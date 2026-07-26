@@ -1,0 +1,13 @@
+{
+  "name": "Next.js Sandbox",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "forwardPorts": [3000],
+  "containerEnv": {
+    "WATCHPACK_POLLING": "true",
+    "CHOKIDAR_USEPOLLING": "true"
+  },
+  "shutdownAction": "stopContainer",
+  "remoteUser": "node"
+}
