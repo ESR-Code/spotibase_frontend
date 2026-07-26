@@ -1,6 +1,6 @@
 "use client";
 
-import { Focus } from "lucide-react";
+import { Focus, Trash2 } from "lucide-react";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 
 type HotspotListItemProps = {
@@ -8,6 +8,7 @@ type HotspotListItemProps = {
   selected: boolean;
   onSelect: () => void;
   onFocus: () => void;
+  onDelete: () => void;
 };
 
 const typeIcons: Record<Hotspot["type"], string> = {
@@ -22,6 +23,7 @@ export function HotspotListItem({
   selected,
   onSelect,
   onFocus,
+  onDelete,
 }: HotspotListItemProps) {
   return (
     <div
@@ -53,6 +55,18 @@ export function HotspotListItem({
         }}
       >
         <Focus className="h-3 w-3" />
+      </button>
+      <button
+        type="button"
+        className="editor-btn-ghost rounded p-1"
+        title="Delete hotspot"
+        style={{ color: "var(--editor-crimson-2)" }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+      >
+        <Trash2 className="h-3 w-3" />
       </button>
     </div>
   );

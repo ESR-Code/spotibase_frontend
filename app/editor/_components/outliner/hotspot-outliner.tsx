@@ -6,6 +6,7 @@ import {
   ChevronRight,
   MapPin,
 } from "lucide-react";
+import { toast } from "sonner";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { SceneModelRow } from "@/app/editor/_components/outliner/scene-model-row";
 import { HotspotListItem } from "@/app/editor/_components/outliner/hotspot-list-item";
@@ -16,6 +17,7 @@ export function HotspotOutliner() {
   const hotspots = useEditorStore((s) => s.hotspots);
   const selectedId = useEditorStore((s) => s.selectedId);
   const selectHotspot = useEditorStore((s) => s.selectHotspot);
+  const removeHotspot = useEditorStore((s) => s.removeHotspot);
   const collapsed = useUIStore((s) => s.outlinerCollapsed);
   const setCollapsed = useUIStore((s) => s.setOutlinerCollapsed);
   const setPropertiesDrawerOpen = useUIStore((s) => s.setPropertiesDrawerOpen);
@@ -23,6 +25,12 @@ export function HotspotOutliner() {
   const handleSelect = (id: number) => {
     selectHotspot(id);
     setPropertiesDrawerOpen(true);
+  };
+
+  const handleDelete = (id: number) => {
+    removeHotspot(id);
+    if (selectedId === id) setPropertiesDrawerOpen(false);
+    toast.success("Hotspot deleted");
   };
 
   return (
@@ -93,6 +101,7 @@ export function HotspotOutliner() {
                     }),
                   );
                 }}
+                onDelete={() => handleDelete(hotspot.id)}
               />
             ))
           )}
