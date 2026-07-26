@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
 export function useEditorKeyboard() {
@@ -42,7 +43,10 @@ export function useEditorKeyboard() {
       if ((e.key === "v" || e.key === "V") && !isPreview) setMode("select");
       else if ((e.key === "a" || e.key === "A") && !isPreview) setMode("add");
       else if (e.key === "Escape") {
-        if (previewOpen) {
+        if (
+          previewOpen &&
+          useSettingsStore.getState().markerDialogResetCameraOnClose
+        ) {
           window.dispatchEvent(new CustomEvent("editor:reset-camera"));
         }
         closeAllOverlays();

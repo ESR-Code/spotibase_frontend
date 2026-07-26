@@ -383,11 +383,7 @@
   position: absolute;
   pointer-events: none;
   z-index: 35;
-  background: linear-gradient(
-    135deg,
-    rgba(21, 36, 63, 0.95),
-    rgba(17, 30, 54, 0.95)
-  );
+  background: #15243f;
   border: 1px solid var(--editor-crimson);
   color: #fff;
   padding: 6px 12px;

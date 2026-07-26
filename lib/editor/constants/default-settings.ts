@@ -13,9 +13,13 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   gridOpacity: 0.45,
   gridSize: 42,
   previewShowLabelOnSelect: false,
+  hotspotLabelColor: "#15243f",
+  hotspotLabelTextColor: "#ffffff",
+  hotspotLabelBorderColor: "#e63946",
   markerDialogPresentation: "drawer",
   markerDialogBackdrop: false,
   markerDialogBackdropBlur: false,
+  markerDialogResetCameraOnClose: true,
 };
 
 export const DEFAULT_ENVIRONMENT_SETTINGS: EnvironmentSettings = {

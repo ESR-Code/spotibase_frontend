@@ -25,9 +25,13 @@ function toFormValues(
     gridOpacity: settings.gridOpacity,
     gridSize: settings.gridSize,
     previewShowLabelOnSelect: settings.previewShowLabelOnSelect,
+    hotspotLabelColor: settings.hotspotLabelColor,
+    hotspotLabelTextColor: settings.hotspotLabelTextColor,
+    hotspotLabelBorderColor: settings.hotspotLabelBorderColor,
     markerDialogPresentation: settings.markerDialogPresentation,
     markerDialogBackdrop: settings.markerDialogBackdrop,
     markerDialogBackdropBlur: settings.markerDialogBackdropBlur,
+    markerDialogResetCameraOnClose: settings.markerDialogResetCameraOnClose,
   };
 }
 

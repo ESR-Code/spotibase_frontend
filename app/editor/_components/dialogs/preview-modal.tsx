@@ -26,6 +26,9 @@ export function PreviewModal() {
   const setPreviewLabelPending = useUIStore((s) => s.setPreviewLabelPending);
   const setHoverTooltip = useUIStore((s) => s.setHoverTooltip);
   const showLabelOnSelect = useSettingsStore((s) => s.previewShowLabelOnSelect);
+  const resetCameraOnClose = useSettingsStore(
+    (s) => s.markerDialogResetCameraOnClose,
+  );
 
   const revealSelectLabel = useCallback(
     (hotspotId: number) => {
@@ -50,12 +53,15 @@ export function PreviewModal() {
     setPreviewActiveHotspotId(null);
     setPreviewLabelPending(false);
     setHoverTooltip(null);
-    window.dispatchEvent(new CustomEvent("editor:reset-camera"));
+    if (resetCameraOnClose) {
+      window.dispatchEvent(new CustomEvent("editor:reset-camera"));
+    }
   }, [
     setOpen,
     setPreviewActiveHotspotId,
     setPreviewLabelPending,
     setHoverTooltip,
+    resetCameraOnClose,
   ]);
 
   const goPrev = useCallback(() => {

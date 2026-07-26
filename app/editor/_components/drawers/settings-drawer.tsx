@@ -89,6 +89,43 @@ export function SettingsDrawer() {
               form.setValue("previewShowLabelOnSelect", checked)
             }
           />
+
+          <div
+            className="pt-2"
+            style={{ borderTop: "1px solid var(--editor-line-soft)" }}
+          >
+            <div
+              className="mb-2.5 text-[10px] font-bold uppercase tracking-wider"
+              style={{ color: "var(--editor-muted-2)" }}
+            >
+              Label Appearance
+            </div>
+            <FieldLabel>Label Color</FieldLabel>
+            <input
+              type="color"
+              className="mb-3 h-8 w-full rounded"
+              value={values.hotspotLabelColor}
+              onChange={(e) => form.setValue("hotspotLabelColor", e.target.value)}
+            />
+            <FieldLabel>Text Color</FieldLabel>
+            <input
+              type="color"
+              className="mb-3 h-8 w-full rounded"
+              value={values.hotspotLabelTextColor}
+              onChange={(e) =>
+                form.setValue("hotspotLabelTextColor", e.target.value)
+              }
+            />
+            <FieldLabel>Border Color</FieldLabel>
+            <input
+              type="color"
+              className="h-8 w-full rounded"
+              value={values.hotspotLabelBorderColor}
+              onChange={(e) =>
+                form.setValue("hotspotLabelBorderColor", e.target.value)
+              }
+            />
+          </div>
         </SettingsSection>
 
         <SettingsSection
@@ -139,6 +176,15 @@ export function SettingsDrawer() {
             }
             onChange={(checked) =>
               form.setValue("markerDialogBackdropBlur", checked)
+            }
+          />
+          <CheckboxField
+            label="Reset camera on close"
+            description="Return to the home view when the marker dialog closes"
+            checked={values.markerDialogResetCameraOnClose}
+            disabled={values.markerDialogPresentation === "off"}
+            onChange={(checked) =>
+              form.setValue("markerDialogResetCameraOnClose", checked)
             }
           />
         </SettingsSection>

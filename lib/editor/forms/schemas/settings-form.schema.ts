@@ -12,9 +12,13 @@ export const settingsFormSchema = z.object({
   gridOpacity: z.number().min(0.05).max(1),
   gridSize: z.number().min(16).max(80),
   previewShowLabelOnSelect: z.boolean(),
+  hotspotLabelColor: z.string(),
+  hotspotLabelTextColor: z.string(),
+  hotspotLabelBorderColor: z.string(),
   markerDialogPresentation: z.enum(["modal", "drawer", "off"]),
   markerDialogBackdrop: z.boolean(),
   markerDialogBackdropBlur: z.boolean(),
+  markerDialogResetCameraOnClose: z.boolean(),
 });
 
 export type SettingsFormValues = z.infer<typeof settingsFormSchema>;
