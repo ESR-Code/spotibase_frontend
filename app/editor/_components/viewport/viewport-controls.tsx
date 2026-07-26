@@ -1,0 +1,102 @@
+"use client";
+
+import {
+  Home,
+  Minus,
+  Plus,
+  SlidersHorizontal,
+  Square,
+  Sun,
+} from "lucide-react";
+import { useSceneStore } from "@/lib/editor/state/scene-store";
+import { useUIStore } from "@/lib/editor/state/ui-store";
+
+export function ViewportControls() {
+  const wireframe = useSceneStore((s) => s.wireframe);
+  const setWireframe = useSceneStore((s) => s.setWireframe);
+  const environmentPanelOpen = useUIStore((s) => s.environmentPanelOpen);
+  const setEnvironmentPanelOpen = useUIStore((s) => s.setEnvironmentPanelOpen);
+  const setSettingsDrawerOpen = useUIStore((s) => s.setSettingsDrawerOpen);
+
+  return (
+    <div
+      className="editor-glass editor-panel-shadow absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-xl px-2 py-2"
+    >
+      <ControlButton
+        title="Reset view"
+        onClick={() => window.dispatchEvent(new Event("editor:reset-camera"))}
+      >
+        <Home className="h-3.5 w-3.5" />
+      </ControlButton>
+      <ControlButton
+        title="Zoom in"
+        onClick={() =>
+          window.dispatchEvent(
+            new CustomEvent("editor:zoom", { detail: { delta: -1.25 } }),
+          )
+        }
+      >
+        <Plus className="h-3.5 w-3.5" />
+      </ControlButton>
+      <ControlButton
+        title="Zoom out"
+        onClick={() =>
+          window.dispatchEvent(
+            new CustomEvent("editor:zoom", { detail: { delta: 1.25 } }),
+          )
+        }
+      >
+        <Minus className="h-3.5 w-3.5" />
+      </ControlButton>
+      <div className="editor-vsep" style={{ height: 18 }} />
+      <ControlButton
+        title="Wireframe"
+        active={wireframe}
+        onClick={() => setWireframe(!wireframe)}
+      >
+        <Square className="h-3.5 w-3.5" />
+      </ControlButton>
+      <ControlButton
+        title="Environment & Lighting"
+        active={environmentPanelOpen}
+        labeled
+        onClick={() => setEnvironmentPanelOpen(!environmentPanelOpen)}
+      >
+        <Sun className="h-3.5 w-3.5" />
+        Env
+      </ControlButton>
+      <div className="editor-vsep" style={{ height: 18 }} />
+      <ControlButton
+        title="General settings"
+        onClick={() => setSettingsDrawerOpen(true)}
+      >
+        <SlidersHorizontal className="h-3.5 w-3.5" />
+      </ControlButton>
+    </div>
+  );
+}
+
+function ControlButton({
+  children,
+  title,
+  active,
+  labeled,
+  onClick,
+}: {
+  children: React.ReactNode;
+  title: string;
+  active?: boolean;
+  labeled?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      className={`editor-tool-btn ${active ? "active" : ""} ${labeled ? "px-3" : ""}`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}

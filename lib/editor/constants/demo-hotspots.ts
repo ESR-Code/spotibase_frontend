@@ -1,0 +1,48 @@
+import { hotspotTypeColors } from "@/lib/editor/theme/tokens";
+import type { Hotspot } from "@/lib/editor/types/hotspot";
+
+/** Demo markers placed on the default 2×2×2 box (centered at y=1). */
+export const DEMO_HOTSPOTS: Omit<Hotspot, "id">[] = [
+  {
+    title: "Top Face",
+    desc: "Marker on the top of the default box. Edit details in the right panel.",
+    image: "https://picsum.photos/seed/boxtop/600/400.jpg",
+    link: "",
+    type: "info",
+    color: hotspotTypeColors.info,
+    style: "number",
+    number: 1,
+    icon: "ℹ",
+    markerImage: "",
+    pulse: false,
+    position: { x: 0, y: 2.15, z: 0 },
+  },
+  {
+    title: "Front Edge",
+    desc: "Marker on the front face of the default box.",
+    image: "https://picsum.photos/seed/boxfront/600/400.jpg",
+    link: "",
+    type: "warning",
+    color: hotspotTypeColors.warning,
+    style: "icon",
+    number: 2,
+    icon: "⚠",
+    markerImage: "",
+    pulse: false,
+    position: { x: 0, y: 1.2, z: 1.15 },
+  },
+  {
+    title: "Side Panel",
+    desc: "Marker on the right side of the default box.",
+    image: "https://picsum.photos/seed/boxside/600/400.jpg",
+    link: "",
+    type: "spec",
+    color: hotspotTypeColors.spec,
+    style: "number",
+    number: 2,
+    icon: "ℹ",
+    markerImage: "",
+    pulse: false,
+    position: { x: 1.15, y: 1.4, z: 0 },
+  },
+];
