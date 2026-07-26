@@ -1,10 +1,8 @@
 "use client";
 
-import { ChevronDown, FolderOpen, Share2, Upload } from "lucide-react";
+import { ChevronDown, FolderOpen, Upload } from "lucide-react";
 import { useRef } from "react";
-import { toast } from "sonner";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
-import { exportHotspots } from "@/lib/editor/io/export-hotspots";
 import { importGlbFile } from "@/lib/editor/io/import-glb";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
@@ -16,12 +14,6 @@ export function FileMenu() {
   const handleImport = () => {
     setFileMenuOpen(false);
     fileInputRef.current?.click();
-  };
-
-  const handleExport = () => {
-    setFileMenuOpen(false);
-    exportHotspots();
-    toast.success("Hotspots exported");
   };
 
   return (
@@ -54,15 +46,6 @@ export function FileMenu() {
               <Upload className="mx-auto h-4 w-4" />
             </span>
             Import Model
-          </button>
-          <button type="button" onClick={handleExport} className="text-left">
-            <span
-              className="inline-block w-[18px] text-center"
-              style={{ color: "var(--editor-crimson-2)" }}
-            >
-              <Share2 className="mx-auto h-4 w-4" />
-            </span>
-            Export
           </button>
         </div>
       )}

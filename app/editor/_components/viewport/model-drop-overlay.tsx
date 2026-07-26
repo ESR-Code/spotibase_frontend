@@ -1,37 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CloudUpload } from "lucide-react";
 import { importGlbFile } from "@/lib/editor/io/import-glb";
 
+/** Listens on the viewport wrap (parent) so drag works even while overlay is non-interactive. */
 export function ModelDropOverlay() {
   const [active, setActive] = useState(false);
-  const [dragCounter, setDragCounter] = useState(0);
+
+  useEffect(() => {
+    const wrap = document.getElementById("editor-viewport-wrap");
+    if (!wrap) return;
+
+    let dragCounter = 0;
+
+    const onEnter = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter += 1;
+      setActive(true);
+    };
+    const onOver = (e: DragEvent) => e.preventDefault();
+    const onLeave = () => {
+      dragCounter -= 1;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        setActive(false);
+      }
+    };
+    const onDrop = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter = 0;
+      setActive(false);
+      const file = e.dataTransfer?.files?.[0];
+      if (file) void importGlbFile(file);
+    };
+
+    wrap.addEventListener("dragenter", onEnter);
+    wrap.addEventListener("dragover", onOver);
+    wrap.addEventListener("dragleave", onLeave);
+    wrap.addEventListener("drop", onDrop);
+    return () => {
+      wrap.removeEventListener("dragenter", onEnter);
+      wrap.removeEventListener("dragover", onOver);
+      wrap.removeEventListener("dragleave", onLeave);
+      wrap.removeEventListener("drop", onDrop);
+    };
+  }, []);
 
   return (
-    <div
-      className={`editor-drop-overlay ${active ? "active" : ""}`}
-      onDragEnter={(e) => {
-        e.preventDefault();
-        setDragCounter((c) => c + 1);
-        setActive(true);
-      }}
-      onDragOver={(e) => e.preventDefault()}
-      onDragLeave={() => {
-        setDragCounter((c) => {
-          const next = c - 1;
-          if (next <= 0) setActive(false);
-          return Math.max(0, next);
-        });
-      }}
-      onDrop={(e) => {
-        e.preventDefault();
-        setDragCounter(0);
-        setActive(false);
-        const file = e.dataTransfer.files[0];
-        if (file) void importGlbFile(file);
-      }}
-    >
+    <div className={`editor-drop-overlay ${active ? "active" : ""}`}>
       <div className="text-center">
         <CloudUpload
           className="mx-auto mb-3 h-12 w-12"

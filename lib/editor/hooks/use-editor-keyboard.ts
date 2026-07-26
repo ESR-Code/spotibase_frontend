@@ -18,14 +18,38 @@ export function useEditorKeyboard() {
       const target = e.target as HTMLElement;
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
 
-      if (e.key === "v" || e.key === "V") setMode("select");
-      else if (e.key === "a" || e.key === "A") setMode("add");
-      else if (e.key === "p" || e.key === "P") setMode("preview");
+      const isPreview = useEditorStore.getState().isPreview;
+      const previewOpen = useUIStore.getState().previewModalOpen;
+
+      if (e.key === "p" || e.key === "P") {
+        const wasPreview = isPreview;
+        setMode("preview");
+        if (wasPreview) {
+          useUIStore.getState().setPreviewModalOpen(false);
+          window.dispatchEvent(new CustomEvent("editor:reset-camera"));
+        } else {
+          closeAllOverlays();
+          setPropertiesDrawerOpen(false);
+          selectHotspot(null);
+        }
+        return;
+      }
+
+      if ((e.key === "v" || e.key === "V") && !isPreview) setMode("select");
+      else if ((e.key === "a" || e.key === "A") && !isPreview) setMode("add");
       else if (e.key === "Escape") {
+        if (previewOpen) {
+          useUIStore.getState().setPreviewModalOpen(false);
+          window.dispatchEvent(new CustomEvent("editor:reset-camera"));
+        }
         closeAllOverlays();
         setPropertiesDrawerOpen(false);
         selectHotspot(null);
-      } else if ((e.key === "Delete" || e.key === "Backspace") && selectedId != null) {
+      } else if (
+        !isPreview &&
+        (e.key === "Delete" || e.key === "Backspace") &&
+        selectedId != null
+      ) {
         removeHotspot(selectedId);
         setPropertiesDrawerOpen(false);
         toast.success("Hotspot deleted");

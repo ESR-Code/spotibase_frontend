@@ -10,17 +10,23 @@ export function ModeToolbar() {
   const setMode = useEditorStore((s) => s.setMode);
   const closeAllOverlays = useUIStore((s) => s.closeAllOverlays);
   const setPropertiesDrawerOpen = useUIStore((s) => s.setPropertiesDrawerOpen);
+  const setPreviewModalOpen = useUIStore((s) => s.setPreviewModalOpen);
 
   const handleMode = (next: "select" | "add" | "preview") => {
     if (next === "preview") {
+      const entering = !isPreview;
       setMode("preview");
-      if (!isPreview) {
+      if (entering) {
         closeAllOverlays();
         setPropertiesDrawerOpen(false);
         useEditorStore.getState().selectHotspot(null);
+      } else {
+        setPreviewModalOpen(false);
+        window.dispatchEvent(new CustomEvent("editor:reset-camera"));
       }
       return;
     }
+    if (isPreview) return;
     setMode(next);
   };
 
@@ -34,6 +40,7 @@ export function ModeToolbar() {
     >
       <button
         type="button"
+        disabled={isPreview}
         className={`editor-tool-btn ${!isPreview && mode === "select" ? "active" : ""} ${isPreview ? "disabled" : ""}`}
         onClick={() => handleMode("select")}
       >
@@ -42,6 +49,7 @@ export function ModeToolbar() {
       </button>
       <button
         type="button"
+        disabled={isPreview}
         className={`editor-tool-btn ${!isPreview && mode === "add" ? "active" : ""} ${isPreview ? "disabled" : ""}`}
         onClick={() => handleMode("add")}
       >

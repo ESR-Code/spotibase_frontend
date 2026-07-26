@@ -16,6 +16,7 @@ export function PlayCanvasViewport() {
 
   return (
     <div
+      id="editor-viewport-wrap"
       className={`relative min-h-0 min-w-0 flex-1 editor-bp-grid ${mode === "add" ? "crosshair" : ""}`}
     >
       <div className="absolute inset-0 overflow-hidden">

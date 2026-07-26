@@ -1,7 +1,7 @@
 import type { Texture } from "playcanvas";
 import type * as pc from "playcanvas";
 
-/** Canvas → PlayCanvas texture for number / icon marker sprites. */
+/** Canvas → PlayCanvas texture for number / icon / solid-dot marker sprites. */
 export function createTextTexture(
   pcModule: typeof pc,
   appGraphicsDevice: pc.GraphicsDevice,
@@ -18,6 +18,7 @@ export function createTextTexture(
     return new pcModule.Texture(appGraphicsDevice, { width: size, height: size });
   }
 
+  ctx.clearRect(0, 0, size, size);
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.arc(size / 2, size / 2, size / 2 - 4, 0, Math.PI * 2);
@@ -27,13 +28,15 @@ export function createTextTexture(
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  ctx.fillStyle = "#ffffff";
-  ctx.font = isIcon
-    ? "bold 70px sans-serif"
-    : "bold 64px Manrope, sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(text, size / 2, size / 2 + 4);
+  if (text) {
+    ctx.fillStyle = "#ffffff";
+    ctx.font = isIcon
+      ? "bold 70px sans-serif"
+      : "bold 64px Manrope, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, size / 2, size / 2 + 4);
+  }
 
   const texture = new pcModule.Texture(appGraphicsDevice, {
     width: size,

@@ -392,6 +392,40 @@
 
 .editor-root .editor-drop-overlay.active {
   opacity: 1;
+  pointer-events: auto;
+}
+
+.editor-root .editor-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(11, 20, 36, 0.6),
+    rgba(11, 20, 36, 0.92)
+  );
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  z-index: 40;
+}
+
+.editor-root .editor-modal-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.editor-root .editor-modal-card {
+  width: min(560px, 90%);
+  transform: scale(0.94) translateY(10px);
+  transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.editor-root .editor-modal-backdrop.open .editor-modal-card {
+  transform: scale(1) translateY(0);
 }
 
 .editor-root .editor-outliner {

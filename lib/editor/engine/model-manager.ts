@@ -59,11 +59,16 @@ export function createModelManager(
         instantiateRenderEntity: () => Entity;
       };
       const entity = resource.instantiateRenderEntity();
-      normalizeEntity(entity, pcModule);
+      const { sizeLabel, triangles } = normalizeEntity(entity, pcModule);
       modelRoot.addChild(entity);
 
-      const sizeLabel = "Imported model";
+      const wireframe = useSceneStore.getState().wireframe;
+      if (wireframe) setWireframe(true);
+
       useSceneStore.getState().setModelMeta(file.name, sizeLabel);
+      useSceneStore
+        .getState()
+        .setStats(useSceneStore.getState().fps, triangles);
       toast.success(`Imported ${file.name}`);
 
       URL.revokeObjectURL(url);
@@ -90,9 +95,13 @@ function clearChildren(root: Entity) {
   }
 }
 
-function normalizeEntity(entity: Entity, pcModule: typeof pc) {
+function normalizeEntity(
+  entity: Entity,
+  pcModule: typeof pc,
+): { sizeLabel: string; triangles: number } {
   const bbox = new pcModule.BoundingBox();
   let hasMesh = false;
+  let triangles = 0;
 
   entity.forEach((node) => {
     const render = (node as Entity).render;
@@ -100,6 +109,10 @@ function normalizeEntity(entity: Entity, pcModule: typeof pc) {
     for (const mi of render.meshInstances) {
       mi.castShadow = true;
       mi.receiveShadow = true;
+      const mesh = mi.mesh;
+      if (mesh?.primitive?.[0]?.count) {
+        triangles += Math.floor(mesh.primitive[0].count / 3);
+      }
       if (!hasMesh) {
         bbox.copy(mi.aabb);
         hasMesh = true;
@@ -109,11 +122,14 @@ function normalizeEntity(entity: Entity, pcModule: typeof pc) {
     }
   });
 
-  if (!hasMesh) return;
+  if (!hasMesh) {
+    return { sizeLabel: "Empty model", triangles: 0 };
+  }
 
   const size = bbox.halfExtents.clone().mulScalar(2);
   const maxDim = Math.max(size.x, size.y, size.z, 0.0001);
-  const scale = 2 / maxDim;
+  // Match reference: normalize longest axis to ~6 units
+  const scale = 6 / maxDim;
   entity.setLocalScale(scale, scale, scale);
 
   const center = bbox.center;
@@ -122,4 +138,7 @@ function normalizeEntity(entity: Entity, pcModule: typeof pc) {
     -bbox.getMin().y * scale,
     -center.z * scale,
   );
+
+  const sizeLabel = `${(size.x * scale).toFixed(1)} × ${(size.y * scale).toFixed(1)} × ${(size.z * scale).toFixed(1)} units`;
+  return { sizeLabel, triangles };
 }

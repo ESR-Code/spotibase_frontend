@@ -72,10 +72,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         isPreview,
         mode: isPreview ? "preview" : "select",
         selectedId: isPreview ? null : get().selectedId,
+        previewDown: null,
+        previewDragged: false,
       });
       return;
     }
-    set({ mode, isPreview: false });
+    set({
+      mode,
+      isPreview: false,
+      previewDown: null,
+      previewDragged: false,
+    });
   },
 
   addHotspot: (position, data = {}) => {

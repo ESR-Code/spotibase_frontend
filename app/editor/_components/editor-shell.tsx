@@ -7,6 +7,7 @@ import { PlayCanvasViewport } from "@/app/editor/_components/viewport/playcanvas
 import { HotspotPropertiesDrawer } from "@/app/editor/_components/drawers/hotspot-properties-drawer";
 import { SettingsDrawer } from "@/app/editor/_components/drawers/settings-drawer";
 import { EnvironmentPanel } from "@/app/editor/_components/panels/environment-panel";
+import { PreviewModal } from "@/app/editor/_components/dialogs/preview-modal";
 import { useEditorKeyboard } from "@/lib/editor/hooks/use-editor-keyboard";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
@@ -29,6 +30,7 @@ export function EditorShell() {
           <EnvironmentPanel />
           <HotspotPropertiesDrawer />
           <SettingsDrawer />
+          <PreviewModal />
         </div>
       </div>
     </div>

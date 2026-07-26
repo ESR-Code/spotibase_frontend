@@ -171,44 +171,44 @@ export async function rebuildCore(
   }
 
   if (hotspot.style === "number" && hotspot.number !== "") {
-    const tex = createTextTexture(
+    attachSpriteCore(
+      visual,
+      createTextTexture(
+        pcModule,
+        app.graphicsDevice,
+        String(hotspot.number),
+        colorHex,
+        false,
+      ),
       pcModule,
-      app.graphicsDevice,
-      String(hotspot.number),
-      colorHex,
-      false,
     );
-    const mat = spriteMat(pcModule, tex);
-    const core = makePlane(pcModule, "Core", mat);
-    core.setLocalScale(MARKER_SPRITE_SIZE, 1, MARKER_SPRITE_SIZE);
-    visual.root.addChild(core);
-    visual.core = core;
-    visual.coreMat = mat;
-    visual.coreTexture = tex;
   } else if (hotspot.style === "icon" && hotspot.icon) {
-    const tex = createTextTexture(
+    attachSpriteCore(
+      visual,
+      createTextTexture(
+        pcModule,
+        app.graphicsDevice,
+        hotspot.icon,
+        colorHex,
+        true,
+      ),
       pcModule,
-      app.graphicsDevice,
-      hotspot.icon,
-      colorHex,
-      true,
     );
-    const mat = spriteMat(pcModule, tex);
-    const core = makePlane(pcModule, "Core", mat);
-    core.setLocalScale(MARKER_SPRITE_SIZE, 1, MARKER_SPRITE_SIZE);
-    visual.root.addChild(core);
-    visual.core = core;
-    visual.coreMat = mat;
-    visual.coreTexture = tex;
   } else {
-    const mat = unlitMat(pcModule, color, isImage ? 0.55 : 1);
-    const core = makeSphere(pcModule, "Core", 0.24, mat, {
-      castShadows: false,
-      receiveShadows: false,
-    });
-    visual.root.addChild(core);
-    visual.core = core;
-    visual.coreMat = mat;
+    // Dot (and image placeholder): same billboard sprite path as number/icon.
+    // Unlit mesh spheres were failing to show under the transparent pass.
+    attachSpriteCore(
+      visual,
+      createTextTexture(
+        pcModule,
+        app.graphicsDevice,
+        "",
+        colorHex,
+        false,
+      ),
+      pcModule,
+      isImage ? 0.85 : 1,
+    );
   }
 
   visual.styleKey = visualStyleKey(hotspot);
@@ -258,7 +258,26 @@ function unlitMat(
   return mat;
 }
 
-function spriteMat(pcModule: typeof pc, texture: Texture): StandardMaterial {
+function attachSpriteCore(
+  visual: HotspotVisual,
+  texture: Texture,
+  pcModule: typeof pc,
+  opacity = 1,
+) {
+  const mat = spriteMat(pcModule, texture, opacity);
+  const core = makePlane(pcModule, "Core", mat);
+  core.setLocalScale(MARKER_SPRITE_SIZE, 1, MARKER_SPRITE_SIZE);
+  visual.root.addChild(core);
+  visual.core = core;
+  visual.coreMat = mat;
+  visual.coreTexture = texture;
+}
+
+function spriteMat(
+  pcModule: typeof pc,
+  texture: Texture,
+  opacity = 1,
+): StandardMaterial {
   const mat = new pcModule.StandardMaterial();
   mat.diffuseMap = texture;
   mat.emissiveMap = texture;
@@ -270,7 +289,7 @@ function spriteMat(pcModule: typeof pc, texture: Texture): StandardMaterial {
   mat.useSkybox = false;
   mat.depthWrite = false;
   mat.depthTest = false;
-  mat.opacity = 1;
+  mat.opacity = opacity;
   mat.alphaTest = 0.08;
   mat.blendType = pcModule.BLEND_NORMAL;
   mat.cull = pcModule.CULLFACE_NONE;
