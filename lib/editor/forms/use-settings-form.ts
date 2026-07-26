@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { DEFAULT_EDITOR_SETTINGS } from "@/lib/editor/constants/default-settings";
 import {
   settingsFormSchema,
   type SettingsFormValues,
@@ -40,16 +41,16 @@ export function useSettingsForm() {
   const reset = () => {
     resetSettings();
     form.reset({
-      hotspotSize: 1,
-      minDistance: 1,
-      maxDistance: 40,
-      minYaw: -180,
-      maxYaw: 180,
-      minPitch: 0,
-      maxPitch: 94,
-      gridColor: "#3d5a80",
-      gridOpacity: 0.7,
-      gridSize: 42,
+      hotspotSize: DEFAULT_EDITOR_SETTINGS.hotspotSize,
+      minDistance: DEFAULT_EDITOR_SETTINGS.minDistance,
+      maxDistance: DEFAULT_EDITOR_SETTINGS.maxDistance,
+      minYaw: DEFAULT_EDITOR_SETTINGS.minYaw,
+      maxYaw: DEFAULT_EDITOR_SETTINGS.maxYaw,
+      minPitch: DEFAULT_EDITOR_SETTINGS.minPitch,
+      maxPitch: DEFAULT_EDITOR_SETTINGS.maxPitch,
+      gridColor: DEFAULT_EDITOR_SETTINGS.gridColor,
+      gridOpacity: DEFAULT_EDITOR_SETTINGS.gridOpacity,
+      gridSize: DEFAULT_EDITOR_SETTINGS.gridSize,
     });
   };
 

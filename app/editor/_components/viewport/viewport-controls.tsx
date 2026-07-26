@@ -6,7 +6,6 @@ import {
   Plus,
   SlidersHorizontal,
   Square,
-  Sun,
 } from "lucide-react";
 import { useSceneStore } from "@/lib/editor/state/scene-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
@@ -14,8 +13,6 @@ import { useUIStore } from "@/lib/editor/state/ui-store";
 export function ViewportControls() {
   const wireframe = useSceneStore((s) => s.wireframe);
   const setWireframe = useSceneStore((s) => s.setWireframe);
-  const environmentPanelOpen = useUIStore((s) => s.environmentPanelOpen);
-  const setEnvironmentPanelOpen = useUIStore((s) => s.setEnvironmentPanelOpen);
   const setSettingsDrawerOpen = useUIStore((s) => s.setSettingsDrawerOpen);
 
   return (
@@ -56,15 +53,6 @@ export function ViewportControls() {
       >
         <Square className="h-3.5 w-3.5" />
       </ControlButton>
-      <ControlButton
-        title="Environment & Lighting"
-        active={environmentPanelOpen}
-        labeled
-        onClick={() => setEnvironmentPanelOpen(!environmentPanelOpen)}
-      >
-        <Sun className="h-3.5 w-3.5" />
-        Env
-      </ControlButton>
       <div className="editor-vsep" style={{ height: 18 }} />
       <ControlButton
         title="General settings"
@@ -80,20 +68,18 @@ function ControlButton({
   children,
   title,
   active,
-  labeled,
   onClick,
 }: {
   children: React.ReactNode;
   title: string;
   active?: boolean;
-  labeled?: boolean;
   onClick?: () => void;
 }) {
   return (
     <button
       type="button"
       title={title}
-      className={`editor-tool-btn ${active ? "active" : ""} ${labeled ? "px-3" : ""}`}
+      className={`editor-tool-btn ${active ? "active" : ""}`}
       onClick={onClick}
     >
       {children}

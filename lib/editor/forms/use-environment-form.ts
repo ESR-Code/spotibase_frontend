@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { DEFAULT_ENVIRONMENT_SETTINGS } from "@/lib/editor/constants/default-settings";
 import {
   environmentFormSchema,
   type EnvironmentFormValues,
@@ -12,11 +13,11 @@ import { useEnvironmentStore } from "@/lib/editor/state/environment-store";
 export function useEnvironmentForm() {
   const environment = useEnvironmentStore();
   const setEnvironment = useEnvironmentStore((s) => s.setEnvironment);
+  const resetEnvironment = useEnvironmentStore((s) => s.resetEnvironment);
 
   const form = useForm<EnvironmentFormValues>({
     resolver: zodResolver(environmentFormSchema),
     defaultValues: {
-      bgMode: environment.bgMode,
       bgColor: environment.bgColor,
       show3dGrid: environment.show3dGrid,
       shadowIntensity: environment.shadowIntensity,
@@ -37,5 +38,10 @@ export function useEnvironmentForm() {
     return () => subscription.unsubscribe();
   }, [form, setEnvironment]);
 
-  return { form };
+  const reset = () => {
+    resetEnvironment();
+    form.reset({ ...DEFAULT_ENVIRONMENT_SETTINGS });
+  };
+
+  return { form, reset };
 }

@@ -13,7 +13,6 @@ export type EditorSettings = {
 };
 
 export type EnvironmentSettings = {
-  bgMode: "grid" | "color";
   bgColor: string;
   show3dGrid: boolean;
   shadowIntensity: number;

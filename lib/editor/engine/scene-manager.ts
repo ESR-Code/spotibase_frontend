@@ -30,7 +30,7 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
 
   const camera = new pcModule.Entity("Camera");
   camera.addComponent("camera", {
-    clearColor: hexToColor(pcModule, env.bgMode === "color" ? env.bgColor : "#0b1424"),
+    clearColor: hexToColor(pcModule, env.bgColor),
     fov: 42,
     nearClip: 0.1,
     farClip: 200,
@@ -116,11 +116,7 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
   const applyEnvironment = () => {
     const state = useEnvironmentStore.getState();
     if (camera.camera) {
-      // CSS bp-grid shows through when alpha canvas + dark clear in grid mode
-      camera.camera.clearColor =
-        state.bgMode === "color"
-          ? hexToColor(pcModule, state.bgColor)
-          : hexToColor(pcModule, "#0b1424");
+      camera.camera.clearColor = hexToColor(pcModule, state.bgColor);
     }
     if (keyLight.light) {
       keyLight.light.intensity = state.keyIntensity;

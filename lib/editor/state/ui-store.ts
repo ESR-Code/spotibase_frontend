@@ -15,7 +15,6 @@ type UIState = {
   hudCollapsed: boolean;
   propertiesDrawerOpen: boolean;
   settingsDrawerOpen: boolean;
-  environmentPanelOpen: boolean;
   previewModalOpen: boolean;
   previewModalIndex: number;
   hoverTooltip: HoverTooltipState;
@@ -25,7 +24,6 @@ type UIState = {
   setHudCollapsed: (value: boolean) => void;
   setPropertiesDrawerOpen: (value: boolean) => void;
   setSettingsDrawerOpen: (value: boolean) => void;
-  setEnvironmentPanelOpen: (value: boolean) => void;
   setPreviewModalOpen: (value: boolean) => void;
   setPreviewModalIndex: (index: number) => void;
   setHoverTooltip: (value: HoverTooltipState) => void;
@@ -39,7 +37,6 @@ export const useUIStore = create<UIState>((set) => ({
   hudCollapsed: false,
   propertiesDrawerOpen: false,
   settingsDrawerOpen: false,
-  environmentPanelOpen: false,
   previewModalOpen: false,
   previewModalIndex: 0,
   hoverTooltip: null,
@@ -50,15 +47,12 @@ export const useUIStore = create<UIState>((set) => ({
   setPropertiesDrawerOpen: (propertiesDrawerOpen) =>
     set({ propertiesDrawerOpen }),
   setSettingsDrawerOpen: (settingsDrawerOpen) => set({ settingsDrawerOpen }),
-  setEnvironmentPanelOpen: (environmentPanelOpen) =>
-    set({ environmentPanelOpen }),
   setPreviewModalOpen: (previewModalOpen) => set({ previewModalOpen }),
   setPreviewModalIndex: (previewModalIndex) => set({ previewModalIndex }),
   setHoverTooltip: (hoverTooltip) => set({ hoverTooltip }),
   closeAllOverlays: () =>
     set({
       settingsDrawerOpen: false,
-      environmentPanelOpen: false,
       previewModalOpen: false,
       propertiesDrawerOpen: false,
       hoverTooltip: null,

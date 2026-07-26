@@ -9,14 +9,13 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   maxYaw: 180,
   minPitch: 0,
   maxPitch: 94,
-  gridColor: "#3d5a80",
-  gridOpacity: 0.7,
+  gridColor: "#ffffff",
+  gridOpacity: 0.45,
   gridSize: 42,
 };
 
 export const DEFAULT_ENVIRONMENT_SETTINGS: EnvironmentSettings = {
-  bgMode: "grid",
-  bgColor: "#0b1424",
+  bgColor: "#c0cbdd",
   show3dGrid: true,
   shadowIntensity: 0.38,
   shadowColor: "#1e2433",

@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 export const environmentFormSchema = z.object({
-  bgMode: z.enum(["grid", "color"]),
   bgColor: z.string(),
   show3dGrid: z.boolean(),
   shadowIntensity: z.number().min(0).max(1),

@@ -6,20 +6,30 @@ import {
   ChevronDown,
   LayoutGrid,
   MapPin,
+  Moon,
+  Sun,
   X,
 } from "lucide-react";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import { useEnvironmentForm } from "@/lib/editor/forms/use-environment-form";
 import { useSettingsForm } from "@/lib/editor/forms/use-settings-form";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
 export function SettingsDrawer() {
   const open = useUIStore((s) => s.settingsDrawerOpen);
   const setOpen = useUIStore((s) => s.setSettingsDrawerOpen);
-  const { form, reset } = useSettingsForm();
+  const { form, reset: resetSettings } = useSettingsForm();
+  const { form: envForm, reset: resetEnvironment } = useEnvironmentForm();
   const values = form.watch();
+  const env = envForm.watch();
+
+  const resetAll = () => {
+    resetSettings();
+    resetEnvironment();
+  };
 
   return (
     <GlassPanel
@@ -42,7 +52,7 @@ export function SettingsDrawer() {
       </div>
 
       <div className="editor-settings-sections min-h-0 flex-1 space-y-2.5 overflow-y-auto p-4">
-        <SettingsSection title="Hotspots" icon={<MapPin className="h-3.5 w-3.5" />} defaultOpen>
+        <SettingsSection title="Hotspots" icon={<MapPin className="h-3.5 w-3.5" />}>
           <SliderField
             label="Hotspot Size"
             value={values.hotspotSize}
@@ -57,7 +67,7 @@ export function SettingsDrawer() {
           </p>
         </SettingsSection>
 
-        <SettingsSection title="Camera" icon={<Camera className="h-3.5 w-3.5" />} defaultOpen>
+        <SettingsSection title="Camera" icon={<Camera className="h-3.5 w-3.5" />}>
           <div className="mb-1 text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--editor-muted-2)" }}>
             Zoom Limits
           </div>
@@ -140,7 +150,15 @@ export function SettingsDrawer() {
           </p>
         </SettingsSection>
 
-        <SettingsSection title="Grid" icon={<LayoutGrid className="h-3.5 w-3.5" />} defaultOpen>
+        <SettingsSection title="Grid" icon={<LayoutGrid className="h-3.5 w-3.5" />}>
+          <label className="mb-3 flex items-center justify-between text-[12px]">
+            <span>Show Ground Grid</span>
+            <input
+              type="checkbox"
+              checked={env.show3dGrid}
+              onChange={(e) => envForm.setValue("show3dGrid", e.target.checked)}
+            />
+          </label>
           <FieldLabel>Grid Color</FieldLabel>
           <input
             type="color"
@@ -170,13 +188,118 @@ export function SettingsDrawer() {
             Overall ground grid extent. Outer edges still fade out.
           </p>
         </SettingsSection>
+
+        <SettingsSection title="Environment & Lighting" icon={<Sun className="h-3.5 w-3.5" />}>
+          <div>
+            <FieldLabel>Environment Color</FieldLabel>
+            <input
+              type="color"
+              className="h-8 w-full rounded"
+              value={env.bgColor}
+              onChange={(e) => envForm.setValue("bgColor", e.target.value)}
+            />
+          </div>
+
+          <div
+            className="pt-3"
+            style={{ borderTop: "1px solid var(--editor-line-soft)" }}
+          >
+            <FieldLabel className="flex items-center gap-1.5">
+              <Moon className="h-3 w-3" style={{ color: "var(--editor-muted)" }} />
+              Shadows
+            </FieldLabel>
+            <SliderField
+              label="Intensity"
+              value={env.shadowIntensity}
+              display={env.shadowIntensity.toFixed(2)}
+              min={0}
+              max={1}
+              step={0.05}
+              onChange={(v) => envForm.setValue("shadowIntensity", v)}
+            />
+            <FieldLabel className="mt-2">Color</FieldLabel>
+            <input
+              type="color"
+              className="h-8 w-full rounded"
+              value={env.shadowColor}
+              onChange={(e) => envForm.setValue("shadowColor", e.target.value)}
+            />
+          </div>
+
+          <div
+            className="pt-3"
+            style={{ borderTop: "1px solid var(--editor-line-soft)" }}
+          >
+            <FieldLabel className="flex items-center gap-1.5">
+              <Sun className="h-3 w-3" style={{ color: "var(--editor-crimson-2)" }} />
+              Key Light
+            </FieldLabel>
+            <SliderField
+              label="Brightness"
+              value={env.keyIntensity}
+              display={env.keyIntensity.toFixed(2)}
+              min={0}
+              max={5}
+              step={0.1}
+              onChange={(v) => envForm.setValue("keyIntensity", v)}
+            />
+            <FieldLabel className="mt-2">Color</FieldLabel>
+            <input
+              type="color"
+              className="h-8 w-full rounded"
+              value={env.keyColor}
+              onChange={(e) => envForm.setValue("keyColor", e.target.value)}
+            />
+          </div>
+
+          <div
+            className="pt-3"
+            style={{ borderTop: "1px solid var(--editor-line-soft)" }}
+          >
+            <FieldLabel>Ambient / Fill Light</FieldLabel>
+            <SliderField
+              label="Brightness"
+              value={env.fillIntensity}
+              display={env.fillIntensity.toFixed(2)}
+              min={0}
+              max={5}
+              step={0.1}
+              onChange={(v) => envForm.setValue("fillIntensity", v)}
+            />
+            <FieldLabel className="mt-2">Color</FieldLabel>
+            <input
+              type="color"
+              className="mb-2 h-8 w-full rounded"
+              value={env.fillColor}
+              onChange={(e) => envForm.setValue("fillColor", e.target.value)}
+            />
+            <SliderField
+              label="Rotate X (Pitch)"
+              value={env.fillPitch}
+              display={`${env.fillPitch}°`}
+              min={-90}
+              max={90}
+              step={5}
+              onChange={(v) => envForm.setValue("fillPitch", v)}
+            />
+            <SliderField
+              label="Rotate Y (Yaw)"
+              value={env.fillYaw}
+              display={`${env.fillYaw}°`}
+              min={-180}
+              max={180}
+              step={5}
+              onChange={(v) => envForm.setValue("fillYaw", v)}
+            />
+          </div>
+        </SettingsSection>
       </div>
 
       <div
         className="flex gap-2 p-4"
         style={{ borderTop: "1px solid var(--editor-line)" }}
       >
-        <EditorButton className="flex-1" onClick={reset}>
+        <EditorButton className="flex-1" onClick={resetAll}>
           Reset
         </EditorButton>
         <EditorButton variant="primary" className="flex-1" onClick={() => setOpen(false)}>
@@ -191,7 +314,7 @@ function SettingsSection({
   title,
   icon,
   children,
-  defaultOpen = true,
+  defaultOpen = false,
 }: {
   title: string;
   icon: React.ReactNode;
