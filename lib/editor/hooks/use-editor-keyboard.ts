@@ -25,7 +25,11 @@ export function useEditorKeyboard() {
         const wasPreview = isPreview;
         setMode("preview");
         if (wasPreview) {
-          useUIStore.getState().setPreviewModalOpen(false);
+          const ui = useUIStore.getState();
+          ui.setPreviewModalOpen(false);
+          ui.setPreviewActiveHotspotId(null);
+          ui.setPreviewLabelPending(false);
+          ui.setHoverTooltip(null);
           window.dispatchEvent(new CustomEvent("editor:reset-camera"));
         } else {
           closeAllOverlays();
@@ -39,7 +43,6 @@ export function useEditorKeyboard() {
       else if ((e.key === "a" || e.key === "A") && !isPreview) setMode("add");
       else if (e.key === "Escape") {
         if (previewOpen) {
-          useUIStore.getState().setPreviewModalOpen(false);
           window.dispatchEvent(new CustomEvent("editor:reset-camera"));
         }
         closeAllOverlays();

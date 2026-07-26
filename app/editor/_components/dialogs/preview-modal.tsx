@@ -22,20 +22,77 @@ export function PreviewModal() {
   const hotspot = hotspots[index] ?? null;
   const count = hotspots.length;
 
+  const setPreviewActiveHotspotId = useUIStore((s) => s.setPreviewActiveHotspotId);
+  const setPreviewLabelPending = useUIStore((s) => s.setPreviewLabelPending);
+  const setHoverTooltip = useUIStore((s) => s.setHoverTooltip);
+  const showLabelOnSelect = useSettingsStore((s) => s.previewShowLabelOnSelect);
+
+  const revealSelectLabel = useCallback(
+    (hotspotId: number) => {
+      setHoverTooltip(null);
+      if (!showLabelOnSelect) {
+        setPreviewLabelPending(false);
+        return;
+      }
+      setPreviewLabelPending(true);
+      window.setTimeout(() => {
+        const state = useUIStore.getState();
+        if (state.previewActiveHotspotId === hotspotId) {
+          state.setPreviewLabelPending(false);
+        }
+      }, 280);
+    },
+    [showLabelOnSelect, setHoverTooltip, setPreviewLabelPending],
+  );
+
   const close = useCallback(() => {
     setOpen(false);
+    setPreviewActiveHotspotId(null);
+    setPreviewLabelPending(false);
+    setHoverTooltip(null);
     window.dispatchEvent(new CustomEvent("editor:reset-camera"));
-  }, [setOpen]);
+  }, [
+    setOpen,
+    setPreviewActiveHotspotId,
+    setPreviewLabelPending,
+    setHoverTooltip,
+  ]);
 
   const goPrev = useCallback(() => {
     if (count === 0) return;
-    setIndex((index - 1 + count) % count);
-  }, [count, index, setIndex]);
+    const nextIndex = (index - 1 + count) % count;
+    setIndex(nextIndex);
+    const next = hotspots[nextIndex];
+    if (next) {
+      setPreviewActiveHotspotId(next.id);
+      revealSelectLabel(next.id);
+    }
+  }, [
+    count,
+    index,
+    setIndex,
+    hotspots,
+    setPreviewActiveHotspotId,
+    revealSelectLabel,
+  ]);
 
   const goNext = useCallback(() => {
     if (count === 0) return;
-    setIndex((index + 1) % count);
-  }, [count, index, setIndex]);
+    const nextIndex = (index + 1) % count;
+    setIndex(nextIndex);
+    const next = hotspots[nextIndex];
+    if (next) {
+      setPreviewActiveHotspotId(next.id);
+      revealSelectLabel(next.id);
+    }
+  }, [
+    count,
+    index,
+    setIndex,
+    hotspots,
+    setPreviewActiveHotspotId,
+    revealSelectLabel,
+  ]);
 
   useEffect(() => {
     if (presentation === "off" && open) setOpen(false);
@@ -43,10 +100,15 @@ export function PreviewModal() {
 
   useEffect(() => {
     if (!open || !hotspot || presentation === "off") return;
+    setPreviewActiveHotspotId(hotspot.id);
     window.dispatchEvent(
       new CustomEvent("editor:focus-hotspot", { detail: { id: hotspot.id } }),
     );
-  }, [open, hotspot?.id, presentation]);
+  }, [open, hotspot?.id, presentation, setPreviewActiveHotspotId]);
+
+  useEffect(() => {
+    if (!showLabelOnSelect) setHoverTooltip(null);
+  }, [showLabelOnSelect, setHoverTooltip]);
 
   useEffect(() => {
     if (!open || presentation === "off") return;

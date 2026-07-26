@@ -9,6 +9,7 @@ import {
 } from "@/lib/editor/engine/hotspot-visuals";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
+import { useUIStore } from "@/lib/editor/state/ui-store";
 import type { Vec3 } from "@/lib/editor/types/hotspot";
 
 export type HotspotManager = {
@@ -63,13 +64,17 @@ export function createHotspotManager(
     }
   };
 
+  const screenPos = new pcModule.Vec3();
+
   const update = (dt: number) => {
     elapsed += dt;
     const t = elapsed;
     const settings = useSettingsStore.getState();
     const editor = useEditorStore.getState();
+    const ui = useUIStore.getState();
     const camPos = camera.getPosition();
     const refDist = settings.hotspotRefDist;
+    const previewActiveId = ui.previewActiveHotspotId;
 
     let index = 0;
     for (const hotspot of editor.hotspots) {
@@ -84,11 +89,14 @@ export function createHotspotManager(
       const zoomScale = (dist / refDist) * settings.hotspotSize;
       let accent = 1;
       if (hotspot.id === editor.selectedId) accent = 1.25;
+      else if (editor.isPreview && hotspot.id === previewActiveId) accent = 1.25;
       else if (editor.isPreview && hotspot.id === editor.hoveredId) accent = 1.22;
       const scale = Math.max(0.02, zoomScale * accent);
       visual.root.setLocalScale(scale, scale, scale);
 
-      if (hotspot.id === editor.selectedId) {
+      const isPreviewActive =
+        editor.isPreview && hotspot.id === previewActiveId;
+      if (hotspot.id === editor.selectedId || isPreviewActive) {
         visual.haloMat.opacity = 0.15 + Math.sin(t * 4) * 0.08;
         visual.haloMat.blendType = pcModule.BLEND_NORMAL;
         visual.haloMat.update();
@@ -116,6 +124,35 @@ export function createHotspotManager(
       }
 
       index += 1;
+    }
+
+    // Pin title label to the selected preview hotspot after the click reveal delay.
+    // Skip while hovering a *different* hotspot (that uses the mouse-follow label).
+    const hoveringOther =
+      editor.hoveredId != null && editor.hoveredId !== previewActiveId;
+    if (
+      editor.isPreview &&
+      settings.previewShowLabelOnSelect &&
+      previewActiveId != null &&
+      !ui.previewLabelPending &&
+      !hoveringOther &&
+      camera.camera
+    ) {
+      const active = editor.hotspots.find((h) => h.id === previewActiveId);
+      const visual = visuals.get(previewActiveId);
+      if (active && visual) {
+        const world = visual.root.getPosition();
+        const toHotspot = new pcModule.Vec3().sub2(world, camPos);
+        if (toHotspot.dot(camera.forward) > 0) {
+          camera.camera.worldToScreen(world, screenPos);
+          useUIStore.getState().setHoverTooltip({
+            x: screenPos.x,
+            y: screenPos.y,
+            title: active.title,
+            pinned: true,
+          });
+        }
+      }
     }
   };
 

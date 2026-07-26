@@ -24,6 +24,7 @@ function toFormValues(
     gridColor: settings.gridColor,
     gridOpacity: settings.gridOpacity,
     gridSize: settings.gridSize,
+    previewShowLabelOnSelect: settings.previewShowLabelOnSelect,
     markerDialogPresentation: settings.markerDialogPresentation,
     markerDialogBackdrop: settings.markerDialogBackdrop,
     markerDialogBackdropBlur: settings.markerDialogBackdropBlur,

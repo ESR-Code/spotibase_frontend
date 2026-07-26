@@ -11,6 +11,9 @@ export function ModeToolbar() {
   const closeAllOverlays = useUIStore((s) => s.closeAllOverlays);
   const setPropertiesDrawerOpen = useUIStore((s) => s.setPropertiesDrawerOpen);
   const setPreviewModalOpen = useUIStore((s) => s.setPreviewModalOpen);
+  const setPreviewActiveHotspotId = useUIStore((s) => s.setPreviewActiveHotspotId);
+  const setPreviewLabelPending = useUIStore((s) => s.setPreviewLabelPending);
+  const setHoverTooltip = useUIStore((s) => s.setHoverTooltip);
 
   const handleMode = (next: "select" | "add" | "preview") => {
     if (next === "preview") {
@@ -22,6 +25,9 @@ export function ModeToolbar() {
         useEditorStore.getState().selectHotspot(null);
       } else {
         setPreviewModalOpen(false);
+        setPreviewActiveHotspotId(null);
+        setPreviewLabelPending(false);
+        setHoverTooltip(null);
         window.dispatchEvent(new CustomEvent("editor:reset-camera"));
       }
       return;

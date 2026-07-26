@@ -8,11 +8,13 @@ export function HotspotHoverTooltip() {
 
   return (
     <div
-      className="editor-hover-tooltip pointer-events-none absolute z-20"
+      key={tooltip.pinned ? `pin-${tooltip.title}` : `hover-${tooltip.title}`}
+      className={`editor-hover-tooltip pointer-events-none absolute z-20 ${
+        tooltip.pinned ? "editor-hover-tooltip-pinned" : ""
+      }`}
       style={{
         left: tooltip.x,
         top: tooltip.y,
-        transform: "translate(12px, -50%)",
       }}
     >
       {tooltip.title}

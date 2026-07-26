@@ -395,8 +395,24 @@
   font-size: 12px;
   font-weight: 600;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  transform: translate(-50%, -140%);
+  /* Center above the marker with a clear gap */
+  transform: translate(-50%, calc(-100% - 18px));
   white-space: nowrap;
+}
+
+.editor-root .editor-hover-tooltip-pinned {
+  animation: editor-hover-tooltip-in 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes editor-hover-tooltip-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 8px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 18px));
+  }
 }
 
 .editor-root .editor-drop-overlay {

@@ -13,6 +13,9 @@ import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
+/** Delay before the select-pinned label fades back in after a click. */
+const SELECT_LABEL_REVEAL_MS = 280;
+
 export type PickingController = {
   dispose: () => void;
 };
@@ -30,6 +33,34 @@ export function createPickingController(
   const planeHit = new pcModule.Vec3();
   const grabPt = new pcModule.Vec3();
   const camForward = new pcModule.Vec3();
+  let labelRevealTimer = 0;
+
+  const clearLabelRevealTimer = () => {
+    if (labelRevealTimer) {
+      window.clearTimeout(labelRevealTimer);
+      labelRevealTimer = 0;
+    }
+  };
+
+  const beginSelectLabelReveal = (hotspotId: number) => {
+    clearLabelRevealTimer();
+    const ui = useUIStore.getState();
+    ui.setHoverTooltip(null);
+    ui.setPreviewLabelPending(true);
+
+    if (!useSettingsStore.getState().previewShowLabelOnSelect) {
+      ui.setPreviewLabelPending(false);
+      return;
+    }
+
+    labelRevealTimer = window.setTimeout(() => {
+      labelRevealTimer = 0;
+      const state = useUIStore.getState();
+      if (state.previewActiveHotspotId === hotspotId) {
+        state.setPreviewLabelPending(false);
+      }
+    }, SELECT_LABEL_REVEAL_MS);
+  };
 
   const pickHotspotId = (clientX: number, clientY: number): number | null => {
     const ray = screenRayFromEvent(pcModule, camera, canvas, clientX, clientY);
@@ -140,17 +171,38 @@ export function createPickingController(
     if (editor.isPreview && editor.draggingId == null) {
       const id = pickHotspotId(e.clientX, e.clientY);
       useEditorStore.getState().setHoveredHotspot(id);
+      const ui = useUIStore.getState();
+      const settings = useSettingsStore.getState();
+      const activeId = ui.previewActiveHotspotId;
       const rect = canvas.getBoundingClientRect();
-      useUIStore.getState().setHoverTooltip(
-        id != null
-          ? {
-              x: e.clientX - rect.left,
-              y: e.clientY - rect.top,
-              title:
-                editor.hotspots.find((h) => h.id === id)?.title ?? "",
-            }
-          : null,
-      );
+
+      if (id != null && id !== activeId) {
+        // Hovering a different hotspot — follow the cursor.
+        ui.setHoverTooltip({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+          title: editor.hotspots.find((h) => h.id === id)?.title ?? "",
+          pinned: false,
+        });
+      } else if (id === activeId) {
+        // Still over the selected marker — never stick the label to the mouse.
+        // Select-pinned label is handled by the hotspot manager after reveal.
+        if (
+          !settings.previewShowLabelOnSelect ||
+          ui.previewLabelPending ||
+          ui.hoverTooltip?.pinned !== true
+        ) {
+          ui.setHoverTooltip(null);
+        }
+      } else {
+        const keepSelectLabel =
+          settings.previewShowLabelOnSelect &&
+          activeId != null &&
+          !ui.previewLabelPending;
+        if (!keepSelectLabel) {
+          ui.setHoverTooltip(null);
+        }
+      }
       canvas.style.cursor = id != null ? "pointer" : "grab";
     } else if (!editor.isPreview) {
       useUIStore.getState().setHoverTooltip(null);
@@ -182,23 +234,33 @@ export function createPickingController(
           const index = editor.hotspots.findIndex((h) => h.id === id);
           if (index >= 0) {
             const hotspot = editor.hotspots[index];
+            const ui = useUIStore.getState();
+            const settings = useSettingsStore.getState();
+
+            ui.setSettingsDrawerOpen(false);
+            ui.setPreviewActiveHotspotId(hotspot.id);
+            ui.setPreviewModalIndex(index);
+            useEditorStore.getState().setHoveredHotspot(null);
+            beginSelectLabelReveal(hotspot.id);
+
             window.dispatchEvent(
               new CustomEvent("editor:focus-hotspot", {
                 detail: { id: hotspot.id },
               }),
             );
-            if (
-              useSettingsStore.getState().markerDialogPresentation === "off"
-            ) {
-              return;
+
+            if (settings.markerDialogPresentation !== "off") {
+              ui.setPreviewModalOpen(true);
             }
-            useUIStore.getState().setPreviewModalIndex(index);
-            useUIStore.getState().setPreviewModalOpen(true);
           }
         }
       }
       useEditorStore.getState().setPreviewDragged(false);
-      useEditorStore.getState().setHoveredHotspot(pickHotspotId(e.clientX, e.clientY));
+      if (useUIStore.getState().previewActiveHotspotId == null) {
+        useEditorStore
+          .getState()
+          .setHoveredHotspot(pickHotspotId(e.clientX, e.clientY));
+      }
     }
 
     if (editor.draggingId != null) {
@@ -210,7 +272,14 @@ export function createPickingController(
   const onPointerLeave = () => {
     if (useEditorStore.getState().isPreview) {
       useEditorStore.getState().setHoveredHotspot(null);
-      useUIStore.getState().setHoverTooltip(null);
+      const ui = useUIStore.getState();
+      const keepSelectLabel =
+        useSettingsStore.getState().previewShowLabelOnSelect &&
+        ui.previewActiveHotspotId != null &&
+        !ui.previewLabelPending;
+      if (!keepSelectLabel) {
+        ui.setHoverTooltip(null);
+      }
       canvas.style.cursor = "";
     }
   };
@@ -222,6 +291,7 @@ export function createPickingController(
 
   return {
     dispose: () => {
+      clearLabelRevealTimer();
       canvas.removeEventListener("pointerdown", onPointerDown, true);
       canvas.removeEventListener("pointermove", onPointerMove, true);
       window.removeEventListener("pointerup", onPointerUp);

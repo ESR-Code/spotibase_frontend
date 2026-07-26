@@ -81,6 +81,14 @@ export function SettingsDrawer() {
           <p className="mt-1.5 text-[11px]" style={{ color: "var(--editor-muted)" }}>
             Scales dynamic marker sizing while zooming.
           </p>
+          <CheckboxField
+            label="Show label on select"
+            description="Keep the title label visible after clicking a hotspot in Preview"
+            checked={values.previewShowLabelOnSelect}
+            onChange={(checked) =>
+              form.setValue("previewShowLabelOnSelect", checked)
+            }
+          />
         </SettingsSection>
 
         <SettingsSection

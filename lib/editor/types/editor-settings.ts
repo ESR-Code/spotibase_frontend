@@ -13,6 +13,8 @@ export type EditorSettings = {
   gridColor: string;
   gridOpacity: number;
   gridSize: number;
+  /** Keep the hotspot title label visible after selecting in Preview. */
+  previewShowLabelOnSelect: boolean;
   /** Marker dialog presentation: centered modal, side drawer, or disabled. */
   markerDialogPresentation: MarkerDialogPresentation;
   /** Dimmed overlay behind the marker dialog. */
