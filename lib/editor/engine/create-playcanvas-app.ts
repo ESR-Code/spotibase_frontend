@@ -21,7 +21,12 @@ export async function createPlayCanvasAppAsync(
     },
   });
 
+  // FILLMODE_NONE + RESOLUTION_AUTO: CSS sizes the canvas; we sync the
+  // backbuffer ourselves via bindViewportResize (see viewport-resize.ts).
+  // Clear inline sizes set by setCanvasFillMode so Tailwind h/w-full wins.
   app.setCanvasFillMode(pc.FILLMODE_NONE);
+  canvas.style.width = "";
+  canvas.style.height = "";
   app.setCanvasResolution(pc.RESOLUTION_AUTO);
   app.start();
 

@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { createCameraController } from "@/lib/editor/engine/camera-controller";
 import { createPlayCanvasAppAsync } from "@/lib/editor/engine/create-playcanvas-app";
 import { createHotspotManager } from "@/lib/editor/engine/hotspot-manager";
 import { createModelManager } from "@/lib/editor/engine/model-manager";
 import { createPickingController } from "@/lib/editor/engine/picking-controller";
 import { createScene } from "@/lib/editor/engine/scene-manager";
+import { bindViewportResize } from "@/lib/editor/engine/viewport-resize";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useEnvironmentStore } from "@/lib/editor/state/environment-store";
 import { useSceneStore } from "@/lib/editor/state/scene-store";
@@ -53,18 +55,7 @@ export function usePlayCanvasEditor() {
         models.loadDefault();
         cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
 
-        const resize = () => {
-          const parent = canvas.parentElement;
-          if (!parent) return;
-          const width = Math.max(parent.clientWidth, 2);
-          const height = Math.max(parent.clientHeight, 2);
-          app.setCanvasResolution(pc.RESOLUTION_FIXED, width, height);
-          app.resizeCanvas(width, height);
-        };
-        resize();
-
-        const ro = new ResizeObserver(resize);
-        if (canvas.parentElement) ro.observe(canvas.parentElement);
+        const unbindResize = bindViewportResize(app, canvas);
 
         let frameCount = 0;
         let fpsAccum = 0;
@@ -134,6 +125,7 @@ export function usePlayCanvasEditor() {
           useEditorStore.getState().initDemoHotspots();
         }
         hotspotMgr.syncFromStore();
+        toast.success("Welcome to VectorForge — try Preview mode");
 
         cleanup = () => {
           window.removeEventListener("editor:import-glb", onImportGlb);
@@ -145,7 +137,7 @@ export function usePlayCanvasEditor() {
           unsubEditor();
           unsubWire();
           app.off("update", onUpdate);
-          ro.disconnect();
+          unbindResize();
           picking.dispose();
           hotspotMgr.dispose();
           cameraCtrl.dispose();

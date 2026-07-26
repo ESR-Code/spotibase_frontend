@@ -45,4 +45,18 @@ export const DEMO_HOTSPOTS: Omit<Hotspot, "id">[] = [
     pulse: false,
     position: { x: 1.15, y: 1.4, z: 0 },
   },
+  {
+    title: "Base Corner",
+    desc: "Corner marker near the ground plane. Useful for checking scale and shadows.",
+    image: "https://picsum.photos/seed/boxbase/600/400.jpg",
+    link: "https://example.com",
+    type: "link",
+    color: hotspotTypeColors.link,
+    style: "dot",
+    number: 3,
+    icon: "↗",
+    markerImage: "",
+    pulse: true,
+    position: { x: -1.05, y: 0.35, z: -1.05 },
+  },
 ];

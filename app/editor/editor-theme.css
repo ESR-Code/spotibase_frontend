@@ -526,6 +526,50 @@
   background: rgba(11, 20, 36, 0.35);
 }
 
+.editor-root .editor-settings-section-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  font-family: var(--font-sora), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--editor-fg);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.editor-root .editor-settings-section-head:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.editor-root .editor-settings-sec-icon {
+  width: 18px;
+  color: var(--editor-crimson-2);
+  display: inline-flex;
+  justify-content: center;
+}
+
+.editor-root .editor-settings-sec-chevron {
+  margin-left: auto;
+  color: var(--editor-muted);
+  transition: transform 0.2s;
+}
+
+.editor-root .editor-settings-section.open .editor-settings-sec-chevron {
+  transform: rotate(180deg);
+}
+
+.editor-root .editor-settings-section-body {
+  padding: 14px;
+  border-top: 1px solid var(--editor-line-soft);
+}
+
 .editor-root .crosshair {
   cursor: crosshair !important;
 }
