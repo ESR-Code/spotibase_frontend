@@ -9,6 +9,7 @@ import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
 import { HotspotMarkerImageField } from "@/app/editor/_components/drawers/hotspot-marker-image-field";
+import { PositionAxisInput } from "@/app/editor/_components/drawers/position-axis-input";
 import { useHotspotForm } from "@/lib/editor/forms/use-hotspot-form";
 import { markerColorSwatches, markerIcons } from "@/lib/editor/theme/tokens";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -21,6 +22,7 @@ export function HotspotPropertiesDrawer() {
   const removeHotspot = useEditorStore((s) => s.removeHotspot);
   const duplicateHotspot = useEditorStore((s) => s.duplicateHotspot);
   const selectHotspot = useEditorStore((s) => s.selectHotspot);
+  const updateHotspot = useEditorStore((s) => s.updateHotspot);
   const { form, selected } = useHotspotForm();
 
   if (!selected) {
@@ -179,9 +181,33 @@ export function HotspotPropertiesDrawer() {
         <div className="border-t pt-4" style={{ borderColor: "var(--editor-line-soft)" }}>
           <FieldLabel>Position (XYZ)</FieldLabel>
           <div className="grid grid-cols-3 gap-2">
-            <input className="editor-input" readOnly value={selected.position.x.toFixed(3)} />
-            <input className="editor-input" readOnly value={selected.position.y.toFixed(3)} />
-            <input className="editor-input" readOnly value={selected.position.z.toFixed(3)} />
+            <PositionAxisInput
+              aria-label="Position X"
+              value={selected.position.x}
+              onChange={(x) =>
+                updateHotspot(selected.id, {
+                  position: { ...selected.position, x },
+                })
+              }
+            />
+            <PositionAxisInput
+              aria-label="Position Y"
+              value={selected.position.y}
+              onChange={(y) =>
+                updateHotspot(selected.id, {
+                  position: { ...selected.position, y },
+                })
+              }
+            />
+            <PositionAxisInput
+              aria-label="Position Z"
+              value={selected.position.z}
+              onChange={(z) =>
+                updateHotspot(selected.id, {
+                  position: { ...selected.position, z },
+                })
+              }
+            />
           </div>
         </div>
       </div>
