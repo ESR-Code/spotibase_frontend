@@ -32,7 +32,9 @@ export function buildDefaultBox(
 
   modelRoot.addChild(box);
 
-  useSceneStore.getState().setModelMeta("Default_Box.glb", "2 × 2 × 2 units");
+  useSceneStore
+    .getState()
+    .setModelMeta("Default_Box.glb", "2 × 2 × 2 units", false);
   useSceneStore.getState().setStats(useSceneStore.getState().fps, 12);
 
   return box;

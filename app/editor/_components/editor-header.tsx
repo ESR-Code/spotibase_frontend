@@ -3,7 +3,6 @@
 import { PenTool } from "lucide-react";
 import { EditorChip } from "@/app/editor/_components/ui/editor-chip";
 import { ModeToolbar } from "@/app/editor/_components/toolbar/mode-toolbar";
-import { FileMenu } from "@/app/editor/_components/toolbar/file-menu";
 import { PROJECT_NAME } from "@/lib/editor/theme/tokens";
 
 export function EditorHeader() {
@@ -74,8 +73,6 @@ export function EditorHeader() {
       <div className="flex flex-1 justify-center">
         <ModeToolbar />
       </div>
-
-      <FileMenu />
 
       <div className="editor-vsep" />
 

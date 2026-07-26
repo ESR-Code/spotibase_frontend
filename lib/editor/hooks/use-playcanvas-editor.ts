@@ -87,6 +87,14 @@ export function usePlayCanvasEditor() {
           if (state.wireframe !== prev.wireframe) {
             models.setWireframe(state.wireframe);
           }
+          if (
+            state.modelScale !== prev.modelScale ||
+            state.modelRotation.x !== prev.modelRotation.x ||
+            state.modelRotation.y !== prev.modelRotation.y ||
+            state.modelRotation.z !== prev.modelRotation.z
+          ) {
+            models.applyTransform(state.modelScale, state.modelRotation);
+          }
         });
 
         const onImportGlb = async (event: Event) => {

@@ -2,12 +2,16 @@ import type { Application, Entity } from "playcanvas";
 import type * as pc from "playcanvas";
 import { toast } from "sonner";
 import { buildDefaultBox } from "@/lib/editor/engine/default-scene-builder";
-import { useSceneStore } from "@/lib/editor/state/scene-store";
+import {
+  type ModelRotation,
+  useSceneStore,
+} from "@/lib/editor/state/scene-store";
 
 export type ModelManager = {
   loadDefault: () => Entity;
   replaceFromGlb: (file: File) => Promise<Entity | null>;
   setWireframe: (enabled: boolean) => void;
+  applyTransform: (scale: number, rotation: ModelRotation) => void;
   getModelRoot: () => Entity;
 };
 
@@ -16,7 +20,17 @@ export function createModelManager(
   pcModule: typeof pc,
   modelRoot: Entity,
 ): ModelManager {
-  const loadDefault = () => buildDefaultBox(app, pcModule, modelRoot);
+  const applyTransform = (scale: number, rotation: ModelRotation) => {
+    modelRoot.setLocalScale(scale, scale, scale);
+    modelRoot.setLocalEulerAngles(rotation.x, rotation.y, rotation.z);
+  };
+
+  const loadDefault = () => {
+    const entity = buildDefaultBox(app, pcModule, modelRoot);
+    const { modelScale, modelRotation } = useSceneStore.getState();
+    applyTransform(modelScale, modelRotation);
+    return entity;
+  };
 
   const setWireframe = (enabled: boolean) => {
     modelRoot.forEach((node) => {
@@ -54,6 +68,8 @@ export function createModelManager(
       });
 
       clearChildren(modelRoot);
+      useSceneStore.getState().resetModelTransform();
+      applyTransform(1, { x: 0, y: 0, z: 0 });
 
       const resource = asset.resource as {
         instantiateRenderEntity: () => Entity;
@@ -65,7 +81,7 @@ export function createModelManager(
       const wireframe = useSceneStore.getState().wireframe;
       if (wireframe) setWireframe(true);
 
-      useSceneStore.getState().setModelMeta(file.name, sizeLabel);
+      useSceneStore.getState().setModelMeta(file.name, sizeLabel, true);
       useSceneStore
         .getState()
         .setStats(useSceneStore.getState().fps, triangles);
@@ -84,6 +100,7 @@ export function createModelManager(
     loadDefault,
     replaceFromGlb,
     setWireframe,
+    applyTransform,
     getModelRoot: () => modelRoot,
   };
 }

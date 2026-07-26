@@ -1,6 +1,6 @@
 "use client";
 
-import { RotateCcw } from "lucide-react";
+import { RefreshCw, Upload } from "lucide-react";
 import { useRef } from "react";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { importGlbFile } from "@/lib/editor/io/import-glb";
@@ -10,10 +10,13 @@ export function SceneModelRow() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const modelName = useSceneStore((s) => s.modelName);
   const modelInfo = useSceneStore((s) => s.modelInfo);
+  const hasUserModel = useSceneStore((s) => s.hasUserModel);
+
+  const openFilePicker = () => fileInputRef.current?.click();
 
   return (
     <div
-      className="flex items-center gap-2.5 px-4 py-2.5"
+      className="px-3 py-2.5"
       style={{ borderBottom: "1px solid var(--editor-line-soft)" }}
     >
       <input
@@ -27,21 +30,38 @@ export function SceneModelRow() {
           e.target.value = "";
         }}
       />
-      <BoxIcon />
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-[12.5px] font-semibold">{modelName}</div>
-        <div className="text-[10px]" style={{ color: "var(--editor-muted-2)" }}>
-          {modelInfo}
+
+      {hasUserModel ? (
+        <div className="flex items-center gap-2.5">
+          <BoxIcon />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[12.5px] font-semibold">{modelName}</div>
+            <div className="text-[10px]" style={{ color: "var(--editor-muted-2)" }}>
+              {modelInfo}
+            </div>
+          </div>
+          <button
+            type="button"
+            title="Replace model"
+            aria-label="Replace model"
+            onClick={openFilePicker}
+            className="editor-replace-model-btn"
+          >
+            <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.25} />
+            Replace
+          </button>
         </div>
-      </div>
-      <EditorButton
-        variant="ghost"
-        className="px-1.5 py-1 text-[11px]"
-        title="Replace"
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <RotateCcw className="h-3 w-3" />
-      </EditorButton>
+      ) : (
+        <EditorButton
+          type="button"
+          className="w-full justify-center text-[12.5px]"
+          title="Import a .glb model"
+          onClick={openFilePicker}
+        >
+          <Upload className="h-4 w-4" />
+          Import Model
+        </EditorButton>
+      )}
     </div>
   );
 }

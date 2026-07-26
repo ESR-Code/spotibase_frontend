@@ -106,6 +106,29 @@
   color: var(--editor-fg);
 }
 
+.editor-root .editor-replace-model-btn {
+  display: inline-flex;
+  height: 32px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--editor-amber);
+  background: rgba(244, 162, 89, 0.12);
+  border: 1px solid rgba(244, 162, 89, 0.45);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.editor-root .editor-replace-model-btn:hover {
+  background: rgba(244, 162, 89, 0.22);
+  border-color: rgba(244, 162, 89, 0.7);
+  transform: translateY(-1px);
+}
+
 .editor-root .editor-icon-btn {
   display: inline-flex;
   align-items: center;
@@ -449,6 +472,43 @@
   flex-direction: column;
 }
 
+.editor-root .editor-panel-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--editor-line-soft);
+  background: rgba(11, 20, 36, 0.35);
+}
+
+.editor-root .editor-panel-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--editor-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.editor-root .editor-panel-tab:hover {
+  color: var(--editor-fg);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.editor-root .editor-panel-tab.active {
+  color: var(--editor-fg);
+  background: rgba(230, 57, 70, 0.14);
+  border-color: rgba(230, 57, 70, 0.35);
+}
+
 .editor-root .editor-outliner-tab {
   position: absolute;
   left: 0;
@@ -500,23 +560,6 @@
 
 .editor-root .editor-hud-panel.collapsed {
   min-width: 0;
-}
-
-.editor-root .editor-file-menu {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 8px);
-  z-index: 40;
-  min-width: 200px;
-  padding: 6px;
-  background: linear-gradient(
-    180deg,
-    rgba(21, 36, 63, 0.98),
-    rgba(17, 30, 54, 0.98)
-  );
-  border: 1px solid var(--editor-line);
-  border-radius: 10px;
-  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.65);
 }
 
 .editor-root .editor-settings-section {
