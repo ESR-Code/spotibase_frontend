@@ -6,17 +6,33 @@ import {
   ChevronDown,
   LayoutGrid,
   MapPin,
+  Ban,
   Moon,
+  PanelRight,
+  Square,
   Sun,
   X,
 } from "lucide-react";
+import { CheckboxField } from "@/app/editor/_components/ui/checkbox-field";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import { TypePill } from "@/app/editor/_components/ui/type-pill";
 import { useEnvironmentForm } from "@/lib/editor/forms/use-environment-form";
 import { useSettingsForm } from "@/lib/editor/forms/use-settings-form";
+import type { MarkerDialogPresentation } from "@/lib/editor/types/editor-settings";
 import { useUIStore } from "@/lib/editor/state/ui-store";
+
+const MARKER_DIALOG_MODES: {
+  id: MarkerDialogPresentation;
+  label: string;
+  icon: typeof PanelRight;
+}[] = [
+  { id: "drawer", label: "Drawer", icon: PanelRight },
+  { id: "modal", label: "Modal", icon: Square },
+  { id: "off", label: "Off", icon: Ban },
+];
 
 export function SettingsDrawer() {
   const open = useUIStore((s) => s.settingsDrawerOpen);
@@ -65,6 +81,58 @@ export function SettingsDrawer() {
           <p className="mt-1.5 text-[11px]" style={{ color: "var(--editor-muted)" }}>
             Scales dynamic marker sizing while zooming.
           </p>
+        </SettingsSection>
+
+        <SettingsSection
+          title="Marker Dialog"
+          icon={<PanelRight className="h-3.5 w-3.5" />}
+        >
+          <div>
+            <FieldLabel>Presentation</FieldLabel>
+            <div className="flex flex-wrap gap-2">
+              {MARKER_DIALOG_MODES.map((mode) => {
+                const Icon = mode.icon;
+                return (
+                  <TypePill
+                    key={mode.id}
+                    active={values.markerDialogPresentation === mode.id}
+                    onClick={() =>
+                      form.setValue("markerDialogPresentation", mode.id)
+                    }
+                  >
+                    <Icon className="mr-1 inline h-3 w-3" />
+                    {mode.label}
+                  </TypePill>
+                );
+              })}
+            </div>
+            <p className="mt-1.5 text-[11px]" style={{ color: "var(--editor-muted)" }}>
+              How hotspot details open in Preview. Off only focuses the camera.
+            </p>
+          </div>
+
+          <CheckboxField
+            label="Show backdrop"
+            description="Dim the viewport behind the dialog"
+            checked={values.markerDialogBackdrop}
+            disabled={values.markerDialogPresentation === "off"}
+            onChange={(checked) => {
+              form.setValue("markerDialogBackdrop", checked);
+              if (!checked) form.setValue("markerDialogBackdropBlur", false);
+            }}
+          />
+          <CheckboxField
+            label="Blur backdrop"
+            description="Soft-focus the scene through the overlay"
+            checked={values.markerDialogBackdropBlur}
+            disabled={
+              values.markerDialogPresentation === "off" ||
+              !values.markerDialogBackdrop
+            }
+            onChange={(checked) =>
+              form.setValue("markerDialogBackdropBlur", checked)
+            }
+          />
         </SettingsSection>
 
         <SettingsSection title="Camera" icon={<Camera className="h-3.5 w-3.5" />}>

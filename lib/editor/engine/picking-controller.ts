@@ -10,6 +10,7 @@ import {
 } from "@/lib/editor/engine/ray-utils";
 import { PREVIEW_CLICK_PX } from "@/lib/editor/constants/default-settings";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
 export type PickingController = {
@@ -180,6 +181,17 @@ export function createPickingController(
         if (id === down.id) {
           const index = editor.hotspots.findIndex((h) => h.id === id);
           if (index >= 0) {
+            const hotspot = editor.hotspots[index];
+            window.dispatchEvent(
+              new CustomEvent("editor:focus-hotspot", {
+                detail: { id: hotspot.id },
+              }),
+            );
+            if (
+              useSettingsStore.getState().markerDialogPresentation === "off"
+            ) {
+              return;
+            }
             useUIStore.getState().setPreviewModalIndex(index);
             useUIStore.getState().setPreviewModalOpen(true);
           }

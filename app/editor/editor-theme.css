@@ -418,37 +418,221 @@
   pointer-events: auto;
 }
 
-.editor-root .editor-modal-backdrop {
+/* Flexible dialog system (modal / drawer) */
+.editor-root .editor-dialog-root {
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    circle at center,
-    rgba(11, 20, 36, 0.6),
-    rgba(11, 20, 36, 0.92)
-  );
-  backdrop-filter: blur(6px);
+  z-index: 40;
+  pointer-events: none;
+}
+
+.editor-root .editor-dialog-root-modal {
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s;
-  z-index: 40;
+  padding: 24px;
 }
 
-.editor-root .editor-modal-backdrop.open {
-  opacity: 1;
+.editor-root .editor-dialog-backdrop {
+  position: absolute;
+  inset: 0;
   pointer-events: auto;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: radial-gradient(
+    circle at center,
+    rgba(11, 20, 36, 0.55),
+    rgba(11, 20, 36, 0.88)
+  );
+  opacity: 1;
 }
 
-.editor-root .editor-modal-card {
-  width: min(560px, 90%);
-  transform: scale(0.94) translateY(10px);
-  transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+.editor-root .editor-dialog-backdrop-blur {
+  backdrop-filter: blur(6px);
 }
 
-.editor-root .editor-modal-backdrop.open .editor-modal-card {
-  transform: scale(1) translateY(0);
+.editor-root .editor-dialog-surface {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--editor-line);
+  color: var(--editor-fg);
+}
+
+.editor-root .editor-dialog-modal {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: min(85vh, 720px);
+  border-radius: 16px;
+  animation: editor-dialog-modal-in 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes editor-dialog-modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.editor-root .editor-dialog-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(380px, 100%);
+  border-radius: 0;
+  border-right: none;
+  animation: editor-dialog-drawer-in 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.editor-root .editor-dialog-drawer-left {
+  right: auto;
+  left: 0;
+  border-right: 1px solid var(--editor-line);
+  border-left: none;
+  animation-name: editor-dialog-drawer-in-left;
+}
+
+@keyframes editor-dialog-drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes editor-dialog-drawer-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.editor-root .editor-dialog-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--editor-line-soft);
+}
+
+.editor-root .editor-dialog-body {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+.editor-root .editor-dialog-footer {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--editor-line-soft);
+  background: rgba(11, 20, 36, 0.4);
+}
+
+.editor-root .editor-dialog-media {
+  position: relative;
+  flex-shrink: 0;
+  height: 200px;
+  background: linear-gradient(135deg, #15243f, #0c1730);
+  overflow: hidden;
+}
+
+.editor-root .editor-marker-dialog-media-fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 40%,
+    rgba(11, 20, 36, 0.95)
+  );
+  pointer-events: none;
+}
+
+.editor-root .editor-marker-dialog.editor-dialog-drawer .editor-dialog-header {
+  padding-top: 14px;
+}
+
+.editor-root .editor-marker-dialog.editor-dialog-modal .editor-dialog-header .font-display {
+  font-size: 20px;
+}
+
+.editor-root .editor-checkbox-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--editor-line-soft);
+  background: rgba(11, 20, 36, 0.35);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.editor-root .editor-checkbox-field:hover:not(.disabled) {
+  border-color: var(--editor-line);
+  background: rgba(11, 20, 36, 0.55);
+}
+
+.editor-root .editor-checkbox-field.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.editor-root .editor-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 5px;
+  border: 1px solid var(--editor-line);
+  background: var(--editor-input-bg);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.editor-root .editor-checkbox:checked {
+  background: linear-gradient(135deg, var(--editor-crimson) 0%, #b51e2c 100%);
+  border-color: #8a1622;
+}
+
+.editor-root .editor-checkbox:checked::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.editor-root .editor-checkbox:disabled {
+  cursor: not-allowed;
+}
+
+.editor-root .editor-checkbox:focus-visible {
+  outline: 2px solid rgba(230, 57, 70, 0.45);
+  outline-offset: 2px;
 }
 
 .editor-root .editor-outliner {

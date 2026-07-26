@@ -12,6 +12,9 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   gridColor: "#ffffff",
   gridOpacity: 0.45,
   gridSize: 42,
+  markerDialogPresentation: "drawer",
+  markerDialogBackdrop: false,
+  markerDialogBackdropBlur: false,
 };
 
 export const DEFAULT_ENVIRONMENT_SETTINGS: EnvironmentSettings = {

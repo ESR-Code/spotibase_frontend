@@ -11,6 +11,9 @@ export const settingsFormSchema = z.object({
   gridColor: z.string(),
   gridOpacity: z.number().min(0.05).max(1),
   gridSize: z.number().min(16).max(80),
+  markerDialogPresentation: z.enum(["modal", "drawer", "off"]),
+  markerDialogBackdrop: z.boolean(),
+  markerDialogBackdropBlur: z.boolean(),
 });
 
 export type SettingsFormValues = z.infer<typeof settingsFormSchema>;
