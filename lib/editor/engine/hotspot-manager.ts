@@ -1,0 +1,141 @@
+import type { Application, Entity } from "playcanvas";
+import type * as pc from "playcanvas";
+import {
+  createHotspotVisual,
+  destroyHotspotVisual,
+  rebuildCore,
+  visualStyleKey,
+  type HotspotVisual,
+} from "@/lib/editor/engine/hotspot-visuals";
+import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useSettingsStore } from "@/lib/editor/state/settings-store";
+import type { Vec3 } from "@/lib/editor/types/hotspot";
+
+export type HotspotManager = {
+  syncFromStore: () => void;
+  update: (dt: number) => void;
+  getVisual: (id: number) => HotspotVisual | undefined;
+  setWorldPosition: (id: number, position: Vec3) => void;
+  dispose: () => void;
+};
+
+export function createHotspotManager(
+  app: Application,
+  pcModule: typeof pc,
+  hotspotRoot: Entity,
+  camera: Entity,
+): HotspotManager {
+  const visuals = new Map<number, HotspotVisual>();
+  let elapsed = 0;
+
+  const syncFromStore = () => {
+    const { hotspots } = useEditorStore.getState();
+    const alive = new Set(hotspots.map((h) => h.id));
+
+    for (const [id, visual] of visuals) {
+      if (!alive.has(id)) {
+        destroyHotspotVisual(visual);
+        visuals.delete(id);
+      }
+    }
+
+    for (const hotspot of hotspots) {
+      const existing = visuals.get(hotspot.id);
+      if (!existing) {
+        const visual = createHotspotVisual(app, pcModule, hotspot);
+        hotspotRoot.addChild(visual.root);
+        visuals.set(hotspot.id, visual);
+        continue;
+      }
+
+      existing.root.setPosition(
+        hotspot.position.x,
+        hotspot.position.y,
+        hotspot.position.z,
+      );
+
+      const nextKey = visualStyleKey(hotspot);
+      if (existing.styleKey !== nextKey) {
+        void rebuildCore(app, pcModule, existing, hotspot);
+      } else {
+        existing.ring.enabled = !!hotspot.pulse;
+      }
+    }
+  };
+
+  const update = (dt: number) => {
+    elapsed += dt;
+    const t = elapsed;
+    const settings = useSettingsStore.getState();
+    const editor = useEditorStore.getState();
+    const camPos = camera.getPosition();
+    const refDist = settings.hotspotRefDist;
+
+    let index = 0;
+    for (const hotspot of editor.hotspots) {
+      const visual = visuals.get(hotspot.id);
+      if (!visual) {
+        index += 1;
+        continue;
+      }
+
+      const pos = visual.root.getPosition();
+      const dist = new pcModule.Vec3().copy(camPos).distance(pos);
+      const zoomScale = (dist / refDist) * settings.hotspotSize;
+      let accent = 1;
+      if (hotspot.id === editor.selectedId) accent = 1.25;
+      else if (editor.isPreview && hotspot.id === editor.hoveredId) accent = 1.22;
+      const scale = Math.max(0.02, zoomScale * accent);
+      visual.root.setLocalScale(scale, scale, scale);
+
+      if (hotspot.id === editor.selectedId) {
+        visual.haloMat.opacity = 0.15 + Math.sin(t * 4) * 0.08;
+        visual.haloMat.blendType = pcModule.BLEND_NORMAL;
+        visual.haloMat.update();
+      } else if (visual.haloMat.opacity !== 0) {
+        visual.haloMat.opacity = 0;
+        visual.haloMat.update();
+      }
+
+      if (visual.ring.enabled) {
+        // Expanding fade ring: grows out while opacity eases to 0, then loops
+        const cycle = ((t * 0.55 + index * 0.37) % 1 + 1) % 1;
+        const ease = 1 - Math.pow(1 - cycle, 2.2);
+        const ringScale = 0.38 + ease * 1.15;
+        visual.ring.setLocalScale(ringScale, 1, ringScale);
+        visual.ringMat.opacity = (1 - ease) * 0.78;
+        visual.ringMat.blendType = pcModule.BLEND_NORMAL;
+        visual.ringMat.update();
+        visual.ring.setRotation(camera.getRotation());
+        visual.ring.rotateLocal(-90, 0, 0);
+      }
+
+      if (visual.coreTexture && visual.core) {
+        visual.core.setRotation(camera.getRotation());
+        visual.core.rotateLocal(-90, 0, 0);
+      }
+
+      index += 1;
+    }
+  };
+
+  const setWorldPosition = (id: number, position: Vec3) => {
+    const visual = visuals.get(id);
+    if (!visual) return;
+    visual.root.setPosition(position.x, position.y, position.z);
+    useEditorStore.getState().updateHotspot(id, { position });
+  };
+
+  syncFromStore();
+
+  return {
+    syncFromStore,
+    update,
+    getVisual: (id) => visuals.get(id),
+    setWorldPosition,
+    dispose: () => {
+      for (const visual of visuals.values()) destroyHotspotVisual(visual);
+      visuals.clear();
+    },
+  };
+}

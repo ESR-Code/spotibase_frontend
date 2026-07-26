@@ -3,7 +3,9 @@
 import { useEffect, useRef } from "react";
 import { createCameraController } from "@/lib/editor/engine/camera-controller";
 import { createPlayCanvasAppAsync } from "@/lib/editor/engine/create-playcanvas-app";
+import { createHotspotManager } from "@/lib/editor/engine/hotspot-manager";
 import { createModelManager } from "@/lib/editor/engine/model-manager";
+import { createPickingController } from "@/lib/editor/engine/picking-controller";
 import { createScene } from "@/lib/editor/engine/scene-manager";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useEnvironmentStore } from "@/lib/editor/state/environment-store";
@@ -33,6 +35,20 @@ export function usePlayCanvasEditor() {
         const scene = createScene(app, pc);
         const models = createModelManager(app, pc, scene.modelRoot);
         const cameraCtrl = createCameraController(app, pc, scene.camera, canvas);
+        const hotspotMgr = createHotspotManager(
+          app,
+          pc,
+          scene.hotspotRoot,
+          scene.camera,
+        );
+        const picking = createPickingController(
+          pc,
+          canvas,
+          scene.camera,
+          scene.modelRoot,
+          hotspotMgr,
+          cameraCtrl,
+        );
 
         models.loadDefault();
         cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
@@ -54,6 +70,7 @@ export function usePlayCanvasEditor() {
         let fpsAccum = 0;
         const onUpdate = (dt: number) => {
           cameraCtrl.update(dt);
+          hotspotMgr.update(dt);
           frameCount += 1;
           fpsAccum += dt;
           if (fpsAccum >= 0.5) {
@@ -71,6 +88,9 @@ export function usePlayCanvasEditor() {
         });
         const unsubSettings = useSettingsStore.subscribe(() => {
           scene.applyGridVisibility();
+        });
+        const unsubEditor = useEditorStore.subscribe(() => {
+          hotspotMgr.syncFromStore();
         });
         const unsubWire = useSceneStore.subscribe((state, prev) => {
           if (state.wireframe !== prev.wireframe) {
@@ -91,10 +111,20 @@ export function usePlayCanvasEditor() {
           const delta = (event as CustomEvent<{ delta: number }>).detail?.delta ?? 0;
           cameraCtrl.nudgeZoom(delta);
         };
+        const onFocusHotspot = (event: Event) => {
+          const id = (event as CustomEvent<{ id: number }>).detail?.id;
+          if (id == null) return;
+          const hotspot = useEditorStore.getState().hotspots.find((h) => h.id === id);
+          if (!hotspot) return;
+          cameraCtrl.focusOnPoint(
+            new pc.Vec3(hotspot.position.x, hotspot.position.y, hotspot.position.z),
+          );
+        };
 
         window.addEventListener("editor:import-glb", onImportGlb);
         window.addEventListener("editor:reset-camera", onResetCamera);
         window.addEventListener("editor:zoom", onZoom);
+        window.addEventListener("editor:focus-hotspot", onFocusHotspot);
 
         useSceneStore.getState().setEngineReady(true);
         useSceneStore.getState().setEngineError(null);
@@ -103,16 +133,21 @@ export function usePlayCanvasEditor() {
         if (useEditorStore.getState().hotspots.length === 0) {
           useEditorStore.getState().initDemoHotspots();
         }
+        hotspotMgr.syncFromStore();
 
         cleanup = () => {
           window.removeEventListener("editor:import-glb", onImportGlb);
           window.removeEventListener("editor:reset-camera", onResetCamera);
           window.removeEventListener("editor:zoom", onZoom);
+          window.removeEventListener("editor:focus-hotspot", onFocusHotspot);
           unsubEnv();
           unsubSettings();
+          unsubEditor();
           unsubWire();
           app.off("update", onUpdate);
           ro.disconnect();
+          picking.dispose();
+          hotspotMgr.dispose();
           cameraCtrl.dispose();
           destroy();
         };

@@ -18,6 +18,8 @@ export const DEFAULT_ENVIRONMENT_SETTINGS: EnvironmentSettings = {
   bgMode: "grid",
   bgColor: "#0b1424",
   show3dGrid: true,
+  shadowIntensity: 0.38,
+  shadowColor: "#1e2433",
   keyIntensity: 2.35,
   keyColor: "#fff4e8",
   fillIntensity: 1.05,

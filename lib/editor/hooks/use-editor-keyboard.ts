@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { toast } from "sonner";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
@@ -24,9 +25,10 @@ export function useEditorKeyboard() {
         closeAllOverlays();
         setPropertiesDrawerOpen(false);
         selectHotspot(null);
-      } else if (e.key === "Delete" && selectedId != null) {
+      } else if ((e.key === "Delete" || e.key === "Backspace") && selectedId != null) {
         removeHotspot(selectedId);
         setPropertiesDrawerOpen(false);
+        toast.success("Hotspot deleted");
       }
     };
 

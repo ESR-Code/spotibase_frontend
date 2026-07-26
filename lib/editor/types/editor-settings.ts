@@ -16,6 +16,8 @@ export type EnvironmentSettings = {
   bgMode: "grid" | "color";
   bgColor: string;
   show3dGrid: boolean;
+  shadowIntensity: number;
+  shadowColor: string;
   keyIntensity: number;
   keyColor: string;
   fillIntensity: number;

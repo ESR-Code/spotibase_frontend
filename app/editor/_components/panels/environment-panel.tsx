@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutGrid, Square, Sun, X } from "lucide-react";
+import { LayoutGrid, Moon, Square, Sun, X } from "lucide-react";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
@@ -107,6 +107,37 @@ export function EnvironmentPanel() {
             onChange={(e) =>
               setSettings({ gridOpacity: parseFloat(e.target.value) })
             }
+          />
+        </section>
+
+        <section
+          className="pt-3"
+          style={{ borderTop: "1px solid var(--editor-line-soft)" }}
+        >
+          <FieldLabel className="flex items-center gap-1.5">
+            <Moon className="h-3 w-3" style={{ color: "var(--editor-muted)" }} />
+            Shadows
+          </FieldLabel>
+          <FieldLabel className="flex justify-between">
+            <span>Intensity</span>
+            <span>{values.shadowIntensity.toFixed(2)}</span>
+          </FieldLabel>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={values.shadowIntensity}
+            onChange={(e) =>
+              form.setValue("shadowIntensity", parseFloat(e.target.value))
+            }
+          />
+          <FieldLabel className="mt-2">Color</FieldLabel>
+          <input
+            type="color"
+            className="h-8 w-full rounded"
+            value={values.shadowColor}
+            onChange={(e) => form.setValue("shadowColor", e.target.value)}
           />
         </section>
 

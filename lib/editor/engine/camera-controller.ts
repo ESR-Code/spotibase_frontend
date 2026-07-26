@@ -30,6 +30,7 @@ const ZOOM_SMOOTH = 7.5;
 export type CameraController = {
   update: (dt: number) => void;
   frameToEntity: (entity: Entity, options?: { storeHome?: boolean }) => void;
+  focusOnPoint: (point: Vec3, duration?: number) => void;
   resetHome: () => void;
   nudgeZoom: (notches: number) => void;
   setEnabled: (enabled: boolean) => void;
@@ -241,6 +242,30 @@ export function createCameraController(
     if (options?.storeHome !== false) storeHome();
   };
 
+  const focusOnPoint = (point: Vec3, duration = 0.8) => {
+    const homeDist = home.ready
+      ? home.distance
+      : Math.max(state.distance, 8);
+    const offset = camera.getPosition().clone().sub(state.target);
+    if (offset.lengthSq() < 1e-6) {
+      offset.set(0.72, 0.48, 0.88);
+    }
+    offset.normalize();
+    const focusDist = clamp(homeDist * 0.42, homeDist * 0.35, homeDist * 0.7);
+    const toPos = new pcModule.Vec3().copy(point).add(offset.mulScalar(focusDist));
+
+    state.anim = {
+      active: true,
+      t: 0,
+      duration,
+      fromPos: camera.getPosition().clone(),
+      toPos,
+      fromTarget: state.target.clone(),
+      toTarget: point.clone(),
+    };
+    state.zoomTarget = null;
+  };
+
   const resetHome = () => {
     if (!home.ready) {
       applyPose();
@@ -271,6 +296,7 @@ export function createCameraController(
   return {
     update,
     frameToEntity,
+    focusOnPoint,
     resetHome,
     nudgeZoom,
     setEnabled: (enabled) => {

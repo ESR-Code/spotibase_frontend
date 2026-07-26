@@ -1,5 +1,11 @@
 import { create } from "zustand";
 
+export type HoverTooltipState = {
+  x: number;
+  y: number;
+  title: string;
+} | null;
+
 type UIState = {
   isLoading: boolean;
   outlinerCollapsed: boolean;
@@ -10,6 +16,7 @@ type UIState = {
   previewModalOpen: boolean;
   previewModalIndex: number;
   fileMenuOpen: boolean;
+  hoverTooltip: HoverTooltipState;
   setLoading: (value: boolean) => void;
   setOutlinerCollapsed: (value: boolean) => void;
   setHudCollapsed: (value: boolean) => void;
@@ -19,6 +26,7 @@ type UIState = {
   setPreviewModalOpen: (value: boolean) => void;
   setPreviewModalIndex: (index: number) => void;
   setFileMenuOpen: (value: boolean) => void;
+  setHoverTooltip: (value: HoverTooltipState) => void;
   closeAllOverlays: () => void;
 };
 
@@ -32,6 +40,7 @@ export const useUIStore = create<UIState>((set) => ({
   previewModalOpen: false,
   previewModalIndex: 0,
   fileMenuOpen: false,
+  hoverTooltip: null,
   setLoading: (isLoading) => set({ isLoading }),
   setOutlinerCollapsed: (outlinerCollapsed) => set({ outlinerCollapsed }),
   setHudCollapsed: (hudCollapsed) => set({ hudCollapsed }),
@@ -43,6 +52,7 @@ export const useUIStore = create<UIState>((set) => ({
   setPreviewModalOpen: (previewModalOpen) => set({ previewModalOpen }),
   setPreviewModalIndex: (previewModalIndex) => set({ previewModalIndex }),
   setFileMenuOpen: (fileMenuOpen) => set({ fileMenuOpen }),
+  setHoverTooltip: (hoverTooltip) => set({ hoverTooltip }),
   closeAllOverlays: () =>
     set({
       settingsDrawerOpen: false,
@@ -50,5 +60,6 @@ export const useUIStore = create<UIState>((set) => ({
       previewModalOpen: false,
       fileMenuOpen: false,
       propertiesDrawerOpen: false,
+      hoverTooltip: null,
     }),
 }));

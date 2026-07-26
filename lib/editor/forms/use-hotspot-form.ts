@@ -32,6 +32,8 @@ export function useHotspotForm() {
     },
   });
 
+  const selectedId = selected?.id ?? null;
+
   useEffect(() => {
     if (!selected) return;
     form.reset({
@@ -47,27 +49,30 @@ export function useHotspotForm() {
       color: selected.color,
       pulse: selected.pulse,
     });
-  }, [selected, form]);
+    // Only re-seed the form when selection changes — not on every store patch
+    // (e.g. drag position updates), otherwise typing fights with reset().
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, form]);
 
   useEffect(() => {
-    if (!selected) return;
+    if (selectedId == null) return;
     const subscription = form.watch((values) => {
-      updateHotspot(selected.id, {
-        title: values.title ?? selected.title,
-        desc: values.desc ?? selected.desc,
-        image: values.image ?? selected.image,
-        link: values.link ?? selected.link,
-        type: values.type ?? selected.type,
-        style: values.style ?? selected.style,
-        number: values.number ?? selected.number,
-        icon: values.icon ?? selected.icon,
-        markerImage: values.markerImage ?? selected.markerImage,
-        color: values.color ?? selected.color,
-        pulse: values.pulse ?? selected.pulse,
+      updateHotspot(selectedId, {
+        title: values.title,
+        desc: values.desc,
+        image: values.image,
+        link: values.link,
+        type: values.type,
+        style: values.style,
+        number: values.number,
+        icon: values.icon,
+        markerImage: values.markerImage,
+        color: values.color,
+        pulse: values.pulse,
       });
     });
     return () => subscription.unsubscribe();
-  }, [form, selected, updateHotspot]);
+  }, [form, selectedId, updateHotspot]);
 
   return { form, selected };
 }

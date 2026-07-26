@@ -19,6 +19,8 @@ export function useEnvironmentForm() {
       bgMode: environment.bgMode,
       bgColor: environment.bgColor,
       show3dGrid: environment.show3dGrid,
+      shadowIntensity: environment.shadowIntensity,
+      shadowColor: environment.shadowColor,
       keyIntensity: environment.keyIntensity,
       keyColor: environment.keyColor,
       fillIntensity: environment.fillIntensity,
