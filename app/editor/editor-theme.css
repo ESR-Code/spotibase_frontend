@@ -213,6 +213,52 @@
   line-height: 1.55;
 }
 
+.editor-root .editor-textarea.editor-textarea-compact {
+  min-height: 56px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.editor-root .editor-form-section + .editor-form-section {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--editor-line-soft);
+}
+
+.editor-root .editor-form-section-title {
+  margin-bottom: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--editor-muted-2);
+}
+
+.editor-root .editor-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.editor-root .editor-pill-row > * {
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: center;
+}
+
+.editor-root .editor-swatch-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.editor-root .editor-swatch-row .editor-swatch {
+  flex: 0 0 auto;
+}
+
 .editor-root .editor-hot-item {
   display: flex;
   align-items: center;
@@ -346,9 +392,134 @@
   transform: translateX(0);
 }
 
+.editor-root .editor-properties-drawer {
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  .editor-root .editor-properties-drawer {
+    width: 40vw;
+    max-width: 40vw;
+  }
+}
+
 .editor-root .editor-settings-drawer {
   z-index: 31;
   width: 400px;
+}
+
+/* Block editor — rich text */
+.editor-root .editor-rich-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.editor-root .editor-rich-text-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  border: 1px solid var(--editor-line-soft);
+  background: rgba(11, 20, 36, 0.55);
+  width: fit-content;
+}
+
+.editor-root .editor-rich-text-toolbar .editor-icon-btn.is-active {
+  color: var(--editor-active-text);
+  background: rgba(230, 57, 70, 0.16);
+  border-color: rgba(230, 57, 70, 0.35);
+}
+
+.editor-root .editor-rich-text-input {
+  min-height: 96px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--editor-line);
+  background: var(--editor-input-bg);
+  color: var(--editor-fg);
+  font-size: 13px;
+  line-height: 1.55;
+  outline: none;
+  overflow-y: auto;
+}
+
+.editor-root .editor-rich-text-input:focus {
+  border-color: rgba(230, 57, 70, 0.45);
+  box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.12);
+}
+
+.editor-root .editor-rich-text-input:empty:before {
+  content: attr(data-placeholder);
+  color: var(--editor-muted-2);
+  pointer-events: none;
+}
+
+.editor-root .editor-rich-text-input p,
+.editor-root .editor-rich-text-preview p,
+.editor-root .editor-rich-text-input div,
+.editor-root .editor-rich-text-preview div {
+  margin: 0;
+}
+
+.editor-root .editor-rich-text-input p + p,
+.editor-root .editor-rich-text-preview p + p,
+.editor-root .editor-rich-text-input div + div,
+.editor-root .editor-rich-text-preview div + div,
+.editor-root .editor-rich-text-input p + div,
+.editor-root .editor-rich-text-preview p + div,
+.editor-root .editor-rich-text-input div + p,
+.editor-root .editor-rich-text-preview div + p {
+  margin-top: 0.85em;
+}
+
+.editor-root .editor-rich-text-preview b,
+.editor-root .editor-rich-text-preview strong {
+  font-weight: 700;
+  color: var(--editor-fg);
+}
+
+.editor-root .editor-rich-text-preview i,
+.editor-root .editor-rich-text-preview em {
+  font-style: italic;
+}
+
+.editor-root .editor-rich-text-preview u {
+  text-decoration: underline;
+}
+
+.editor-root .editor-block-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--editor-muted-2);
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+.editor-root .editor-block-drag-handle:hover {
+  color: var(--editor-fg);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.editor-root .editor-block-drag-handle:active {
+  cursor: grabbing;
+}
+
+.editor-root .editor-block-card.is-dragging {
+  opacity: 0.45;
+}
+
+.editor-root .editor-block-card.is-drop-target {
+  border-color: rgba(230, 57, 70, 0.55) !important;
+  box-shadow: 0 0 0 1px rgba(230, 57, 70, 0.25);
 }
 
 .editor-root .editor-vsep {

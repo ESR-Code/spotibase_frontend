@@ -1,3 +1,5 @@
+import type { HotspotBlock } from "@/lib/editor/types/hotspot-block";
+
 export type HotspotType = "info" | "warning" | "spec" | "link";
 export type HotspotStyle = "dot" | "number" | "icon" | "image";
 export type EditorMode = "select" | "add" | "preview";
@@ -18,4 +20,8 @@ export type Hotspot = {
   markerImage: string;
   pulse: boolean;
   position: Vec3;
+  blocks: HotspotBlock[];
 };
+
+export type { HotspotBlock, HotspotBlockType } from "@/lib/editor/types/hotspot-block";
+

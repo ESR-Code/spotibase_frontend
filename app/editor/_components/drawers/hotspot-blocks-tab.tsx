@@ -1,0 +1,268 @@
+"use client";
+
+import {
+  ChevronsDownUp,
+  ChevronsUpDown,
+  ChevronDown,
+  ChevronRight,
+  GripVertical,
+  Trash2,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { getBlockDefinition } from "@/app/editor/_components/blocks/block-registry";
+import { AddBlockMenu } from "@/app/editor/_components/drawers/add-block-menu";
+import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import { createBlock } from "@/lib/editor/blocks/create-block";
+import { richTextToPlainPreview } from "@/lib/editor/blocks/rich-text";
+import { useEditorStore } from "@/lib/editor/state/editor-store";
+import type { Hotspot } from "@/lib/editor/types/hotspot";
+import type { HotspotBlockType } from "@/lib/editor/types/hotspot-block";
+
+type HotspotBlocksTabProps = {
+  selected: Hotspot;
+};
+
+export function HotspotBlocksTab({ selected }: HotspotBlocksTabProps) {
+  const updateHotspot = useEditorStore((s) => s.updateHotspot);
+  const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => new Set());
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const blocks = selected.blocks;
+
+  useEffect(() => {
+    setCollapsedIds(new Set());
+    setFocusBlockId(null);
+    setDraggingId(null);
+    setOverId(null);
+  }, [selected.id]);
+
+  const allCollapsed =
+    blocks.length > 0 && blocks.every((block) => collapsedIds.has(block.id));
+
+  const setBlocks = (next: Hotspot["blocks"]) => {
+    updateHotspot(selected.id, { blocks: next });
+  };
+
+  const handleAdd = (type: HotspotBlockType) => {
+    const block = createBlock(type);
+    setBlocks([...blocks, block]);
+    setFocusBlockId(block.id);
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(block.id);
+      return next;
+    });
+  };
+
+  const handleContentChange = (id: string, content: string) => {
+    setBlocks(
+      blocks.map((block) => (block.id === id ? { ...block, content } : block)),
+    );
+  };
+
+  const handleDelete = (id: string) => {
+    setBlocks(blocks.filter((block) => block.id !== id));
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
+  const toggleCollapsed = (id: string) => {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (allCollapsed) {
+      setCollapsedIds(new Set());
+      return;
+    }
+    setCollapsedIds(new Set(blocks.map((block) => block.id)));
+  };
+
+  const reorder = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    const fromIndex = blocks.findIndex((block) => block.id === fromId);
+    const toIndex = blocks.findIndex((block) => block.id === toId);
+    if (fromIndex < 0 || toIndex < 0) return;
+    const next = [...blocks];
+    const [item] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, item);
+    setBlocks(next);
+  };
+
+  const emptyHint = useMemo(
+    () => (
+      <div
+        className="rounded-lg px-4 py-6 text-center"
+        style={{
+          border: "1px dashed var(--editor-line)",
+          background: "rgba(11,20,36,0.35)",
+        }}
+      >
+        <div className="mb-1 text-[12px] font-semibold">No blocks yet</div>
+        <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
+          Add a heading or text block to build hotspot content.
+        </div>
+      </div>
+    ),
+    [],
+  );
+
+  return (
+    <div className="flex min-h-0 flex-col gap-3">
+      {blocks.length > 0 ? (
+        <div className="flex items-center justify-end">
+          <button
+            type="button"
+            className="editor-btn editor-btn-ghost text-[11px]"
+            style={{ padding: "4px 8px", color: "var(--editor-muted)" }}
+            onClick={toggleAll}
+            title={allCollapsed ? "Expand all blocks" : "Collapse all blocks"}
+          >
+            {allCollapsed ? (
+              <>
+                <ChevronsUpDown className="h-3.5 w-3.5" />
+                Expand all
+              </>
+            ) : (
+              <>
+                <ChevronsDownUp className="h-3.5 w-3.5" />
+                Collapse all
+              </>
+            )}
+          </button>
+        </div>
+      ) : null}
+
+      {blocks.length === 0 ? (
+        emptyHint
+      ) : (
+        <div className="space-y-3">
+          {blocks.map((block) => {
+            const def = getBlockDefinition(block.type);
+            const Editor = def.Editor;
+            const Icon = def.icon;
+            const collapsed = collapsedIds.has(block.id);
+            const isDragging = draggingId === block.id;
+            const isOver = overId === block.id && draggingId !== block.id;
+            const preview =
+              block.type === "text"
+                ? richTextToPlainPreview(block.content)
+                : block.content.trim() || "Empty heading";
+
+            return (
+              <div
+                key={block.id}
+                className={`editor-block-card rounded-lg ${isDragging ? "is-dragging" : ""} ${isOver ? "is-drop-target" : ""}`}
+                style={{
+                  border: "1px solid var(--editor-line-soft)",
+                  background: "rgba(11,20,36,0.4)",
+                }}
+                onDragOver={(e) => {
+                  if (!draggingId) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  if (overId !== block.id) setOverId(block.id);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const fromId =
+                    draggingId ?? e.dataTransfer.getData("text/block-id");
+                  if (fromId) reorder(fromId, block.id);
+                  setDraggingId(null);
+                  setOverId(null);
+                }}
+              >
+                <div className="flex items-center gap-1 px-2 py-1.5">
+                  <button
+                    type="button"
+                    className="editor-block-drag-handle"
+                    title="Drag to reorder"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = "move";
+                      e.dataTransfer.setData("text/block-id", block.id);
+                      setDraggingId(block.id);
+                      setOverId(block.id);
+                    }}
+                    onDragEnd={() => {
+                      setDraggingId(null);
+                      setOverId(null);
+                    }}
+                  >
+                    <GripVertical className="h-3.5 w-3.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-1 py-1 text-left"
+                    onClick={() => toggleCollapsed(block.id)}
+                    aria-expanded={!collapsed}
+                    title={collapsed ? "Expand block" : "Collapse block"}
+                  >
+                    {collapsed ? (
+                      <ChevronRight
+                        className="h-3.5 w-3.5 flex-shrink-0"
+                        style={{ color: "var(--editor-muted-2)" }}
+                      />
+                    ) : (
+                      <ChevronDown
+                        className="h-3.5 w-3.5 flex-shrink-0"
+                        style={{ color: "var(--editor-muted-2)" }}
+                      />
+                    )}
+                    <span
+                      className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider"
+                      style={{ color: "var(--editor-muted-2)" }}
+                    >
+                      <Icon className="h-3 w-3" />
+                      {def.label}
+                    </span>
+                    {collapsed ? (
+                      <span
+                        className="ml-1 truncate text-[11px] font-normal normal-case tracking-normal"
+                        style={{ color: "var(--editor-muted)" }}
+                      >
+                        {preview || "Empty"}
+                      </span>
+                    ) : null}
+                  </button>
+
+                  <IconButton
+                    title="Delete block"
+                    onClick={() => handleDelete(block.id)}
+                    style={{ width: 28, height: 28, color: "#ff8a95" }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </IconButton>
+                </div>
+
+                {!collapsed ? (
+                  <div className="px-3 pb-3 pt-1">
+                    <Editor
+                      block={block}
+                      autoFocus={focusBlockId === block.id}
+                      onChange={(content) =>
+                        handleContentChange(block.id, content)
+                      }
+                    />
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <AddBlockMenu onAdd={handleAdd} />
+    </div>
+  );
+}

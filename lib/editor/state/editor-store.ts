@@ -50,6 +50,7 @@ function createHotspotData(
     markerImage: data.markerImage ?? "",
     pulse: data.pulse ?? false,
     position,
+    blocks: data.blocks ?? [],
   };
 }
 

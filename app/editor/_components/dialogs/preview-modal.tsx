@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight, ExternalLink, X } from "lucide-react";
 import { useCallback, useEffect } from "react";
+import { HotspotBlocksPreview } from "@/app/editor/_components/blocks/hotspot-blocks-preview";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { EditorDialog } from "@/app/editor/_components/ui/editor-dialog";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
@@ -128,8 +129,35 @@ export function PreviewModal() {
 
   if (!hotspot) return null;
 
-  const imageSrc =
-    hotspot.image || `https://picsum.photos/seed/vf${hotspot.id}/600/400`;
+  const headerImage = hotspot.image.trim();
+  const hasHeaderImage = headerImage.length > 0;
+
+  const typeChip = (
+    <span
+      className="editor-chip"
+      style={{
+        color: hotspot.color,
+        borderColor: `${hotspot.color}66`,
+        background: `${hotspot.color}22`,
+      }}
+    >
+      {hotspot.type.toUpperCase()}
+    </span>
+  );
+
+  const closeButton = (
+    <IconButton
+      title="Close"
+      style={{
+        background: "rgba(11,20,36,0.7)",
+        border: "1px solid var(--editor-line)",
+        backdropFilter: "blur(8px)",
+      }}
+      onClick={close}
+    >
+      <X />
+    </IconButton>
+  );
 
   return (
     <EditorDialog
@@ -140,48 +168,29 @@ export function PreviewModal() {
       backdropBlur={backdropBlur}
       className="editor-marker-dialog"
     >
-      <EditorDialog.Media>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imageSrc} alt="" className="h-full w-full object-cover" />
-        <div className="editor-marker-dialog-media-fade" />
-        <IconButton
-          title="Close"
-          className="absolute right-3 top-3 z-10"
-          style={{
-            background: "rgba(11,20,36,0.7)",
-            border: "1px solid var(--editor-line)",
-            backdropFilter: "blur(8px)",
-          }}
-          onClick={close}
-        >
-          <X />
-        </IconButton>
-        <div className="absolute bottom-3 left-5 flex items-center gap-2">
-          <span
-            className="editor-chip"
-            style={{
-              color: hotspot.color,
-              borderColor: `${hotspot.color}66`,
-              background: `${hotspot.color}22`,
-            }}
-          >
-            {hotspot.type.toUpperCase()}
-          </span>
-          <span className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
-            HSP-{String(hotspot.id).padStart(3, "0")}
-          </span>
-        </div>
-      </EditorDialog.Media>
+      {hasHeaderImage ? (
+        <EditorDialog.Media>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={headerImage} alt="" className="h-full w-full object-cover" />
+          <div className="editor-marker-dialog-media-fade" />
+          <div className="absolute right-3 top-3 z-10">{closeButton}</div>
+          <div className="absolute bottom-3 left-5 flex items-center gap-2">
+            {typeChip}
+          </div>
+        </EditorDialog.Media>
+      ) : null}
 
-      <EditorDialog.Header title={hotspot.title} />
+      <EditorDialog.Header title={hotspot.title}>
+        {!hasHeaderImage ? (
+          <div className="flex flex-shrink-0 items-center gap-2">
+            {typeChip}
+            {closeButton}
+          </div>
+        ) : null}
+      </EditorDialog.Header>
 
       <EditorDialog.Body>
-        <p
-          className="text-[14px] leading-relaxed"
-          style={{ color: "var(--editor-muted)" }}
-        >
-          {hotspot.desc || "No description provided."}
-        </p>
+        <HotspotBlocksPreview blocks={hotspot.blocks} />
         {hotspot.link ? (
           <div className="mt-4">
             <a

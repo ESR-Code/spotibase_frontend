@@ -1,19 +1,27 @@
 "use client";
 
-import { Copy, Trash2, X } from "lucide-react";
+import { Copy, LayoutList, Settings2, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ColorSwatch } from "@/app/editor/_components/ui/color-swatch";
+import { HotspotBlocksTab } from "@/app/editor/_components/drawers/hotspot-blocks-tab";
+import { HotspotGeneralTab } from "@/app/editor/_components/drawers/hotspot-general-tab";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
-import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
-import { TypePill } from "@/app/editor/_components/ui/type-pill";
-import { HotspotMarkerImageField } from "@/app/editor/_components/drawers/hotspot-marker-image-field";
-import { PositionAxisInput } from "@/app/editor/_components/drawers/position-axis-input";
 import { useHotspotForm } from "@/lib/editor/forms/use-hotspot-form";
-import { markerColorSwatches, markerIcons } from "@/lib/editor/theme/tokens";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
+
+type PropertiesTab = "general" | "blocks";
+
+const TABS: {
+  id: PropertiesTab;
+  label: string;
+  icon: typeof Settings2;
+}[] = [
+  { id: "general", label: "General", icon: Settings2 },
+  { id: "blocks", label: "Blocks", icon: LayoutList },
+];
 
 export function HotspotPropertiesDrawer() {
   const open = useUIStore((s) => s.propertiesDrawerOpen);
@@ -22,23 +30,25 @@ export function HotspotPropertiesDrawer() {
   const removeHotspot = useEditorStore((s) => s.removeHotspot);
   const duplicateHotspot = useEditorStore((s) => s.duplicateHotspot);
   const selectHotspot = useEditorStore((s) => s.selectHotspot);
-  const updateHotspot = useEditorStore((s) => s.updateHotspot);
   const { form, selected } = useHotspotForm();
+  const [activeTab, setActiveTab] = useState<PropertiesTab>("general");
+
+  useEffect(() => {
+    setActiveTab("general");
+  }, [selectedId]);
 
   if (!selected) {
     return (
       <GlassPanel
-        className={`editor-drawer flex flex-col ${open ? "open" : ""}`}
+        className={`editor-drawer editor-properties-drawer flex flex-col ${open ? "open" : ""}`}
         style={{ borderLeft: "1px solid var(--editor-line)" }}
       />
     );
   }
 
-  const values = form.watch();
-
   return (
     <GlassPanel
-      className={`editor-drawer flex flex-col ${open ? "open" : ""}`}
+      className={`editor-drawer editor-properties-drawer flex flex-col ${open ? "open" : ""}`}
       style={{ borderLeft: "1px solid var(--editor-line)" }}
     >
       <div
@@ -62,154 +72,36 @@ export function HotspotPropertiesDrawer() {
         </IconButton>
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto p-5">
-        <div className="flex items-center gap-2">
-          <span className="editor-chip">HSP-{String(selected.id).padStart(3, "0")}</span>
-        </div>
+      <div
+        className="editor-panel-tabs flex-shrink-0"
+        role="tablist"
+        aria-label="Hotspot editor panels"
+      >
+        {TABS.map((tab) => {
+          const Icon = tab.icon;
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              className={`editor-panel-tab ${active ? "active" : ""}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              <Icon className="h-3 w-3" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
-        <div>
-          <FieldLabel>Title</FieldLabel>
-          <input
-            className="editor-input"
-            placeholder="e.g. Hydraulic Press Unit"
-            {...form.register("title")}
-          />
-        </div>
-
-        <div>
-          <FieldLabel>Type</FieldLabel>
-          <div className="flex gap-2">
-            {(["info", "warning", "spec", "link"] as const).map((type) => (
-              <TypePill
-                key={type}
-                active={values.type === type}
-                onClick={() => form.setValue("type", type)}
-              >
-                {type}
-              </TypePill>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <FieldLabel>Marker Style</FieldLabel>
-          <div className="grid grid-cols-2 gap-2">
-            {(["dot", "number", "icon", "image"] as const).map((style) => (
-              <TypePill
-                key={style}
-                active={values.style === style}
-                onClick={() => form.setValue("style", style)}
-              >
-                {style}
-              </TypePill>
-            ))}
-          </div>
-          {values.style === "number" && (
-            <input
-              className="editor-input mt-2"
-              type="number"
-              min={0}
-              {...form.register("number")}
-            />
-          )}
-          {values.style === "icon" && (
-            <select className="editor-select mt-2" {...form.register("icon")}>
-              {markerIcons.map((icon) => (
-                <option key={icon.value} value={icon.value}>
-                  {icon.label}
-                </option>
-              ))}
-            </select>
-          )}
-          {values.style === "image" && (
-            <HotspotMarkerImageField
-              value={values.markerImage ?? ""}
-              onChange={(dataUrl) => {
-                form.setValue("markerImage", dataUrl);
-                form.setValue("style", "image");
-              }}
-            />
-          )}
-        </div>
-
-        <div>
-          <FieldLabel>Description</FieldLabel>
-          <textarea
-            className="editor-textarea"
-            placeholder="Describe this point of interest..."
-            {...form.register("desc")}
-          />
-        </div>
-
-        <div>
-          <FieldLabel>Image URL</FieldLabel>
-          <input
-            className="editor-input"
-            placeholder="https://..."
-            {...form.register("image")}
-          />
-        </div>
-
-        <div>
-          <FieldLabel>Marker Color</FieldLabel>
-          <div className="grid grid-cols-6 gap-2">
-            {markerColorSwatches.map((color) => (
-              <ColorSwatch
-                key={color}
-                color={color}
-                selected={values.color === color}
-                onClick={() => form.setValue("color", color)}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <FieldLabel className="mb-0">Pulsing Ring</FieldLabel>
-          <input type="checkbox" {...form.register("pulse")} />
-        </div>
-
-        <div>
-          <FieldLabel>Link (optional)</FieldLabel>
-          <input
-            className="editor-input"
-            placeholder="https://external-docs..."
-            {...form.register("link")}
-          />
-        </div>
-
-        <div className="border-t pt-4" style={{ borderColor: "var(--editor-line-soft)" }}>
-          <FieldLabel>Position (XYZ)</FieldLabel>
-          <div className="grid grid-cols-3 gap-2">
-            <PositionAxisInput
-              aria-label="Position X"
-              value={selected.position.x}
-              onChange={(x) =>
-                updateHotspot(selected.id, {
-                  position: { ...selected.position, x },
-                })
-              }
-            />
-            <PositionAxisInput
-              aria-label="Position Y"
-              value={selected.position.y}
-              onChange={(y) =>
-                updateHotspot(selected.id, {
-                  position: { ...selected.position, y },
-                })
-              }
-            />
-            <PositionAxisInput
-              aria-label="Position Z"
-              value={selected.position.z}
-              onChange={(z) =>
-                updateHotspot(selected.id, {
-                  position: { ...selected.position, z },
-                })
-              }
-            />
-          </div>
-        </div>
+      <div className="flex-1 overflow-y-auto p-5">
+        {activeTab === "general" ? (
+          <HotspotGeneralTab form={form} selected={selected} />
+        ) : (
+          <HotspotBlocksTab selected={selected} />
+        )}
       </div>
 
       <div

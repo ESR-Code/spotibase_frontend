@@ -16,6 +16,7 @@ export const DEMO_HOTSPOTS: Omit<Hotspot, "id">[] = [
     markerImage: "",
     pulse: false,
     position: { x: 0, y: 2.15, z: 0 },
+    blocks: [],
   },
   {
     title: "Front Edge",
@@ -30,6 +31,7 @@ export const DEMO_HOTSPOTS: Omit<Hotspot, "id">[] = [
     markerImage: "",
     pulse: false,
     position: { x: 0, y: 1.2, z: 1.15 },
+    blocks: [],
   },
   {
     title: "Side Panel",
@@ -44,6 +46,7 @@ export const DEMO_HOTSPOTS: Omit<Hotspot, "id">[] = [
     markerImage: "",
     pulse: false,
     position: { x: 1.15, y: 1.4, z: 0 },
+    blocks: [],
   },
   {
     title: "Base Corner",
@@ -58,5 +61,6 @@ export const DEMO_HOTSPOTS: Omit<Hotspot, "id">[] = [
     markerImage: "",
     pulse: true,
     position: { x: -1.05, y: 0.35, z: -1.05 },
+    blocks: [],
   },
 ];
