@@ -44,8 +44,8 @@ export function HotspotOutliner() {
 
   return (
     <aside
-      className={`editor-outliner editor-glass z-10 ${collapsed ? "collapsed" : ""}`}
-      style={{ borderRight: "1px solid var(--editor-line)" }}
+      className={`editor-outliner editor-glass editor-panel-shadow ${collapsed ? "collapsed" : ""}`}
+      aria-hidden={collapsed}
     >
       <div className="editor-outliner-panel">
         <div

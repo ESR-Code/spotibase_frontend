@@ -21,15 +21,13 @@ export function EditorShell() {
       <LoadingOverlay />
       <EditorHeader />
 
-      <div className="relative flex min-h-0 flex-1 overflow-hidden">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <PlayCanvasViewport />
         <HotspotOutliner />
-        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-          <OutlinerExpandTab />
-          <PlayCanvasViewport />
-          <HotspotPropertiesDrawer />
-          <SettingsDrawer />
-          <PreviewModal />
-        </div>
+        <OutlinerExpandTab />
+        <HotspotPropertiesDrawer />
+        <SettingsDrawer />
+        <PreviewModal />
       </div>
     </div>
   );

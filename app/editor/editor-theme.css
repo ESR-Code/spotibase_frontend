@@ -647,18 +647,24 @@
   outline-offset: 2px;
 }
 
+/* Overlay drawer — slides over the viewport; never changes canvas layout size */
 .editor-root .editor-outliner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
   width: 18rem;
-  flex-shrink: 0;
+  z-index: 28;
   overflow: hidden;
-  transition:
-    width 0.32s cubic-bezier(0.22, 0.61, 0.36, 1),
-    border-color 0.2s;
+  transform: translateX(0);
+  transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+  border-right: 1px solid var(--editor-line);
 }
 
 .editor-root .editor-outliner.collapsed {
-  width: 0;
-  border-right-color: transparent !important;
+  transform: translateX(-100%);
+  pointer-events: none;
+  border-right-color: transparent;
 }
 
 .editor-root .editor-outliner-panel {
@@ -748,6 +754,12 @@
   z-index: 10;
   min-width: 220px;
   max-width: min(320px, calc(100% - 2rem));
+  transition: left 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Keep HUD clear of the left outliner overlay when it is open */
+.editor-root:not(.outliner-collapsed) .editor-hud-panel {
+  left: calc(18rem + 1rem);
 }
 
 .editor-root .editor-hud-panel.collapsed .editor-hud-body {
