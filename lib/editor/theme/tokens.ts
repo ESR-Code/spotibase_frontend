@@ -27,6 +27,7 @@ export const editorColors = {
 } as const;
 
 export const hotspotTypeColors = {
+  none: "#8a98b8",
   info: "#e63946",
   warning: "#f4a259",
   spec: "#3fb8af",

@@ -1,6 +1,11 @@
 import type { HotspotBlock } from "@/lib/editor/types/hotspot-block";
 
-export type HotspotType = "info" | "warning" | "spec" | "link";
+export type HotspotType = "none" | "info" | "warning" | "spec" | "link";
+
+/** Outliner / header label for hotspot type. */
+export function hotspotTypeLabel(type: HotspotType): string {
+  return type === "none" ? "default" : type;
+}
 export type HotspotStyle = "dot" | "number" | "icon" | "image";
 export type EditorMode = "select" | "add" | "preview";
 

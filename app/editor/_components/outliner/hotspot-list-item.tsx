@@ -1,7 +1,10 @@
 "use client";
 
 import { Focus, Trash2 } from "lucide-react";
-import type { Hotspot } from "@/lib/editor/types/hotspot";
+import {
+  hotspotTypeLabel,
+  type Hotspot,
+} from "@/lib/editor/types/hotspot";
 
 type HotspotListItemProps = {
   hotspot: Hotspot;
@@ -12,6 +15,7 @@ type HotspotListItemProps = {
 };
 
 const typeIcons: Record<Hotspot["type"], string> = {
+  none: "○",
   info: "ℹ",
   warning: "⚠",
   spec: "◎",
@@ -41,7 +45,7 @@ export function HotspotListItem({
           style={{ color: "var(--editor-muted-2)" }}
         >
           <span>{typeIcons[hotspot.type]}</span>
-          <span>{hotspot.type}</span>
+          <span>{hotspotTypeLabel(hotspot.type)}</span>
           <span>· HSP-{String(hotspot.id).padStart(3, "0")}</span>
         </div>
       </div>

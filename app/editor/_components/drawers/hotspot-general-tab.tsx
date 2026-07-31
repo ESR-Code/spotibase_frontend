@@ -2,9 +2,9 @@
 
 import type { ReactNode } from "react";
 import type { UseFormReturn } from "react-hook-form";
-import { CheckboxField } from "@/app/editor/_components/ui/checkbox-field";
 import { ColorSwatch } from "@/app/editor/_components/ui/color-swatch";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
+import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
 import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-image-field";
 import { HotspotMarkerImageField } from "@/app/editor/_components/drawers/hotspot-marker-image-field";
@@ -40,13 +40,6 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
 
   return (
     <div className="editor-general-tab">
-      <div className="mb-1 flex items-center gap-2">
-        <span className="editor-chip">HSP-{String(selected.id).padStart(3, "0")}</span>
-        <span className="text-[11px]" style={{ color: "var(--editor-muted-2)" }}>
-          {values.type}
-        </span>
-      </div>
-
       <FormSection title="Content">
         <div>
           <FieldLabel>Title</FieldLabel>
@@ -56,31 +49,23 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
             {...form.register("title")}
           />
         </div>
-
-        <div>
-          <FieldLabel>Description</FieldLabel>
-          <textarea
-            className="editor-textarea editor-textarea-compact"
-            placeholder="Short note for editors (not shown in preview)…"
-            rows={2}
-            {...form.register("desc")}
-          />
-        </div>
       </FormSection>
 
       <FormSection title="Marker">
         <div>
           <FieldLabel>Type</FieldLabel>
           <div className="editor-pill-row">
-            {(["info", "warning", "spec", "link"] as const).map((type) => (
-              <TypePill
-                key={type}
-                active={values.type === type}
-                onClick={() => form.setValue("type", type)}
-              >
-                {type}
-              </TypePill>
-            ))}
+            {(["none", "info", "warning", "spec", "link"] as const).map(
+              (type) => (
+                <TypePill
+                  key={type}
+                  active={values.type === type}
+                  onClick={() => form.setValue("type", type)}
+                >
+                  {type}
+                </TypePill>
+              ),
+            )}
           </div>
         </div>
 
@@ -140,7 +125,7 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
           </div>
         </div>
 
-        <CheckboxField
+        <SwitchField
           label="Pulsing ring"
           description="Animate a soft ring around the marker"
           checked={values.pulse}

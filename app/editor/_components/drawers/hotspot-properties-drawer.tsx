@@ -11,6 +11,7 @@ import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { useHotspotForm } from "@/lib/editor/forms/use-hotspot-form";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
+import { hotspotTypeLabel } from "@/lib/editor/types/hotspot";
 
 type PropertiesTab = "general" | "blocks";
 
@@ -55,8 +56,19 @@ export function HotspotPropertiesDrawer() {
         className="flex flex-shrink-0 items-center justify-between px-5 py-4"
         style={{ borderBottom: "1px solid var(--editor-line)" }}
       >
-        <div>
-          <div className="font-display text-[15px] font-bold">Hotspot Editor</div>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="font-display text-[15px] font-bold">Hotspot Editor</div>
+            <span className="editor-chip">
+              HSP-{String(selected.id).padStart(3, "0")}
+            </span>
+            <span
+              className="text-[11px] capitalize"
+              style={{ color: "var(--editor-muted-2)" }}
+            >
+              {hotspotTypeLabel(selected.type)}
+            </span>
+          </div>
           <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
             Edit marker properties
           </div>

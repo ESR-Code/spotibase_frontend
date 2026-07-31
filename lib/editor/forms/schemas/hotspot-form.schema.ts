@@ -5,7 +5,7 @@ export const hotspotFormSchema = z.object({
   desc: z.string(),
   image: z.string(),
   link: z.string(),
-  type: z.enum(["info", "warning", "spec", "link"]),
+  type: z.enum(["none", "info", "warning", "spec", "link"]),
   style: z.enum(["dot", "number", "icon", "image"]),
   number: z.union([z.string(), z.number()]),
   icon: z.string(),

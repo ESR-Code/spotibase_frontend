@@ -132,7 +132,8 @@ export function PreviewModal() {
   const headerImage = hotspot.image.trim();
   const hasHeaderImage = headerImage.length > 0;
 
-  const typeChip = (
+  const showTypeChip = hotspot.type !== "none";
+  const typeChip = showTypeChip ? (
     <span
       className="editor-chip"
       style={{
@@ -143,7 +144,7 @@ export function PreviewModal() {
     >
       {hotspot.type.toUpperCase()}
     </span>
-  );
+  ) : null;
 
   const closeButton = (
     <IconButton
@@ -174,9 +175,11 @@ export function PreviewModal() {
           <img src={headerImage} alt="" className="h-full w-full object-cover" />
           <div className="editor-marker-dialog-media-fade" />
           <div className="absolute right-3 top-3 z-10">{closeButton}</div>
-          <div className="absolute bottom-3 left-5 flex items-center gap-2">
-            {typeChip}
-          </div>
+          {typeChip ? (
+            <div className="absolute bottom-3 left-5 flex items-center gap-2">
+              {typeChip}
+            </div>
+          ) : null}
         </EditorDialog.Media>
       ) : null}
 
