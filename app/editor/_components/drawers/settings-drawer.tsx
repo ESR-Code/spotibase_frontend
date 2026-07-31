@@ -21,7 +21,10 @@ import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
 import { useEnvironmentForm } from "@/lib/editor/forms/use-environment-form";
 import { useSettingsForm } from "@/lib/editor/forms/use-settings-form";
-import type { MarkerDialogPresentation } from "@/lib/editor/types/editor-settings";
+import type {
+  MarkerDialogPresentation,
+  MarkerDialogSize,
+} from "@/lib/editor/types/editor-settings";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
 const MARKER_DIALOG_MODES: {
@@ -32,6 +35,15 @@ const MARKER_DIALOG_MODES: {
   { id: "drawer", label: "Drawer", icon: PanelRight },
   { id: "modal", label: "Modal", icon: Square },
   { id: "off", label: "Off", icon: Ban },
+];
+
+const MARKER_DIALOG_SIZES: {
+  id: MarkerDialogSize;
+  label: string;
+}[] = [
+  { id: "medium", label: "Medium" },
+  { id: "large", label: "Large" },
+  { id: "fullscreen", label: "Full screen" },
 ];
 
 export function SettingsDrawer() {
@@ -153,6 +165,25 @@ export function SettingsDrawer() {
             </div>
             <p className="mt-1.5 text-[11px]" style={{ color: "var(--editor-muted)" }}>
               How hotspot details open in Preview. Off only focuses the camera.
+            </p>
+          </div>
+
+          <div>
+            <FieldLabel>Size</FieldLabel>
+            <div className="flex flex-wrap gap-2">
+              {MARKER_DIALOG_SIZES.map((size) => (
+                <TypePill
+                  key={size.id}
+                  active={values.markerDialogSize === size.id}
+                  disabled={values.markerDialogPresentation === "off"}
+                  onClick={() => form.setValue("markerDialogSize", size.id)}
+                >
+                  {size.label}
+                </TypePill>
+              ))}
+            </div>
+            <p className="mt-1.5 text-[11px]" style={{ color: "var(--editor-muted)" }}>
+              Desktop width for drawer and modal. Mobile always uses full screen.
             </p>
           </div>
 

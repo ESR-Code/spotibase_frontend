@@ -17,6 +17,7 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   hotspotLabelTextColor: "#ffffff",
   hotspotLabelBorderColor: "#e63946",
   markerDialogPresentation: "drawer",
+  markerDialogSize: "medium",
   markerDialogBackdrop: false,
   markerDialogBackdropBlur: false,
   markerDialogResetCameraOnClose: true,

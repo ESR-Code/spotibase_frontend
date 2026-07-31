@@ -17,6 +17,7 @@ export function PreviewModal() {
   const setIndex = useUIStore((s) => s.setPreviewModalIndex);
   const hotspots = useEditorStore((s) => s.hotspots);
   const presentation = useSettingsStore((s) => s.markerDialogPresentation);
+  const size = useSettingsStore((s) => s.markerDialogSize);
   const backdrop = useSettingsStore((s) => s.markerDialogBackdrop);
   const backdropBlur = useSettingsStore((s) => s.markerDialogBackdropBlur);
 
@@ -165,6 +166,7 @@ export function PreviewModal() {
       open={open}
       onClose={close}
       presentation={presentation}
+      size={size}
       backdrop={backdrop}
       backdropBlur={backdropBlur}
       className="editor-marker-dialog"

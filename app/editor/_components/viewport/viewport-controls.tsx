@@ -7,12 +7,14 @@ import {
   SlidersHorizontal,
   Square,
 } from "lucide-react";
+import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useSceneStore } from "@/lib/editor/state/scene-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
 export function ViewportControls() {
   const wireframe = useSceneStore((s) => s.wireframe);
   const setWireframe = useSceneStore((s) => s.setWireframe);
+  const isPreview = useEditorStore((s) => s.isPreview);
   const setSettingsDrawerOpen = useUIStore((s) => s.setSettingsDrawerOpen);
 
   return (
@@ -56,6 +58,7 @@ export function ViewportControls() {
       <div className="editor-vsep" style={{ height: 18 }} />
       <ControlButton
         title="General settings"
+        disabled={isPreview}
         onClick={() => setSettingsDrawerOpen(true)}
       >
         <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -68,18 +71,21 @@ function ControlButton({
   children,
   title,
   active,
+  disabled,
   onClick,
 }: {
   children: React.ReactNode;
   title: string;
   active?: boolean;
+  disabled?: boolean;
   onClick?: () => void;
 }) {
   return (
     <button
       type="button"
       title={title}
-      className={`editor-tool-btn ${active ? "active" : ""}`}
+      disabled={disabled}
+      className={`editor-tool-btn ${active ? "active" : ""} ${disabled ? "disabled" : ""}`}
       onClick={onClick}
     >
       {children}

@@ -1,6 +1,9 @@
 /** How marker content is presented when a hotspot is opened in preview. */
 export type MarkerDialogPresentation = "modal" | "drawer" | "off";
 
+/** Desktop width of the marker dialog. Mobile always uses fullscreen. */
+export type MarkerDialogSize = "medium" | "large" | "fullscreen";
+
 export type EditorSettings = {
   hotspotSize: number;
   hotspotRefDist: number;
@@ -23,6 +26,8 @@ export type EditorSettings = {
   hotspotLabelBorderColor: string;
   /** Marker dialog presentation: centered modal, side drawer, or disabled. */
   markerDialogPresentation: MarkerDialogPresentation;
+  /** Desktop size for drawer/modal presentation. */
+  markerDialogSize: MarkerDialogSize;
   /** Dimmed overlay behind the marker dialog. */
   markerDialogBackdrop: boolean;
   /** Blur the viewport through the backdrop (requires backdrop). */

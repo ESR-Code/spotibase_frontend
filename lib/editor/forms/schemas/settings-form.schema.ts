@@ -16,6 +16,7 @@ export const settingsFormSchema = z.object({
   hotspotLabelTextColor: z.string(),
   hotspotLabelBorderColor: z.string(),
   markerDialogPresentation: z.enum(["modal", "drawer", "off"]),
+  markerDialogSize: z.enum(["medium", "large", "fullscreen"]),
   markerDialogBackdrop: z.boolean(),
   markerDialogBackdropBlur: z.boolean(),
   markerDialogResetCameraOnClose: z.boolean(),

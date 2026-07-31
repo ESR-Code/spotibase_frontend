@@ -9,7 +9,10 @@ import {
   useMemo,
 } from "react";
 import { cn } from "@/lib/utils";
-import type { MarkerDialogPresentation } from "@/lib/editor/types/editor-settings";
+import type {
+  MarkerDialogPresentation,
+  MarkerDialogSize,
+} from "@/lib/editor/types/editor-settings";
 
 export type EditorDialogPresentation = Exclude<MarkerDialogPresentation, "off">;
 
@@ -46,6 +49,8 @@ export type EditorDialogProps = {
   closeOnEscape?: boolean;
   /** Drawer side. Default `"right"`. */
   side?: "left" | "right";
+  /** Desktop size. Mobile always renders fullscreen. Default `"medium"`. */
+  size?: MarkerDialogSize;
   className?: string;
   children: React.ReactNode;
 };
@@ -59,6 +64,7 @@ export function EditorDialog({
   closeOnBackdrop,
   closeOnEscape = true,
   side = "right",
+  size = "medium",
   className,
   children,
 }: EditorDialogProps) {
@@ -98,6 +104,8 @@ export function EditorDialog({
           side === "left" && "editor-dialog-drawer-left",
         );
 
+  const sizeClass = `editor-dialog-size-${size}`;
+
   return (
     <EditorDialogContext.Provider value={ctx}>
       <div
@@ -105,6 +113,7 @@ export function EditorDialog({
           "editor-dialog-root",
           presentation === "modal" && "editor-dialog-root-modal",
           presentation === "drawer" && "editor-dialog-root-drawer",
+          sizeClass,
           open && "open",
         )}
         role="presentation"
@@ -130,6 +139,7 @@ export function EditorDialog({
           className={cn(
             "editor-dialog-surface editor-glass editor-panel-shadow",
             surfaceClass,
+            sizeClass,
             className,
           )}
         >
