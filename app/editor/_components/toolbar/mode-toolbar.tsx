@@ -22,6 +22,7 @@ export function ModeToolbar() {
       if (entering) {
         closeAllOverlays();
         setPropertiesDrawerOpen(false);
+        useUIStore.getState().setOutlinerCollapsed(true);
         useEditorStore.getState().selectHotspot(null);
       } else {
         setPreviewModalOpen(false);

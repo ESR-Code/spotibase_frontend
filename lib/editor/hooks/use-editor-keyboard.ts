@@ -36,6 +36,7 @@ export function useEditorKeyboard() {
         } else {
           closeAllOverlays();
           setPropertiesDrawerOpen(false);
+          useUIStore.getState().setOutlinerCollapsed(true);
           selectHotspot(null);
         }
         return;

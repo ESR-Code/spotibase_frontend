@@ -1341,9 +1341,16 @@
   box-shadow: 4px 0 18px -8px rgba(0, 0, 0, 0.5);
 }
 
-.editor-root .editor-outliner-tab:hover {
+.editor-root .editor-outliner-tab:hover:not(:disabled) {
   color: var(--editor-fg);
   background: rgba(230, 57, 70, 0.18);
+}
+
+.editor-root .editor-outliner-tab:disabled,
+.editor-root .editor-outliner-tab.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .editor-root.outliner-collapsed .editor-outliner-tab {

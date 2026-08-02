@@ -153,6 +153,7 @@ export function HotspotOutliner() {
 }
 
 export function OutlinerExpandTab() {
+  const isPreview = useEditorStore((s) => s.isPreview);
   const collapsed = useUIStore((s) => s.outlinerCollapsed);
   const setCollapsed = useUIStore((s) => s.setOutlinerCollapsed);
 
@@ -161,9 +162,13 @@ export function OutlinerExpandTab() {
   return (
     <button
       type="button"
-      className="editor-outliner-tab"
-      title="Show outliner"
-      onClick={() => setCollapsed(false)}
+      className={`editor-outliner-tab ${isPreview ? "disabled" : ""}`}
+      title={isPreview ? "Outliner unavailable in Preview" : "Show outliner"}
+      disabled={isPreview}
+      onClick={() => {
+        if (isPreview) return;
+        setCollapsed(false);
+      }}
     >
       <ChevronRight className="h-3 w-3" />
     </button>
