@@ -1,8 +1,12 @@
+import type { LegendCategory } from "@/lib/editor/types/legend-category";
+
 /** How marker content is presented when a hotspot is opened in preview. */
 export type MarkerDialogPresentation = "modal" | "drawer" | "off";
 
 /** Desktop width of the marker dialog. Mobile always uses fullscreen. */
 export type MarkerDialogSize = "medium" | "large" | "fullscreen";
+
+export type { LegendCategory };
 
 export type EditorSettings = {
   hotspotSize: number;
@@ -36,8 +40,8 @@ export type EditorSettings = {
   markerDialogResetCameraOnClose: boolean;
   /** Show the Legend button and drawer in Preview. */
   legendEnabled: boolean;
-  /** User-defined category names available for hotspot legend assignment. */
-  legendCategories: string[];
+  /** User-defined legend categories available for hotspot assignment. */
+  legendCategories: LegendCategory[];
 };
 
 export type EnvironmentSettings = {

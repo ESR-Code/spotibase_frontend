@@ -157,7 +157,7 @@ function DialogHeader({
   className,
 }: {
   title?: string;
-  description?: string;
+  description?: React.ReactNode;
   children?: React.ReactNode;
   className?: string;
 }) {
@@ -177,7 +177,10 @@ function DialogHeader({
             </span>
           )}
           {description ? (
-            <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
+            <div
+              className="mt-1 text-[11px]"
+              style={{ color: "var(--editor-muted)" }}
+            >
               {description}
             </div>
           ) : null}

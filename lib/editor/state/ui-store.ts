@@ -44,7 +44,7 @@ export const useUIStore = create<UIState>((set) => ({
   isLoading: true,
   outlinerCollapsed: false,
   outlinerTab: "outliner",
-  hudCollapsed: false,
+  hudCollapsed: true,
   propertiesDrawerOpen: false,
   settingsDrawerOpen: false,
   legendDrawerOpen: false,

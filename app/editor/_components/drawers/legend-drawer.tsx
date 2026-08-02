@@ -6,6 +6,7 @@ import {
   CategorySelect,
   LEGEND_CATEGORY_ALL,
 } from "@/app/editor/_components/ui/category-select";
+import { CategoryOptionBadge } from "@/app/editor/_components/ui/category-option";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
@@ -17,6 +18,7 @@ import {
   hotspotTypeLabel,
   type Hotspot,
 } from "@/lib/editor/types/hotspot";
+import type { LegendCategory } from "@/lib/editor/types/legend-category";
 
 const typeIcons: Record<Hotspot["type"], string> = {
   none: "○",
@@ -81,6 +83,12 @@ export function LegendDrawer() {
     });
   }, [hotspots, category, search]);
 
+  const categoryById = useMemo(() => {
+    const map = new Map<string, LegendCategory>();
+    for (const item of legendCategories) map.set(item.id, item);
+    return map;
+  }, [legendCategories]);
+
   if (!isPreview || !legendEnabled) return null;
 
   return (
@@ -138,6 +146,11 @@ export function LegendDrawer() {
             <LegendListItem
               key={hotspot.id}
               hotspot={hotspot}
+              category={
+                hotspot.category
+                  ? categoryById.get(hotspot.category) ?? null
+                  : null
+              }
               selected={previewActiveHotspotId === hotspot.id}
               onSelect={() => {
                 openHotspotInPreview(hotspot.id);
@@ -153,10 +166,12 @@ export function LegendDrawer() {
 
 function LegendListItem({
   hotspot,
+  category,
   selected,
   onSelect,
 }: {
   hotspot: Hotspot;
+  category: LegendCategory | null;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -169,23 +184,26 @@ function LegendListItem({
       tabIndex={0}
     >
       <LegendMarkerVisual hotspot={hotspot} />
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-[12.5px] font-semibold">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="truncate text-[12.5px] font-semibold leading-tight">
           {hotspot.legendName || hotspot.title}
         </div>
+        {category ? (
+          <CategoryOptionBadge category={category} />
+        ) : (
+          <span
+            className="text-[10.5px] font-medium"
+            style={{ color: "var(--editor-muted-2)" }}
+          >
+            No category
+          </span>
+        )}
         <div
-          className="flex items-center gap-1.5 text-[10.5px] uppercase tracking-wider"
+          className="flex min-w-0 items-center gap-1.5 text-[10.5px] uppercase tracking-wider"
           style={{ color: "var(--editor-muted-2)" }}
         >
           <span>{typeIcons[hotspot.type]}</span>
           <span>{hotspotTypeLabel(hotspot.type)}</span>
-          {hotspot.category ? (
-            <>
-              <span>·</span>
-              <span className="normal-case tracking-normal">{hotspot.category}</span>
-            </>
-          ) : null}
-          <span>· HSP-{String(hotspot.id).padStart(3, "0")}</span>
         </div>
       </div>
     </div>
@@ -196,7 +214,7 @@ function LegendMarkerVisual({ hotspot }: { hotspot: Hotspot }) {
   if (hotspot.style === "image" && hotspot.markerImage) {
     return (
       <span
-        className="editor-hot-dot overflow-hidden border"
+        className="editor-hot-dot editor-hot-dot-lg overflow-hidden border"
         style={{ borderColor: "var(--editor-line)", background: "transparent" }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -211,7 +229,10 @@ function LegendMarkerVisual({ hotspot }: { hotspot: Hotspot }) {
 
   if (hotspot.style === "number" && hotspot.number !== "") {
     return (
-      <span className="editor-hot-dot" style={{ background: hotspot.color }}>
+      <span
+        className="editor-hot-dot editor-hot-dot-lg"
+        style={{ background: hotspot.color }}
+      >
         {hotspot.number}
       </span>
     );
@@ -219,13 +240,19 @@ function LegendMarkerVisual({ hotspot }: { hotspot: Hotspot }) {
 
   if (hotspot.style === "icon" && hotspot.icon) {
     return (
-      <span className="editor-hot-dot" style={{ background: hotspot.color }}>
+      <span
+        className="editor-hot-dot editor-hot-dot-lg"
+        style={{ background: hotspot.color }}
+      >
         {hotspot.icon}
       </span>
     );
   }
 
   return (
-    <span className="editor-hot-dot" style={{ background: hotspot.color }} />
+    <span
+      className="editor-hot-dot editor-hot-dot-lg"
+      style={{ background: hotspot.color }}
+    />
   );
 }

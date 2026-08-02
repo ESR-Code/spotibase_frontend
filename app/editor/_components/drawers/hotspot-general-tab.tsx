@@ -43,14 +43,18 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
   const setSettings = useSettingsStore((s) => s.setSettings);
   const values = form.watch();
 
-  const handleCategoriesChange = (categories: string[]) => {
-    const removed = legendCategories.filter((c) => !categories.includes(c));
+  const handleCategoriesChange = (
+    categories: typeof legendCategories,
+  ) => {
+    const removedIds = legendCategories
+      .filter((c) => !categories.some((next) => next.id === c.id))
+      .map((c) => c.id);
     setSettings({ legendCategories: categories });
-    if (removed.length === 0) return;
+    if (removedIds.length === 0) return;
 
     const { hotspots } = useEditorStore.getState();
     for (const hotspot of hotspots) {
-      if (removed.includes(hotspot.category)) {
+      if (removedIds.includes(hotspot.category)) {
         useEditorStore.getState().updateHotspot(hotspot.id, { category: "" });
         if (hotspot.id === selected.id) {
           form.setValue("category", "");
@@ -81,14 +85,6 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
             onChange={(category) => form.setValue("category", category)}
             onCategoriesChange={handleCategoriesChange}
           />
-          <div>
-            <FieldLabel>Legend name</FieldLabel>
-            <input
-              className="editor-input"
-              placeholder="Name shown in the Legend drawer"
-              {...form.register("legendName")}
-            />
-          </div>
         </FormSection>
       ) : null}
 

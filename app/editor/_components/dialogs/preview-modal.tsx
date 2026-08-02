@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight, ExternalLink, X } from "lucide-react";
 import { useCallback, useEffect } from "react";
 import { HotspotBlocksPreview } from "@/app/editor/_components/blocks/hotspot-blocks-preview";
+import { CategoryOptionBadge } from "@/app/editor/_components/ui/category-option";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { EditorDialog } from "@/app/editor/_components/ui/editor-dialog";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
@@ -20,9 +21,14 @@ export function PreviewModal() {
   const size = useSettingsStore((s) => s.markerDialogSize);
   const backdrop = useSettingsStore((s) => s.markerDialogBackdrop);
   const backdropBlur = useSettingsStore((s) => s.markerDialogBackdropBlur);
+  const legendCategories = useSettingsStore((s) => s.legendCategories);
 
   const hotspot = hotspots[index] ?? null;
   const count = hotspots.length;
+  const category =
+    hotspot?.category
+      ? legendCategories.find((c) => c.id === hotspot.category) ?? null
+      : null;
 
   const setPreviewActiveHotspotId = useUIStore((s) => s.setPreviewActiveHotspotId);
   const setPreviewLabelPending = useUIStore((s) => s.setPreviewLabelPending);
@@ -185,7 +191,12 @@ export function PreviewModal() {
         </EditorDialog.Media>
       ) : null}
 
-      <EditorDialog.Header title={hotspot.title}>
+      <EditorDialog.Header
+        title={hotspot.title}
+        description={
+          category ? <CategoryOptionBadge category={category} /> : undefined
+        }
+      >
         {!hasHeaderImage ? (
           <div className="flex flex-shrink-0 items-center gap-2">
             {typeChip}

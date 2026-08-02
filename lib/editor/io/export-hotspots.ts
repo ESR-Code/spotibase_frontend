@@ -1,15 +1,19 @@
 import { DEFAULT_MODEL_NAME } from "@/lib/editor/theme/tokens";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useSceneStore } from "@/lib/editor/state/scene-store";
+import { useSettingsStore } from "@/lib/editor/state/settings-store";
 
 export function exportHotspots() {
   const { hotspots } = useEditorStore.getState();
   const { modelName } = useSceneStore.getState();
+  const { legendCategories } = useSettingsStore.getState();
+  const categoryById = new Map(legendCategories.map((c) => [c.id, c]));
 
   const data = {
     project: "Factory Tour — Assembly Line B",
     model: modelName || DEFAULT_MODEL_NAME,
     exportedAt: new Date().toISOString(),
+    legendCategories,
     hotspots: hotspots.map((h) => ({
       id: h.id,
       title: h.title,
@@ -24,6 +28,7 @@ export function exportHotspots() {
       markerImage: h.markerImage || "",
       pulse: h.pulse,
       category: h.category || "",
+      categoryName: categoryById.get(h.category)?.name ?? "",
       legendName: h.legendName || h.title,
       blocks: h.blocks,
       position: {

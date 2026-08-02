@@ -7,9 +7,18 @@ import { useSceneStore } from "@/lib/editor/state/scene-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
 const modeLabels = {
-  select: { title: "Editor Mode — Select", hint: "Click a hotspot to edit. Drag to reposition." },
-  add: { title: "Editor Mode — Add", hint: "Click anywhere on the model to place a hotspot." },
-  preview: { title: "Preview Mode", hint: "Click any hotspot to view its content. Hover to see title." },
+  select: {
+    title: "Select",
+    hint: "Click to edit · Drag to move",
+  },
+  add: {
+    title: "Add",
+    hint: "Click the model to place a hotspot",
+  },
+  preview: {
+    title: "Preview",
+    hint: "Click a hotspot to view · Hover for title",
+  },
 };
 
 export function ViewportHud() {
@@ -27,16 +36,24 @@ export function ViewportHud() {
     <GlassPanel
       className={`editor-hud-panel rounded-xl ${collapsed ? "collapsed" : ""}`}
     >
-      <div className="flex items-center gap-2 px-3 py-2">
+      <div className="flex items-center gap-1.5 px-2.5 py-1.5">
         <span
-          className="flex-1 text-[11px] font-bold uppercase tracking-wider"
+          className="flex-1 text-[10px] font-bold uppercase tracking-wider"
           style={{ color: "var(--editor-muted)" }}
         >
           Viewport
         </span>
+        {!collapsed ? (
+          <span
+            className="truncate text-[10px] font-semibold"
+            style={{ color: "var(--editor-muted-2)" }}
+          >
+            {label.title}
+          </span>
+        ) : null}
         <button
           type="button"
-          className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-transparent text-[var(--editor-muted)] transition hover:bg-white/5 hover:text-[var(--editor-fg)]"
+          className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-transparent text-[var(--editor-muted)] transition hover:bg-white/5 hover:text-[var(--editor-fg)]"
           title={collapsed ? "Expand viewport info" : "Collapse viewport info"}
           onClick={() => setCollapsed(!collapsed)}
         >
@@ -47,14 +64,17 @@ export function ViewportHud() {
           )}
         </button>
       </div>
-      <div className="editor-hud-body px-4 pb-4">
-        <div className="font-display mb-1 text-[13px] font-semibold">
+      <div className="editor-hud-body px-2.5 pb-2.5 pt-0.5">
+        <div className="font-display mb-0.5 text-[12px] font-semibold leading-tight">
           {label.title}
         </div>
-        <div className="mb-3 text-[11px]" style={{ color: "var(--editor-muted)" }}>
+        <div
+          className="mb-2 text-[10px] leading-snug"
+          style={{ color: "var(--editor-muted)" }}
+        >
           {label.hint}
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2">
           <Stat label="FPS" value={String(fps)} />
           <Stat
             label="Hotspots"
@@ -80,13 +100,13 @@ function Stat({
   return (
     <div>
       <div
-        className="text-[10px] uppercase tracking-wider"
+        className="text-[9px] uppercase tracking-wider"
         style={{ color: "var(--editor-muted-2)" }}
       >
         {label}
       </div>
       <div
-        className="font-display text-[15px] font-bold"
+        className="font-display text-[13px] font-bold leading-tight"
         style={accent ? { color: accent } : undefined}
       >
         {value}
