@@ -14,19 +14,8 @@ import { openHotspotInPreview } from "@/lib/editor/preview/open-hotspot-in-previ
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
-import {
-  hotspotTypeLabel,
-  type Hotspot,
-} from "@/lib/editor/types/hotspot";
+import type { Hotspot } from "@/lib/editor/types/hotspot";
 import type { LegendCategory } from "@/lib/editor/types/legend-category";
-
-const typeIcons: Record<Hotspot["type"], string> = {
-  none: "○",
-  info: "ℹ",
-  warning: "⚠",
-  spec: "◎",
-  link: "↗",
-};
 
 export function LegendButton() {
   const isPreview = useEditorStore((s) => s.isPreview);
@@ -198,13 +187,6 @@ function LegendListItem({
             No category
           </span>
         )}
-        <div
-          className="flex min-w-0 items-center gap-1.5 text-[10.5px] uppercase tracking-wider"
-          style={{ color: "var(--editor-muted-2)" }}
-        >
-          <span>{typeIcons[hotspot.type]}</span>
-          <span>{hotspotTypeLabel(hotspot.type)}</span>
-        </div>
       </div>
     </div>
   );

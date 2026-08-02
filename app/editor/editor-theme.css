@@ -1350,6 +1350,22 @@
   display: flex;
 }
 
+.editor-root .editor-viewport-logo {
+  transform-origin: top center;
+  max-width: min(280px, calc(100% - 2rem));
+}
+
+.editor-root .editor-viewport-logo-img {
+  display: block;
+  max-height: 48px;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.35));
+  user-select: none;
+}
+
 .editor-root .editor-hud-panel {
   position: absolute;
   top: 1rem;

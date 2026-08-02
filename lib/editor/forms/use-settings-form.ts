@@ -34,6 +34,8 @@ function toFormValues(
     markerDialogBackdropBlur: settings.markerDialogBackdropBlur,
     markerDialogResetCameraOnClose: settings.markerDialogResetCameraOnClose,
     legendEnabled: settings.legendEnabled,
+    logoUrl: settings.logoUrl,
+    logoScale: settings.logoScale,
   };
 }
 

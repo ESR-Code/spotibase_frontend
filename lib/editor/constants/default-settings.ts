@@ -23,6 +23,8 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   markerDialogResetCameraOnClose: true,
   legendEnabled: false,
   legendCategories: [],
+  logoUrl: "",
+  logoScale: 1,
 };
 
 export const DEFAULT_ENVIRONMENT_SETTINGS: EnvironmentSettings = {

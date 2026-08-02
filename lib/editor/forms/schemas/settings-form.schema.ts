@@ -21,6 +21,8 @@ export const settingsFormSchema = z.object({
   markerDialogBackdropBlur: z.boolean(),
   markerDialogResetCameraOnClose: z.boolean(),
   legendEnabled: z.boolean(),
+  logoUrl: z.string(),
+  logoScale: z.number().min(0.4).max(2.5),
 });
 
 export type SettingsFormValues = z.infer<typeof settingsFormSchema>;

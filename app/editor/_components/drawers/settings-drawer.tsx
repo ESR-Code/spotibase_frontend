@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   Camera,
   ChevronDown,
+  ImageIcon,
   LayoutGrid,
   ListTree,
   MapPin,
@@ -14,6 +15,7 @@ import {
   Sun,
   X,
 } from "lucide-react";
+import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-image-field";
 import { CheckboxField } from "@/app/editor/_components/ui/checkbox-field";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
@@ -82,6 +84,31 @@ export function SettingsDrawer() {
       </div>
 
       <div className="editor-settings-sections min-h-0 flex-1 space-y-2.5 overflow-y-auto p-4">
+        <SettingsSection title="Logo" icon={<ImageIcon className="h-3.5 w-3.5" />}>
+          <HotspotImageField
+            layout="split"
+            value={values.logoUrl ?? ""}
+            onChange={(dataUrl) => form.setValue("logoUrl", dataUrl)}
+            uploadLabel="Upload logo"
+            emptyLabel="No logo"
+            hint="Shown at the top center of the viewport. PNG / JPG / WebP / SVG, up to 2.5 MB."
+            clearTitle="Remove logo"
+            successMessage="Logo applied"
+            sizeErrorMessage="Logo must be under 2.5 MB"
+          />
+          {values.logoUrl ? (
+            <SliderField
+              label="Logo scale"
+              value={values.logoScale}
+              display={`${values.logoScale.toFixed(2)}×`}
+              min={0.4}
+              max={2.5}
+              step={0.05}
+              onChange={(v) => form.setValue("logoScale", v)}
+            />
+          ) : null}
+        </SettingsSection>
+
         <SettingsSection title="Hotspots" icon={<MapPin className="h-3.5 w-3.5" />}>
           <SliderField
             label="Hotspot Size"

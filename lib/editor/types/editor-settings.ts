@@ -42,6 +42,10 @@ export type EditorSettings = {
   legendEnabled: boolean;
   /** User-defined legend categories available for hotspot assignment. */
   legendCategories: LegendCategory[];
+  /** Project logo as a data URL or remote URL; empty when unset. */
+  logoUrl: string;
+  /** Display scale for the viewport logo overlay. */
+  logoScale: number;
 };
 
 export type EnvironmentSettings = {

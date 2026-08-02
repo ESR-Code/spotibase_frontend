@@ -7,6 +7,7 @@ import { EngineErrorBanner } from "@/app/editor/_components/viewport/engine-erro
 import { ModelDropOverlay } from "@/app/editor/_components/viewport/model-drop-overlay";
 import { ViewportControls } from "@/app/editor/_components/viewport/viewport-controls";
 import { ViewportHud } from "@/app/editor/_components/viewport/viewport-hud";
+import { ViewportLogo } from "@/app/editor/_components/viewport/viewport-logo";
 import { HotspotHoverTooltip } from "@/app/editor/_components/viewport/hotspot-hover-tooltip";
 
 export function PlayCanvasViewport() {
@@ -25,6 +26,7 @@ export function PlayCanvasViewport() {
       {engineError && <EngineErrorBanner message={engineError} />}
       <HotspotHoverTooltip />
       <ModelDropOverlay />
+      <ViewportLogo />
       <ViewportHud />
       <ViewportControls />
     </div>
