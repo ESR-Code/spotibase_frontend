@@ -34,6 +34,10 @@ export type EditorSettings = {
   markerDialogBackdropBlur: boolean;
   /** Return the camera to the home view when the marker dialog closes. */
   markerDialogResetCameraOnClose: boolean;
+  /** Show the Legend button and drawer in Preview. */
+  legendEnabled: boolean;
+  /** User-defined category names available for hotspot legend assignment. */
+  legendCategories: string[];
 };
 
 export type EnvironmentSettings = {

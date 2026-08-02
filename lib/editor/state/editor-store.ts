@@ -34,9 +34,10 @@ function createHotspotData(
   data: Partial<Omit<Hotspot, "id" | "position">> = {},
 ): Hotspot {
   const type = data.type ?? "info";
+  const title = data.title ?? `Hotspot ${String(id).padStart(3, "0")}`;
   return {
     id,
-    title: data.title ?? `Hotspot ${String(id).padStart(3, "0")}`,
+    title,
     desc:
       data.desc ??
       "New point of interest. Edit details in the panel on the right.",
@@ -49,6 +50,8 @@ function createHotspotData(
     icon: data.icon ?? "ℹ",
     markerImage: data.markerImage ?? "",
     pulse: data.pulse ?? false,
+    category: data.category ?? "",
+    legendName: data.legendName ?? title,
     position,
     blocks: data.blocks ?? [],
   };
@@ -125,13 +128,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const source = get().hotspots.find((h) => h.id === id);
     if (!source) return;
     const { id: _id, position, ...rest } = source;
+    const title = `${rest.title} (copy)`;
     get().addHotspot(
       {
         x: position.x + 0.5,
         y: position.y,
         z: position.z + 0.5,
       },
-      { ...rest, title: `${rest.title} (copy)` },
+      { ...rest, title, legendName: title },
     );
   },
 

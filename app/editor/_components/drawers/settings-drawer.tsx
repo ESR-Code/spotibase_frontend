@@ -5,6 +5,7 @@ import {
   Camera,
   ChevronDown,
   LayoutGrid,
+  ListTree,
   MapPin,
   Ban,
   Moon,
@@ -18,6 +19,7 @@ import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
 import { useEnvironmentForm } from "@/lib/editor/forms/use-environment-form";
 import { useSettingsForm } from "@/lib/editor/forms/use-settings-form";
@@ -340,6 +342,15 @@ export function SettingsDrawer() {
           <p className="mt-1.5 text-[11px]" style={{ color: "var(--editor-muted)" }}>
             Overall ground grid extent. Outer edges still fade out.
           </p>
+        </SettingsSection>
+
+        <SettingsSection title="Legend" icon={<ListTree className="h-3.5 w-3.5" />}>
+          <SwitchField
+            label="Enable legend"
+            description="Show a Legend control in Preview to browse hotspots by category"
+            checked={values.legendEnabled}
+            onChange={(checked) => form.setValue("legendEnabled", checked)}
+          />
         </SettingsSection>
 
         <SettingsSection title="Environment & Lighting" icon={<Sun className="h-3.5 w-3.5" />}>

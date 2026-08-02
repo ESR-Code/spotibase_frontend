@@ -29,6 +29,8 @@ export function useHotspotForm() {
       markerImage: "",
       color: "#e63946",
       pulse: false,
+      category: "",
+      legendName: "",
     },
   });
 
@@ -48,6 +50,8 @@ export function useHotspotForm() {
       markerImage: selected.markerImage,
       color: selected.color,
       pulse: selected.pulse,
+      category: selected.category,
+      legendName: selected.legendName,
     });
     // Only re-seed the form when selection changes — not on every store patch
     // (e.g. drag position updates), otherwise typing fights with reset().
@@ -56,8 +60,8 @@ export function useHotspotForm() {
 
   useEffect(() => {
     if (selectedId == null) return;
-    const subscription = form.watch((values) => {
-      updateHotspot(selectedId, {
+    const subscription = form.watch((values, { name }) => {
+      const patch: Partial<HotspotFormValues> = {
         title: values.title,
         desc: values.desc,
         image: values.image,
@@ -69,7 +73,25 @@ export function useHotspotForm() {
         markerImage: values.markerImage,
         color: values.color,
         pulse: values.pulse,
-      });
+        category: values.category,
+        legendName: values.legendName,
+      };
+
+      // Keep legendName in sync with title until the user customizes it.
+      if (name === "title" && values.title != null) {
+        const previousTitle = useEditorStore
+          .getState()
+          .hotspots.find((h) => h.id === selectedId)?.title;
+        if (
+          previousTitle != null &&
+          (values.legendName === previousTitle || values.legendName === "")
+        ) {
+          patch.legendName = values.title;
+          form.setValue("legendName", values.title, { shouldDirty: false });
+        }
+      }
+
+      updateHotspot(selectedId, patch);
     });
     return () => subscription.unsubscribe();
   }, [form, selectedId, updateHotspot]);

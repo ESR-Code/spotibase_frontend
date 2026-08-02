@@ -17,6 +17,7 @@ type UIState = {
   hudCollapsed: boolean;
   propertiesDrawerOpen: boolean;
   settingsDrawerOpen: boolean;
+  legendDrawerOpen: boolean;
   previewModalOpen: boolean;
   previewModalIndex: number;
   /** Hotspot selected by click in Preview (label / dialog target). */
@@ -30,6 +31,7 @@ type UIState = {
   setHudCollapsed: (value: boolean) => void;
   setPropertiesDrawerOpen: (value: boolean) => void;
   setSettingsDrawerOpen: (value: boolean) => void;
+  setLegendDrawerOpen: (value: boolean) => void;
   setPreviewModalOpen: (value: boolean) => void;
   setPreviewModalIndex: (index: number) => void;
   setPreviewActiveHotspotId: (id: number | null) => void;
@@ -45,6 +47,7 @@ export const useUIStore = create<UIState>((set) => ({
   hudCollapsed: false,
   propertiesDrawerOpen: false,
   settingsDrawerOpen: false,
+  legendDrawerOpen: false,
   previewModalOpen: false,
   previewModalIndex: 0,
   previewActiveHotspotId: null,
@@ -57,6 +60,7 @@ export const useUIStore = create<UIState>((set) => ({
   setPropertiesDrawerOpen: (propertiesDrawerOpen) =>
     set({ propertiesDrawerOpen }),
   setSettingsDrawerOpen: (settingsDrawerOpen) => set({ settingsDrawerOpen }),
+  setLegendDrawerOpen: (legendDrawerOpen) => set({ legendDrawerOpen }),
   setPreviewModalOpen: (previewModalOpen) => set({ previewModalOpen }),
   setPreviewModalIndex: (previewModalIndex) => set({ previewModalIndex }),
   setPreviewActiveHotspotId: (previewActiveHotspotId) =>
@@ -66,6 +70,7 @@ export const useUIStore = create<UIState>((set) => ({
   closeAllOverlays: () =>
     set({
       settingsDrawerOpen: false,
+      legendDrawerOpen: false,
       previewModalOpen: false,
       propertiesDrawerOpen: false,
       previewActiveHotspotId: null,

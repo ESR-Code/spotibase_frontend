@@ -12,6 +12,8 @@ export const hotspotFormSchema = z.object({
   markerImage: z.string(),
   color: z.string(),
   pulse: z.boolean(),
+  category: z.string(),
+  legendName: z.string(),
 });
 
 export type HotspotFormValues = z.infer<typeof hotspotFormSchema>;

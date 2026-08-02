@@ -5,6 +5,10 @@ import { LoadingOverlay } from "@/app/editor/_components/loading-overlay";
 import { HotspotOutliner, OutlinerExpandTab } from "@/app/editor/_components/outliner/hotspot-outliner";
 import { PlayCanvasViewport } from "@/app/editor/_components/viewport/playcanvas-viewport";
 import { HotspotPropertiesDrawer } from "@/app/editor/_components/drawers/hotspot-properties-drawer";
+import {
+  LegendButton,
+  LegendDrawer,
+} from "@/app/editor/_components/drawers/legend-drawer";
 import { SettingsDrawer } from "@/app/editor/_components/drawers/settings-drawer";
 import { PreviewModal } from "@/app/editor/_components/dialogs/preview-modal";
 import { useEditorKeyboard } from "@/lib/editor/hooks/use-editor-keyboard";
@@ -27,6 +31,8 @@ export function EditorShell() {
         <OutlinerExpandTab />
         <HotspotPropertiesDrawer />
         <SettingsDrawer />
+        <LegendDrawer />
+        <LegendButton />
         <PreviewModal />
       </div>
     </div>

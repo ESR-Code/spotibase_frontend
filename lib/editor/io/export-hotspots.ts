@@ -23,6 +23,8 @@ export function exportHotspots() {
       icon: h.icon,
       markerImage: h.markerImage || "",
       pulse: h.pulse,
+      category: h.category || "",
+      legendName: h.legendName || h.title,
       blocks: h.blocks,
       position: {
         x: +h.position.x.toFixed(3),

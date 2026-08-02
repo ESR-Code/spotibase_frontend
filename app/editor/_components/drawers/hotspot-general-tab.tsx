@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { UseFormReturn } from "react-hook-form";
+import { CategorySelect } from "@/app/editor/_components/ui/category-select";
 import { ColorSwatch } from "@/app/editor/_components/ui/color-swatch";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { SwitchField } from "@/app/editor/_components/ui/switch-field";
@@ -13,6 +14,7 @@ import type { HotspotFormValues } from "@/lib/editor/forms/schemas/hotspot-form.
 import { markerColorSwatches, markerIcons } from "@/lib/editor/theme/tokens";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useSettingsStore } from "@/lib/editor/state/settings-store";
 
 type HotspotGeneralTabProps = {
   form: UseFormReturn<HotspotFormValues>;
@@ -36,7 +38,26 @@ function FormSection({
 
 export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
   const updateHotspot = useEditorStore((s) => s.updateHotspot);
+  const legendEnabled = useSettingsStore((s) => s.legendEnabled);
+  const legendCategories = useSettingsStore((s) => s.legendCategories);
+  const setSettings = useSettingsStore((s) => s.setSettings);
   const values = form.watch();
+
+  const handleCategoriesChange = (categories: string[]) => {
+    const removed = legendCategories.filter((c) => !categories.includes(c));
+    setSettings({ legendCategories: categories });
+    if (removed.length === 0) return;
+
+    const { hotspots } = useEditorStore.getState();
+    for (const hotspot of hotspots) {
+      if (removed.includes(hotspot.category)) {
+        useEditorStore.getState().updateHotspot(hotspot.id, { category: "" });
+        if (hotspot.id === selected.id) {
+          form.setValue("category", "");
+        }
+      }
+    }
+  };
 
   return (
     <div className="editor-general-tab">
@@ -50,6 +71,26 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
           />
         </div>
       </FormSection>
+
+      {legendEnabled ? (
+        <FormSection title="Legend">
+          <CategorySelect
+            value={values.category ?? ""}
+            categories={legendCategories}
+            allowClear
+            onChange={(category) => form.setValue("category", category)}
+            onCategoriesChange={handleCategoriesChange}
+          />
+          <div>
+            <FieldLabel>Legend name</FieldLabel>
+            <input
+              className="editor-input"
+              placeholder="Name shown in the Legend drawer"
+              {...form.register("legendName")}
+            />
+          </div>
+        </FormSection>
+      ) : null}
 
       <FormSection title="Marker">
         <div>

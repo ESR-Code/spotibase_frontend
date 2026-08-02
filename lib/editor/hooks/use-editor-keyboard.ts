@@ -31,6 +31,7 @@ export function useEditorKeyboard() {
           ui.setPreviewActiveHotspotId(null);
           ui.setPreviewLabelPending(false);
           ui.setHoverTooltip(null);
+          ui.setLegendDrawerOpen(false);
           window.dispatchEvent(new CustomEvent("editor:reset-camera"));
         } else {
           closeAllOverlays();

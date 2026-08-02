@@ -21,6 +21,8 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   markerDialogBackdrop: false,
   markerDialogBackdropBlur: false,
   markerDialogResetCameraOnClose: true,
+  legendEnabled: false,
+  legendCategories: [],
 };
 
 export const DEFAULT_ENVIRONMENT_SETTINGS: EnvironmentSettings = {

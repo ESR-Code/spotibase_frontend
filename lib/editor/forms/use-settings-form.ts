@@ -33,6 +33,7 @@ function toFormValues(
     markerDialogBackdrop: settings.markerDialogBackdrop,
     markerDialogBackdropBlur: settings.markerDialogBackdropBlur,
     markerDialogResetCameraOnClose: settings.markerDialogResetCameraOnClose,
+    legendEnabled: settings.legendEnabled,
   };
 }
 

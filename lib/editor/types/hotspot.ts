@@ -24,6 +24,10 @@ export type Hotspot = {
   icon: string;
   markerImage: string;
   pulse: boolean;
+  /** Legend category name; empty means uncategorized. */
+  category: string;
+  /** Display name in the Legend drawer; defaults to title. */
+  legendName: string;
   position: Vec3;
   blocks: HotspotBlock[];
 };
