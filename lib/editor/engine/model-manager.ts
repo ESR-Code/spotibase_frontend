@@ -149,6 +149,8 @@ export function createModelManager(
 
   const unloadCurrent = () => {
     clearChildren(modelRoot);
+    modelRoot.setLocalScale(1, 1, 1);
+    modelRoot.setLocalEulerAngles(0, 0, 0);
     useModelStore.getState().unload();
   };
 

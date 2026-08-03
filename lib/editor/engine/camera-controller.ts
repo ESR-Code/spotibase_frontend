@@ -31,7 +31,8 @@ export type CameraController = {
   update: (dt: number) => void;
   frameToEntity: (entity: Entity, options?: { storeHome?: boolean }) => void;
   focusOnPoint: (point: Vec3, duration?: number) => void;
-  resetHome: () => void;
+  /** Animate back to home. Pass `entity` to recompute zoom-extents from its current (scaled) bounds first. */
+  resetHome: (entity?: Entity) => void;
   nudgeZoom: (notches: number) => void;
   setEnabled: (enabled: boolean) => void;
   dispose: () => void;
@@ -93,6 +94,106 @@ export function createCameraController(
     home.distance = state.distance;
     home.target.copy(state.target);
     home.ready = true;
+  };
+
+  const orbitPosition = (
+    target: Vec3,
+    yaw: number,
+    pitch: number,
+    distance: number,
+  ) => {
+    const pitchRad = (pitch * Math.PI) / 180;
+    const yawRad = (yaw * Math.PI) / 180;
+    return new pcModule.Vec3(
+      target.x + distance * Math.sin(yawRad) * Math.cos(pitchRad),
+      target.y + distance * Math.sin(pitchRad),
+      target.z + distance * Math.cos(yawRad) * Math.cos(pitchRad),
+    );
+  };
+
+  /** Compute zoom-extents pose from the entity's current world AABB (includes scale/rotation). */
+  const computeFramePose = (entity: Entity) => {
+    entity.syncHierarchy();
+
+    const bbox = new pcModule.BoundingBox();
+    const scratch = new pcModule.BoundingBox();
+    let hasMesh = false;
+
+    entity.forEach((node) => {
+      const render = (node as Entity).render;
+      if (!render?.meshInstances?.length) return;
+      for (const mi of render.meshInstances) {
+        const meshAabb = mi.mesh?.aabb;
+        const world = (mi.node ?? node).getWorldTransform();
+        if (meshAabb && world) {
+          scratch.setFromTransformedAabb(meshAabb, world);
+          if (!hasMesh) {
+            bbox.copy(scratch);
+            hasMesh = true;
+          } else {
+            bbox.add(scratch);
+          }
+          continue;
+        }
+
+        if (!hasMesh) {
+          bbox.copy(mi.aabb);
+          hasMesh = true;
+        } else {
+          bbox.add(mi.aabb);
+        }
+      }
+    });
+
+    if (!hasMesh) {
+      bbox.center.set(0, 1, 0);
+      bbox.halfExtents.set(1, 1, 1);
+    }
+
+    const size = bbox.halfExtents.clone().mulScalar(2);
+    const span = Math.max(size.length(), size.x, size.y, size.z, 1);
+    const fovDeg = camera.camera?.fov ?? 42;
+    const halfVFov = ((fovDeg * Math.PI) / 180) / 2;
+    const aspect =
+      camera.camera?.aspectRatio ??
+      canvas.clientWidth / Math.max(canvas.clientHeight, 1);
+    const halfHFov = Math.atan(Math.tan(halfVFov) * aspect);
+    // Fit the bounding sphere in the tighter FOV axis so the whole model is on screen.
+    const radius = Math.max(bbox.halfExtents.length(), 0.5);
+    const fitHalfFov = Math.min(halfVFov, halfHFov);
+    // Modest padding (~12%) so edges aren't clipped, without looking too far away.
+    let distance = (radius / Math.tan(fitHalfFov)) * 1.12;
+
+    const minDistance = Math.max(0.4, +(span * 0.12).toFixed(2));
+    const maxDistance = Math.max(20, +(span * 6).toFixed(1));
+    distance = clamp(distance, minDistance, maxDistance);
+
+    return {
+      yaw: 35,
+      pitch: 28,
+      distance,
+      target: bbox.center.clone(),
+      minDistance,
+      maxDistance,
+    };
+  };
+
+  const applyFramePose = (
+    pose: ReturnType<typeof computeFramePose>,
+    storeAsHome: boolean,
+  ) => {
+    state.anim = null;
+    state.zoomTarget = null;
+    state.target.copy(pose.target);
+    state.yaw = pose.yaw;
+    state.pitch = pose.pitch;
+    state.distance = pose.distance;
+    useSettingsStore.getState().setSettings({
+      minDistance: pose.minDistance,
+      maxDistance: pose.maxDistance,
+    });
+    applyPose();
+    if (storeAsHome) storeHome();
   };
 
   const onPointerDown = (e: PointerEvent) => {
@@ -197,49 +298,7 @@ export function createCameraController(
   };
 
   const frameToEntity = (entity: Entity, options?: { storeHome?: boolean }) => {
-    const bbox = new pcModule.BoundingBox();
-    let hasMesh = false;
-
-    entity.forEach((node) => {
-      const render = (node as Entity).render;
-      if (!render?.meshInstances?.length) return;
-      for (const mi of render.meshInstances) {
-        if (!hasMesh) {
-          bbox.copy(mi.aabb);
-          hasMesh = true;
-        } else {
-          bbox.add(mi.aabb);
-        }
-      }
-    });
-
-    if (!hasMesh) {
-      bbox.center.set(0, 1, 0);
-      bbox.halfExtents.set(1, 1, 1);
-    }
-
-    const size = bbox.halfExtents.clone().mulScalar(2);
-    const span = Math.max(size.length(), size.x, size.y, size.z, 1);
-    const fov = ((camera.camera?.fov ?? 42) * Math.PI) / 180;
-    let dist = Math.max(size.y * 0.6 / Math.tan(fov / 2), size.x * 0.6 / Math.tan(fov / 2), span * 0.55);
-    dist *= 1.6;
-
-    const center = bbox.center.clone();
-    state.target.copy(center);
-    state.yaw = 35;
-    state.pitch = 28;
-    state.distance = dist;
-    state.zoomTarget = null;
-
-    const s = settings();
-    useSettingsStore.getState().setSettings({
-      minDistance: Math.max(0.4, +(span * 0.12).toFixed(2)),
-      maxDistance: Math.max(20, +(span * 6).toFixed(1)),
-    });
-    state.distance = clamp(state.distance, s.minDistance, useSettingsStore.getState().maxDistance);
-
-    applyPose();
-    if (options?.storeHome !== false) storeHome();
+    applyFramePose(computeFramePose(entity), options?.storeHome !== false);
   };
 
   const focusOnPoint = (point: Vec3, duration = 0.8) => {
@@ -266,26 +325,34 @@ export function createCameraController(
     state.zoomTarget = null;
   };
 
-  const resetHome = () => {
+  const resetHome = (entity?: Entity) => {
+    // Recompute zoom-extents from the live (scaled) model before animating.
+    if (entity) {
+      const pose = computeFramePose(entity);
+      home.yaw = pose.yaw;
+      home.pitch = pose.pitch;
+      home.distance = pose.distance;
+      home.target.copy(pose.target);
+      home.ready = true;
+      useSettingsStore.getState().setSettings({
+        minDistance: pose.minDistance,
+        maxDistance: pose.maxDistance,
+      });
+    }
+
     if (!home.ready) {
       applyPose();
       storeHome();
       return;
     }
+
+    state.zoomTarget = null;
     state.anim = {
       active: true,
       t: 0,
       duration: 0.85,
       fromPos: camera.getPosition().clone(),
-      toPos: (() => {
-        const pitchRad = (home.pitch * Math.PI) / 180;
-        const yawRad = (home.yaw * Math.PI) / 180;
-        return new pcModule.Vec3(
-          home.target.x + home.distance * Math.sin(yawRad) * Math.cos(pitchRad),
-          home.target.y + home.distance * Math.sin(pitchRad),
-          home.target.z + home.distance * Math.cos(yawRad) * Math.cos(pitchRad),
-        );
-      })(),
+      toPos: orbitPosition(home.target, home.yaw, home.pitch, home.distance),
       fromTarget: state.target.clone(),
       toTarget: home.target.clone(),
     };

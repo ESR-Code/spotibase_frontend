@@ -114,7 +114,10 @@ export function usePlayCanvasEditor() {
             cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
           }
         };
-        const onResetCamera = () => cameraCtrl.resetHome();
+        const onResetCamera = () => {
+          // Recompute zoom-extents from the current (scaled) model, then animate.
+          cameraCtrl.resetHome(scene.modelRoot);
+        };
         const onZoom = (event: Event) => {
           const delta =
             (event as CustomEvent<{ delta: number }>).detail?.delta ?? 0;
@@ -170,6 +173,8 @@ export function usePlayCanvasEditor() {
           }
 
           hotspotMgr.syncFromStore();
+          // Zoom-extend to the newly loaded model's world AABB and store as home
+          // so Reset view returns to the same framing for this scene.
           cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
         };
 
