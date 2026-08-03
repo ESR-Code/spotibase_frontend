@@ -99,8 +99,12 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
       name: name?.trim() || defaultNewSceneName(snapshotted),
       isPrimary: false,
       model: createEmptyModelState(),
-      // New scenes inherit the primary scene's settings.
-      settings: primary.settings,
+      // New scenes inherit the primary scene's settings, but start without a
+      // Reset view pose so each scene can define its own camera home.
+      settings: {
+        ...primary.settings,
+        resetPosition: null,
+      },
       environment: primary.environment,
     });
     set({ scenes: snapshotted.concat(scene) });
@@ -196,3 +200,15 @@ export const useActiveScene = () =>
 
 export const usePrimaryScene = () =>
   useScenesStore((state) => state.scenes.find((s) => s.isPrimary) ?? null);
+
+/** Persist the live settings store into the active scene entry. */
+export function syncActiveSceneSettings() {
+  const state = useScenesStore.getState();
+  useScenesStore.setState({
+    scenes: state.scenes.map((scene) =>
+      scene.id === state.activeSceneId
+        ? { ...scene, settings: readEditorSettingsSnapshot() }
+        : scene,
+    ),
+  });
+}

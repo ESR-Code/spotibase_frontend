@@ -19,7 +19,10 @@ import {
   useModelStore,
 } from "@/lib/editor/state/model-store";
 import { sceneModelCache } from "@/lib/editor/state/scene-model-cache";
-import { useScenesStore } from "@/lib/editor/state/scenes-store";
+import {
+  syncActiveSceneSettings,
+  useScenesStore,
+} from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
@@ -142,6 +145,7 @@ export function usePlayCanvasEditor() {
               previewUrl,
             },
           });
+          syncActiveSceneSettings();
           toast.success("Reset view position saved");
         };
         const onZoom = (event: Event) => {
@@ -203,9 +207,15 @@ export function usePlayCanvasEditor() {
           }
 
           hotspotMgr.syncFromStore();
-          // Zoom-extend to the newly loaded model's world AABB and store as home
-          // so Reset view returns to the same framing for this scene.
-          cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
+          // Prefer this scene's saved Reset view pose; otherwise zoom-extend
+          // and store that framing as the default home for Reset view.
+          const customReset = useSettingsStore.getState().resetPosition;
+          if (customReset) {
+            cameraCtrl.storeHomeFromEntity(scene.modelRoot);
+            cameraCtrl.snapToOrbitPose(customReset);
+          } else {
+            cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
+          }
         };
 
         window.addEventListener("editor:import-glb", onImportGlb);

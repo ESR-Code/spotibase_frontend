@@ -44,6 +44,10 @@ export type CameraController = {
   getOrbitPose: () => CameraOrbitPose;
   /** Animate the camera to a stored orbit pose (used by custom Reset view). */
   animateToOrbitPose: (pose: CameraOrbitPose, duration?: number) => void;
+  /** Immediately apply a stored orbit pose without animating. */
+  snapToOrbitPose: (pose: CameraOrbitPose) => void;
+  /** Recompute and store default home from entity bounds without moving the camera. */
+  storeHomeFromEntity: (entity: Entity) => void;
   nudgeZoom: (notches: number) => void;
   setEnabled: (enabled: boolean) => void;
   dispose: () => void;
@@ -380,23 +384,53 @@ export function createCameraController(
     },
   });
 
-  const animateToOrbitPose = (pose: CameraOrbitPose, duration = 0.85) => {
+  const resolveOrbitPose = (pose: CameraOrbitPose) => {
     const s = settings();
-    const yaw = clamp(pose.yaw, s.minYaw, s.maxYaw);
-    const pitch = clamp(pose.pitch, s.minPitch, s.maxPitch);
-    const distance = clamp(pose.distance, s.minDistance, s.maxDistance);
-    const target = new pcModule.Vec3(pose.target.x, pose.target.y, pose.target.z);
+    return {
+      yaw: clamp(pose.yaw, s.minYaw, s.maxYaw),
+      pitch: clamp(pose.pitch, s.minPitch, s.maxPitch),
+      distance: clamp(pose.distance, s.minDistance, s.maxDistance),
+      target: new pcModule.Vec3(pose.target.x, pose.target.y, pose.target.z),
+    };
+  };
 
+  const snapToOrbitPose = (pose: CameraOrbitPose) => {
+    const resolved = resolveOrbitPose(pose);
+    state.anim = null;
+    state.zoomTarget = null;
+    state.yaw = resolved.yaw;
+    state.pitch = resolved.pitch;
+    state.distance = resolved.distance;
+    state.target.copy(resolved.target);
+    applyPose();
+  };
+
+  const animateToOrbitPose = (pose: CameraOrbitPose, duration = 0.85) => {
+    const resolved = resolveOrbitPose(pose);
     state.zoomTarget = null;
     state.anim = {
       active: true,
       t: 0,
       duration,
       fromPos: camera.getPosition().clone(),
-      toPos: orbitPosition(target, yaw, pitch, distance),
+      toPos: orbitPosition(
+        resolved.target,
+        resolved.yaw,
+        resolved.pitch,
+        resolved.distance,
+      ),
       fromTarget: state.target.clone(),
-      toTarget: target,
+      toTarget: resolved.target,
     };
+  };
+
+  const storeHomeFromEntity = (entity: Entity) => {
+    const pose = computeFramePose(entity);
+    home.yaw = pose.yaw;
+    home.pitch = pose.pitch;
+    home.distance = pose.distance;
+    home.target.copy(pose.target);
+    home.ready = true;
   };
 
   applyPose();
@@ -408,6 +442,8 @@ export function createCameraController(
     resetHome,
     getOrbitPose,
     animateToOrbitPose,
+    snapToOrbitPose,
+    storeHomeFromEntity,
     nudgeZoom,
     setEnabled: (enabled) => {
       state.enabled = enabled;

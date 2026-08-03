@@ -32,6 +32,7 @@ import type {
   MarkerDialogSize,
 } from "@/lib/editor/types/editor-settings";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
+import { syncActiveSceneSettings } from "@/lib/editor/state/scenes-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
 const MARKER_DIALOG_MODES: {
@@ -70,6 +71,7 @@ export function SettingsDrawer() {
 
   const clearResetPosition = () => {
     setSettings({ resetPosition: null });
+    syncActiveSceneSettings();
     toast.success("Reset view position cleared");
   };
 
@@ -284,7 +286,7 @@ export function SettingsDrawer() {
                 Clear
               </EditorButton>
               <p className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
-                Saves the current camera as the Reset view home. If unset, Reset view frames the model.
+                Per scene — saves the current camera as this scene&apos;s Reset view home. If unset, Reset view frames the model.
               </p>
             </div>
             <div
