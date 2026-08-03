@@ -1,4 +1,8 @@
-import type { EditorSettings, EnvironmentSettings } from "@/lib/editor/types/editor-settings";
+import type {
+  CameraResetPosition,
+  EditorSettings,
+  EnvironmentSettings,
+} from "@/lib/editor/types/editor-settings";
 import type { LegendCategory } from "@/lib/editor/types/legend-category";
 
 export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
@@ -10,6 +14,7 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   maxYaw: 180,
   minPitch: 0,
   maxPitch: 94,
+  resetPosition: null,
   gridColor: "#ffffff",
   gridOpacity: 0.45,
   gridSize: 42,
@@ -27,6 +32,19 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   logoUrl: "",
   logoScale: 1,
 };
+
+export function cloneCameraResetPosition(
+  resetPosition: CameraResetPosition | null,
+): CameraResetPosition | null {
+  if (!resetPosition) return null;
+  return {
+    yaw: resetPosition.yaw,
+    pitch: resetPosition.pitch,
+    distance: resetPosition.distance,
+    target: { ...resetPosition.target },
+    previewUrl: resetPosition.previewUrl,
+  };
+}
 
 export const DEFAULT_ENVIRONMENT_SETTINGS: EnvironmentSettings = {
   bgColor: "#c0cbdd",
@@ -54,7 +72,8 @@ export function cloneLegendCategories(
 export function cloneEditorSettings(settings: EditorSettings): EditorSettings {
   return {
     ...settings,
-    legendCategories: cloneLegendCategories(settings.legendCategories),
+    resetPosition: cloneCameraResetPosition(settings.resetPosition ?? null),
+    legendCategories: cloneLegendCategories(settings.legendCategories ?? []),
   };
 }
 

@@ -27,12 +27,23 @@ type OrbitState = {
 const ZOOM_STEP = 0.036;
 const ZOOM_SMOOTH = 7.5;
 
+export type CameraOrbitPose = {
+  yaw: number;
+  pitch: number;
+  distance: number;
+  target: { x: number; y: number; z: number };
+};
+
 export type CameraController = {
   update: (dt: number) => void;
   frameToEntity: (entity: Entity, options?: { storeHome?: boolean }) => void;
   focusOnPoint: (point: Vec3, duration?: number) => void;
   /** Animate back to home. Pass `entity` to recompute zoom-extents from its current (scaled) bounds first. */
   resetHome: (entity?: Entity) => void;
+  /** Snapshot the current orbit pose (yaw / pitch / distance / target). */
+  getOrbitPose: () => CameraOrbitPose;
+  /** Animate the camera to a stored orbit pose (used by custom Reset view). */
+  animateToOrbitPose: (pose: CameraOrbitPose, duration?: number) => void;
   nudgeZoom: (notches: number) => void;
   setEnabled: (enabled: boolean) => void;
   dispose: () => void;
@@ -358,6 +369,36 @@ export function createCameraController(
     };
   };
 
+  const getOrbitPose = (): CameraOrbitPose => ({
+    yaw: state.yaw,
+    pitch: state.pitch,
+    distance: state.distance,
+    target: {
+      x: state.target.x,
+      y: state.target.y,
+      z: state.target.z,
+    },
+  });
+
+  const animateToOrbitPose = (pose: CameraOrbitPose, duration = 0.85) => {
+    const s = settings();
+    const yaw = clamp(pose.yaw, s.minYaw, s.maxYaw);
+    const pitch = clamp(pose.pitch, s.minPitch, s.maxPitch);
+    const distance = clamp(pose.distance, s.minDistance, s.maxDistance);
+    const target = new pcModule.Vec3(pose.target.x, pose.target.y, pose.target.z);
+
+    state.zoomTarget = null;
+    state.anim = {
+      active: true,
+      t: 0,
+      duration,
+      fromPos: camera.getPosition().clone(),
+      toPos: orbitPosition(target, yaw, pitch, distance),
+      fromTarget: state.target.clone(),
+      toTarget: target,
+    };
+  };
+
   applyPose();
 
   return {
@@ -365,6 +406,8 @@ export function createCameraController(
     frameToEntity,
     focusOnPoint,
     resetHome,
+    getOrbitPose,
+    animateToOrbitPose,
     nudgeZoom,
     setEnabled: (enabled) => {
       state.enabled = enabled;

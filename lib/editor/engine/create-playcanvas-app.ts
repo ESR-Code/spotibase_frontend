@@ -18,6 +18,8 @@ export async function createPlayCanvasAppAsync(
       antialias: true,
       alpha: true,
       powerPreference: "high-performance",
+      // Needed so set-reset-position can read a screenshot via toDataURL.
+      preserveDrawingBuffer: true,
     },
   });
 

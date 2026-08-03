@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { createCameraController } from "@/lib/editor/engine/camera-controller";
+import { captureViewportPreview } from "@/lib/editor/engine/capture-viewport-preview";
 import { createPlayCanvasAppAsync } from "@/lib/editor/engine/create-playcanvas-app";
 import { createHotspotManager } from "@/lib/editor/engine/hotspot-manager";
 import { createModelManager } from "@/lib/editor/engine/model-manager";
@@ -119,8 +120,29 @@ export function usePlayCanvasEditor() {
           }
         };
         const onResetCamera = () => {
+          const custom = useSettingsStore.getState().resetPosition;
+          if (custom) {
+            cameraCtrl.animateToOrbitPose(custom);
+            return;
+          }
           // Recompute zoom-extents from the current (scaled) model, then animate.
           cameraCtrl.resetHome(scene.modelRoot);
+        };
+        const onSetResetPosition = () => {
+          // Force a fresh frame so the canvas buffer is readable for the preview.
+          app.render();
+          const pose = cameraCtrl.getOrbitPose();
+          const previewUrl = captureViewportPreview(canvas);
+          useSettingsStore.getState().setSettings({
+            resetPosition: {
+              yaw: pose.yaw,
+              pitch: pose.pitch,
+              distance: pose.distance,
+              target: { ...pose.target },
+              previewUrl,
+            },
+          });
+          toast.success("Reset view position saved");
         };
         const onZoom = (event: Event) => {
           const delta =
@@ -188,6 +210,7 @@ export function usePlayCanvasEditor() {
 
         window.addEventListener("editor:import-glb", onImportGlb);
         window.addEventListener("editor:reset-camera", onResetCamera);
+        window.addEventListener("editor:set-reset-position", onSetResetPosition);
         window.addEventListener("editor:zoom", onZoom);
         window.addEventListener("editor:focus-hotspot", onFocusHotspot);
         window.addEventListener("editor:scene-switched", onSceneSwitched);
@@ -205,6 +228,10 @@ export function usePlayCanvasEditor() {
         cleanup = () => {
           window.removeEventListener("editor:import-glb", onImportGlb);
           window.removeEventListener("editor:reset-camera", onResetCamera);
+          window.removeEventListener(
+            "editor:set-reset-position",
+            onSetResetPosition,
+          );
           window.removeEventListener("editor:zoom", onZoom);
           window.removeEventListener("editor:focus-hotspot", onFocusHotspot);
           window.removeEventListener("editor:scene-switched", onSceneSwitched);

@@ -8,6 +8,16 @@ export type MarkerDialogSize = "medium" | "large" | "fullscreen";
 
 export type { LegendCategory };
 
+/** User-defined camera pose used by Reset view (Home). */
+export type CameraResetPosition = {
+  yaw: number;
+  pitch: number;
+  distance: number;
+  target: { x: number; y: number; z: number };
+  /** Viewport screenshot preview as a data URL. */
+  previewUrl: string;
+};
+
 export type EditorSettings = {
   hotspotSize: number;
   hotspotRefDist: number;
@@ -17,6 +27,11 @@ export type EditorSettings = {
   maxYaw: number;
   minPitch: number;
   maxPitch: number;
+  /**
+   * Custom Reset view pose. When null, Reset view uses the default
+   * zoom-extents framing for the current model.
+   */
+  resetPosition: CameraResetPosition | null;
   gridColor: string;
   gridOpacity: number;
   gridSize: number;
