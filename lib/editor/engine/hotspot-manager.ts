@@ -11,6 +11,7 @@ import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import type { Vec3 } from "@/lib/editor/types/hotspot";
+import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
 
 export type HotspotManager = {
   syncFromStore: () => void;
@@ -76,10 +77,24 @@ export function createHotspotManager(
     const refDist = settings.hotspotRefDist;
     const previewActiveId = ui.previewActiveHotspotId;
 
+    const legendFilter = ui.legendFilterCategory;
+    const filterByLegend =
+      editor.isPreview && legendFilter !== LEGEND_CATEGORY_ALL;
+
     let index = 0;
     for (const hotspot of editor.hotspots) {
       const visual = visuals.get(hotspot.id);
       if (!visual) {
+        index += 1;
+        continue;
+      }
+
+      const categoryVisible =
+        !filterByLegend || hotspot.category === legendFilter;
+      if (visual.root.enabled !== categoryVisible) {
+        visual.root.enabled = categoryVisible;
+      }
+      if (!categoryVisible) {
         index += 1;
         continue;
       }

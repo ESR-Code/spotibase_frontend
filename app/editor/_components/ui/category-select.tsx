@@ -5,9 +5,12 @@ import { useEffect, useId, useRef, useState } from "react";
 import { CategoryDialog } from "@/app/editor/_components/ui/category-dialog";
 import { CategoryOption } from "@/app/editor/_components/ui/category-option";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
-import type { LegendCategory } from "@/lib/editor/types/legend-category";
+import {
+  LEGEND_CATEGORY_ALL,
+  type LegendCategory,
+} from "@/lib/editor/types/legend-category";
 
-export const LEGEND_CATEGORY_ALL = "__all__";
+export { LEGEND_CATEGORY_ALL };
 
 type CategorySelectProps = {
   value: string;

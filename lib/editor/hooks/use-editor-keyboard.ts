@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
+import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
 
 export function useEditorKeyboard() {
   const setMode = useEditorStore((s) => s.setMode);
@@ -32,6 +33,7 @@ export function useEditorKeyboard() {
           ui.setPreviewLabelPending(false);
           ui.setHoverTooltip(null);
           ui.setLegendDrawerOpen(false);
+          ui.setLegendFilterCategory(LEGEND_CATEGORY_ALL);
           window.dispatchEvent(new CustomEvent("editor:reset-camera"));
         } else {
           closeAllOverlays();

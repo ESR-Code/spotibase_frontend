@@ -3,6 +3,7 @@
 import { Layers, MousePointer2, Play, Plus, SquarePen } from "lucide-react";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
+import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
 
 export function ModeToolbar() {
   const mode = useEditorStore((s) => s.mode);
@@ -32,6 +33,7 @@ export function ModeToolbar() {
         setPreviewLabelPending(false);
         setHoverTooltip(null);
         useUIStore.getState().setLegendDrawerOpen(false);
+        useUIStore.getState().setLegendFilterCategory(LEGEND_CATEGORY_ALL);
         window.dispatchEvent(new CustomEvent("editor:reset-camera"));
       }
       return;

@@ -2,10 +2,7 @@
 
 import { ListTree, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import {
-  CategorySelect,
-  LEGEND_CATEGORY_ALL,
-} from "@/app/editor/_components/ui/category-select";
+import { CategorySelect } from "@/app/editor/_components/ui/category-select";
 import { CategoryOptionBadge } from "@/app/editor/_components/ui/category-option";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
@@ -15,7 +12,10 @@ import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
-import type { LegendCategory } from "@/lib/editor/types/legend-category";
+import {
+  LEGEND_CATEGORY_ALL,
+  type LegendCategory,
+} from "@/lib/editor/types/legend-category";
 
 export function LegendButton() {
   const isPreview = useEditorStore((s) => s.isPreview);
@@ -53,8 +53,9 @@ export function LegendDrawer() {
   const previewActiveHotspotId = useUIStore((s) => s.previewActiveHotspotId);
   const open = useUIStore((s) => s.legendDrawerOpen);
   const setOpen = useUIStore((s) => s.setLegendDrawerOpen);
+  const category = useUIStore((s) => s.legendFilterCategory);
+  const setCategory = useUIStore((s) => s.setLegendFilterCategory);
 
-  const [category, setCategory] = useState(LEGEND_CATEGORY_ALL);
   const [search, setSearch] = useState("");
 
   const visible = isPreview && legendEnabled && open;

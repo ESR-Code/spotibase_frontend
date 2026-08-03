@@ -41,7 +41,7 @@ export function createPickingController(
 
     for (const h of editor.hotspots) {
       const visual = hotspots.getVisual(h.id);
-      if (!visual) continue;
+      if (!visual || !visual.root.enabled) continue;
       const center = visual.root.getPosition();
       const radius = 0.28 * visual.root.getLocalScale().x;
       if (raySphereHit(ray, center, radius, pcModule, hit)) {

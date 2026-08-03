@@ -1,5 +1,8 @@
 import { DEFAULT_CATEGORY_ICON } from "@/lib/editor/theme/category-icons";
 
+/** Sentinel value for “show every hotspot” in the Legend filter. */
+export const LEGEND_CATEGORY_ALL = "__all__";
+
 export type LegendCategory = {
   id: string;
   name: string;

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
 
 export type HoverTooltipState = {
   x: number;
@@ -18,6 +19,8 @@ type UIState = {
   propertiesDrawerOpen: boolean;
   settingsDrawerOpen: boolean;
   legendDrawerOpen: boolean;
+  /** Legend category filter in Preview (`LEGEND_CATEGORY_ALL` = show all). */
+  legendFilterCategory: string;
   previewModalOpen: boolean;
   previewModalIndex: number;
   /** Hotspot selected by click in Preview (label / dialog target). */
@@ -33,6 +36,7 @@ type UIState = {
   setPropertiesDrawerOpen: (value: boolean) => void;
   setSettingsDrawerOpen: (value: boolean) => void;
   setLegendDrawerOpen: (value: boolean) => void;
+  setLegendFilterCategory: (value: string) => void;
   setPreviewModalOpen: (value: boolean) => void;
   setPreviewModalIndex: (index: number) => void;
   setPreviewActiveHotspotId: (id: number | null) => void;
@@ -50,6 +54,7 @@ export const useUIStore = create<UIState>((set) => ({
   propertiesDrawerOpen: false,
   settingsDrawerOpen: false,
   legendDrawerOpen: false,
+  legendFilterCategory: LEGEND_CATEGORY_ALL,
   previewModalOpen: false,
   previewModalIndex: 0,
   previewActiveHotspotId: null,
@@ -64,6 +69,8 @@ export const useUIStore = create<UIState>((set) => ({
     set({ propertiesDrawerOpen }),
   setSettingsDrawerOpen: (settingsDrawerOpen) => set({ settingsDrawerOpen }),
   setLegendDrawerOpen: (legendDrawerOpen) => set({ legendDrawerOpen }),
+  setLegendFilterCategory: (legendFilterCategory) =>
+    set({ legendFilterCategory }),
   setPreviewModalOpen: (previewModalOpen) => set({ previewModalOpen }),
   setPreviewModalIndex: (previewModalIndex) => set({ previewModalIndex }),
   setPreviewActiveHotspotId: (previewActiveHotspotId) =>
@@ -76,6 +83,7 @@ export const useUIStore = create<UIState>((set) => ({
     set({
       settingsDrawerOpen: false,
       legendDrawerOpen: false,
+      legendFilterCategory: LEGEND_CATEGORY_ALL,
       previewModalOpen: false,
       propertiesDrawerOpen: false,
       scenesModalOpen: false,
