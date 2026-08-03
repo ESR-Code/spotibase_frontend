@@ -1,6 +1,6 @@
 import type { Application, Entity } from "playcanvas";
 import type * as pc from "playcanvas";
-import { useSceneStore } from "@/lib/editor/state/scene-store";
+import { useModelStore } from "@/lib/editor/state/model-store";
 
 /** Build a single default box as the starter scene model. */
 export function buildDefaultBox(
@@ -32,10 +32,10 @@ export function buildDefaultBox(
 
   modelRoot.addChild(box);
 
-  useSceneStore
+  useModelStore
     .getState()
     .setModelMeta("Default_Box.glb", "2 × 2 × 2 units", false);
-  useSceneStore.getState().setStats(useSceneStore.getState().fps, 12);
+  useModelStore.getState().setStats(useModelStore.getState().fps, 12);
 
   return box;
 }

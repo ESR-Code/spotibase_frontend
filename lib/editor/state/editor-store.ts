@@ -1,8 +1,11 @@
 import { create } from "zustand";
 import { DEMO_HOTSPOTS } from "@/lib/editor/constants/demo-hotspots";
-import { hotspotTypeColors } from "@/lib/editor/theme/tokens";
+import {
+  getSeedHotspots,
+  getSeedNextHotspotId,
+} from "@/lib/editor/constants/seed-scene";
+import { hotspotTypeColors, PROJECT_NAME } from "@/lib/editor/theme/tokens";
 import type { EditorMode, Hotspot, Vec3 } from "@/lib/editor/types/hotspot";
-import { PROJECT_NAME } from "@/lib/editor/theme/tokens";
 
 type EditorState = {
   projectName: string;
@@ -26,6 +29,7 @@ type EditorState = {
   setPreviewDragged: (value: boolean) => void;
   duplicateHotspot: (id: number) => void;
   initDemoHotspots: () => void;
+  loadScene: (hotspots: Hotspot[], nextId: number) => void;
 };
 
 function createHotspotData(
@@ -61,10 +65,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   projectName: PROJECT_NAME,
   mode: "select",
   isPreview: false,
-  hotspots: [],
+  hotspots: getSeedHotspots(),
   selectedId: null,
   hoveredId: null,
-  nextId: 1,
+  nextId: getSeedNextHotspotId(),
   draggingId: null,
   previewDown: null,
   previewDragged: false,
@@ -146,6 +150,22 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({
       hotspots,
       nextId: hotspots.length + 1,
+    });
+  },
+
+  loadScene: (hotspots, nextId) => {
+    set({
+      hotspots: hotspots.map((h) => ({
+        ...h,
+        position: { ...h.position },
+        blocks: [...h.blocks],
+      })),
+      nextId,
+      selectedId: null,
+      hoveredId: null,
+      draggingId: null,
+      previewDown: null,
+      previewDragged: false,
     });
   },
 }));

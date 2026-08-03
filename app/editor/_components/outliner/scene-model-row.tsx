@@ -4,13 +4,13 @@ import { RefreshCw, Upload } from "lucide-react";
 import { useRef } from "react";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { importGlbFile } from "@/lib/editor/io/import-glb";
-import { useSceneStore } from "@/lib/editor/state/scene-store";
+import { useModelStore } from "@/lib/editor/state/model-store";
 
 export function SceneModelRow() {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const modelName = useSceneStore((s) => s.modelName);
-  const modelInfo = useSceneStore((s) => s.modelInfo);
-  const hasUserModel = useSceneStore((s) => s.hasUserModel);
+  const modelName = useModelStore((s) => s.modelName);
+  const modelInfo = useModelStore((s) => s.modelInfo);
+  const hasUserModel = useModelStore((s) => s.hasUserModel);
 
   const openFilePicker = () => fileInputRef.current?.click();
 

@@ -1505,3 +1505,23 @@
   border: 1px solid var(--editor-line);
   border-radius: 6px;
 }
+
+.editor-root .editor-scenes-dialog .editor-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 220px;
+}
+
+.editor-root .editor-scene-item-icon {
+  display: inline-flex;
+  height: 28px;
+  width: 28px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--editor-line-soft);
+  background: rgba(244, 162, 89, 0.1);
+}
+

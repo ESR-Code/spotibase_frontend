@@ -60,5 +60,6 @@ export const markerIcons = [
   { value: "✋", label: "Stop (✋)" },
 ] as const;
 
-export const PROJECT_NAME = "Factory Tour — Assembly Line B";
+export const PROJECT_NAME = "Factory Tour";
+export const DEFAULT_SCENE_NAME = "Assembly Line B";
 export const DEFAULT_MODEL_NAME = "Default_Box.glb";

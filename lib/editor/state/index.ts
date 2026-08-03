@@ -1,5 +1,6 @@
 export { useEditorStore, useSelectedHotspot } from "@/lib/editor/state/editor-store";
-export { useSceneStore } from "@/lib/editor/state/scene-store";
+export { useModelStore } from "@/lib/editor/state/model-store";
+export { useScenesStore, useActiveScene, usePrimaryScene } from "@/lib/editor/state/scenes-store";
 export { useUIStore } from "@/lib/editor/state/ui-store";
 export { useSettingsStore } from "@/lib/editor/state/settings-store";
 export { useEnvironmentStore } from "@/lib/editor/state/environment-store";

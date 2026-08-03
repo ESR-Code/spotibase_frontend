@@ -11,6 +11,7 @@ import {
 } from "@/app/editor/_components/drawers/legend-drawer";
 import { SettingsDrawer } from "@/app/editor/_components/drawers/settings-drawer";
 import { PreviewModal } from "@/app/editor/_components/dialogs/preview-modal";
+import { ScenesModal } from "@/app/editor/_components/dialogs/scenes-modal";
 import { useEditorKeyboard } from "@/lib/editor/hooks/use-editor-keyboard";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
@@ -34,6 +35,7 @@ export function EditorShell() {
         <LegendDrawer />
         <LegendButton />
         <PreviewModal />
+        <ScenesModal />
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { MousePointer2, Play, Plus, SquarePen } from "lucide-react";
+import { Layers, MousePointer2, Play, Plus, SquarePen } from "lucide-react";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
@@ -14,6 +14,8 @@ export function ModeToolbar() {
   const setPreviewActiveHotspotId = useUIStore((s) => s.setPreviewActiveHotspotId);
   const setPreviewLabelPending = useUIStore((s) => s.setPreviewLabelPending);
   const setHoverTooltip = useUIStore((s) => s.setHoverTooltip);
+  const scenesModalOpen = useUIStore((s) => s.scenesModalOpen);
+  const setScenesModalOpen = useUIStore((s) => s.setScenesModalOpen);
 
   const handleMode = (next: "select" | "add" | "preview") => {
     if (next === "preview") {
@@ -46,6 +48,18 @@ export function ModeToolbar() {
         border: "1px solid var(--editor-line)",
       }}
     >
+      <button
+        type="button"
+        disabled={isPreview}
+        className={`editor-tool-btn ${scenesModalOpen ? "active" : ""} ${isPreview ? "disabled" : ""}`}
+        onClick={() => {
+          if (!isPreview) setScenesModalOpen(true);
+        }}
+      >
+        <Layers className="h-3 w-3" />
+        Scenes
+      </button>
+      <div className="editor-vsep" style={{ height: 18 }} />
       <button
         type="button"
         disabled={isPreview}

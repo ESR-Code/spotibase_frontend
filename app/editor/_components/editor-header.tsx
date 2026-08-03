@@ -3,9 +3,12 @@
 import { PenTool } from "lucide-react";
 import { EditorChip } from "@/app/editor/_components/ui/editor-chip";
 import { ModeToolbar } from "@/app/editor/_components/toolbar/mode-toolbar";
+import { useActiveScene } from "@/lib/editor/state/scenes-store";
 import { PROJECT_NAME } from "@/lib/editor/theme/tokens";
 
 export function EditorHeader() {
+  const activeScene = useActiveScene();
+
   return (
     <header
       className="editor-glass editor-panel-shadow z-20 flex items-center gap-4 px-5 py-3"
@@ -53,7 +56,9 @@ export function EditorHeader() {
             Project
           </div>
           <div className="flex items-center gap-2 text-[13px] font-semibold">
-            {PROJECT_NAME}
+            <span className="truncate">{PROJECT_NAME}</span>
+            <span style={{ color: "var(--editor-muted-2)" }}>›</span>
+            <span className="truncate">{activeScene.name}</span>
             <EditorChip
               style={{
                 color: "var(--editor-teal)",

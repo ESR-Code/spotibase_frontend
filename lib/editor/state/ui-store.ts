@@ -25,6 +25,7 @@ type UIState = {
   /** Hide select label briefly after click before revealing with transition. */
   previewLabelPending: boolean;
   hoverTooltip: HoverTooltipState;
+  scenesModalOpen: boolean;
   setLoading: (value: boolean) => void;
   setOutlinerCollapsed: (value: boolean) => void;
   setOutlinerTab: (tab: OutlinerTab) => void;
@@ -37,6 +38,7 @@ type UIState = {
   setPreviewActiveHotspotId: (id: number | null) => void;
   setPreviewLabelPending: (value: boolean) => void;
   setHoverTooltip: (value: HoverTooltipState) => void;
+  setScenesModalOpen: (value: boolean) => void;
   closeAllOverlays: () => void;
 };
 
@@ -53,6 +55,7 @@ export const useUIStore = create<UIState>((set) => ({
   previewActiveHotspotId: null,
   previewLabelPending: false,
   hoverTooltip: null,
+  scenesModalOpen: false,
   setLoading: (isLoading) => set({ isLoading }),
   setOutlinerCollapsed: (outlinerCollapsed) => set({ outlinerCollapsed }),
   setOutlinerTab: (outlinerTab) => set({ outlinerTab }),
@@ -65,14 +68,17 @@ export const useUIStore = create<UIState>((set) => ({
   setPreviewModalIndex: (previewModalIndex) => set({ previewModalIndex }),
   setPreviewActiveHotspotId: (previewActiveHotspotId) =>
     set({ previewActiveHotspotId }),
-  setPreviewLabelPending: (previewLabelPending) => set({ previewLabelPending }),
+  setPreviewLabelPending: (previewLabelPending) =>
+    set({ previewLabelPending }),
   setHoverTooltip: (hoverTooltip) => set({ hoverTooltip }),
+  setScenesModalOpen: (scenesModalOpen) => set({ scenesModalOpen }),
   closeAllOverlays: () =>
     set({
       settingsDrawerOpen: false,
       legendDrawerOpen: false,
       previewModalOpen: false,
       propertiesDrawerOpen: false,
+      scenesModalOpen: false,
       previewActiveHotspotId: null,
       previewLabelPending: false,
       hoverTooltip: null,

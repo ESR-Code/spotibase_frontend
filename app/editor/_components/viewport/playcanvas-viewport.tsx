@@ -2,7 +2,7 @@
 
 import { usePlayCanvasEditor } from "@/lib/editor/hooks/use-playcanvas-editor";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
-import { useSceneStore } from "@/lib/editor/state/scene-store";
+import { useModelStore } from "@/lib/editor/state/model-store";
 import { EngineErrorBanner } from "@/app/editor/_components/viewport/engine-error-banner";
 import { ModelDropOverlay } from "@/app/editor/_components/viewport/model-drop-overlay";
 import { ViewportControls } from "@/app/editor/_components/viewport/viewport-controls";
@@ -13,7 +13,7 @@ import { HotspotHoverTooltip } from "@/app/editor/_components/viewport/hotspot-h
 export function PlayCanvasViewport() {
   const { canvasRef } = usePlayCanvasEditor();
   const mode = useEditorStore((s) => s.mode);
-  const engineError = useSceneStore((s) => s.engineError);
+  const engineError = useModelStore((s) => s.engineError);
 
   return (
     <div

@@ -3,7 +3,7 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
-import { useSceneStore } from "@/lib/editor/state/scene-store";
+import { useModelStore } from "@/lib/editor/state/model-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
 const modeLabels = {
@@ -25,8 +25,8 @@ export function ViewportHud() {
   const mode = useEditorStore((s) => s.mode);
   const isPreview = useEditorStore((s) => s.isPreview);
   const hotspots = useEditorStore((s) => s.hotspots);
-  const fps = useSceneStore((s) => s.fps);
-  const triangleCount = useSceneStore((s) => s.triangleCount);
+  const fps = useModelStore((s) => s.fps);
+  const triangleCount = useModelStore((s) => s.triangleCount);
   const collapsed = useUIStore((s) => s.hudCollapsed);
   const setCollapsed = useUIStore((s) => s.setHudCollapsed);
 

@@ -11,7 +11,13 @@ import { createScene } from "@/lib/editor/engine/scene-manager";
 import { bindViewportResize } from "@/lib/editor/engine/viewport-resize";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useEnvironmentStore } from "@/lib/editor/state/environment-store";
-import { useSceneStore } from "@/lib/editor/state/scene-store";
+import {
+  DEFAULT_MODEL_ROTATION,
+  DEFAULT_MODEL_SCALE,
+  useModelStore,
+} from "@/lib/editor/state/model-store";
+import { sceneModelCache } from "@/lib/editor/state/scene-model-cache";
+import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
@@ -65,9 +71,12 @@ export function usePlayCanvasEditor() {
           frameCount += 1;
           fpsAccum += dt;
           if (fpsAccum >= 0.5) {
-            useSceneStore
+            useModelStore
               .getState()
-              .setStats(Math.round(frameCount / fpsAccum), useSceneStore.getState().triangleCount);
+              .setStats(
+                Math.round(frameCount / fpsAccum),
+                useModelStore.getState().triangleCount,
+              );
             frameCount = 0;
             fpsAccum = 0;
           }
@@ -83,7 +92,7 @@ export function usePlayCanvasEditor() {
         const unsubEditor = useEditorStore.subscribe(() => {
           hotspotMgr.syncFromStore();
         });
-        const unsubWire = useSceneStore.subscribe((state, prev) => {
+        const unsubWire = useModelStore.subscribe((state, prev) => {
           if (state.wireframe !== prev.wireframe) {
             models.setWireframe(state.wireframe);
           }
@@ -107,26 +116,71 @@ export function usePlayCanvasEditor() {
         };
         const onResetCamera = () => cameraCtrl.resetHome();
         const onZoom = (event: Event) => {
-          const delta = (event as CustomEvent<{ delta: number }>).detail?.delta ?? 0;
+          const delta =
+            (event as CustomEvent<{ delta: number }>).detail?.delta ?? 0;
           cameraCtrl.nudgeZoom(delta);
         };
         const onFocusHotspot = (event: Event) => {
           const id = (event as CustomEvent<{ id: number }>).detail?.id;
           if (id == null) return;
-          const hotspot = useEditorStore.getState().hotspots.find((h) => h.id === id);
+          const hotspot = useEditorStore
+            .getState()
+            .hotspots.find((h) => h.id === id);
           if (!hotspot) return;
           cameraCtrl.focusOnPoint(
-            new pc.Vec3(hotspot.position.x, hotspot.position.y, hotspot.position.z),
+            new pc.Vec3(
+              hotspot.position.x,
+              hotspot.position.y,
+              hotspot.position.z,
+            ),
           );
+        };
+        const onSceneSwitched = async (event: Event) => {
+          const sceneId = (event as CustomEvent<{ sceneId: string }>).detail
+            ?.sceneId;
+          if (!sceneId) return;
+
+          models.unloadCurrent();
+
+          const targetScene = useScenesStore
+            .getState()
+            .scenes.find((s) => s.id === sceneId);
+          const cached = sceneModelCache.get(sceneId);
+
+          if (cached) {
+            const entity = await models.restoreFromCache(
+              cached.fileName,
+              cached.buffer,
+            );
+            if (!entity) {
+              models.loadDefault();
+            }
+          } else {
+            models.loadDefault();
+          }
+
+          if (targetScene) {
+            useModelStore.getState().hydrateFromScene(targetScene.model);
+            models.applyTransform(
+              targetScene.model.scale,
+              targetScene.model.rotation,
+            );
+          } else {
+            models.applyTransform(DEFAULT_MODEL_SCALE, DEFAULT_MODEL_ROTATION);
+          }
+
+          hotspotMgr.syncFromStore();
+          cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
         };
 
         window.addEventListener("editor:import-glb", onImportGlb);
         window.addEventListener("editor:reset-camera", onResetCamera);
         window.addEventListener("editor:zoom", onZoom);
         window.addEventListener("editor:focus-hotspot", onFocusHotspot);
+        window.addEventListener("editor:scene-switched", onSceneSwitched);
 
-        useSceneStore.getState().setEngineReady(true);
-        useSceneStore.getState().setEngineError(null);
+        useModelStore.getState().setEngineReady(true);
+        useModelStore.getState().setEngineError(null);
         useUIStore.getState().setLoading(false);
 
         if (useEditorStore.getState().hotspots.length === 0) {
@@ -140,6 +194,7 @@ export function usePlayCanvasEditor() {
           window.removeEventListener("editor:reset-camera", onResetCamera);
           window.removeEventListener("editor:zoom", onZoom);
           window.removeEventListener("editor:focus-hotspot", onFocusHotspot);
+          window.removeEventListener("editor:scene-switched", onSceneSwitched);
           unsubEnv();
           unsubSettings();
           unsubEditor();
@@ -154,8 +209,10 @@ export function usePlayCanvasEditor() {
       } catch (error) {
         console.error(error);
         const message =
-          error instanceof Error ? error.message : "Failed to initialize 3D engine";
-        useSceneStore.getState().setEngineError(message);
+          error instanceof Error
+            ? error.message
+            : "Failed to initialize 3D engine";
+        useModelStore.getState().setEngineError(message);
         useUIStore.getState().setLoading(false);
       }
     };
@@ -165,7 +222,7 @@ export function usePlayCanvasEditor() {
     return () => {
       destroyed = true;
       cleanup?.();
-      useSceneStore.getState().setEngineReady(false);
+      useModelStore.getState().setEngineReady(false);
     };
   }, []);
 

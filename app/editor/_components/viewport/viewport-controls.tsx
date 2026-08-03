@@ -8,12 +8,12 @@ import {
   Square,
 } from "lucide-react";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
-import { useSceneStore } from "@/lib/editor/state/scene-store";
+import { useModelStore } from "@/lib/editor/state/model-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
 export function ViewportControls() {
-  const wireframe = useSceneStore((s) => s.wireframe);
-  const setWireframe = useSceneStore((s) => s.setWireframe);
+  const wireframe = useModelStore((s) => s.wireframe);
+  const setWireframe = useModelStore((s) => s.setWireframe);
   const isPreview = useEditorStore((s) => s.isPreview);
   const setSettingsDrawerOpen = useUIStore((s) => s.setSettingsDrawerOpen);
 

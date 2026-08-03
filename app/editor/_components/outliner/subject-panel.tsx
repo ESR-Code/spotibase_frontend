@@ -6,18 +6,18 @@ import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import {
   DEFAULT_MODEL_ROTATION,
   DEFAULT_MODEL_SCALE,
-  useSceneStore,
-} from "@/lib/editor/state/scene-store";
+  useModelStore,
+} from "@/lib/editor/state/model-store";
 
 export function SubjectPanel() {
-  const modelName = useSceneStore((s) => s.modelName);
-  const modelInfo = useSceneStore((s) => s.modelInfo);
-  const hasUserModel = useSceneStore((s) => s.hasUserModel);
-  const modelScale = useSceneStore((s) => s.modelScale);
-  const modelRotation = useSceneStore((s) => s.modelRotation);
-  const setModelScale = useSceneStore((s) => s.setModelScale);
-  const setModelRotation = useSceneStore((s) => s.setModelRotation);
-  const resetModelTransform = useSceneStore((s) => s.resetModelTransform);
+  const modelName = useModelStore((s) => s.modelName);
+  const modelInfo = useModelStore((s) => s.modelInfo);
+  const hasUserModel = useModelStore((s) => s.hasUserModel);
+  const modelScale = useModelStore((s) => s.modelScale);
+  const modelRotation = useModelStore((s) => s.modelRotation);
+  const setModelScale = useModelStore((s) => s.setModelScale);
+  const setModelRotation = useModelStore((s) => s.setModelRotation);
+  const resetModelTransform = useModelStore((s) => s.resetModelTransform);
 
   const isDefaultTransform =
     modelScale === DEFAULT_MODEL_SCALE &&

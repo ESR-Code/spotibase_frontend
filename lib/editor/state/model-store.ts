@@ -1,16 +1,19 @@
 import { create } from "zustand";
 import { DEFAULT_MODEL_NAME } from "@/lib/editor/theme/tokens";
+import type { ModelRotation, SceneModelState } from "@/lib/editor/types/scene";
 
-export type ModelRotation = {
-  x: number;
-  y: number;
-  z: number;
-};
+export type { ModelRotation };
 
 export const DEFAULT_MODEL_SCALE = 1;
 export const DEFAULT_MODEL_ROTATION: ModelRotation = { x: 0, y: 0, z: 0 };
 
-type SceneState = {
+export const DEFAULT_MODEL_META = {
+  name: DEFAULT_MODEL_NAME,
+  info: "Default sample model",
+  hasUserModel: false,
+} as const;
+
+type ModelState = {
   modelName: string;
   modelInfo: string;
   hasUserModel: boolean;
@@ -29,12 +32,14 @@ type SceneState = {
   setStats: (fps: number, triangleCount: number) => void;
   setEngineReady: (ready: boolean) => void;
   setEngineError: (error: string | null) => void;
+  unload: () => void;
+  hydrateFromScene: (model: SceneModelState) => void;
 };
 
-export const useSceneStore = create<SceneState>((set) => ({
-  modelName: DEFAULT_MODEL_NAME,
-  modelInfo: "Default sample model",
-  hasUserModel: false,
+export const useModelStore = create<ModelState>((set) => ({
+  modelName: DEFAULT_MODEL_META.name,
+  modelInfo: DEFAULT_MODEL_META.info,
+  hasUserModel: DEFAULT_MODEL_META.hasUserModel,
   modelScale: DEFAULT_MODEL_SCALE,
   modelRotation: { ...DEFAULT_MODEL_ROTATION },
   wireframe: false,
@@ -63,4 +68,21 @@ export const useSceneStore = create<SceneState>((set) => ({
   setStats: (fps, triangleCount) => set({ fps, triangleCount }),
   setEngineReady: (engineReady) => set({ engineReady }),
   setEngineError: (engineError) => set({ engineError }),
+  unload: () =>
+    set({
+      modelName: DEFAULT_MODEL_META.name,
+      modelInfo: DEFAULT_MODEL_META.info,
+      hasUserModel: false,
+      modelScale: DEFAULT_MODEL_SCALE,
+      modelRotation: { ...DEFAULT_MODEL_ROTATION },
+      triangleCount: 0,
+    }),
+  hydrateFromScene: (model) =>
+    set({
+      modelName: model.name,
+      modelInfo: model.info,
+      hasUserModel: model.hasUserModel,
+      modelScale: model.scale,
+      modelRotation: { ...model.rotation },
+    }),
 }));
