@@ -8,6 +8,7 @@ import {
   settingsFormSchema,
   type SettingsFormValues,
 } from "@/lib/editor/forms/schemas/settings-form.schema";
+import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 
 function toFormValues(
@@ -43,6 +44,7 @@ export function useSettingsForm() {
   const settings = useSettingsStore();
   const setSettings = useSettingsStore((s) => s.setSettings);
   const resetSettings = useSettingsStore((s) => s.resetSettings);
+  const activeSceneId = useScenesStore((s) => s.activeSceneId);
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsFormSchema),
@@ -55,6 +57,11 @@ export function useSettingsForm() {
     });
     return () => subscription.unsubscribe();
   }, [form, setSettings]);
+
+  // Keep the drawer form in sync when switching scenes.
+  useEffect(() => {
+    form.reset(toFormValues(useSettingsStore.getState()));
+  }, [activeSceneId, form]);
 
   const reset = () => {
     resetSettings();

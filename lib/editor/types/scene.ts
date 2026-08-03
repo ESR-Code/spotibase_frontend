@@ -1,4 +1,8 @@
 import type { Hotspot } from "@/lib/editor/types/hotspot";
+import type {
+  EditorSettings,
+  EnvironmentSettings,
+} from "@/lib/editor/types/editor-settings";
 
 export type ModelRotation = {
   x: number;
@@ -23,4 +27,8 @@ export type Scene = {
   hotspots: Hotspot[];
   nextHotspotId: number;
   model: SceneModelState;
+  /** Per-scene editor settings (formerly global "General Settings"). */
+  settings: EditorSettings;
+  /** Per-scene environment / lighting settings. */
+  environment: EnvironmentSettings;
 };

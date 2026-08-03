@@ -1,4 +1,5 @@
 import type { EditorSettings, EnvironmentSettings } from "@/lib/editor/types/editor-settings";
+import type { LegendCategory } from "@/lib/editor/types/legend-category";
 
 export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   hotspotSize: 1,
@@ -43,3 +44,22 @@ export const DEFAULT_ENVIRONMENT_SETTINGS: EnvironmentSettings = {
 export const GRID_BASE_SIZE = 42;
 export const MARKER_SPRITE_SIZE = 0.45;
 export const PREVIEW_CLICK_PX = 6;
+
+export function cloneLegendCategories(
+  categories: LegendCategory[],
+): LegendCategory[] {
+  return categories.map((c) => ({ ...c }));
+}
+
+export function cloneEditorSettings(settings: EditorSettings): EditorSettings {
+  return {
+    ...settings,
+    legendCategories: cloneLegendCategories(settings.legendCategories),
+  };
+}
+
+export function cloneEnvironmentSettings(
+  environment: EnvironmentSettings,
+): EnvironmentSettings {
+  return { ...environment };
+}

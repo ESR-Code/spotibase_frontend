@@ -7,8 +7,14 @@ import { EditorChip } from "@/app/editor/_components/ui/editor-chip";
 import { EditorDialog } from "@/app/editor/_components/ui/editor-dialog";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import {
+  readEnvironmentSnapshot,
+} from "@/lib/editor/state/environment-store";
 import { useModelStore } from "@/lib/editor/state/model-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
+import {
+  readEditorSettingsSnapshot,
+} from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import type { Scene } from "@/lib/editor/types/scene";
 
@@ -35,6 +41,8 @@ function syncActiveSceneSnapshot() {
               rotation: { ...model.modelRotation },
               reflection: model.modelReflection,
             },
+            settings: readEditorSettingsSnapshot(),
+            environment: readEnvironmentSnapshot(),
           }
         : scene,
     ),

@@ -73,9 +73,9 @@ export function SettingsDrawer() {
         style={{ borderBottom: "1px solid var(--editor-line)" }}
       >
         <div>
-          <div className="font-display text-[15px] font-bold">General Settings</div>
+          <div className="font-display text-[15px] font-bold">Scene Settings</div>
           <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
-            Live preview — changes apply instantly
+            Applies to the current scene — changes apply instantly
           </div>
         </div>
         <IconButton title="Close" onClick={() => setOpen(false)}>

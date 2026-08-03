@@ -57,7 +57,7 @@ export function ViewportControls() {
       </ControlButton>
       <div className="editor-vsep" style={{ height: 18 }} />
       <ControlButton
-        title="General settings"
+        title="Scene settings"
         disabled={isPreview}
         onClick={() => setSettingsDrawerOpen(true)}
       >

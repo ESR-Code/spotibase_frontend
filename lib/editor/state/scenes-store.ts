@@ -1,14 +1,26 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import {
+  cloneEditorSettings,
+  cloneEnvironmentSettings,
+} from "@/lib/editor/constants/default-settings";
+import {
   createEmptyModelState,
   createScene,
   INITIAL_SCENE_ID,
   SEED_SCENE,
 } from "@/lib/editor/constants/seed-scene";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import {
+  readEnvironmentSnapshot,
+  useEnvironmentStore,
+} from "@/lib/editor/state/environment-store";
 import { useModelStore } from "@/lib/editor/state/model-store";
 import { sceneModelCache } from "@/lib/editor/state/scene-model-cache";
+import {
+  readEditorSettingsSnapshot,
+  useSettingsStore,
+} from "@/lib/editor/state/settings-store";
 import type { Scene } from "@/lib/editor/types/scene";
 
 function snapshotCurrentIntoScene(scene: Scene): Scene {
@@ -30,6 +42,8 @@ function snapshotCurrentIntoScene(scene: Scene): Scene {
       rotation: { ...model.modelRotation },
       reflection: model.modelReflection,
     },
+    settings: readEditorSettingsSnapshot(),
+    environment: readEnvironmentSnapshot(),
   };
 }
 
@@ -66,27 +80,30 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
         blocks: [...h.blocks],
       })),
       model: { ...SEED_SCENE.model, rotation: { ...SEED_SCENE.model.rotation } },
+      settings: cloneEditorSettings(SEED_SCENE.settings),
+      environment: cloneEnvironmentSettings(SEED_SCENE.environment),
     },
   ],
   activeSceneId: INITIAL_SCENE_ID,
 
   addScene: (name) => {
     const state = get();
-    const id = nextSceneId(state.scenes);
+    const snapshotted = state.scenes.map((s) =>
+      s.id === state.activeSceneId ? snapshotCurrentIntoScene(s) : s,
+    );
+    const primary =
+      snapshotted.find((s) => s.isPrimary) ?? snapshotted[0]!;
+    const id = nextSceneId(snapshotted);
     const scene = createScene({
       id,
-      name: name?.trim() || defaultNewSceneName(state.scenes),
+      name: name?.trim() || defaultNewSceneName(snapshotted),
       isPrimary: false,
       model: createEmptyModelState(),
+      // New scenes inherit the primary scene's settings.
+      settings: primary.settings,
+      environment: primary.environment,
     });
-    // Append only — do not switch; switching happens when the user clicks a scene row.
-    set({
-      scenes: state.scenes
-        .map((s) =>
-          s.id === state.activeSceneId ? snapshotCurrentIntoScene(s) : s,
-        )
-        .concat(scene),
-    });
+    set({ scenes: snapshotted.concat(scene) });
     return id;
   },
 
@@ -158,6 +175,8 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
     set({ scenes, activeSceneId: id });
     useEditorStore.getState().loadScene(next.hotspots, next.nextHotspotId);
     useModelStore.getState().hydrateFromScene(next.model);
+    useSettingsStore.getState().hydrateSettings(next.settings);
+    useEnvironmentStore.getState().hydrateEnvironment(next.environment);
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(

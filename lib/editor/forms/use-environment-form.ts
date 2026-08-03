@@ -9,11 +9,13 @@ import {
   type EnvironmentFormValues,
 } from "@/lib/editor/forms/schemas/environment-form.schema";
 import { useEnvironmentStore } from "@/lib/editor/state/environment-store";
+import { useScenesStore } from "@/lib/editor/state/scenes-store";
 
 export function useEnvironmentForm() {
   const environment = useEnvironmentStore();
   const setEnvironment = useEnvironmentStore((s) => s.setEnvironment);
   const resetEnvironment = useEnvironmentStore((s) => s.resetEnvironment);
+  const activeSceneId = useScenesStore((s) => s.activeSceneId);
 
   const form = useForm<EnvironmentFormValues>({
     resolver: zodResolver(environmentFormSchema),
@@ -37,6 +39,23 @@ export function useEnvironmentForm() {
     });
     return () => subscription.unsubscribe();
   }, [form, setEnvironment]);
+
+  // Keep the drawer form in sync when switching scenes.
+  useEffect(() => {
+    const env = useEnvironmentStore.getState();
+    form.reset({
+      bgColor: env.bgColor,
+      show3dGrid: env.show3dGrid,
+      shadowIntensity: env.shadowIntensity,
+      shadowColor: env.shadowColor,
+      keyIntensity: env.keyIntensity,
+      keyColor: env.keyColor,
+      fillIntensity: env.fillIntensity,
+      fillColor: env.fillColor,
+      fillPitch: env.fillPitch,
+      fillYaw: env.fillYaw,
+    });
+  }, [activeSceneId, form]);
 
   const reset = () => {
     resetEnvironment();

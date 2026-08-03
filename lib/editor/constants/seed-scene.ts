@@ -1,3 +1,9 @@
+import {
+  cloneEditorSettings,
+  cloneEnvironmentSettings,
+  DEFAULT_EDITOR_SETTINGS,
+  DEFAULT_ENVIRONMENT_SETTINGS,
+} from "@/lib/editor/constants/default-settings";
 import { DEMO_HOTSPOTS } from "@/lib/editor/constants/demo-hotspots";
 import {
   DEFAULT_MODEL_META,
@@ -6,6 +12,10 @@ import {
   DEFAULT_MODEL_SCALE,
 } from "@/lib/editor/state/model-store";
 import { DEFAULT_SCENE_NAME } from "@/lib/editor/theme/tokens";
+import type {
+  EditorSettings,
+  EnvironmentSettings,
+} from "@/lib/editor/types/editor-settings";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 import type { Scene, SceneModelState } from "@/lib/editor/types/scene";
 
@@ -36,6 +46,8 @@ export function createScene(partial: {
   hotspots?: Hotspot[];
   nextHotspotId?: number;
   model?: SceneModelState;
+  settings?: EditorSettings;
+  environment?: EnvironmentSettings;
 }): Scene {
   const hotspots = partial.hotspots ?? [];
   return {
@@ -43,8 +55,13 @@ export function createScene(partial: {
     name: partial.name,
     isPrimary: partial.isPrimary ?? false,
     hotspots,
-    nextHotspotId: partial.nextHotspotId ?? (hotspots.length > 0 ? hotspots.length + 1 : 1),
+    nextHotspotId:
+      partial.nextHotspotId ?? (hotspots.length > 0 ? hotspots.length + 1 : 1),
     model: partial.model ?? createEmptyModelState(),
+    settings: cloneEditorSettings(partial.settings ?? DEFAULT_EDITOR_SETTINGS),
+    environment: cloneEnvironmentSettings(
+      partial.environment ?? DEFAULT_ENVIRONMENT_SETTINGS,
+    ),
   };
 }
 
