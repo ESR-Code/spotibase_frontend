@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import {
+  cloneCameraResetPosition,
   cloneEditorSettings,
   cloneEnvironmentSettings,
 } from "@/lib/editor/constants/default-settings";
@@ -32,6 +33,8 @@ function snapshotCurrentIntoScene(scene: Scene): Scene {
       ...h,
       position: { ...h.position },
       blocks: [...h.blocks],
+      customCameraEnabled: h.customCameraEnabled ?? false,
+      customCamera: cloneCameraResetPosition(h.customCamera ?? null),
     })),
     nextHotspotId: editor.nextId,
     model: {
@@ -78,6 +81,8 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
         ...h,
         position: { ...h.position },
         blocks: [...h.blocks],
+        customCameraEnabled: h.customCameraEnabled ?? false,
+        customCamera: cloneCameraResetPosition(h.customCamera ?? null),
       })),
       model: { ...SEED_SCENE.model, rotation: { ...SEED_SCENE.model.rotation } },
       settings: cloneEditorSettings(SEED_SCENE.settings),

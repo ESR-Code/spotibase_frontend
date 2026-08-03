@@ -2,19 +2,21 @@
 
 import type { ReactNode } from "react";
 import type { UseFormReturn } from "react-hook-form";
+import { toast } from "sonner";
+import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-image-field";
+import { HotspotMarkerImageField } from "@/app/editor/_components/drawers/hotspot-marker-image-field";
+import { PositionAxisInput } from "@/app/editor/_components/drawers/position-axis-input";
+import { CameraPoseCaptureField } from "@/app/editor/_components/ui/camera-pose-capture-field";
 import { CategorySelect } from "@/app/editor/_components/ui/category-select";
 import { ColorSwatch } from "@/app/editor/_components/ui/color-swatch";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
-import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-image-field";
-import { HotspotMarkerImageField } from "@/app/editor/_components/drawers/hotspot-marker-image-field";
-import { PositionAxisInput } from "@/app/editor/_components/drawers/position-axis-input";
 import type { HotspotFormValues } from "@/lib/editor/forms/schemas/hotspot-form.schema";
-import { markerColorSwatches, markerIcons } from "@/lib/editor/theme/tokens";
-import type { Hotspot } from "@/lib/editor/types/hotspot";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
+import { markerColorSwatches, markerIcons } from "@/lib/editor/theme/tokens";
+import type { Hotspot } from "@/lib/editor/types/hotspot";
 
 type HotspotGeneralTabProps = {
   form: UseFormReturn<HotspotFormValues>;
@@ -242,6 +244,37 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
             />
           </div>
         </div>
+      </FormSection>
+
+      <FormSection title="Custom camera">
+        <SwitchField
+          label="Use custom camera"
+          description="When enabled, focusing this hotspot moves the camera to a saved view"
+          checked={selected.customCameraEnabled}
+          onChange={(checked) =>
+            updateHotspot(selected.id, { customCameraEnabled: checked })
+          }
+        />
+        {selected.customCameraEnabled ? (
+          <CameraPoseCaptureField
+            previewUrl={selected.customCamera?.previewUrl}
+            captureLabel="Set camera position"
+            emptyLabel="No camera position"
+            hint="Captures the current viewport camera. Leave unset to keep the default focus framing."
+            previewAlt="Hotspot camera preview"
+            onCapture={() => {
+              window.dispatchEvent(
+                new CustomEvent("editor:set-hotspot-camera", {
+                  detail: { id: selected.id },
+                }),
+              );
+            }}
+            onClear={() => {
+              updateHotspot(selected.id, { customCamera: null });
+              toast.success("Hotspot camera cleared");
+            }}
+          />
+        ) : null}
       </FormSection>
     </div>
   );

@@ -1,3 +1,4 @@
+import type { CameraResetPosition } from "@/lib/editor/types/editor-settings";
 import type { HotspotBlock } from "@/lib/editor/types/hotspot-block";
 
 export type HotspotType = "none" | "info" | "warning" | "spec" | "link";
@@ -30,6 +31,13 @@ export type Hotspot = {
   legendName: string;
   position: Vec3;
   blocks: HotspotBlock[];
+  /**
+   * When true and `customCamera` is set, focusing this hotspot animates
+   * to the captured camera pose instead of the default look-at framing.
+   */
+  customCameraEnabled: boolean;
+  /** Captured orbit pose + preview thumbnail; null until the user sets one. */
+  customCamera: CameraResetPosition | null;
 };
 
 export type { HotspotBlock, HotspotBlockType } from "@/lib/editor/types/hotspot-block";

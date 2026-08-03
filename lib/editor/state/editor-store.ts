@@ -58,6 +58,16 @@ function createHotspotData(
     legendName: data.legendName ?? title,
     position,
     blocks: data.blocks ?? [],
+    customCameraEnabled: data.customCameraEnabled ?? false,
+    customCamera: data.customCamera
+      ? {
+          yaw: data.customCamera.yaw,
+          pitch: data.customCamera.pitch,
+          distance: data.customCamera.distance,
+          target: { ...data.customCamera.target },
+          previewUrl: data.customCamera.previewUrl,
+        }
+      : null,
   };
 }
 
@@ -159,6 +169,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         ...h,
         position: { ...h.position },
         blocks: [...h.blocks],
+        customCameraEnabled: h.customCameraEnabled ?? false,
+        customCamera: h.customCamera
+          ? {
+              yaw: h.customCamera.yaw,
+              pitch: h.customCamera.pitch,
+              distance: h.customCamera.distance,
+              target: { ...h.customCamera.target },
+              previewUrl: h.customCamera.previewUrl,
+            }
+          : null,
       })),
       nextId,
       selectedId: null,

@@ -148,6 +148,29 @@ export function usePlayCanvasEditor() {
           syncActiveSceneSettings();
           toast.success("Reset view position saved");
         };
+        const onSetHotspotCamera = (event: Event) => {
+          const id = (event as CustomEvent<{ id: number }>).detail?.id;
+          if (id == null) return;
+          const hotspot = useEditorStore
+            .getState()
+            .hotspots.find((h) => h.id === id);
+          if (!hotspot) return;
+
+          app.render();
+          const pose = cameraCtrl.getOrbitPose();
+          const previewUrl = captureViewportPreview(canvas);
+          useEditorStore.getState().updateHotspot(id, {
+            customCamera: {
+              yaw: pose.yaw,
+              pitch: pose.pitch,
+              distance: pose.distance,
+              target: { ...pose.target },
+              previewUrl,
+            },
+            customCameraEnabled: true,
+          });
+          toast.success("Hotspot camera saved");
+        };
         const onZoom = (event: Event) => {
           const delta =
             (event as CustomEvent<{ delta: number }>).detail?.delta ?? 0;
@@ -160,6 +183,12 @@ export function usePlayCanvasEditor() {
             .getState()
             .hotspots.find((h) => h.id === id);
           if (!hotspot) return;
+
+          if (hotspot.customCameraEnabled && hotspot.customCamera) {
+            cameraCtrl.animateToOrbitPose(hotspot.customCamera);
+            return;
+          }
+
           cameraCtrl.focusOnPoint(
             new pc.Vec3(
               hotspot.position.x,
@@ -221,6 +250,7 @@ export function usePlayCanvasEditor() {
         window.addEventListener("editor:import-glb", onImportGlb);
         window.addEventListener("editor:reset-camera", onResetCamera);
         window.addEventListener("editor:set-reset-position", onSetResetPosition);
+        window.addEventListener("editor:set-hotspot-camera", onSetHotspotCamera);
         window.addEventListener("editor:zoom", onZoom);
         window.addEventListener("editor:focus-hotspot", onFocusHotspot);
         window.addEventListener("editor:scene-switched", onSceneSwitched);
@@ -241,6 +271,10 @@ export function usePlayCanvasEditor() {
           window.removeEventListener(
             "editor:set-reset-position",
             onSetResetPosition,
+          );
+          window.removeEventListener(
+            "editor:set-hotspot-camera",
+            onSetHotspotCamera,
           );
           window.removeEventListener("editor:zoom", onZoom);
           window.removeEventListener("editor:focus-hotspot", onFocusHotspot);

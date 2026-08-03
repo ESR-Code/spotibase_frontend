@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   Camera,
   ChevronDown,
-  Crosshair,
   ImageIcon,
   LayoutGrid,
   ListTree,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-image-field";
+import { CameraPoseCaptureField } from "@/app/editor/_components/ui/camera-pose-capture-field";
 import { CheckboxField } from "@/app/editor/_components/ui/checkbox-field";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
@@ -269,49 +269,15 @@ export function SettingsDrawer() {
           <div className="mb-1 text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--editor-muted-2)" }}>
             Reset View
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="min-w-0 space-y-2">
-              <EditorButton
-                className="w-full justify-center"
-                onClick={setResetPosition}
-              >
-                <Crosshair className="h-3.5 w-3.5" />
-                Set reset position
-              </EditorButton>
-              <EditorButton
-                className="w-full justify-center disabled:cursor-not-allowed disabled:opacity-40"
-                disabled={!resetPosition}
-                onClick={clearResetPosition}
-              >
-                Clear
-              </EditorButton>
-              <p className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
-                Per scene — saves the current camera as this scene&apos;s Reset view home. If unset, Reset view frames the model.
-              </p>
-            </div>
-            <div
-              className="flex h-[108px] items-center justify-center overflow-hidden rounded-lg text-xs"
-              style={{
-                background: "var(--editor-input-bg)",
-                border: "1px solid var(--editor-line)",
-                color: "var(--editor-muted-2)",
-              }}
-            >
-              {resetPosition?.previewUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={resetPosition.previewUrl}
-                  alt="Reset view preview"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span className="inline-flex flex-col items-center gap-1.5 px-2 text-center">
-                  <Camera className="h-3.5 w-3.5" />
-                  No reset position
-                </span>
-              )}
-            </div>
-          </div>
+          <CameraPoseCaptureField
+            previewUrl={resetPosition?.previewUrl}
+            captureLabel="Set reset position"
+            emptyLabel="No reset position"
+            hint="Per scene — saves the current camera as this scene's Reset view home. If unset, Reset view frames the model."
+            previewAlt="Reset view preview"
+            onCapture={setResetPosition}
+            onClear={clearResetPosition}
+          />
 
           <div
             className="mb-1 mt-3 pt-3 text-[10px] font-bold uppercase tracking-wider"

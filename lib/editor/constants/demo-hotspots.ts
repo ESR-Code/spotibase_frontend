@@ -19,6 +19,8 @@ export const DEMO_HOTSPOTS: Omit<Hotspot, "id">[] = [
     legendName: "Top Face",
     position: { x: 0, y: 2.15, z: 0 },
     blocks: [],
+    customCameraEnabled: false,
+    customCamera: null,
   },
   {
     title: "Front Edge",
@@ -36,6 +38,8 @@ export const DEMO_HOTSPOTS: Omit<Hotspot, "id">[] = [
     legendName: "Front Edge",
     position: { x: 0, y: 1.2, z: 1.15 },
     blocks: [],
+    customCameraEnabled: false,
+    customCamera: null,
   },
   {
     title: "Side Panel",
@@ -53,6 +57,8 @@ export const DEMO_HOTSPOTS: Omit<Hotspot, "id">[] = [
     legendName: "Side Panel",
     position: { x: 1.15, y: 1.4, z: 0 },
     blocks: [],
+    customCameraEnabled: false,
+    customCamera: null,
   },
   {
     title: "Base Corner",
@@ -70,5 +76,7 @@ export const DEMO_HOTSPOTS: Omit<Hotspot, "id">[] = [
     legendName: "Base Corner",
     position: { x: -1.05, y: 0.35, z: -1.05 },
     blocks: [],
+    customCameraEnabled: false,
+    customCamera: null,
   },
 ];

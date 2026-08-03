@@ -80,6 +80,16 @@ export function getSeedHotspots(): Hotspot[] {
     ...h,
     position: { ...h.position },
     blocks: [...h.blocks],
+    customCameraEnabled: h.customCameraEnabled ?? false,
+    customCamera: h.customCamera
+      ? {
+          yaw: h.customCamera.yaw,
+          pitch: h.customCamera.pitch,
+          distance: h.customCamera.distance,
+          target: { ...h.customCamera.target },
+          previewUrl: h.customCamera.previewUrl,
+        }
+      : null,
   }));
 }
 
