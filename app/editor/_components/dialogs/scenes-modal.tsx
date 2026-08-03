@@ -33,6 +33,7 @@ function syncActiveSceneSnapshot() {
               hasUserModel: model.hasUserModel,
               scale: model.modelScale,
               rotation: { ...model.modelRotation },
+              reflection: model.modelReflection,
             },
           }
         : scene,

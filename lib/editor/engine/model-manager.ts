@@ -1,13 +1,21 @@
-import type { Application, Entity } from "playcanvas";
+import type { Application, Entity, StandardMaterial } from "playcanvas";
 import type * as pc from "playcanvas";
 import { toast } from "sonner";
 import { buildDefaultBox } from "@/lib/editor/engine/default-scene-builder";
 import {
+  DEFAULT_MODEL_REFLECTION,
   type ModelRotation,
   useModelStore,
 } from "@/lib/editor/state/model-store";
 import { sceneModelCache } from "@/lib/editor/state/scene-model-cache";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
+
+type MaterialBaseline = {
+  material: StandardMaterial;
+  gloss: number;
+  specularityFactor: number;
+  reflectivity: number;
+};
 
 export type ModelManager = {
   loadDefault: () => Entity;
@@ -19,6 +27,7 @@ export type ModelManager = {
   unloadCurrent: () => void;
   setWireframe: (enabled: boolean) => void;
   applyTransform: (scale: number, rotation: ModelRotation) => void;
+  applyReflection: (amount: number) => void;
   getModelRoot: () => Entity;
 };
 
@@ -27,15 +36,69 @@ export function createModelManager(
   pcModule: typeof pc,
   modelRoot: Entity,
 ): ModelManager {
+  let materialBaselines: MaterialBaseline[] = [];
+
   const applyTransform = (scale: number, rotation: ModelRotation) => {
     modelRoot.setLocalScale(scale, scale, scale);
     modelRoot.setLocalEulerAngles(rotation.x, rotation.y, rotation.z);
+  };
+
+  const captureMaterialBaselines = () => {
+    const baselines: MaterialBaseline[] = [];
+    modelRoot.forEach((node) => {
+      const render = (node as Entity).render;
+      if (!render?.meshInstances) return;
+      for (const mi of render.meshInstances) {
+        const material = mi.material as StandardMaterial | null | undefined;
+        if (!material || typeof material.update !== "function") continue;
+        if (typeof material.gloss !== "number") continue;
+        baselines.push({
+          material,
+          gloss: material.gloss,
+          specularityFactor:
+            typeof material.specularityFactor === "number"
+              ? material.specularityFactor
+              : 1,
+          reflectivity:
+            typeof material.reflectivity === "number"
+              ? material.reflectivity
+              : 1,
+        });
+      }
+    });
+    materialBaselines = baselines;
+  };
+
+  const applyReflection = (amount: number) => {
+    const t = Math.min(1, Math.max(0, amount));
+    if (materialBaselines.length === 0) {
+      captureMaterialBaselines();
+    }
+    for (const baseline of materialBaselines) {
+      // GLB materials use glossInvert (gloss = roughness). For those, push
+      // toward fully rough as reflection drops; otherwise scale gloss down.
+      if (baseline.material.glossInvert) {
+        baseline.material.gloss =
+          baseline.gloss + (1 - baseline.gloss) * (1 - t);
+      } else {
+        baseline.material.gloss = baseline.gloss * t;
+      }
+      baseline.material.specularityFactor = baseline.specularityFactor * t;
+      baseline.material.reflectivity = baseline.reflectivity * t;
+      baseline.material.update();
+    }
+  };
+
+  const syncAppearanceFromStore = () => {
+    captureMaterialBaselines();
+    applyReflection(useModelStore.getState().modelReflection);
   };
 
   const loadDefault = () => {
     const entity = buildDefaultBox(app, pcModule, modelRoot);
     const { modelScale, modelRotation } = useModelStore.getState();
     applyTransform(modelScale, modelRotation);
+    syncAppearanceFromStore();
     return entity;
   };
 
@@ -70,8 +133,10 @@ export function createModelManager(
       });
 
       clearChildren(modelRoot);
+      materialBaselines = [];
       if (options.resetTransform) {
         useModelStore.getState().resetModelTransform();
+        useModelStore.getState().setModelReflection(DEFAULT_MODEL_REFLECTION);
         applyTransform(1, { x: 0, y: 0, z: 0 });
       }
 
@@ -84,6 +149,8 @@ export function createModelManager(
 
       const wireframe = useModelStore.getState().wireframe;
       if (wireframe) setWireframe(true);
+
+      syncAppearanceFromStore();
 
       useModelStore.getState().setModelMeta(fileName, sizeLabel, true);
       useModelStore
@@ -149,6 +216,7 @@ export function createModelManager(
 
   const unloadCurrent = () => {
     clearChildren(modelRoot);
+    materialBaselines = [];
     modelRoot.setLocalScale(1, 1, 1);
     modelRoot.setLocalEulerAngles(0, 0, 0);
     useModelStore.getState().unload();
@@ -161,6 +229,7 @@ export function createModelManager(
     unloadCurrent,
     setWireframe,
     applyTransform,
+    applyReflection,
     getModelRoot: () => modelRoot,
   };
 }

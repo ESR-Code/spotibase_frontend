@@ -1,6 +1,7 @@
 import { DEMO_HOTSPOTS } from "@/lib/editor/constants/demo-hotspots";
 import {
   DEFAULT_MODEL_META,
+  DEFAULT_MODEL_REFLECTION,
   DEFAULT_MODEL_ROTATION,
   DEFAULT_MODEL_SCALE,
 } from "@/lib/editor/state/model-store";
@@ -17,6 +18,7 @@ export function createEmptyModelState(): SceneModelState {
     hasUserModel: false,
     scale: DEFAULT_MODEL_SCALE,
     rotation: { ...DEFAULT_MODEL_ROTATION },
+    reflection: DEFAULT_MODEL_REFLECTION,
   };
 }
 

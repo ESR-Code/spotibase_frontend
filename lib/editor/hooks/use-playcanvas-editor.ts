@@ -12,6 +12,7 @@ import { bindViewportResize } from "@/lib/editor/engine/viewport-resize";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useEnvironmentStore } from "@/lib/editor/state/environment-store";
 import {
+  DEFAULT_MODEL_REFLECTION,
   DEFAULT_MODEL_ROTATION,
   DEFAULT_MODEL_SCALE,
   useModelStore,
@@ -104,6 +105,9 @@ export function usePlayCanvasEditor() {
           ) {
             models.applyTransform(state.modelScale, state.modelRotation);
           }
+          if (state.modelReflection !== prev.modelReflection) {
+            models.applyReflection(state.modelReflection);
+          }
         });
 
         const onImportGlb = async (event: Event) => {
@@ -168,8 +172,12 @@ export function usePlayCanvasEditor() {
               targetScene.model.scale,
               targetScene.model.rotation,
             );
+            models.applyReflection(
+              targetScene.model.reflection ?? DEFAULT_MODEL_REFLECTION,
+            );
           } else {
             models.applyTransform(DEFAULT_MODEL_SCALE, DEFAULT_MODEL_ROTATION);
+            models.applyReflection(DEFAULT_MODEL_REFLECTION);
           }
 
           hotspotMgr.syncFromStore();

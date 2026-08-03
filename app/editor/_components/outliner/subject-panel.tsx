@@ -4,6 +4,7 @@ import { Box, RotateCcw } from "lucide-react";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import {
+  DEFAULT_MODEL_REFLECTION,
   DEFAULT_MODEL_ROTATION,
   DEFAULT_MODEL_SCALE,
   useModelStore,
@@ -15,8 +16,10 @@ export function SubjectPanel() {
   const hasUserModel = useModelStore((s) => s.hasUserModel);
   const modelScale = useModelStore((s) => s.modelScale);
   const modelRotation = useModelStore((s) => s.modelRotation);
+  const modelReflection = useModelStore((s) => s.modelReflection);
   const setModelScale = useModelStore((s) => s.setModelScale);
   const setModelRotation = useModelStore((s) => s.setModelRotation);
+  const setModelReflection = useModelStore((s) => s.setModelReflection);
   const resetModelTransform = useModelStore((s) => s.resetModelTransform);
 
   const isDefaultTransform =
@@ -104,6 +107,32 @@ export function SubjectPanel() {
               onChange={(v) => setModelRotation("z", v)}
             />
           </div>
+        </section>
+
+        <section>
+          <div
+            className="mb-2.5 text-[10px] font-bold uppercase tracking-wider"
+            style={{ color: "var(--editor-muted-2)" }}
+          >
+            Appearance
+          </div>
+          <SliderField
+            label="Reflection"
+            value={modelReflection}
+            display={`${Math.round(modelReflection * 100)}%`}
+            min={0}
+            max={1}
+            step={0.05}
+            onChange={setModelReflection}
+          />
+          {modelReflection !== DEFAULT_MODEL_REFLECTION ? (
+            <p
+              className="mt-1.5 text-[10px] leading-snug"
+              style={{ color: "var(--editor-muted-2)" }}
+            >
+              Lower values reduce gloss so model shadows read more clearly.
+            </p>
+          ) : null}
         </section>
 
         <EditorButton

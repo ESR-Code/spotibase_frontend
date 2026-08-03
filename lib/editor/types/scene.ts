@@ -12,6 +12,8 @@ export type SceneModelState = {
   hasUserModel: boolean;
   scale: number;
   rotation: ModelRotation;
+  /** 0 = matte, 1 = full original material reflection/gloss. */
+  reflection: number;
 };
 
 export type Scene = {
