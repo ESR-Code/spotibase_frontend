@@ -9,7 +9,7 @@ import {
   screenRayFromEvent,
 } from "@/lib/editor/engine/ray-utils";
 import { PREVIEW_CLICK_PX } from "@/lib/editor/constants/default-settings";
-import { openHotspotInPreview } from "@/lib/editor/preview/open-hotspot-in-preview";
+import { runHotspotActions } from "@/lib/editor/actions/run-hotspot-actions";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
@@ -201,7 +201,7 @@ export function createPickingController(
       if (!editor.previewDragged && down.id != null) {
         const id = pickHotspotId(e.clientX, e.clientY);
         if (id === down.id) {
-          openHotspotInPreview(id);
+          runHotspotActions(id);
         }
       }
       useEditorStore.getState().setPreviewDragged(false);

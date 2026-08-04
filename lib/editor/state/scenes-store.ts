@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import {
+  cloneActionGraph,
+  createDefaultActionGraph,
+} from "@/lib/editor/actions/create-action-graph";
+import {
   cloneCameraResetPosition,
   cloneEditorSettings,
   cloneEnvironmentSettings,
@@ -35,6 +39,9 @@ function snapshotCurrentIntoScene(scene: Scene): Scene {
       blocks: [...h.blocks],
       customCameraEnabled: h.customCameraEnabled ?? false,
       customCamera: cloneCameraResetPosition(h.customCamera ?? null),
+      actions: h.actions
+        ? cloneActionGraph(h.actions)
+        : createDefaultActionGraph(),
     })),
     nextHotspotId: editor.nextId,
     model: {
@@ -83,6 +90,9 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
         blocks: [...h.blocks],
         customCameraEnabled: h.customCameraEnabled ?? false,
         customCamera: cloneCameraResetPosition(h.customCamera ?? null),
+        actions: h.actions
+          ? cloneActionGraph(h.actions)
+          : createDefaultActionGraph(),
       })),
       model: { ...SEED_SCENE.model, rotation: { ...SEED_SCENE.model.rotation } },
       settings: cloneEditorSettings(SEED_SCENE.settings),

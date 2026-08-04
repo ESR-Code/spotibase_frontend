@@ -1,8 +1,9 @@
 "use client";
 
-import { Copy, LayoutList, Settings2, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Copy, LayoutList, Settings2, Trash2, Workflow, X } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
+import { HotspotActionsTab } from "@/app/editor/_components/actions/hotspot-actions-tab";
 import { HotspotBlocksTab } from "@/app/editor/_components/drawers/hotspot-blocks-tab";
 import { HotspotGeneralTab } from "@/app/editor/_components/drawers/hotspot-general-tab";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
@@ -13,7 +14,7 @@ import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import { hotspotTypeLabel } from "@/lib/editor/types/hotspot";
 
-type PropertiesTab = "general" | "blocks";
+type PropertiesTab = "general" | "blocks" | "actions";
 
 const TABS: {
   id: PropertiesTab;
@@ -22,21 +23,27 @@ const TABS: {
 }[] = [
   { id: "general", label: "General", icon: Settings2 },
   { id: "blocks", label: "Blocks", icon: LayoutList },
+  { id: "actions", label: "Actions", icon: Workflow },
 ];
 
 export function HotspotPropertiesDrawer() {
   const open = useUIStore((s) => s.propertiesDrawerOpen);
   const setOpen = useUIStore((s) => s.setPropertiesDrawerOpen);
+  const openActionsModal = useUIStore((s) => s.openActionsModal);
   const selectedId = useEditorStore((s) => s.selectedId);
   const removeHotspot = useEditorStore((s) => s.removeHotspot);
   const duplicateHotspot = useEditorStore((s) => s.duplicateHotspot);
   const selectHotspot = useEditorStore((s) => s.selectHotspot);
   const { form, selected } = useHotspotForm();
-  const [activeTab, setActiveTab] = useState<PropertiesTab>("general");
+  const [tabState, setTabState] = useState<{
+    hotspotId: number | null;
+    tab: PropertiesTab;
+  }>({ hotspotId: selectedId, tab: "general" });
 
-  useEffect(() => {
-    setActiveTab("general");
-  }, [selectedId]);
+  const activeTab =
+    tabState.hotspotId === selectedId ? tabState.tab : "general";
+  const setActiveTab = (tab: PropertiesTab) =>
+    setTabState({ hotspotId: selectedId, tab });
 
   if (!selected) {
     return (
@@ -99,7 +106,15 @@ export function HotspotPropertiesDrawer() {
               role="tab"
               aria-selected={active}
               className={`editor-panel-tab ${active ? "active" : ""}`}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                if (tab.id === "actions") {
+                  openActionsModal({
+                    kind: "hotspot",
+                    hotspotId: selected.id,
+                  });
+                }
+              }}
             >
               <Icon className="h-3 w-3" />
               {tab.label}
@@ -111,8 +126,10 @@ export function HotspotPropertiesDrawer() {
       <div className="flex-1 overflow-y-auto p-5">
         {activeTab === "general" ? (
           <HotspotGeneralTab form={form} selected={selected} />
-        ) : (
+        ) : activeTab === "blocks" ? (
           <HotspotBlocksTab selected={selected} />
+        ) : (
+          <HotspotActionsTab selected={selected} />
         )}
       </div>
 

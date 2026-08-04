@@ -1,4 +1,5 @@
 import type { CameraResetPosition } from "@/lib/editor/types/editor-settings";
+import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 import type { HotspotBlock } from "@/lib/editor/types/hotspot-block";
 
 export type HotspotType = "none" | "info" | "warning" | "spec" | "link";
@@ -38,7 +39,17 @@ export type Hotspot = {
   customCameraEnabled: boolean;
   /** Captured orbit pose + preview thumbnail; null until the user sets one. */
   customCamera: CameraResetPosition | null;
+  /**
+   * Action graph for preview click. `undefined` normalizes to a default
+   * openModal chain; an explicit empty `nodes: []` means do nothing.
+   */
+  actions?: HotspotActionGraph;
 };
 
 export type { HotspotBlock, HotspotBlockType } from "@/lib/editor/types/hotspot-block";
+export type {
+  ActionNode,
+  ActionNodeType,
+  HotspotActionGraph,
+} from "@/lib/editor/types/hotspot-action";
 

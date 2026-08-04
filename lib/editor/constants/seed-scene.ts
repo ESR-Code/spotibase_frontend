@@ -1,4 +1,8 @@
 import {
+  cloneActionGraph,
+  createDefaultActionGraph,
+} from "@/lib/editor/actions/create-action-graph";
+import {
   cloneEditorSettings,
   cloneEnvironmentSettings,
   DEFAULT_EDITOR_SETTINGS,
@@ -90,6 +94,9 @@ export function getSeedHotspots(): Hotspot[] {
           previewUrl: h.customCamera.previewUrl,
         }
       : null,
+    actions: h.actions
+      ? cloneActionGraph(h.actions)
+      : createDefaultActionGraph(),
   }));
 }
 

@@ -1,4 +1,8 @@
 import { create } from "zustand";
+import {
+  cloneActionGraph,
+  createDefaultActionGraph,
+} from "@/lib/editor/actions/create-action-graph";
 import { DEMO_HOTSPOTS } from "@/lib/editor/constants/demo-hotspots";
 import {
   getSeedHotspots,
@@ -68,6 +72,9 @@ function createHotspotData(
           previewUrl: data.customCamera.previewUrl,
         }
       : null,
+    actions: data.actions
+      ? cloneActionGraph(data.actions)
+      : createDefaultActionGraph(),
   };
 }
 
@@ -179,6 +186,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
               previewUrl: h.customCamera.previewUrl,
             }
           : null,
+        actions: h.actions
+          ? cloneActionGraph(h.actions)
+          : createDefaultActionGraph(),
       })),
       nextId,
       selectedId: null,

@@ -1,3 +1,4 @@
+import { getActionGraph } from "@/lib/editor/actions/create-action-graph";
 import { DEFAULT_MODEL_NAME, PROJECT_NAME } from "@/lib/editor/theme/tokens";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useModelStore } from "@/lib/editor/state/model-store";
@@ -31,6 +32,7 @@ export function exportHotspots() {
       categoryName: categoryById.get(h.category)?.name ?? "",
       legendName: h.legendName || h.title,
       blocks: h.blocks,
+      actions: getActionGraph(h),
       position: {
         x: +h.position.x.toFixed(3),
         y: +h.position.y.toFixed(3),

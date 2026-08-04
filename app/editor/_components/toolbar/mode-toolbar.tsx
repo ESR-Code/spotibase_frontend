@@ -1,6 +1,13 @@
 "use client";
 
-import { Layers, MousePointer2, Play, Plus, SquarePen } from "lucide-react";
+import {
+  Layers,
+  MousePointer2,
+  Play,
+  Plus,
+  SquarePen,
+  Workflow,
+} from "lucide-react";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
@@ -17,6 +24,9 @@ export function ModeToolbar() {
   const setHoverTooltip = useUIStore((s) => s.setHoverTooltip);
   const scenesModalOpen = useUIStore((s) => s.scenesModalOpen);
   const setScenesModalOpen = useUIStore((s) => s.setScenesModalOpen);
+  const actionsModal = useUIStore((s) => s.actionsModal);
+  const openActionsModal = useUIStore((s) => s.openActionsModal);
+  const sceneActionsOpen = actionsModal?.kind === "scene";
 
   const handleMode = (next: "select" | "add" | "preview") => {
     if (next === "preview") {
@@ -79,6 +89,18 @@ export function ModeToolbar() {
       >
         <Plus className="h-3 w-3" />
         Add Hotspot
+      </button>
+      <div className="editor-vsep" style={{ height: 18 }} />
+      <button
+        type="button"
+        disabled={isPreview}
+        className={`editor-tool-btn ${!isPreview && sceneActionsOpen ? "active" : ""} ${isPreview ? "disabled" : ""}`}
+        onClick={() => {
+          if (!isPreview) openActionsModal({ kind: "scene" });
+        }}
+      >
+        <Workflow className="h-3 w-3" />
+        Actions
       </button>
       <div className="editor-vsep" style={{ height: 18 }} />
       <button

@@ -7,7 +7,7 @@ import { CategoryOptionBadge } from "@/app/editor/_components/ui/category-option
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
-import { openHotspotInPreview } from "@/lib/editor/preview/open-hotspot-in-preview";
+import { runHotspotActions } from "@/lib/editor/actions/run-hotspot-actions";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
@@ -143,7 +143,7 @@ export function LegendDrawer() {
               }
               selected={previewActiveHotspotId === hotspot.id}
               onSelect={() => {
-                openHotspotInPreview(hotspot.id);
+                runHotspotActions(hotspot.id);
                 setOpen(false);
               }}
             />

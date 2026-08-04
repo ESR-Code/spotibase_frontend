@@ -6,6 +6,10 @@ import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { EditorChip } from "@/app/editor/_components/ui/editor-chip";
 import { EditorDialog } from "@/app/editor/_components/ui/editor-dialog";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import {
+  cloneActionGraph,
+  createDefaultActionGraph,
+} from "@/lib/editor/actions/create-action-graph";
 import { cloneCameraResetPosition } from "@/lib/editor/constants/default-settings";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import {
@@ -34,6 +38,9 @@ function syncActiveSceneSnapshot() {
               blocks: [...h.blocks],
               customCameraEnabled: h.customCameraEnabled ?? false,
               customCamera: cloneCameraResetPosition(h.customCamera ?? null),
+              actions: h.actions
+                ? cloneActionGraph(h.actions)
+                : createDefaultActionGraph(),
             })),
             nextHotspotId: editor.nextId,
             model: {

@@ -21,7 +21,9 @@ export function useEditorKeyboard() {
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
 
       const isPreview = useEditorStore.getState().isPreview;
-      const previewOpen = useUIStore.getState().previewModalOpen;
+      const ui = useUIStore.getState();
+      const previewOpen = ui.previewModalOpen;
+      const actionsOpen = ui.actionsModal != null;
 
       if (e.key === "p" || e.key === "P") {
         const wasPreview = isPreview;
@@ -44,9 +46,11 @@ export function useEditorKeyboard() {
         return;
       }
 
-      if ((e.key === "v" || e.key === "V") && !isPreview) setMode("select");
-      else if ((e.key === "a" || e.key === "A") && !isPreview) setMode("add");
-      else if (e.key === "Escape") {
+      if ((e.key === "v" || e.key === "V") && !isPreview && !actionsOpen) {
+        setMode("select");
+      } else if ((e.key === "a" || e.key === "A") && !isPreview && !actionsOpen) {
+        setMode("add");
+      } else if (e.key === "Escape") {
         if (
           previewOpen &&
           useSettingsStore.getState().markerDialogResetCameraOnClose
@@ -58,6 +62,7 @@ export function useEditorKeyboard() {
         selectHotspot(null);
       } else if (
         !isPreview &&
+        !actionsOpen &&
         (e.key === "Delete" || e.key === "Backspace") &&
         selectedId != null
       ) {

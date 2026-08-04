@@ -11,6 +11,10 @@ export type HoverTooltipState = {
 
 export type OutlinerTab = "outliner" | "subject";
 
+export type ActionsModalScope =
+  | { kind: "hotspot"; hotspotId: number }
+  | { kind: "scene" };
+
 type UIState = {
   isLoading: boolean;
   outlinerCollapsed: boolean;
@@ -29,6 +33,7 @@ type UIState = {
   previewLabelPending: boolean;
   hoverTooltip: HoverTooltipState;
   scenesModalOpen: boolean;
+  actionsModal: ActionsModalScope | null;
   setLoading: (value: boolean) => void;
   setOutlinerCollapsed: (value: boolean) => void;
   setOutlinerTab: (tab: OutlinerTab) => void;
@@ -43,6 +48,8 @@ type UIState = {
   setPreviewLabelPending: (value: boolean) => void;
   setHoverTooltip: (value: HoverTooltipState) => void;
   setScenesModalOpen: (value: boolean) => void;
+  openActionsModal: (scope: ActionsModalScope) => void;
+  closeActionsModal: () => void;
   closeAllOverlays: () => void;
 };
 
@@ -61,6 +68,7 @@ export const useUIStore = create<UIState>((set) => ({
   previewLabelPending: false,
   hoverTooltip: null,
   scenesModalOpen: false,
+  actionsModal: null,
   setLoading: (isLoading) => set({ isLoading }),
   setOutlinerCollapsed: (outlinerCollapsed) => set({ outlinerCollapsed }),
   setOutlinerTab: (outlinerTab) => set({ outlinerTab }),
@@ -79,6 +87,8 @@ export const useUIStore = create<UIState>((set) => ({
     set({ previewLabelPending }),
   setHoverTooltip: (hoverTooltip) => set({ hoverTooltip }),
   setScenesModalOpen: (scenesModalOpen) => set({ scenesModalOpen }),
+  openActionsModal: (actionsModal) => set({ actionsModal }),
+  closeActionsModal: () => set({ actionsModal: null }),
   closeAllOverlays: () =>
     set({
       settingsDrawerOpen: false,
@@ -87,6 +97,7 @@ export const useUIStore = create<UIState>((set) => ({
       previewModalOpen: false,
       propertiesDrawerOpen: false,
       scenesModalOpen: false,
+      actionsModal: null,
       previewActiveHotspotId: null,
       previewLabelPending: false,
       hoverTooltip: null,
