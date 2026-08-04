@@ -1,4 +1,5 @@
 import { createActionNode } from "@/lib/editor/actions/create-action-graph";
+import { transitionToScene } from "@/lib/editor/actions/transition-to-scene";
 import { openHotspotInPreview } from "@/lib/editor/preview/open-hotspot-in-preview";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import type {
@@ -6,7 +7,6 @@ import type {
   ActionNodeType,
   ActionNodeXY,
 } from "@/lib/editor/types/hotspot-action";
-import { toast } from "sonner";
 
 export type ActionRunContext = {
   hotspotId: number;
@@ -49,17 +49,7 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     },
     run: (node) => {
       if (node.type !== "goToScene") return;
-      const sceneId = node.data.sceneId;
-      if (!sceneId) {
-        toast.error("Go To Scene: no scene selected");
-        return "stop";
-      }
-      const scenes = useScenesStore.getState().scenes;
-      if (!scenes.some((s) => s.id === sceneId)) {
-        toast.error("Go To Scene: target scene no longer exists");
-        return "stop";
-      }
-      useScenesStore.getState().switchScene(sceneId);
+      return transitionToScene(node.data.sceneId);
     },
   },
 };

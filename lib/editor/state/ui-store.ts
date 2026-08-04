@@ -15,6 +15,13 @@ export type ActionsModalScope =
   | { kind: "hotspot"; hotspotId: number }
   | { kind: "scene" };
 
+export type SceneTransitionPhase = "in" | "hold" | "out";
+
+export type SceneTransitionState = {
+  sceneName: string;
+  phase: SceneTransitionPhase;
+} | null;
+
 type UIState = {
   isLoading: boolean;
   outlinerCollapsed: boolean;
@@ -34,6 +41,8 @@ type UIState = {
   hoverTooltip: HoverTooltipState;
   scenesModalOpen: boolean;
   actionsModal: ActionsModalScope | null;
+  /** Splash overlay for Go To Scene action transitions. */
+  sceneTransition: SceneTransitionState;
   setLoading: (value: boolean) => void;
   setOutlinerCollapsed: (value: boolean) => void;
   setOutlinerTab: (tab: OutlinerTab) => void;
@@ -50,6 +59,10 @@ type UIState = {
   setScenesModalOpen: (value: boolean) => void;
   openActionsModal: (scope: ActionsModalScope) => void;
   closeActionsModal: () => void;
+  startSceneTransition: (sceneName: string) => void;
+  holdSceneTransition: () => void;
+  beginSceneTransitionOut: () => void;
+  endSceneTransition: () => void;
   closeAllOverlays: () => void;
 };
 
@@ -69,6 +82,7 @@ export const useUIStore = create<UIState>((set) => ({
   hoverTooltip: null,
   scenesModalOpen: false,
   actionsModal: null,
+  sceneTransition: null,
   setLoading: (isLoading) => set({ isLoading }),
   setOutlinerCollapsed: (outlinerCollapsed) => set({ outlinerCollapsed }),
   setOutlinerTab: (outlinerTab) => set({ outlinerTab }),
@@ -89,6 +103,21 @@ export const useUIStore = create<UIState>((set) => ({
   setScenesModalOpen: (scenesModalOpen) => set({ scenesModalOpen }),
   openActionsModal: (actionsModal) => set({ actionsModal }),
   closeActionsModal: () => set({ actionsModal: null }),
+  startSceneTransition: (sceneName) =>
+    set({ sceneTransition: { sceneName, phase: "in" } }),
+  holdSceneTransition: () =>
+    set((state) =>
+      state.sceneTransition
+        ? { sceneTransition: { ...state.sceneTransition, phase: "hold" } }
+        : state,
+    ),
+  beginSceneTransitionOut: () =>
+    set((state) =>
+      state.sceneTransition
+        ? { sceneTransition: { ...state.sceneTransition, phase: "out" } }
+        : state,
+    ),
+  endSceneTransition: () => set({ sceneTransition: null }),
   closeAllOverlays: () =>
     set({
       settingsDrawerOpen: false,
