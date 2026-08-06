@@ -12,6 +12,7 @@ type ActionNodeCardProps = {
   selected?: boolean;
   showTarget?: boolean;
   showSource?: boolean;
+  wide?: boolean;
   onDelete?: () => void;
   children?: ReactNode;
   footer?: ReactNode;
@@ -24,13 +25,14 @@ export function ActionNodeCard({
   selected = false,
   showTarget = true,
   showSource = true,
+  wide = false,
   onDelete,
   children,
   footer,
 }: ActionNodeCardProps) {
   return (
     <div
-      className={`editor-action-node ${selected ? "selected" : ""}`}
+      className={`editor-action-node ${wide ? "wide" : ""} ${selected ? "selected" : ""}`}
       style={{ borderColor: selected ? accent : undefined }}
     >
       {showTarget ? (

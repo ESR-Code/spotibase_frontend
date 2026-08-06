@@ -1,4 +1,8 @@
 import { createActionNode } from "@/lib/editor/actions/create-action-graph";
+import {
+  parsePayloadJson,
+  sendPostMessage,
+} from "@/lib/editor/actions/send-post-message";
 import { transitionToScene } from "@/lib/editor/actions/transition-to-scene";
 import { openHotspotInPreview } from "@/lib/editor/preview/open-hotspot-in-preview";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
@@ -72,6 +76,28 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
       if (node.type !== "openUrl") return;
       if (!openExternalUrl(node.data.url)) {
         toast.error("Open URL: invalid or empty URL");
+        return "stop";
+      }
+    },
+  },
+  sendPostMessage: {
+    type: "sendPostMessage",
+    label: "Send Post Message",
+    description: "Send a postMessage event to another window.",
+    createDefault: (position) => createActionNode("sendPostMessage", position),
+    validate: (node) => {
+      if (node.type !== "sendPostMessage") return null;
+      if (!node.data.eventName.trim()) return "Enter an event name";
+      const parsed = parsePayloadJson(node.data.payloadJson);
+      if (!parsed.ok) return parsed.error;
+      if (!node.data.targetOrigin.trim()) return "Enter a target origin";
+      return null;
+    },
+    run: (node, ctx) => {
+      if (node.type !== "sendPostMessage") return;
+      const error = sendPostMessage(node, ctx.hotspotId);
+      if (error) {
+        toast.error(`Send Post Message: ${error}`);
         return "stop";
       }
     },

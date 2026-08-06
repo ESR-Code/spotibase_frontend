@@ -1588,6 +1588,18 @@
   color: var(--editor-fg);
 }
 
+.editor-root .editor-action-node.wide {
+  width: 300px;
+}
+
+.editor-root .editor-action-node .editor-textarea-compact {
+  min-height: 72px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
 .editor-root .editor-action-node.selected {
   border-color: rgba(230, 57, 70, 0.55);
   box-shadow:
@@ -1646,7 +1658,7 @@
 }
 
 .editor-root .editor-actions-context-menu {
-  position: fixed;
+  position: absolute;
   z-index: 80;
   min-width: 220px;
   max-width: 280px;

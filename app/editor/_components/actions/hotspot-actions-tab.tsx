@@ -65,7 +65,11 @@ export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
                     ? node.data.url.trim()
                       ? `→ ${node.data.url.trim()}`
                       : "→ (no url)"
-                    : null;
+                    : node.type === "sendPostMessage"
+                      ? node.data.eventName.trim()
+                        ? `→ ${node.data.eventName.trim()}`
+                        : "→ (no event)"
+                      : null;
               return (
                 <li
                   key={node.id}

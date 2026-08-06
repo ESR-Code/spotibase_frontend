@@ -119,6 +119,33 @@ export function updateNodeData(
           },
         };
       }
+      if (node.type === "sendPostMessage") {
+        const target =
+          patch.target === "parent" ||
+          patch.target === "opener" ||
+          patch.target === "top" ||
+          patch.target === "self"
+            ? patch.target
+            : node.data.target;
+        return {
+          ...node,
+          data: {
+            eventName:
+              typeof patch.eventName === "string"
+                ? patch.eventName
+                : node.data.eventName,
+            payloadJson:
+              typeof patch.payloadJson === "string"
+                ? patch.payloadJson
+                : node.data.payloadJson,
+            targetOrigin:
+              typeof patch.targetOrigin === "string"
+                ? patch.targetOrigin
+                : node.data.targetOrigin,
+            target,
+          },
+        };
+      }
       return node;
     }),
   };

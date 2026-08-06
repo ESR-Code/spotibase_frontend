@@ -15,7 +15,7 @@ import {
   type OnNodesChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { ACTION_FLOW_NODE_TYPES } from "@/app/editor/_components/actions/action-node-registry";
 import {
   ActionsContextMenu,
@@ -73,7 +73,21 @@ function structureKeyFor(hotspots: Hotspot[]): string {
 function ActionsFlowCanvas({ hotspots }: ActionsFlowProps) {
   const updateHotspot = useEditorStore((s) => s.updateHotspot);
   const { screenToFlowPosition } = useReactFlow();
+  const flowRootRef = useRef<HTMLDivElement>(null);
   const [rawMenu, setRawMenu] = useState<ActionsContextMenuState | null>(null);
+
+  /** Map viewport coords → flow container local coords (avoids fixed/transform offset). */
+  const menuPositionFromEvent = useCallback(
+    (event: { clientX: number; clientY: number }) => {
+      const rect = flowRootRef.current?.getBoundingClientRect();
+      if (!rect) return { x: event.clientX, y: event.clientY };
+      return {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+    },
+    [],
+  );
 
   const laneByHotspotId = useMemo(() => {
     const map = new Map<number, number>();
@@ -214,15 +228,16 @@ function ActionsFlowCanvas({ hotspots }: ActionsFlowProps) {
       });
 
       const graphPos = toGraphPosition(flowPos.x, flowPos.y, bestLane);
+      const menuPos = menuPositionFromEvent(event);
       setRawMenu({
         kind: "pane",
-        x: event.clientX,
-        y: event.clientY,
+        x: menuPos.x,
+        y: menuPos.y,
         hotspotId: best.id,
         flowPosition: graphPos,
       });
     },
-    [hotspots, screenToFlowPosition],
+    [hotspots, menuPositionFromEvent, screenToFlowPosition],
   );
 
   const onNodeContextMenu = useCallback(
@@ -230,10 +245,11 @@ function ActionsFlowCanvas({ hotspots }: ActionsFlowProps) {
       event.preventDefault();
       const parsed = parseFlowNodeId(node.id);
       if (!parsed) return;
+      const menuPos = menuPositionFromEvent(event);
       setRawMenu({
         kind: "node",
-        x: event.clientX,
-        y: event.clientY,
+        x: menuPos.x,
+        y: menuPos.y,
         hotspotId: parsed.hotspotId,
         nodeId: parsed.nodeId,
         deletable:
@@ -241,7 +257,7 @@ function ActionsFlowCanvas({ hotspots }: ActionsFlowProps) {
           node.type !== TRIGGER_FLOW_TYPE,
       });
     },
-    [],
+    [menuPositionFromEvent],
   );
 
   const handleAdd = useCallback(
@@ -253,7 +269,7 @@ function ActionsFlowCanvas({ hotspots }: ActionsFlowProps) {
 
   return (
     <ActionsEditorProvider value={api}>
-      <div className="editor-actions-flow relative h-full w-full">
+      <div ref={flowRootRef} className="editor-actions-flow relative h-full w-full">
         <ReactFlow
           nodes={nodes}
           edges={edges}

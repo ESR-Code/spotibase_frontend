@@ -7,6 +7,8 @@ import type {
   OpenModalActionNode,
   GoToSceneActionNode,
   OpenUrlActionNode,
+  PostMessageTarget,
+  SendPostMessageActionNode,
 } from "@/lib/editor/types/hotspot-action";
 import { TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
 
@@ -20,6 +22,18 @@ export function newActionId(): string {
 const DEFAULT_TRIGGER_POS: ActionNodeXY = { x: 80, y: 120 };
 const DEFAULT_OPEN_MODAL_POS: ActionNodeXY = { x: 360, y: 120 };
 
+function asPostMessageTarget(value: unknown): PostMessageTarget {
+  if (
+    value === "parent" ||
+    value === "opener" ||
+    value === "top" ||
+    value === "self"
+  ) {
+    return value;
+  }
+  return "parent";
+}
+
 export function createActionNode(
   type: "openModal",
   position: ActionNodeXY,
@@ -32,6 +46,10 @@ export function createActionNode(
   type: "openUrl",
   position: ActionNodeXY,
 ): OpenUrlActionNode;
+export function createActionNode(
+  type: "sendPostMessage",
+  position: ActionNodeXY,
+): SendPostMessageActionNode;
 export function createActionNode(
   type: ActionNodeType,
   position: ActionNodeXY,
@@ -61,6 +79,18 @@ export function createActionNode(
         type: "openUrl",
         position: { ...position },
         data: { url: "" },
+      };
+    case "sendPostMessage":
+      return {
+        id: newActionId(),
+        type: "sendPostMessage",
+        position: { ...position },
+        data: {
+          eventName: "",
+          payloadJson: '{\n  \n}',
+          targetOrigin: "*",
+          target: "parent",
+        },
       };
   }
 }
@@ -101,6 +131,19 @@ export function cloneActionGraph(
           type: "openUrl",
           position: { ...node.position },
           data: { url: node.data.url },
+        };
+      }
+      if (node.type === "sendPostMessage") {
+        return {
+          id: node.id,
+          type: "sendPostMessage",
+          position: { ...node.position },
+          data: {
+            eventName: node.data.eventName,
+            payloadJson: node.data.payloadJson,
+            targetOrigin: node.data.targetOrigin,
+            target: asPostMessageTarget(node.data.target),
+          },
         };
       }
       return {
