@@ -8,7 +8,7 @@ import {
   GripVertical,
   Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { getBlockDefinition } from "@/app/editor/_components/blocks/block-registry";
 import { AddBlockMenu } from "@/app/editor/_components/drawers/add-block-menu";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
@@ -22,20 +22,79 @@ type HotspotBlocksTabProps = {
   selected: Hotspot;
 };
 
+type BlocksUiState = {
+  hotspotId: number;
+  focusBlockId: string | null;
+  collapsedIds: Set<string>;
+  draggingId: string | null;
+  overId: string | null;
+};
+
+function createBlocksUiState(hotspotId: number): BlocksUiState {
+  return {
+    hotspotId,
+    focusBlockId: null,
+    collapsedIds: new Set(),
+    draggingId: null,
+    overId: null,
+  };
+}
+
 export function HotspotBlocksTab({ selected }: HotspotBlocksTabProps) {
   const updateHotspot = useEditorStore((s) => s.updateHotspot);
-  const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
-  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => new Set());
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [overId, setOverId] = useState<string | null>(null);
+  const [uiState, setUiState] = useState<BlocksUiState>(() =>
+    createBlocksUiState(selected.id),
+  );
   const blocks = selected.blocks;
 
-  useEffect(() => {
-    setCollapsedIds(new Set());
-    setFocusBlockId(null);
-    setDraggingId(null);
-    setOverId(null);
-  }, [selected.id]);
+  if (uiState.hotspotId !== selected.id) {
+    setUiState(createBlocksUiState(selected.id));
+  }
+
+  const { focusBlockId, collapsedIds, draggingId, overId } =
+    uiState.hotspotId === selected.id
+      ? uiState
+      : createBlocksUiState(selected.id);
+
+  const setFocusBlockId = (focusBlockId: string | null) =>
+    setUiState((prev) => ({
+      ...(prev.hotspotId === selected.id
+        ? prev
+        : createBlocksUiState(selected.id)),
+      hotspotId: selected.id,
+      focusBlockId,
+    }));
+  const setCollapsedIds = (
+    next: Set<string> | ((prev: Set<string>) => Set<string>),
+  ) =>
+    setUiState((prev) => {
+      const base =
+        prev.hotspotId === selected.id
+          ? prev
+          : createBlocksUiState(selected.id);
+      return {
+        ...base,
+        hotspotId: selected.id,
+        collapsedIds:
+          typeof next === "function" ? next(base.collapsedIds) : next,
+      };
+    });
+  const setDraggingId = (draggingId: string | null) =>
+    setUiState((prev) => ({
+      ...(prev.hotspotId === selected.id
+        ? prev
+        : createBlocksUiState(selected.id)),
+      hotspotId: selected.id,
+      draggingId,
+    }));
+  const setOverId = (overId: string | null) =>
+    setUiState((prev) => ({
+      ...(prev.hotspotId === selected.id
+        ? prev
+        : createBlocksUiState(selected.id)),
+      hotspotId: selected.id,
+      overId,
+    }));
 
   const allCollapsed =
     blocks.length > 0 && blocks.every((block) => collapsedIds.has(block.id));
@@ -55,9 +114,14 @@ export function HotspotBlocksTab({ selected }: HotspotBlocksTabProps) {
     });
   };
 
-  const handleContentChange = (id: string, content: string) => {
+  const handleBlockChange = (
+    id: string,
+    patch: Partial<Omit<(typeof blocks)[number], "id" | "type">>,
+  ) => {
     setBlocks(
-      blocks.map((block) => (block.id === id ? { ...block, content } : block)),
+      blocks.map((block) =>
+        block.id === id ? ({ ...block, ...patch } as typeof block) : block,
+      ),
     );
   };
 
@@ -109,7 +173,7 @@ export function HotspotBlocksTab({ selected }: HotspotBlocksTabProps) {
       >
         <div className="mb-1 text-[12px] font-semibold">No blocks yet</div>
         <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
-          Add a heading or text block to build hotspot content.
+          Add a heading, text, or link block to build hotspot content.
         </div>
       </div>
     ),
@@ -156,7 +220,9 @@ export function HotspotBlocksTab({ selected }: HotspotBlocksTabProps) {
             const preview =
               block.type === "text"
                 ? richTextToPlainPreview(block.content)
-                : block.content.trim() || "Empty heading";
+                : block.type === "link"
+                  ? block.label.trim() || block.url.trim() || "Empty link"
+                  : block.content.trim() || "Empty heading";
 
             return (
               <div
@@ -250,9 +316,7 @@ export function HotspotBlocksTab({ selected }: HotspotBlocksTabProps) {
                     <Editor
                       block={block}
                       autoFocus={focusBlockId === block.id}
-                      onChange={(content) =>
-                        handleContentChange(block.id, content)
-                      }
+                      onChange={(patch) => handleBlockChange(block.id, patch)}
                     />
                   </div>
                 ) : null}

@@ -61,7 +61,11 @@ export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
                         "missing scene"
                       }`
                     : "→ (no scene)"
-                  : null;
+                  : node.type === "openUrl"
+                    ? node.data.url.trim()
+                      ? `→ ${node.data.url.trim()}`
+                      : "→ (no url)"
+                    : null;
               return (
                 <li
                   key={node.id}

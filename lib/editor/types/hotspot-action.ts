@@ -1,4 +1,4 @@
-export type ActionNodeType = "openModal" | "goToScene";
+export type ActionNodeType = "openModal" | "goToScene" | "openUrl";
 export type ActionNodeXY = { x: number; y: number };
 
 type ActionNodeBase<T extends ActionNodeType, D> = {
@@ -16,7 +16,11 @@ export type GoToSceneActionNode = ActionNodeBase<
   "goToScene",
   { sceneId: string }
 >;
-export type ActionNode = OpenModalActionNode | GoToSceneActionNode;
+export type OpenUrlActionNode = ActionNodeBase<"openUrl", { url: string }>;
+export type ActionNode =
+  | OpenModalActionNode
+  | GoToSceneActionNode
+  | OpenUrlActionNode;
 
 export type ActionEdge = { id: string; source: string; target: string };
 

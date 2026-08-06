@@ -6,6 +6,7 @@ import type {
   HotspotActionGraph,
   OpenModalActionNode,
   GoToSceneActionNode,
+  OpenUrlActionNode,
 } from "@/lib/editor/types/hotspot-action";
 import { TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
 
@@ -28,6 +29,10 @@ export function createActionNode(
   position: ActionNodeXY,
 ): GoToSceneActionNode;
 export function createActionNode(
+  type: "openUrl",
+  position: ActionNodeXY,
+): OpenUrlActionNode;
+export function createActionNode(
   type: ActionNodeType,
   position: ActionNodeXY,
 ): ActionNode;
@@ -49,6 +54,13 @@ export function createActionNode(
         type: "goToScene",
         position: { ...position },
         data: { sceneId: "" },
+      };
+    case "openUrl":
+      return {
+        id: newActionId(),
+        type: "openUrl",
+        position: { ...position },
+        data: { url: "" },
       };
   }
 }
@@ -81,6 +93,14 @@ export function cloneActionGraph(
           type: "goToScene",
           position: { ...node.position },
           data: { sceneId: node.data.sceneId },
+        };
+      }
+      if (node.type === "openUrl") {
+        return {
+          id: node.id,
+          type: "openUrl",
+          position: { ...node.position },
+          data: { url: node.data.url },
         };
       }
       return {

@@ -54,18 +54,16 @@ type ActionsFlowProps = {
   hotspots: Hotspot[];
 };
 
-/** Structural fingerprint — remount canvas when nodes/edges/data change. */
+/**
+ * Structural fingerprint — remount only when nodes/edges are added/removed/
+ * reconnected. Editable fields (url, sceneId) must NOT be included or inputs
+ * remount and lose focus on every keystroke.
+ */
 function structureKeyFor(hotspots: Hotspot[]): string {
   return hotspots
     .map((h) => {
       const g = getActionGraph(h);
-      const nodes = g.nodes
-        .map((n) =>
-          n.type === "goToScene"
-            ? `${n.id}:${n.type}:${n.data.sceneId}`
-            : `${n.id}:${n.type}`,
-        )
-        .join(",");
+      const nodes = g.nodes.map((n) => `${n.id}:${n.type}`).join(",");
       const edges = g.edges.map((e) => `${e.source}>${e.target}`).join(",");
       return `${h.id}[${nodes}|${edges}]`;
     })

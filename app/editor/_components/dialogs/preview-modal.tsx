@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, ExternalLink, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useCallback, useEffect } from "react";
 import { HotspotBlocksPreview } from "@/app/editor/_components/blocks/hotspot-blocks-preview";
 import { CategoryOptionBadge } from "@/app/editor/_components/ui/category-option";
@@ -207,19 +207,6 @@ export function PreviewModal() {
 
       <EditorDialog.Body>
         <HotspotBlocksPreview blocks={hotspot.blocks} />
-        {hotspot.link ? (
-          <div className="mt-4">
-            <a
-              href={hotspot.link}
-              target="_blank"
-              rel="noreferrer"
-              className="editor-btn editor-btn-primary inline-flex items-center gap-2"
-            >
-              <ExternalLink className="h-4 w-4" />
-              Open Link
-            </a>
-          </div>
-        ) : null}
       </EditorDialog.Body>
 
       <EditorDialog.Footer>

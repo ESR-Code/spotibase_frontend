@@ -1,9 +1,11 @@
 "use client";
 
-import { Heading, Type, type LucideIcon } from "lucide-react";
+import { ExternalLink, Heading, Type, type LucideIcon } from "lucide-react";
 import type { ComponentType } from "react";
 import { HeadingBlockEditor } from "@/app/editor/_components/blocks/heading-block-editor";
 import { HeadingBlockPreview } from "@/app/editor/_components/blocks/heading-block-preview";
+import { LinkBlockEditor } from "@/app/editor/_components/blocks/link-block-editor";
+import { LinkBlockPreview } from "@/app/editor/_components/blocks/link-block-preview";
 import { TextBlockEditor } from "@/app/editor/_components/blocks/text-block-editor";
 import { TextBlockPreview } from "@/app/editor/_components/blocks/text-block-preview";
 import { createBlock } from "@/lib/editor/blocks/create-block";
@@ -12,9 +14,11 @@ import type {
   HotspotBlockType,
 } from "@/lib/editor/types/hotspot-block";
 
+export type BlockEditorPatch = Partial<Omit<HotspotBlock, "id" | "type">>;
+
 type BlockEditorProps = {
   block: HotspotBlock;
-  onChange: (content: string) => void;
+  onChange: (patch: BlockEditorPatch) => void;
   autoFocus?: boolean;
 };
 
@@ -31,14 +35,10 @@ export type BlockDefinition = {
   Preview: ComponentType<BlockPreviewProps>;
 };
 
-function asBlockEditor<T extends HotspotBlock>(
-  Editor: ComponentType<{
-    block: T;
-    onChange: (content: string) => void;
-    autoFocus?: boolean;
-  }>,
+function asBlockEditor(
+  Editor: ComponentType<BlockEditorProps>,
 ): ComponentType<BlockEditorProps> {
-  return Editor as ComponentType<BlockEditorProps>;
+  return Editor;
 }
 
 function asBlockPreview<T extends HotspotBlock>(
@@ -53,7 +53,20 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
     label: "Heading",
     icon: Heading,
     createDefault: () => createBlock("heading"),
-    Editor: asBlockEditor(HeadingBlockEditor),
+    Editor: asBlockEditor(function HeadingEditorAdapter({
+      block,
+      onChange,
+      autoFocus,
+    }) {
+      if (block.type !== "heading") return null;
+      return (
+        <HeadingBlockEditor
+          block={block}
+          autoFocus={autoFocus}
+          onChange={(content) => onChange({ content })}
+        />
+      );
+    }),
     Preview: asBlockPreview(HeadingBlockPreview),
   },
   text: {
@@ -61,8 +74,42 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
     label: "Text",
     icon: Type,
     createDefault: () => createBlock("text"),
-    Editor: asBlockEditor(TextBlockEditor),
+    Editor: asBlockEditor(function TextEditorAdapter({
+      block,
+      onChange,
+      autoFocus,
+    }) {
+      if (block.type !== "text") return null;
+      return (
+        <TextBlockEditor
+          block={block}
+          autoFocus={autoFocus}
+          onChange={(content) => onChange({ content })}
+        />
+      );
+    }),
     Preview: asBlockPreview(TextBlockPreview),
+  },
+  link: {
+    type: "link",
+    label: "Link",
+    icon: ExternalLink,
+    createDefault: () => createBlock("link"),
+    Editor: asBlockEditor(function LinkEditorAdapter({
+      block,
+      onChange,
+      autoFocus,
+    }) {
+      if (block.type !== "link") return null;
+      return (
+        <LinkBlockEditor
+          block={block}
+          autoFocus={autoFocus}
+          onChange={onChange}
+        />
+      );
+    }),
+    Preview: asBlockPreview(LinkBlockPreview),
   },
 };
 

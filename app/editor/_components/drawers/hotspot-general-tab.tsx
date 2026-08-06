@@ -194,15 +194,6 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
             }
           />
         </div>
-
-        <div>
-          <FieldLabel>Link</FieldLabel>
-          <input
-            className="editor-input"
-            placeholder="https://external-docs…"
-            {...form.register("link")}
-          />
-        </div>
       </FormSection>
 
       <FormSection title="Position">

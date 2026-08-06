@@ -7,6 +7,11 @@ import type {
   ActionNodeType,
   ActionNodeXY,
 } from "@/lib/editor/types/hotspot-action";
+import {
+  normalizeExternalUrl,
+  openExternalUrl,
+} from "@/lib/editor/utils/open-external-url";
+import { toast } from "sonner";
 
 export type ActionRunContext = {
   hotspotId: number;
@@ -50,6 +55,25 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     run: (node) => {
       if (node.type !== "goToScene") return;
       return transitionToScene(node.data.sceneId);
+    },
+  },
+  openUrl: {
+    type: "openUrl",
+    label: "Open URL",
+    description: "Open a URL in a new browser tab.",
+    createDefault: (position) => createActionNode("openUrl", position),
+    validate: (node) => {
+      if (node.type !== "openUrl") return null;
+      if (!node.data.url.trim()) return "Enter a URL";
+      if (!normalizeExternalUrl(node.data.url)) return "Enter a valid URL";
+      return null;
+    },
+    run: (node) => {
+      if (node.type !== "openUrl") return;
+      if (!openExternalUrl(node.data.url)) {
+        toast.error("Open URL: invalid or empty URL");
+        return "stop";
+      }
     },
   },
 };

@@ -111,6 +111,14 @@ export function updateNodeData(
           },
         };
       }
+      if (node.type === "openUrl") {
+        return {
+          ...node,
+          data: {
+            url: typeof patch.url === "string" ? patch.url : node.data.url,
+          },
+        };
+      }
       return node;
     }),
   };

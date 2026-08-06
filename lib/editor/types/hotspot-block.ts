@@ -1,4 +1,4 @@
-export type HotspotBlockType = "heading" | "text";
+export type HotspotBlockType = "heading" | "text" | "link";
 
 export type HotspotBlockBase = {
   id: string;
@@ -14,4 +14,12 @@ export type TextBlock = HotspotBlockBase & {
   content: string;
 };
 
-export type HotspotBlock = HeadingBlock | TextBlock;
+export type LinkBlock = HotspotBlockBase & {
+  type: "link";
+  /** Button label shown in the marker dialog. */
+  label: string;
+  /** Destination opened in a new tab when the button is clicked. */
+  url: string;
+};
+
+export type HotspotBlock = HeadingBlock | TextBlock | LinkBlock;

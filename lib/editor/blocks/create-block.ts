@@ -2,6 +2,7 @@ import type {
   HeadingBlock,
   HotspotBlock,
   HotspotBlockType,
+  LinkBlock,
   TextBlock,
 } from "@/lib/editor/types/hotspot-block";
 
@@ -14,6 +15,7 @@ function newBlockId() {
 
 export function createBlock(type: "heading"): HeadingBlock;
 export function createBlock(type: "text"): TextBlock;
+export function createBlock(type: "link"): LinkBlock;
 export function createBlock(type: HotspotBlockType): HotspotBlock;
 export function createBlock(type: HotspotBlockType): HotspotBlock {
   switch (type) {
@@ -21,6 +23,13 @@ export function createBlock(type: HotspotBlockType): HotspotBlock {
       return { id: newBlockId(), type: "heading", content: "" };
     case "text":
       return { id: newBlockId(), type: "text", content: "" };
+    case "link":
+      return {
+        id: newBlockId(),
+        type: "link",
+        label: "Open Link",
+        url: "",
+      };
   }
 }
 

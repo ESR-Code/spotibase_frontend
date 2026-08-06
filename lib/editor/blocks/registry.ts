@@ -4,7 +4,11 @@ import type { HotspotBlockType } from "@/lib/editor/types/hotspot-block";
 /** Non-UI block metadata for menus and future non-React consumers. */
 export const BLOCK_TYPE_META: Record<
   HotspotBlockType,
-  { type: HotspotBlockType; label: string; createDefault: () => ReturnType<typeof createBlock> }
+  {
+    type: HotspotBlockType;
+    label: string;
+    createDefault: () => ReturnType<typeof createBlock>;
+  }
 > = {
   heading: {
     type: "heading",
@@ -15,6 +19,11 @@ export const BLOCK_TYPE_META: Record<
     type: "text",
     label: "Text",
     createDefault: () => createBlock("text"),
+  },
+  link: {
+    type: "link",
+    label: "Link",
+    createDefault: () => createBlock("link"),
   },
 };
 
