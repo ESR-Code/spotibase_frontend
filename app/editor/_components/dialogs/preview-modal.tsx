@@ -156,11 +156,7 @@ export function PreviewModal() {
   const closeButton = (
     <IconButton
       title="Close"
-      style={{
-        background: "rgba(11,20,36,0.7)",
-        border: "1px solid var(--editor-line)",
-        backdropFilter: "blur(8px)",
-      }}
+      className={hasHeaderImage ? "editor-marker-dialog-close" : undefined}
       onClick={close}
     >
       <X />

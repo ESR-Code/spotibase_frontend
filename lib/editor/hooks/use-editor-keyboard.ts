@@ -38,7 +38,11 @@ export function useEditorKeyboard() {
           ui.setLegendFilterCategory(LEGEND_CATEGORY_ALL);
           window.dispatchEvent(new CustomEvent("editor:reset-camera"));
         } else {
+          const keepGeneralSettings = ui.generalSettingsDrawerOpen;
           closeAllOverlays();
+          if (keepGeneralSettings) {
+            useUIStore.getState().setGeneralSettingsDrawerOpen(true);
+          }
           setPropertiesDrawerOpen(false);
           useUIStore.getState().setOutlinerCollapsed(true);
           selectHotspot(null);

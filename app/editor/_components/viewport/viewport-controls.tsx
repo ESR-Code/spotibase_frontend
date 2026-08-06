@@ -59,7 +59,10 @@ export function ViewportControls() {
       <ControlButton
         title="Scene settings"
         disabled={isPreview}
-        onClick={() => setSettingsDrawerOpen(true)}
+        onClick={() => {
+          useUIStore.getState().setGeneralSettingsDrawerOpen(false);
+          setSettingsDrawerOpen(true);
+        }}
       >
         <SlidersHorizontal className="h-3.5 w-3.5" />
       </ControlButton>

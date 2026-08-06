@@ -2,6 +2,7 @@
 
 import { PenTool } from "lucide-react";
 import { EditorChip } from "@/app/editor/_components/ui/editor-chip";
+import { HeaderNavMenu } from "@/app/editor/_components/toolbar/header-nav-menu";
 import { ModeToolbar } from "@/app/editor/_components/toolbar/mode-toolbar";
 import { useActiveScene } from "@/lib/editor/state/scenes-store";
 import { PROJECT_NAME } from "@/lib/editor/theme/tokens";
@@ -46,6 +47,8 @@ export function EditorHeader() {
       </div>
 
       <div className="editor-vsep" />
+
+      <HeaderNavMenu />
 
       <div className="hidden items-center gap-3 md:flex">
         <div>

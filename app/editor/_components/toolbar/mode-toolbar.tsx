@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Layers,
   MousePointer2,
   Play,
   Plus,
@@ -22,18 +21,22 @@ export function ModeToolbar() {
   const setPreviewActiveHotspotId = useUIStore((s) => s.setPreviewActiveHotspotId);
   const setPreviewLabelPending = useUIStore((s) => s.setPreviewLabelPending);
   const setHoverTooltip = useUIStore((s) => s.setHoverTooltip);
-  const scenesModalOpen = useUIStore((s) => s.scenesModalOpen);
-  const setScenesModalOpen = useUIStore((s) => s.setScenesModalOpen);
   const actionsModal = useUIStore((s) => s.actionsModal);
   const openActionsModal = useUIStore((s) => s.openActionsModal);
   const sceneActionsOpen = actionsModal?.kind === "scene";
+  const generalSettingsOpen = useUIStore((s) => s.generalSettingsDrawerOpen);
+  const setGeneralSettingsDrawerOpen = useUIStore(
+    (s) => s.setGeneralSettingsDrawerOpen,
+  );
 
   const handleMode = (next: "select" | "add" | "preview") => {
     if (next === "preview") {
       const entering = !isPreview;
       setMode("preview");
       if (entering) {
+        const keepGeneralSettings = generalSettingsOpen;
         closeAllOverlays();
+        if (keepGeneralSettings) setGeneralSettingsDrawerOpen(true);
         setPropertiesDrawerOpen(false);
         useUIStore.getState().setOutlinerCollapsed(true);
         useEditorStore.getState().selectHotspot(null);
@@ -60,18 +63,6 @@ export function ModeToolbar() {
         border: "1px solid var(--editor-line)",
       }}
     >
-      <button
-        type="button"
-        disabled={isPreview}
-        className={`editor-tool-btn ${scenesModalOpen ? "active" : ""} ${isPreview ? "disabled" : ""}`}
-        onClick={() => {
-          if (!isPreview) setScenesModalOpen(true);
-        }}
-      >
-        <Layers className="h-3 w-3" />
-        Scenes
-      </button>
-      <div className="editor-vsep" style={{ height: 18 }} />
       <button
         type="button"
         disabled={isPreview}

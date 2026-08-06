@@ -19,6 +19,7 @@ export function openHotspotInPreview(id: number) {
   const settings = useSettingsStore.getState();
 
   ui.setSettingsDrawerOpen(false);
+  ui.setGeneralSettingsDrawerOpen(false);
   ui.setPreviewActiveHotspotId(hotspot.id);
   ui.setPreviewModalIndex(index);
   editor.setHoveredHotspot(null);

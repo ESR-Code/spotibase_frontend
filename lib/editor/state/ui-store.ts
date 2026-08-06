@@ -29,6 +29,7 @@ type UIState = {
   hudCollapsed: boolean;
   propertiesDrawerOpen: boolean;
   settingsDrawerOpen: boolean;
+  generalSettingsDrawerOpen: boolean;
   legendDrawerOpen: boolean;
   /** Legend category filter in Preview (`LEGEND_CATEGORY_ALL` = show all). */
   legendFilterCategory: string;
@@ -49,6 +50,7 @@ type UIState = {
   setHudCollapsed: (value: boolean) => void;
   setPropertiesDrawerOpen: (value: boolean) => void;
   setSettingsDrawerOpen: (value: boolean) => void;
+  setGeneralSettingsDrawerOpen: (value: boolean) => void;
   setLegendDrawerOpen: (value: boolean) => void;
   setLegendFilterCategory: (value: string) => void;
   setPreviewModalOpen: (value: boolean) => void;
@@ -73,6 +75,7 @@ export const useUIStore = create<UIState>((set) => ({
   hudCollapsed: true,
   propertiesDrawerOpen: false,
   settingsDrawerOpen: false,
+  generalSettingsDrawerOpen: false,
   legendDrawerOpen: false,
   legendFilterCategory: LEGEND_CATEGORY_ALL,
   previewModalOpen: false,
@@ -90,6 +93,8 @@ export const useUIStore = create<UIState>((set) => ({
   setPropertiesDrawerOpen: (propertiesDrawerOpen) =>
     set({ propertiesDrawerOpen }),
   setSettingsDrawerOpen: (settingsDrawerOpen) => set({ settingsDrawerOpen }),
+  setGeneralSettingsDrawerOpen: (generalSettingsDrawerOpen) =>
+    set({ generalSettingsDrawerOpen }),
   setLegendDrawerOpen: (legendDrawerOpen) => set({ legendDrawerOpen }),
   setLegendFilterCategory: (legendFilterCategory) =>
     set({ legendFilterCategory }),
@@ -121,6 +126,7 @@ export const useUIStore = create<UIState>((set) => ({
   closeAllOverlays: () =>
     set({
       settingsDrawerOpen: false,
+      generalSettingsDrawerOpen: false,
       legendDrawerOpen: false,
       legendFilterCategory: LEGEND_CATEGORY_ALL,
       previewModalOpen: false,

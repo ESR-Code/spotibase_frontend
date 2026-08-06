@@ -9,21 +9,32 @@ import {
   LegendButton,
   LegendDrawer,
 } from "@/app/editor/_components/drawers/legend-drawer";
+import { GeneralSettingsDrawer } from "@/app/editor/_components/drawers/general-settings-drawer";
 import { SettingsDrawer } from "@/app/editor/_components/drawers/settings-drawer";
 import { ActionsModal } from "@/app/editor/_components/actions/actions-modal";
 import { PreviewModal } from "@/app/editor/_components/dialogs/preview-modal";
 import { ScenesModal } from "@/app/editor/_components/dialogs/scenes-modal";
 import { SceneTransitionOverlay } from "@/app/editor/_components/viewport/scene-transition-overlay";
 import { useEditorKeyboard } from "@/lib/editor/hooks/use-editor-keyboard";
+import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useGeneralSettingsStore } from "@/lib/editor/state/general-settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
+import { generalStyleToCssVars } from "@/lib/editor/theme/preview-style-vars";
 
 export function EditorShell() {
   useEditorKeyboard();
   const outlinerCollapsed = useUIStore((s) => s.outlinerCollapsed);
+  const isPreview = useEditorStore((s) => s.isPreview);
+  const generalStyle = useGeneralSettingsStore((s) => s.style);
 
   return (
     <div
       className={`editor-root relative flex h-dvh w-full flex-col ${outlinerCollapsed ? "outliner-collapsed" : ""}`}
+      data-preview={isPreview ? "true" : undefined}
+      data-preview-borders={
+        isPreview ? (generalStyle.bordersEnabled ? "on" : "off") : undefined
+      }
+      style={isPreview ? generalStyleToCssVars(generalStyle) : undefined}
     >
       <LoadingOverlay />
       <EditorHeader />
@@ -34,6 +45,7 @@ export function EditorShell() {
         <OutlinerExpandTab />
         <HotspotPropertiesDrawer />
         <SettingsDrawer />
+        <GeneralSettingsDrawer />
         <LegendDrawer />
         <LegendButton />
         <PreviewModal />
