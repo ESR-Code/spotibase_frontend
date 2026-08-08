@@ -25,8 +25,10 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
 
   // Studio-like exposure (matches reference ~1.15)
   app.scene.exposure = 1.2;
-  app.scene.ambientLight = new pcModule.Color(0.42, 0.46, 0.55);
-  app.scene.ambientLuminance = 0.35;
+  // Keep ambient modest so key-light self-shadows on imported models stay
+  // readable. The ground shadow catcher is unaffected by ambient/fill.
+  app.scene.ambientLight = new pcModule.Color(0.3, 0.34, 0.42);
+  app.scene.ambientLuminance = 0.2;
 
   const camera = new pcModule.Entity("Camera");
   camera.addComponent("camera", {
@@ -46,14 +48,19 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
     intensity: env.keyIntensity,
     castShadows: true,
     shadowResolution: 2048,
-    shadowDistance: 40,
+    // Tight enough for ~6-unit normalized models while still covering orbit.
+    shadowDistance: 28,
     shadowIntensity: env.shadowIntensity,
-    shadowBias: 0.3,
-    normalOffsetBias: 0.08,
+    // PlayCanvas default is 0.05; large bias peter-pans contact/self shadows.
+    shadowBias: 0.06,
+    normalOffsetBias: 0.04,
     shadowType: pcModule.SHADOW_PCF5_32F,
+    // Near cascades restore detail inside dense imported meshes (factories, etc.).
+    numCascades: 3,
+    cascadeDistribution: 0.72,
+    cascadeBlend: 0.12,
   });
-  keyLight.setPosition(7, 14, 5);
-  keyLight.lookAt(0, 1, 0);
+  applyDirectionalSpherical(keyLight, env.keyPitch, env.keyYaw, 16);
   app.root.addChild(keyLight);
 
   // Fill — cool bounce so dark sides stay readable
@@ -64,15 +71,15 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
     intensity: env.fillIntensity,
     castShadows: false,
   });
-  applyFillLightSpherical(fillLight, env.fillPitch, env.fillYaw);
+  applyDirectionalSpherical(fillLight, env.fillPitch, env.fillYaw, 10);
   app.root.addChild(fillLight);
 
-  // Rim — edge definition from behind
+  // Rim — edge definition from behind (low enough not to fill interiors)
   const rimLight = new pcModule.Entity("RimLight");
   rimLight.addComponent("light", {
     type: "directional",
     color: hexToColor(pcModule, "#dce8ff"),
-    intensity: 0.85,
+    intensity: 0.5,
     castShadows: false,
   });
   rimLight.setPosition(-2, 5, -10);
@@ -122,6 +129,7 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
       keyLight.light.intensity = state.keyIntensity;
       keyLight.light.color = hexToColor(pcModule, state.keyColor);
       keyLight.light.shadowIntensity = state.shadowIntensity;
+      applyDirectionalSpherical(keyLight, state.keyPitch, state.keyYaw, 16);
     }
     if (shadowCatcher.render?.meshInstances?.[0]?.material) {
       applyShadowCatcherAppearance(
@@ -132,7 +140,7 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
     if (fillLight.light) {
       fillLight.light.intensity = state.fillIntensity;
       fillLight.light.color = hexToColor(pcModule, state.fillColor);
-      applyFillLightSpherical(fillLight, state.fillPitch, state.fillYaw);
+      applyDirectionalSpherical(fillLight, state.fillPitch, state.fillYaw, 10);
     }
     applyGridVisibility();
   };
@@ -153,8 +161,12 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
   };
 }
 
-function applyFillLightSpherical(light: Entity, pitchDeg: number, yawDeg: number) {
-  const dist = 10;
+function applyDirectionalSpherical(
+  light: Entity,
+  pitchDeg: number,
+  yawDeg: number,
+  dist: number,
+) {
   const pitch = (pitchDeg * Math.PI) / 180;
   const yaw = (yawDeg * Math.PI) / 180;
   const x = Math.cos(pitch) * Math.sin(yaw) * dist;

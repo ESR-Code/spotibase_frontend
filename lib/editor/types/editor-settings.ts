@@ -70,6 +70,8 @@ export type EnvironmentSettings = {
   shadowColor: string;
   keyIntensity: number;
   keyColor: string;
+  keyPitch: number;
+  keyYaw: number;
   fillIntensity: number;
   fillColor: string;
   fillPitch: number;

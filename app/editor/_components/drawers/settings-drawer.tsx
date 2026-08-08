@@ -416,89 +416,104 @@ export function SettingsDrawer() {
         </SettingsSection>
 
         <SettingsSection title="Environment & Lighting" icon={<Sun className="h-3.5 w-3.5" />}>
-          <div>
-            <FieldLabel>Environment Color</FieldLabel>
+          <EnvGroup
+            title="Environment"
+            icon={<LayoutGrid className="h-3 w-3" />}
+          >
+            <FieldLabel>Background Color</FieldLabel>
             <input
               type="color"
               className="h-8 w-full rounded"
               value={env.bgColor}
               onChange={(e) => envForm.setValue("bgColor", e.target.value)}
             />
-          </div>
+          </EnvGroup>
 
-          <div
-            className="pt-3"
-            style={{ borderTop: "1px solid var(--editor-line-soft)" }}
+          <EnvGroup
+            title="Shadows"
+            icon={<Moon className="h-3 w-3" />}
           >
-            <FieldLabel className="flex items-center gap-1.5">
-              <Moon className="h-3 w-3" style={{ color: "var(--editor-muted)" }} />
-              Shadows
-            </FieldLabel>
-            <SliderField
-              label="Intensity"
-              value={env.shadowIntensity}
-              display={env.shadowIntensity.toFixed(2)}
-              min={0}
-              max={1}
-              step={0.05}
-              onChange={(v) => envForm.setValue("shadowIntensity", v)}
-            />
-            <FieldLabel className="mt-2">Color</FieldLabel>
-            <input
-              type="color"
-              className="h-8 w-full rounded"
-              value={env.shadowColor}
-              onChange={(e) => envForm.setValue("shadowColor", e.target.value)}
-            />
-          </div>
+            <div className="editor-env-inline-row">
+              <div className="editor-env-inline-slider">
+                <SliderField
+                  label="Intensity"
+                  value={env.shadowIntensity}
+                  display={env.shadowIntensity.toFixed(2)}
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  onChange={(v) => envForm.setValue("shadowIntensity", v)}
+                />
+              </div>
+              <ColorSwatch
+                label="Color"
+                value={env.shadowColor}
+                onChange={(v) => envForm.setValue("shadowColor", v)}
+              />
+            </div>
+          </EnvGroup>
 
-          <div
-            className="pt-3"
-            style={{ borderTop: "1px solid var(--editor-line-soft)" }}
+          <EnvGroup
+            title="Key Light"
+            icon={<Sun className="h-3 w-3" />}
           >
-            <FieldLabel className="flex items-center gap-1.5">
-              <Sun className="h-3 w-3" style={{ color: "var(--editor-crimson-2)" }} />
-              Key Light
-            </FieldLabel>
+            <div className="editor-env-inline-row">
+              <div className="editor-env-inline-slider">
+                <SliderField
+                  label="Brightness"
+                  value={env.keyIntensity}
+                  display={env.keyIntensity.toFixed(2)}
+                  min={0}
+                  max={5}
+                  step={0.1}
+                  onChange={(v) => envForm.setValue("keyIntensity", v)}
+                />
+              </div>
+              <ColorSwatch
+                label="Color"
+                value={env.keyColor}
+                onChange={(v) => envForm.setValue("keyColor", v)}
+              />
+            </div>
             <SliderField
-              label="Brightness"
-              value={env.keyIntensity}
-              display={env.keyIntensity.toFixed(2)}
-              min={0}
-              max={5}
-              step={0.1}
-              onChange={(v) => envForm.setValue("keyIntensity", v)}
+              label="Rotate X (Pitch)"
+              value={env.keyPitch}
+              display={`${env.keyPitch}°`}
+              min={-90}
+              max={90}
+              step={5}
+              onChange={(v) => envForm.setValue("keyPitch", v)}
             />
-            <FieldLabel className="mt-2">Color</FieldLabel>
-            <input
-              type="color"
-              className="h-8 w-full rounded"
-              value={env.keyColor}
-              onChange={(e) => envForm.setValue("keyColor", e.target.value)}
+            <SliderField
+              label="Rotate Y (Yaw)"
+              value={env.keyYaw}
+              display={`${env.keyYaw}°`}
+              min={-180}
+              max={180}
+              step={5}
+              onChange={(v) => envForm.setValue("keyYaw", v)}
             />
-          </div>
+          </EnvGroup>
 
-          <div
-            className="pt-3"
-            style={{ borderTop: "1px solid var(--editor-line-soft)" }}
-          >
-            <FieldLabel>Ambient / Fill Light</FieldLabel>
-            <SliderField
-              label="Brightness"
-              value={env.fillIntensity}
-              display={env.fillIntensity.toFixed(2)}
-              min={0}
-              max={5}
-              step={0.1}
-              onChange={(v) => envForm.setValue("fillIntensity", v)}
-            />
-            <FieldLabel className="mt-2">Color</FieldLabel>
-            <input
-              type="color"
-              className="mb-2 h-8 w-full rounded"
-              value={env.fillColor}
-              onChange={(e) => envForm.setValue("fillColor", e.target.value)}
-            />
+          <EnvGroup title="Ambient / Fill Light">
+            <div className="editor-env-inline-row">
+              <div className="editor-env-inline-slider">
+                <SliderField
+                  label="Brightness"
+                  value={env.fillIntensity}
+                  display={env.fillIntensity.toFixed(2)}
+                  min={0}
+                  max={5}
+                  step={0.1}
+                  onChange={(v) => envForm.setValue("fillIntensity", v)}
+                />
+              </div>
+              <ColorSwatch
+                label="Color"
+                value={env.fillColor}
+                onChange={(v) => envForm.setValue("fillColor", v)}
+              />
+            </div>
             <SliderField
               label="Rotate X (Pitch)"
               value={env.fillPitch}
@@ -517,7 +532,7 @@ export function SettingsDrawer() {
               step={5}
               onChange={(v) => envForm.setValue("fillYaw", v)}
             />
-          </div>
+          </EnvGroup>
         </SettingsSection>
       </div>
 
@@ -560,7 +575,52 @@ function SettingsSection({
         {title}
         <ChevronDown className="editor-settings-sec-chevron h-3 w-3" />
       </button>
-      {open ? <div className="editor-settings-section-body space-y-3">{children}</div> : null}
+      {open ? (
+        <div className="editor-settings-section-body space-y-2.5">{children}</div>
+      ) : null}
+    </div>
+  );
+}
+
+function EnvGroup({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="editor-env-group">
+      <div className="editor-env-group-head">
+        {icon ? <span className="editor-env-group-icon">{icon}</span> : null}
+        <span>{title}</span>
+      </div>
+      <div className="editor-env-group-body space-y-2.5">{children}</div>
+    </div>
+  );
+}
+
+function ColorSwatch({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="editor-env-swatch">
+      <FieldLabel>{label}</FieldLabel>
+      <input
+        type="color"
+        className="editor-env-swatch-input"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        title={value}
+      />
     </div>
   );
 }

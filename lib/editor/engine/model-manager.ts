@@ -191,6 +191,7 @@ export function createModelManager(
       };
       const entity = resource.instantiateRenderEntity();
       const { sizeLabel, triangles } = normalizeEntity(entity, pcModule);
+      prepareImportedModelMaterials(entity, pcModule);
       modelRoot.addChild(entity);
 
       const wireframe = useModelStore.getState().wireframe;
@@ -414,6 +415,53 @@ function buildImagePlane(
   plane.setLocalPosition(0, 0, 0);
 
   return plane;
+}
+
+/**
+ * Imported GLBs often carry AO/occlusion maps and glossy specular that
+ * compete with real-time directional shadows. Nudge materials so cavity
+ * shadowing (AO + key-light self-shadow) reads more clearly.
+ */
+function prepareImportedModelMaterials(
+  entity: Entity,
+  pcModule: typeof pc,
+) {
+  const seen = new Set<StandardMaterial>();
+
+  entity.forEach((node) => {
+    const render = (node as Entity).render;
+    if (!render?.meshInstances?.length) return;
+
+    for (const mi of render.meshInstances) {
+      const material = mi.material as StandardMaterial | null | undefined;
+      if (!material || typeof material.update !== "function") continue;
+      if (seen.has(material)) continue;
+      seen.add(material);
+
+      if (material.aoMap) {
+        // AO should darken lit recesses, not only ambient.
+        // Runtime accepts boolean; generated typings expose a numeric setter.
+        (material as unknown as { occludeDirect: boolean }).occludeDirect = true;
+        material.occludeSpecular = pcModule.SPECOCC_AO;
+        if (typeof material.aoIntensity === "number") {
+          material.aoIntensity = Math.min(
+            1.35,
+            Math.max(material.aoIntensity, 1.1),
+          );
+        }
+      }
+
+      // Slightly damp extreme specular so soft self-shadows aren't bleached.
+      if (
+        typeof material.specularityFactor === "number" &&
+        material.specularityFactor > 0.85
+      ) {
+        material.specularityFactor = 0.85;
+      }
+
+      material.update();
+    }
+  });
 }
 
 function normalizeEntity(

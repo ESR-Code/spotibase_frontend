@@ -19,6 +19,8 @@ function pickEnvironment(state: EnvironmentState): EnvironmentSettings {
     shadowColor: state.shadowColor,
     keyIntensity: state.keyIntensity,
     keyColor: state.keyColor,
+    keyPitch: state.keyPitch,
+    keyYaw: state.keyYaw,
     fillIntensity: state.fillIntensity,
     fillColor: state.fillColor,
     fillPitch: state.fillPitch,

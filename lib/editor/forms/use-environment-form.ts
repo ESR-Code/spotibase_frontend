@@ -11,6 +11,25 @@ import {
 import { useEnvironmentStore } from "@/lib/editor/state/environment-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 
+function toFormValues(
+  environment: EnvironmentFormValues | typeof DEFAULT_ENVIRONMENT_SETTINGS,
+): EnvironmentFormValues {
+  return {
+    bgColor: environment.bgColor,
+    show3dGrid: environment.show3dGrid,
+    shadowIntensity: environment.shadowIntensity,
+    shadowColor: environment.shadowColor,
+    keyIntensity: environment.keyIntensity,
+    keyColor: environment.keyColor,
+    keyPitch: environment.keyPitch,
+    keyYaw: environment.keyYaw,
+    fillIntensity: environment.fillIntensity,
+    fillColor: environment.fillColor,
+    fillPitch: environment.fillPitch,
+    fillYaw: environment.fillYaw,
+  };
+}
+
 export function useEnvironmentForm() {
   const environment = useEnvironmentStore();
   const setEnvironment = useEnvironmentStore((s) => s.setEnvironment);
@@ -19,18 +38,7 @@ export function useEnvironmentForm() {
 
   const form = useForm<EnvironmentFormValues>({
     resolver: zodResolver(environmentFormSchema),
-    defaultValues: {
-      bgColor: environment.bgColor,
-      show3dGrid: environment.show3dGrid,
-      shadowIntensity: environment.shadowIntensity,
-      shadowColor: environment.shadowColor,
-      keyIntensity: environment.keyIntensity,
-      keyColor: environment.keyColor,
-      fillIntensity: environment.fillIntensity,
-      fillColor: environment.fillColor,
-      fillPitch: environment.fillPitch,
-      fillYaw: environment.fillYaw,
-    },
+    defaultValues: toFormValues(environment),
   });
 
   useEffect(() => {
@@ -42,19 +50,7 @@ export function useEnvironmentForm() {
 
   // Keep the drawer form in sync when switching scenes.
   useEffect(() => {
-    const env = useEnvironmentStore.getState();
-    form.reset({
-      bgColor: env.bgColor,
-      show3dGrid: env.show3dGrid,
-      shadowIntensity: env.shadowIntensity,
-      shadowColor: env.shadowColor,
-      keyIntensity: env.keyIntensity,
-      keyColor: env.keyColor,
-      fillIntensity: env.fillIntensity,
-      fillColor: env.fillColor,
-      fillPitch: env.fillPitch,
-      fillYaw: env.fillYaw,
-    });
+    form.reset(toFormValues(useEnvironmentStore.getState()));
   }, [activeSceneId, form]);
 
   const reset = () => {

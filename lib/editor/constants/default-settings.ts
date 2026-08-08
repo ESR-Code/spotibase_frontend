@@ -49,11 +49,14 @@ export function cloneCameraResetPosition(
 export const DEFAULT_ENVIRONMENT_SETTINGS: EnvironmentSettings = {
   bgColor: "#c0cbdd",
   show3dGrid: true,
-  shadowIntensity: 0.38,
-  shadowColor: "#1e2433",
+  shadowIntensity: 0.35,
+  shadowColor: "#4b5b81",
   keyIntensity: 2.35,
   keyColor: "#fff4e8",
-  fillIntensity: 1.05,
+  // Matches prior fixed key direction (~7, 14, 5).
+  keyPitch: 58,
+  keyYaw: 54,
+  fillIntensity: 2.3,
   fillColor: "#9bb8ff",
   fillPitch: 35,
   fillYaw: -140,
@@ -78,7 +81,7 @@ export function cloneEditorSettings(settings: EditorSettings): EditorSettings {
 }
 
 export function cloneEnvironmentSettings(
-  environment: EnvironmentSettings,
+  environment: Partial<EnvironmentSettings>,
 ): EnvironmentSettings {
-  return { ...environment };
+  return { ...DEFAULT_ENVIRONMENT_SETTINGS, ...environment };
 }
