@@ -32,7 +32,10 @@ import type {
   MarkerDialogSize,
 } from "@/lib/editor/types/editor-settings";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
-import { syncActiveSceneSettings } from "@/lib/editor/state/scenes-store";
+import {
+  syncActiveSceneSettings,
+  useActiveScene,
+} from "@/lib/editor/state/scenes-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
 const MARKER_DIALOG_MODES: {
@@ -61,6 +64,8 @@ export function SettingsDrawer() {
   const { form: envForm, reset: resetEnvironment } = useEnvironmentForm();
   const values = form.watch();
   const env = envForm.watch();
+  const scene = useActiveScene();
+  const isModelScene = scene.type === "model";
   const resetPosition = useSettingsStore((s) => s.resetPosition);
   const setSettings = useSettingsStore((s) => s.setSettings);
 
@@ -415,7 +420,10 @@ export function SettingsDrawer() {
           />
         </SettingsSection>
 
-        <SettingsSection title="Environment & Lighting" icon={<Sun className="h-3.5 w-3.5" />}>
+        <SettingsSection
+          title={isModelScene ? "Environment & Lighting" : "Environment"}
+          icon={<Sun className="h-3.5 w-3.5" />}
+        >
           <EnvGroup
             title="Environment"
             icon={<LayoutGrid className="h-3 w-3" />}
@@ -429,110 +437,114 @@ export function SettingsDrawer() {
             />
           </EnvGroup>
 
-          <EnvGroup
-            title="Shadows"
-            icon={<Moon className="h-3 w-3" />}
-          >
-            <div className="editor-env-inline-row">
-              <div className="editor-env-inline-slider">
-                <SliderField
-                  label="Intensity"
-                  value={env.shadowIntensity}
-                  display={env.shadowIntensity.toFixed(2)}
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  onChange={(v) => envForm.setValue("shadowIntensity", v)}
-                />
-              </div>
-              <ColorSwatch
-                label="Color"
-                value={env.shadowColor}
-                onChange={(v) => envForm.setValue("shadowColor", v)}
-              />
-            </div>
-          </EnvGroup>
+          {isModelScene ? (
+            <>
+              <EnvGroup
+                title="Shadows"
+                icon={<Moon className="h-3 w-3" />}
+              >
+                <div className="editor-env-inline-row">
+                  <div className="editor-env-inline-slider">
+                    <SliderField
+                      label="Intensity"
+                      value={env.shadowIntensity}
+                      display={env.shadowIntensity.toFixed(2)}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      onChange={(v) => envForm.setValue("shadowIntensity", v)}
+                    />
+                  </div>
+                  <ColorSwatch
+                    label="Color"
+                    value={env.shadowColor}
+                    onChange={(v) => envForm.setValue("shadowColor", v)}
+                  />
+                </div>
+              </EnvGroup>
 
-          <EnvGroup
-            title="Key Light"
-            icon={<Sun className="h-3 w-3" />}
-          >
-            <div className="editor-env-inline-row">
-              <div className="editor-env-inline-slider">
+              <EnvGroup
+                title="Key Light"
+                icon={<Sun className="h-3 w-3" />}
+              >
+                <div className="editor-env-inline-row">
+                  <div className="editor-env-inline-slider">
+                    <SliderField
+                      label="Brightness"
+                      value={env.keyIntensity}
+                      display={env.keyIntensity.toFixed(2)}
+                      min={0}
+                      max={5}
+                      step={0.1}
+                      onChange={(v) => envForm.setValue("keyIntensity", v)}
+                    />
+                  </div>
+                  <ColorSwatch
+                    label="Color"
+                    value={env.keyColor}
+                    onChange={(v) => envForm.setValue("keyColor", v)}
+                  />
+                </div>
                 <SliderField
-                  label="Brightness"
-                  value={env.keyIntensity}
-                  display={env.keyIntensity.toFixed(2)}
-                  min={0}
-                  max={5}
-                  step={0.1}
-                  onChange={(v) => envForm.setValue("keyIntensity", v)}
+                  label="Rotate X (Pitch)"
+                  value={env.keyPitch}
+                  display={`${env.keyPitch}°`}
+                  min={-90}
+                  max={90}
+                  step={5}
+                  onChange={(v) => envForm.setValue("keyPitch", v)}
                 />
-              </div>
-              <ColorSwatch
-                label="Color"
-                value={env.keyColor}
-                onChange={(v) => envForm.setValue("keyColor", v)}
-              />
-            </div>
-            <SliderField
-              label="Rotate X (Pitch)"
-              value={env.keyPitch}
-              display={`${env.keyPitch}°`}
-              min={-90}
-              max={90}
-              step={5}
-              onChange={(v) => envForm.setValue("keyPitch", v)}
-            />
-            <SliderField
-              label="Rotate Y (Yaw)"
-              value={env.keyYaw}
-              display={`${env.keyYaw}°`}
-              min={-180}
-              max={180}
-              step={5}
-              onChange={(v) => envForm.setValue("keyYaw", v)}
-            />
-          </EnvGroup>
+                <SliderField
+                  label="Rotate Y (Yaw)"
+                  value={env.keyYaw}
+                  display={`${env.keyYaw}°`}
+                  min={-180}
+                  max={180}
+                  step={5}
+                  onChange={(v) => envForm.setValue("keyYaw", v)}
+                />
+              </EnvGroup>
 
-          <EnvGroup title="Ambient / Fill Light">
-            <div className="editor-env-inline-row">
-              <div className="editor-env-inline-slider">
+              <EnvGroup title="Ambient / Fill Light">
+                <div className="editor-env-inline-row">
+                  <div className="editor-env-inline-slider">
+                    <SliderField
+                      label="Brightness"
+                      value={env.fillIntensity}
+                      display={env.fillIntensity.toFixed(2)}
+                      min={0}
+                      max={5}
+                      step={0.1}
+                      onChange={(v) => envForm.setValue("fillIntensity", v)}
+                    />
+                  </div>
+                  <ColorSwatch
+                    label="Color"
+                    value={env.fillColor}
+                    onChange={(v) => envForm.setValue("fillColor", v)}
+                  />
+                </div>
                 <SliderField
-                  label="Brightness"
-                  value={env.fillIntensity}
-                  display={env.fillIntensity.toFixed(2)}
-                  min={0}
-                  max={5}
-                  step={0.1}
-                  onChange={(v) => envForm.setValue("fillIntensity", v)}
+                  label="Rotate X (Pitch)"
+                  value={env.fillPitch}
+                  display={`${env.fillPitch}°`}
+                  min={-90}
+                  max={90}
+                  step={5}
+                  onChange={(v) => envForm.setValue("fillPitch", v)}
                 />
-              </div>
-              <ColorSwatch
-                label="Color"
-                value={env.fillColor}
-                onChange={(v) => envForm.setValue("fillColor", v)}
-              />
-            </div>
-            <SliderField
-              label="Rotate X (Pitch)"
-              value={env.fillPitch}
-              display={`${env.fillPitch}°`}
-              min={-90}
-              max={90}
-              step={5}
-              onChange={(v) => envForm.setValue("fillPitch", v)}
-            />
-            <SliderField
-              label="Rotate Y (Yaw)"
-              value={env.fillYaw}
-              display={`${env.fillYaw}°`}
-              min={-180}
-              max={180}
-              step={5}
-              onChange={(v) => envForm.setValue("fillYaw", v)}
-            />
-          </EnvGroup>
+                <SliderField
+                  label="Rotate Y (Yaw)"
+                  value={env.fillYaw}
+                  display={`${env.fillYaw}°`}
+                  min={-180}
+                  max={180}
+                  step={5}
+                  onChange={(v) => envForm.setValue("fillYaw", v)}
+                />
+              </EnvGroup>
+            </>
+          ) : null}
         </SettingsSection>
       </div>
 
