@@ -7,6 +7,7 @@ import {
 import {
   cloneCameraResetPosition,
   cloneEditorSettings,
+  cloneEffectsSettings,
   cloneEnvironmentSettings,
 } from "@/lib/editor/constants/default-settings";
 import {
@@ -16,6 +17,10 @@ import {
   SEED_SCENE,
 } from "@/lib/editor/constants/seed-scene";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import {
+  readEffectsSnapshot,
+  useEffectsStore,
+} from "@/lib/editor/state/effects-store";
 import {
   readEnvironmentSnapshot,
   useEnvironmentStore,
@@ -55,6 +60,7 @@ function snapshotCurrentIntoScene(scene: Scene): Scene {
     },
     settings: readEditorSettingsSnapshot(),
     environment: readEnvironmentSnapshot(),
+    effects: readEffectsSnapshot(),
   };
 }
 
@@ -104,6 +110,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
       model: { ...SEED_SCENE.model, rotation: { ...SEED_SCENE.model.rotation } },
       settings: cloneEditorSettings(SEED_SCENE.settings),
       environment: cloneEnvironmentSettings(SEED_SCENE.environment),
+      effects: cloneEffectsSettings(SEED_SCENE.effects),
     },
   ],
   activeSceneId: INITIAL_SCENE_ID,
@@ -204,6 +211,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
     useModelStore.getState().hydrateFromScene(next.model);
     useSettingsStore.getState().hydrateSettings(next.settings);
     useEnvironmentStore.getState().hydrateEnvironment(next.environment);
+    useEffectsStore.getState().hydrateEffects(next.effects);
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(

@@ -11,6 +11,7 @@ import {
   Ban,
   Moon,
   PanelRight,
+  Sparkles,
   Square,
   Sun,
   X,
@@ -25,6 +26,7 @@ import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
+import { useEffectsForm } from "@/lib/editor/forms/use-effects-form";
 import { useEnvironmentForm } from "@/lib/editor/forms/use-environment-form";
 import { useSettingsForm } from "@/lib/editor/forms/use-settings-form";
 import type {
@@ -62,8 +64,10 @@ export function SettingsDrawer() {
   const setOpen = useUIStore((s) => s.setSettingsDrawerOpen);
   const { form, reset: resetSettings } = useSettingsForm();
   const { form: envForm, reset: resetEnvironment } = useEnvironmentForm();
+  const { form: effectsForm, reset: resetEffects } = useEffectsForm();
   const values = form.watch();
   const env = envForm.watch();
+  const effects = effectsForm.watch();
   const scene = useActiveScene();
   const isModelScene = scene.type === "model";
   const resetPosition = useSettingsStore((s) => s.resetPosition);
@@ -72,6 +76,7 @@ export function SettingsDrawer() {
   const resetAll = () => {
     resetSettings();
     resetEnvironment();
+    resetEffects();
   };
 
   const clearResetPosition = () => {
@@ -419,6 +424,69 @@ export function SettingsDrawer() {
             onChange={(checked) => form.setValue("legendEnabled", checked)}
           />
         </SettingsSection>
+
+        {isModelScene ? (
+          <SettingsSection title="Effects" icon={<Sparkles className="h-3.5 w-3.5" />}>
+            <EnvGroup title="Ambient Occlusion" icon={<Moon className="h-3 w-3" />}>
+              <SwitchField
+                label="Enable AO"
+                description="Screen-space ambient occlusion softens crevices and contact areas"
+                checked={effects.aoEnabled}
+                onChange={(checked) => effectsForm.setValue("aoEnabled", checked)}
+              />
+              {effects.aoEnabled ? (
+                <>
+                  <SliderField
+                    label="Intensity"
+                    value={effects.aoIntensity}
+                    display={effects.aoIntensity.toFixed(2)}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    onChange={(v) => effectsForm.setValue("aoIntensity", v)}
+                  />
+                  <SliderField
+                    label="Radius"
+                    value={effects.aoRadius}
+                    display={effects.aoRadius.toFixed(0)}
+                    min={1}
+                    max={100}
+                    step={1}
+                    onChange={(v) => effectsForm.setValue("aoRadius", v)}
+                  />
+                  <SliderField
+                    label="Samples"
+                    value={effects.aoSamples}
+                    display={String(Math.round(effects.aoSamples))}
+                    min={4}
+                    max={32}
+                    step={1}
+                    onChange={(v) =>
+                      effectsForm.setValue("aoSamples", Math.round(v))
+                    }
+                  />
+                  <SliderField
+                    label="Power"
+                    value={effects.aoPower}
+                    display={effects.aoPower.toFixed(1)}
+                    min={0.5}
+                    max={10}
+                    step={0.5}
+                    onChange={(v) => effectsForm.setValue("aoPower", v)}
+                  />
+                  <SwitchField
+                    label="Blur"
+                    description="Softens AO noise for a cleaner look"
+                    checked={effects.aoBlurEnabled}
+                    onChange={(checked) =>
+                      effectsForm.setValue("aoBlurEnabled", checked)
+                    }
+                  />
+                </>
+              ) : null}
+            </EnvGroup>
+          </SettingsSection>
+        ) : null}
 
         <SettingsSection
           title={isModelScene ? "Environment & Lighting" : "Environment"}

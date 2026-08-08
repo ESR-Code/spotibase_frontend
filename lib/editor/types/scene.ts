@@ -1,6 +1,7 @@
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 import type {
   EditorSettings,
+  EffectsSettings,
   EnvironmentSettings,
 } from "@/lib/editor/types/editor-settings";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
@@ -34,4 +35,6 @@ export type Scene = {
   settings: EditorSettings;
   /** Per-scene environment / lighting settings. */
   environment: EnvironmentSettings;
+  /** Per-scene post-processing effects (AO, etc.). */
+  effects: EffectsSettings;
 };

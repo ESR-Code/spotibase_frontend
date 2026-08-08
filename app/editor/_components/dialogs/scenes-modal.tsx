@@ -13,6 +13,7 @@ import {
 import { cloneCameraResetPosition } from "@/lib/editor/constants/default-settings";
 import { getSceneType, listSceneTypes } from "@/lib/editor/scene-types/registry";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { readEffectsSnapshot } from "@/lib/editor/state/effects-store";
 import {
   readEnvironmentSnapshot,
 } from "@/lib/editor/state/environment-store";
@@ -55,6 +56,7 @@ function syncActiveSceneSnapshot() {
             },
             settings: readEditorSettingsSnapshot(),
             environment: readEnvironmentSnapshot(),
+            effects: readEffectsSnapshot(),
           }
         : scene,
     ),

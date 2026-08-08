@@ -77,3 +77,19 @@ export type EnvironmentSettings = {
   fillPitch: number;
   fillYaw: number;
 };
+
+/** Per-scene post-processing effects (3D model scenes). */
+export type EffectsSettings = {
+  /** Screen-space ambient occlusion via PlayCanvas CameraFrame SSAO. */
+  aoEnabled: boolean;
+  /** SSAO intensity, 0–1. */
+  aoIntensity: number;
+  /** SSAO sample radius in world units, 0–100. */
+  aoRadius: number;
+  /** SSAO sample count, 1–64. */
+  aoSamples: number;
+  /** SSAO contrast/power curve, 0.1–10. */
+  aoPower: number;
+  /** Soften SSAO with a blur pass. */
+  aoBlurEnabled: boolean;
+};

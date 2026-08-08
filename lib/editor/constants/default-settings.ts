@@ -1,6 +1,7 @@
 import type {
   CameraResetPosition,
   EditorSettings,
+  EffectsSettings,
   EnvironmentSettings,
 } from "@/lib/editor/types/editor-settings";
 import type { LegendCategory } from "@/lib/editor/types/legend-category";
@@ -62,6 +63,15 @@ export const DEFAULT_ENVIRONMENT_SETTINGS: EnvironmentSettings = {
   fillYaw: -140,
 };
 
+export const DEFAULT_EFFECTS_SETTINGS: EffectsSettings = {
+  aoEnabled: false,
+  aoIntensity: 0.5,
+  aoRadius: 30,
+  aoSamples: 12,
+  aoPower: 6,
+  aoBlurEnabled: true,
+};
+
 export const GRID_BASE_SIZE = 42;
 export const MARKER_SPRITE_SIZE = 0.45;
 export const PREVIEW_CLICK_PX = 6;
@@ -84,4 +94,10 @@ export function cloneEnvironmentSettings(
   environment: Partial<EnvironmentSettings>,
 ): EnvironmentSettings {
   return { ...DEFAULT_ENVIRONMENT_SETTINGS, ...environment };
+}
+
+export function cloneEffectsSettings(
+  effects: Partial<EffectsSettings>,
+): EffectsSettings {
+  return { ...DEFAULT_EFFECTS_SETTINGS, ...effects };
 }

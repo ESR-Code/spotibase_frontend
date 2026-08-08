@@ -4,8 +4,10 @@ import {
 } from "@/lib/editor/actions/create-action-graph";
 import {
   cloneEditorSettings,
+  cloneEffectsSettings,
   cloneEnvironmentSettings,
   DEFAULT_EDITOR_SETTINGS,
+  DEFAULT_EFFECTS_SETTINGS,
   DEFAULT_ENVIRONMENT_SETTINGS,
 } from "@/lib/editor/constants/default-settings";
 import { DEMO_HOTSPOTS } from "@/lib/editor/constants/demo-hotspots";
@@ -18,6 +20,7 @@ import {
 import { DEFAULT_SCENE_NAME } from "@/lib/editor/theme/tokens";
 import type {
   EditorSettings,
+  EffectsSettings,
   EnvironmentSettings,
 } from "@/lib/editor/types/editor-settings";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
@@ -57,6 +60,7 @@ export function createScene(partial: {
   model?: SceneModelState;
   settings?: EditorSettings;
   environment?: EnvironmentSettings;
+  effects?: EffectsSettings;
 }): Scene {
   const hotspots = partial.hotspots ?? [];
   return {
@@ -72,6 +76,7 @@ export function createScene(partial: {
     environment: cloneEnvironmentSettings(
       partial.environment ?? DEFAULT_ENVIRONMENT_SETTINGS,
     ),
+    effects: cloneEffectsSettings(partial.effects ?? DEFAULT_EFFECTS_SETTINGS),
   };
 }
 

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { createCameraController } from "@/lib/editor/engine/camera-controller";
 import { captureViewportPreview } from "@/lib/editor/engine/capture-viewport-preview";
 import { createPlayCanvasAppAsync } from "@/lib/editor/engine/create-playcanvas-app";
+import { createEffectsManager } from "@/lib/editor/engine/effects-manager";
 import { createHotspotManager } from "@/lib/editor/engine/hotspot-manager";
 import { createModelManager } from "@/lib/editor/engine/model-manager";
 import { createPickingController } from "@/lib/editor/engine/picking-controller";
@@ -13,6 +14,7 @@ import { bindViewportResize } from "@/lib/editor/engine/viewport-resize";
 import type { ImportSubjectDetail } from "@/lib/editor/io/import-subject";
 import { getCameraModeForSceneType } from "@/lib/editor/scene-types/registry";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useEffectsStore } from "@/lib/editor/state/effects-store";
 import { useEnvironmentStore } from "@/lib/editor/state/environment-store";
 import {
   DEFAULT_MODEL_REFLECTION,
@@ -58,6 +60,7 @@ export function usePlayCanvasEditor() {
         const scene = createScene(app, pc);
         const models = createModelManager(app, pc, scene.modelRoot);
         const cameraCtrl = createCameraController(app, pc, scene.camera, canvas);
+        const effectsMgr = createEffectsManager(app, pc, scene.camera);
         const hotspotMgr = createHotspotManager(
           app,
           pc,
@@ -82,6 +85,7 @@ export function usePlayCanvasEditor() {
           } else {
             scene.applyGridVisibility();
           }
+          effectsMgr.applyEffects(type);
         };
 
         const initialType = getActiveSceneType();
@@ -120,6 +124,9 @@ export function usePlayCanvasEditor() {
             scene.grid.enabled = false;
             scene.shadowCatcher.enabled = false;
           }
+        });
+        const unsubEffects = useEffectsStore.subscribe(() => {
+          effectsMgr.applyEffects(getActiveSceneType());
         });
         const unsubSettings = useSettingsStore.subscribe(() => {
           if (getActiveSceneType() === "image") {
@@ -325,6 +332,7 @@ export function usePlayCanvasEditor() {
           window.removeEventListener("editor:focus-hotspot", onFocusHotspot);
           window.removeEventListener("editor:scene-switched", onSceneSwitched);
           unsubEnv();
+          unsubEffects();
           unsubSettings();
           unsubEditor();
           unsubWire();
@@ -332,6 +340,7 @@ export function usePlayCanvasEditor() {
           unbindResize();
           picking.dispose();
           hotspotMgr.dispose();
+          effectsMgr.destroy();
           cameraCtrl.dispose();
           destroy();
         };
