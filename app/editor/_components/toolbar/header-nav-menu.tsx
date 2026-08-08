@@ -37,25 +37,17 @@ export function HeaderNavMenu() {
 
   return (
     <div ref={rootRef} className="relative">
-      <div
-        className="flex items-center rounded-xl p-1"
-        style={{
-          background: "rgba(11,20,36,0.6)",
-          border: "1px solid var(--editor-line)",
-        }}
+      <button
+        type="button"
+        title="Project menu"
+        aria-label="Project menu"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className={`editor-tool-btn ${open || active ? "active" : ""}`}
+        onClick={() => setOpen((v) => !v)}
       >
-        <button
-          type="button"
-          title="Project menu"
-          aria-label="Project menu"
-          aria-expanded={open}
-          aria-haspopup="menu"
-          className={`editor-tool-btn ${open || active ? "active" : ""}`}
-          onClick={() => setOpen((v) => !v)}
-        >
-          <Menu className="h-3.5 w-3.5" />
-        </button>
-      </div>
+        <Menu className="h-3.5 w-3.5" />
+      </button>
 
       {open ? (
         <div

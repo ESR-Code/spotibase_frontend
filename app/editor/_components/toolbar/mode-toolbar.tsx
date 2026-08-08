@@ -7,6 +7,7 @@ import {
   SquarePen,
   Workflow,
 } from "lucide-react";
+import { HeaderNavMenu } from "@/app/editor/_components/toolbar/header-nav-menu";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
@@ -63,6 +64,8 @@ export function ModeToolbar() {
         border: "1px solid var(--editor-line)",
       }}
     >
+      <HeaderNavMenu />
+      <div className="editor-vsep" style={{ height: 18 }} />
       <button
         type="button"
         disabled={isPreview}
