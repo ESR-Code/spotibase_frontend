@@ -1,16 +1,25 @@
 "use client";
 
-import { Box, RotateCcw } from "lucide-react";
+import { Box, ImageIcon, RefreshCw, RotateCcw, Upload } from "lucide-react";
+import { useRef } from "react";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
+import { importSubjectFile } from "@/lib/editor/io/import-subject";
+import { getSceneType } from "@/lib/editor/scene-types/registry";
 import {
   DEFAULT_MODEL_REFLECTION,
   DEFAULT_MODEL_ROTATION,
   DEFAULT_MODEL_SCALE,
   useModelStore,
 } from "@/lib/editor/state/model-store";
+import { useActiveScene } from "@/lib/editor/state/scenes-store";
 
 export function SubjectPanel() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const scene = useActiveScene();
+  const descriptor = getSceneType(scene.type);
+  const controls = descriptor.subjectControls;
+
   const modelName = useModelStore((s) => s.modelName);
   const modelInfo = useModelStore((s) => s.modelInfo);
   const hasUserModel = useModelStore((s) => s.hasUserModel);
@@ -28,8 +37,28 @@ export function SubjectPanel() {
     modelRotation.y === DEFAULT_MODEL_ROTATION.y &&
     modelRotation.z === DEFAULT_MODEL_ROTATION.z;
 
+  const openFilePicker = () => fileInputRef.current?.click();
+  const SubjectIcon = scene.type === "image" ? ImageIcon : Box;
+
+  const emptyHint =
+    scene.type === "image"
+      ? "Import a PNG, JPG, or WebP"
+      : "Sample subject — import a .glb to replace";
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={descriptor.accept}
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void importSubjectFile(file);
+          e.target.value = "";
+        }}
+      />
+
       <div
         className="flex items-center gap-2.5 px-4 py-3"
         style={{ borderBottom: "1px solid var(--editor-line-soft)" }}
@@ -42,110 +71,146 @@ export function SubjectPanel() {
             color: "var(--editor-amber)",
           }}
         >
-          <Box className="h-4 w-4" />
+          <SubjectIcon className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="truncate text-[12.5px] font-semibold">{modelName}</div>
           <div className="text-[10px]" style={{ color: "var(--editor-muted-2)" }}>
-            {hasUserModel ? modelInfo : "Sample subject — import a .glb to replace"}
+            {hasUserModel ? modelInfo : emptyHint}
           </div>
         </div>
+        {hasUserModel ? (
+          <button
+            type="button"
+            title="Replace subject"
+            aria-label="Replace subject"
+            onClick={openFilePicker}
+            className="editor-replace-model-btn"
+          >
+            <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.25} />
+            Replace
+          </button>
+        ) : null}
       </div>
 
       <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
-        <section>
-          <div
-            className="mb-2.5 text-[10px] font-bold uppercase tracking-wider"
-            style={{ color: "var(--editor-muted-2)" }}
+        {!hasUserModel ? (
+          <EditorButton
+            type="button"
+            className="w-full justify-center text-[12.5px]"
+            title={
+              scene.type === "image"
+                ? "Import a 2D image"
+                : "Import a .glb model"
+            }
+            onClick={openFilePicker}
           >
-            Size
-          </div>
-          <SliderField
-            label="Uniform Scale"
-            value={modelScale}
-            display={`${modelScale.toFixed(2)}×`}
-            min={0.1}
-            max={3}
-            step={0.05}
-            onChange={setModelScale}
-          />
-        </section>
+            <Upload className="h-4 w-4" />
+            {scene.type === "image" ? "Import Image" : "Import Model"}
+          </EditorButton>
+        ) : null}
 
-        <section>
-          <div
-            className="mb-2.5 text-[10px] font-bold uppercase tracking-wider"
-            style={{ color: "var(--editor-muted-2)" }}
-          >
-            Rotation
-          </div>
-          <div className="space-y-3">
-            <SliderField
-              label="Rotate X"
-              value={modelRotation.x}
-              display={`${Math.round(modelRotation.x)}°`}
-              min={-180}
-              max={180}
-              step={1}
-              onChange={(v) => setModelRotation("x", v)}
-            />
-            <SliderField
-              label="Rotate Y"
-              value={modelRotation.y}
-              display={`${Math.round(modelRotation.y)}°`}
-              min={-180}
-              max={180}
-              step={1}
-              onChange={(v) => setModelRotation("y", v)}
-            />
-            <SliderField
-              label="Rotate Z"
-              value={modelRotation.z}
-              display={`${Math.round(modelRotation.z)}°`}
-              min={-180}
-              max={180}
-              step={1}
-              onChange={(v) => setModelRotation("z", v)}
-            />
-          </div>
-        </section>
-
-        <section>
-          <div
-            className="mb-2.5 text-[10px] font-bold uppercase tracking-wider"
-            style={{ color: "var(--editor-muted-2)" }}
-          >
-            Appearance
-          </div>
-          <SliderField
-            label="Reflection"
-            value={modelReflection}
-            display={`${Math.round(modelReflection * 100)}%`}
-            min={0}
-            max={1}
-            step={0.05}
-            onChange={setModelReflection}
-          />
-          {modelReflection !== DEFAULT_MODEL_REFLECTION ? (
-            <p
-              className="mt-1.5 text-[10px] leading-snug"
+        {controls.scale ? (
+          <section>
+            <div
+              className="mb-2.5 text-[10px] font-bold uppercase tracking-wider"
               style={{ color: "var(--editor-muted-2)" }}
             >
-              Lower values reduce gloss so model shadows read more clearly.
-            </p>
-          ) : null}
-        </section>
+              Size
+            </div>
+            <SliderField
+              label="Uniform Scale"
+              value={modelScale}
+              display={`${modelScale.toFixed(2)}×`}
+              min={0.1}
+              max={3}
+              step={0.05}
+              onChange={setModelScale}
+            />
+          </section>
+        ) : null}
 
-        <EditorButton
-          type="button"
-          variant="ghost"
-          className="w-full justify-center text-[12px]"
-          disabled={isDefaultTransform}
-          title="Reset size and rotation"
-          onClick={resetModelTransform}
-        >
-          <RotateCcw className="h-3.5 w-3.5" />
-          Reset Transform
-        </EditorButton>
+        {controls.rotation ? (
+          <section>
+            <div
+              className="mb-2.5 text-[10px] font-bold uppercase tracking-wider"
+              style={{ color: "var(--editor-muted-2)" }}
+            >
+              Rotation
+            </div>
+            <div className="space-y-3">
+              <SliderField
+                label="Rotate X"
+                value={modelRotation.x}
+                display={`${Math.round(modelRotation.x)}°`}
+                min={-180}
+                max={180}
+                step={1}
+                onChange={(v) => setModelRotation("x", v)}
+              />
+              <SliderField
+                label="Rotate Y"
+                value={modelRotation.y}
+                display={`${Math.round(modelRotation.y)}°`}
+                min={-180}
+                max={180}
+                step={1}
+                onChange={(v) => setModelRotation("y", v)}
+              />
+              <SliderField
+                label="Rotate Z"
+                value={modelRotation.z}
+                display={`${Math.round(modelRotation.z)}°`}
+                min={-180}
+                max={180}
+                step={1}
+                onChange={(v) => setModelRotation("z", v)}
+              />
+            </div>
+          </section>
+        ) : null}
+
+        {controls.reflection ? (
+          <section>
+            <div
+              className="mb-2.5 text-[10px] font-bold uppercase tracking-wider"
+              style={{ color: "var(--editor-muted-2)" }}
+            >
+              Appearance
+            </div>
+            <SliderField
+              label="Reflection"
+              value={modelReflection}
+              display={`${Math.round(modelReflection * 100)}%`}
+              min={0}
+              max={1}
+              step={0.05}
+              onChange={setModelReflection}
+            />
+            {modelReflection !== DEFAULT_MODEL_REFLECTION ? (
+              <p
+                className="mt-1.5 text-[10px] leading-snug"
+                style={{ color: "var(--editor-muted-2)" }}
+              >
+                Lower values reduce gloss so model shadows read more clearly.
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+
+        {controls.scale || controls.rotation ? (
+          <EditorButton
+            type="button"
+            variant="ghost"
+            className="w-full justify-center text-[12px]"
+            disabled={isDefaultTransform}
+            title="Reset size and rotation"
+            onClick={resetModelTransform}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Reset Transform
+          </EditorButton>
+        ) : null}
       </div>
     </div>
   );

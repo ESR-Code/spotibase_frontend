@@ -1,21 +1,7 @@
-export type CachedModel = {
-  fileName: string;
-  buffer: ArrayBuffer;
-};
-
-const cache = new Map<string, CachedModel>();
-
-export const sceneModelCache = {
-  get(sceneId: string): CachedModel | undefined {
-    return cache.get(sceneId);
-  },
-  set(sceneId: string, value: CachedModel): void {
-    cache.set(sceneId, value);
-  },
-  delete(sceneId: string): void {
-    cache.delete(sceneId);
-  },
-  clear(): void {
-    cache.clear();
-  },
-};
+/** @deprecated Prefer importing from scene-subject-cache. */
+export {
+  sceneSubjectCache as sceneModelCache,
+  sceneSubjectCache,
+  type CachedSubject as CachedModel,
+  type CachedSubject,
+} from "@/lib/editor/state/scene-subject-cache";

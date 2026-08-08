@@ -3,6 +3,7 @@ import type {
   EditorSettings,
   EnvironmentSettings,
 } from "@/lib/editor/types/editor-settings";
+import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 
 export type ModelRotation = {
   x: number;
@@ -23,6 +24,8 @@ export type SceneModelState = {
 export type Scene = {
   id: string;
   name: string;
+  /** Immutable after creation — drives subject loader + camera mode. */
+  type: SceneTypeId;
   isPrimary: boolean;
   hotspots: Hotspot[];
   nextHotspotId: number;

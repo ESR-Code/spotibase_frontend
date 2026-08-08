@@ -21,12 +21,13 @@ import {
   useEnvironmentStore,
 } from "@/lib/editor/state/environment-store";
 import { useModelStore } from "@/lib/editor/state/model-store";
-import { sceneModelCache } from "@/lib/editor/state/scene-model-cache";
+import { sceneSubjectCache } from "@/lib/editor/state/scene-subject-cache";
 import {
   readEditorSettingsSnapshot,
   useSettingsStore,
 } from "@/lib/editor/state/settings-store";
 import type { Scene } from "@/lib/editor/types/scene";
+import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 
 function snapshotCurrentIntoScene(scene: Scene): Scene {
   const editor = useEditorStore.getState();
@@ -70,10 +71,15 @@ function defaultNewSceneName(scenes: Scene[]): string {
   return `Scene ${scenes.length + 1}`;
 }
 
+export type AddSceneInput = {
+  name?: string;
+  type: SceneTypeId;
+};
+
 type ScenesState = {
   scenes: Scene[];
   activeSceneId: string;
-  addScene: (name?: string) => string;
+  addScene: (input: AddSceneInput) => string;
   removeScene: (id: string) => void;
   renameScene: (id: string, name: string) => void;
   setPrimaryScene: (id: string) => void;
@@ -84,6 +90,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
   scenes: [
     {
       ...SEED_SCENE,
+      type: SEED_SCENE.type,
       hotspots: SEED_SCENE.hotspots.map((h) => ({
         ...h,
         position: { ...h.position },
@@ -101,7 +108,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
   ],
   activeSceneId: INITIAL_SCENE_ID,
 
-  addScene: (name) => {
+  addScene: (input) => {
     const state = get();
     const snapshotted = state.scenes.map((s) =>
       s.id === state.activeSceneId ? snapshotCurrentIntoScene(s) : s,
@@ -111,9 +118,10 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
     const id = nextSceneId(snapshotted);
     const scene = createScene({
       id,
-      name: name?.trim() || defaultNewSceneName(snapshotted),
+      name: input.name?.trim() || defaultNewSceneName(snapshotted),
+      type: input.type,
       isPrimary: false,
-      model: createEmptyModelState(),
+      model: createEmptyModelState(input.type),
       // New scenes inherit the primary scene's settings, but start without a
       // Reset view pose so each scene can define its own camera home.
       settings: {
@@ -145,7 +153,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
       get().switchScene(fallback.id);
     }
 
-    sceneModelCache.delete(id);
+    sceneSubjectCache.delete(id);
 
     set((current) => {
       const remaining = current.scenes.filter((s) => s.id !== id);

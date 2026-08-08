@@ -1,14 +1,17 @@
-import type { Application, Entity, StandardMaterial } from "playcanvas";
+import type { Application, Entity, StandardMaterial, Texture } from "playcanvas";
 import type * as pc from "playcanvas";
 import { toast } from "sonner";
 import { buildDefaultBox } from "@/lib/editor/engine/default-scene-builder";
+import { createImageTexture } from "@/lib/editor/engine/hotspot-text-texture";
+import { getSceneType } from "@/lib/editor/scene-types/registry";
 import {
   DEFAULT_MODEL_REFLECTION,
   type ModelRotation,
   useModelStore,
 } from "@/lib/editor/state/model-store";
-import { sceneModelCache } from "@/lib/editor/state/scene-model-cache";
+import { sceneSubjectCache } from "@/lib/editor/state/scene-subject-cache";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
+import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 
 type MaterialBaseline = {
   material: StandardMaterial;
@@ -17,10 +20,15 @@ type MaterialBaseline = {
   reflectivity: number;
 };
 
+const IMAGE_PLANE_HEIGHT = 6;
+
 export type ModelManager = {
-  loadDefault: () => Entity;
+  loadDefault: (type?: SceneTypeId) => Entity;
+  replaceFromFile: (file: File, type: SceneTypeId) => Promise<Entity | null>;
+  /** @deprecated Use replaceFromFile */
   replaceFromGlb: (file: File) => Promise<Entity | null>;
   restoreFromCache: (
+    kind: SceneTypeId,
     fileName: string,
     buffer: ArrayBuffer,
   ) => Promise<Entity | null>;
@@ -37,10 +45,18 @@ export function createModelManager(
   modelRoot: Entity,
 ): ModelManager {
   let materialBaselines: MaterialBaseline[] = [];
+  let ownedTexture: Texture | null = null;
 
   const applyTransform = (scale: number, rotation: ModelRotation) => {
     modelRoot.setLocalScale(scale, scale, scale);
     modelRoot.setLocalEulerAngles(rotation.x, rotation.y, rotation.z);
+  };
+
+  const destroyOwnedTexture = () => {
+    if (ownedTexture) {
+      ownedTexture.destroy();
+      ownedTexture = null;
+    }
   };
 
   const captureMaterialBaselines = () => {
@@ -70,6 +86,9 @@ export function createModelManager(
   };
 
   const applyReflection = (amount: number) => {
+    const sceneType = activeSceneType();
+    if (sceneType === "image") return;
+
     const t = Math.min(1, Math.max(0, amount));
     if (materialBaselines.length === 0) {
       captureMaterialBaselines();
@@ -90,11 +109,37 @@ export function createModelManager(
   };
 
   const syncAppearanceFromStore = () => {
+    if (activeSceneType() === "image") return;
     captureMaterialBaselines();
     applyReflection(useModelStore.getState().modelReflection);
   };
 
-  const loadDefault = () => {
+  const loadDefaultImagePlaceholder = () => {
+    clearChildren(modelRoot);
+    destroyOwnedTexture();
+    materialBaselines = [];
+
+    const plane = buildImagePlane(pcModule, null, 16 / 9);
+    modelRoot.addChild(plane);
+
+    const { modelScale, modelRotation } = useModelStore.getState();
+    applyTransform(modelScale, modelRotation);
+
+    const descriptor = getSceneType("image");
+    useModelStore
+      .getState()
+      .setModelMeta(descriptor.emptySubjectName, descriptor.emptySubjectInfo, false);
+    useModelStore.getState().setStats(useModelStore.getState().fps, 2);
+    return plane;
+  };
+
+  const loadDefault = (type?: SceneTypeId) => {
+    const sceneType = type ?? activeSceneType();
+    if (sceneType === "image") {
+      return loadDefaultImagePlaceholder();
+    }
+
+    destroyOwnedTexture();
     const entity = buildDefaultBox(app, pcModule, modelRoot);
     const { modelScale, modelRotation } = useModelStore.getState();
     applyTransform(modelScale, modelRotation);
@@ -114,7 +159,7 @@ export function createModelManager(
     });
   };
 
-  const instantiateFromBuffer = async (
+  const instantiateModelFromBuffer = async (
     fileName: string,
     buffer: ArrayBuffer,
     options: { resetTransform: boolean; toastOnSuccess: boolean },
@@ -133,6 +178,7 @@ export function createModelManager(
       });
 
       clearChildren(modelRoot);
+      destroyOwnedTexture();
       materialBaselines = [];
       if (options.resetTransform) {
         useModelStore.getState().resetModelTransform();
@@ -167,24 +213,76 @@ export function createModelManager(
     }
   };
 
-  const replaceFromGlb = async (file: File): Promise<Entity | null> => {
-    const ext = file.name.split(".").pop()?.toLowerCase();
-    if (ext !== "glb") {
-      toast.error("Unsupported format. Use .glb");
-      return null;
-    }
+  const instantiateImageFromBuffer = async (
+    fileName: string,
+    buffer: ArrayBuffer,
+    options: { resetTransform: boolean; toastOnSuccess: boolean },
+  ): Promise<Entity | null> => {
+    const mime = mimeFromFileName(fileName);
+    const blob = new Blob([buffer], { type: mime });
+    const url = URL.createObjectURL(blob);
 
+    try {
+      const { texture, aspect } = await createImageTexture(
+        pcModule,
+        app.graphicsDevice,
+        url,
+      );
+
+      clearChildren(modelRoot);
+      destroyOwnedTexture();
+      ownedTexture = texture;
+      materialBaselines = [];
+
+      if (options.resetTransform) {
+        useModelStore.getState().resetModelTransform();
+        applyTransform(1, { x: 0, y: 0, z: 0 });
+      }
+
+      const plane = buildImagePlane(pcModule, texture, aspect);
+      modelRoot.addChild(plane);
+
+      const wireframe = useModelStore.getState().wireframe;
+      if (wireframe) setWireframe(true);
+
+      const width = IMAGE_PLANE_HEIGHT * aspect;
+      const sizeLabel = `${width.toFixed(1)} × ${IMAGE_PLANE_HEIGHT.toFixed(1)} units`;
+      useModelStore.getState().setModelMeta(fileName, sizeLabel, true);
+      useModelStore.getState().setStats(useModelStore.getState().fps, 2);
+
+      if (options.toastOnSuccess) {
+        toast.success(`Imported ${fileName}`);
+      }
+
+      return plane;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const replaceFromFile = async (
+    file: File,
+    type: SceneTypeId,
+  ): Promise<Entity | null> => {
     toast.message(`Importing ${file.name}...`);
 
     try {
       const buffer = await file.arrayBuffer();
-      const entity = await instantiateFromBuffer(file.name, buffer, {
-        resetTransform: true,
-        toastOnSuccess: true,
-      });
+      const entity =
+        type === "image"
+          ? await instantiateImageFromBuffer(file.name, buffer, {
+              resetTransform: true,
+              toastOnSuccess: true,
+            })
+          : await instantiateModelFromBuffer(file.name, buffer, {
+              resetTransform: true,
+              toastOnSuccess: true,
+            });
+
       if (entity) {
         const sceneId = useScenesStore.getState().activeSceneId;
-        sceneModelCache.set(sceneId, {
+        sceneSubjectCache.set(sceneId, {
+          kind: type,
           fileName: file.name,
           buffer,
         });
@@ -192,30 +290,46 @@ export function createModelManager(
       return entity;
     } catch (error) {
       console.error(error);
-      toast.error("Failed to load model");
+      toast.error(
+        type === "image" ? "Failed to load image" : "Failed to load model",
+      );
       return null;
     }
   };
 
+  const replaceFromGlb = (file: File) => replaceFromFile(file, "model");
+
   const restoreFromCache = async (
+    kind: SceneTypeId,
     fileName: string,
     buffer: ArrayBuffer,
   ): Promise<Entity | null> => {
     try {
-      return await instantiateFromBuffer(fileName, buffer, {
+      if (kind === "image") {
+        return await instantiateImageFromBuffer(fileName, buffer, {
+          resetTransform: false,
+          toastOnSuccess: false,
+        });
+      }
+      return await instantiateModelFromBuffer(fileName, buffer, {
         resetTransform: false,
         toastOnSuccess: false,
       });
     } catch (error) {
       console.error(error);
-      toast.error("Failed to restore scene model");
-      loadDefault();
+      toast.error(
+        kind === "image"
+          ? "Failed to restore scene image"
+          : "Failed to restore scene model",
+      );
+      loadDefault(kind);
       return null;
     }
   };
 
   const unloadCurrent = () => {
     clearChildren(modelRoot);
+    destroyOwnedTexture();
     materialBaselines = [];
     modelRoot.setLocalScale(1, 1, 1);
     modelRoot.setLocalEulerAngles(0, 0, 0);
@@ -224,6 +338,7 @@ export function createModelManager(
 
   return {
     loadDefault,
+    replaceFromFile,
     replaceFromGlb,
     restoreFromCache,
     unloadCurrent,
@@ -234,11 +349,71 @@ export function createModelManager(
   };
 }
 
+function activeSceneType(): SceneTypeId {
+  const state = useScenesStore.getState();
+  return (
+    state.scenes.find((s) => s.id === state.activeSceneId)?.type ?? "model"
+  );
+}
+
 function clearChildren(root: Entity) {
   const children = [...root.children];
   for (const child of children) {
     child.destroy();
   }
+}
+
+function mimeFromFileName(fileName: string): string {
+  const ext = fileName.split(".").pop()?.toLowerCase();
+  if (ext === "png") return "image/png";
+  if (ext === "webp") return "image/webp";
+  if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+  return "application/octet-stream";
+}
+
+function buildImagePlane(
+  pcModule: typeof pc,
+  texture: Texture | null,
+  aspect: number,
+): Entity {
+  const mat = new pcModule.StandardMaterial();
+  if (texture) {
+    mat.diffuseMap = texture;
+    mat.emissiveMap = texture;
+    mat.emissive = new pcModule.Color(1, 1, 1);
+    mat.emissiveIntensity = 1;
+    mat.diffuse = new pcModule.Color(1, 1, 1);
+  } else {
+    // Neutral placeholder when no image is imported yet.
+    mat.diffuse = new pcModule.Color(0.22, 0.26, 0.32);
+    mat.emissive = new pcModule.Color(0.22, 0.26, 0.32);
+    mat.emissiveIntensity = 1;
+  }
+  mat.metalness = 0;
+  mat.gloss = 0;
+  mat.reflectivity = 0;
+  mat.useMetalness = true;
+  mat.useLighting = false;
+  mat.useSkybox = false;
+  mat.cull = pcModule.CULLFACE_NONE;
+  mat.update();
+
+  const plane = new pcModule.Entity(texture ? "ImagePlane" : "ImagePlaceholder");
+  plane.addComponent("render", {
+    type: "plane",
+    castShadows: false,
+    receiveShadows: false,
+    material: mat,
+  });
+
+  // Default plane faces +Y; rotate so it faces +Z (frontal pan/zoom camera).
+  const height = IMAGE_PLANE_HEIGHT;
+  const width = height * Math.max(aspect, 0.05);
+  plane.setLocalScale(width, 1, height);
+  plane.setLocalEulerAngles(90, 0, 0);
+  plane.setLocalPosition(0, 0, 0);
+
+  return plane;
 }
 
 function normalizeEntity(

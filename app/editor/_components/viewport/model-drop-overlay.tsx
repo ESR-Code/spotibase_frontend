@@ -2,11 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { CloudUpload } from "lucide-react";
-import { importGlbFile } from "@/lib/editor/io/import-glb";
+import { importSubjectFile } from "@/lib/editor/io/import-subject";
+import { getSceneType } from "@/lib/editor/scene-types/registry";
+import { useActiveScene } from "@/lib/editor/state/scenes-store";
 
 /** Listens on the viewport wrap (parent) so drag works even while overlay is non-interactive. */
 export function ModelDropOverlay() {
   const [active, setActive] = useState(false);
+  const scene = useActiveScene();
+  const descriptor = getSceneType(scene.type);
 
   useEffect(() => {
     const wrap = document.getElementById("editor-viewport-wrap");
@@ -32,7 +36,7 @@ export function ModelDropOverlay() {
       dragCounter = 0;
       setActive(false);
       const file = e.dataTransfer?.files?.[0];
-      if (file) void importGlbFile(file);
+      if (file) void importSubjectFile(file);
     };
 
     wrap.addEventListener("dragenter", onEnter);
@@ -47,6 +51,13 @@ export function ModelDropOverlay() {
     };
   }, []);
 
+  const dropLabel =
+    scene.type === "image" ? "Drop image to import" : "Drop GLB to import";
+  const dropHint =
+    scene.type === "image"
+      ? "Replace current scene image"
+      : "Replace current scene model";
+
   return (
     <div className={`editor-drop-overlay ${active ? "active" : ""}`}>
       <div className="text-center">
@@ -54,9 +65,12 @@ export function ModelDropOverlay() {
           className="mx-auto mb-3 h-12 w-12"
           style={{ color: "var(--editor-crimson-2)" }}
         />
-        <div className="font-display text-xl font-bold">Drop GLB to import</div>
+        <div className="font-display text-xl font-bold">{dropLabel}</div>
         <div className="mt-1 text-sm" style={{ color: "var(--editor-muted)" }}>
-          Replace current scene model
+          {dropHint}
+          <span className="mt-1 block text-xs opacity-70">
+            Accepts {descriptor.extensions.map((e) => `.${e}`).join(", ")}
+          </span>
         </div>
       </div>
     </div>

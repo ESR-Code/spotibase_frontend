@@ -1,13 +1,2 @@
-import { toast } from "sonner";
-
-export async function importGlbFile(file: File) {
-  const ext = file.name.split(".").pop()?.toLowerCase();
-  if (ext !== "glb") {
-    toast.error("Unsupported format. Use .glb");
-    return;
-  }
-
-  window.dispatchEvent(
-    new CustomEvent("editor:import-glb", { detail: { file } }),
-  );
-}
+/** @deprecated Prefer import-subject. */
+export { importSubjectFile as importGlbFile, importSubjectFile } from "@/lib/editor/io/import-subject";

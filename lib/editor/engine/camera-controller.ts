@@ -1,8 +1,10 @@
 import type { Application, Entity, Vec3 } from "playcanvas";
 import type * as pc from "playcanvas";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
+import type { CameraMode } from "@/lib/editor/types/scene-type";
 
 type OrbitState = {
+  mode: CameraMode;
   yaw: number;
   pitch: number;
   distance: number;
@@ -26,6 +28,8 @@ type OrbitState = {
 
 const ZOOM_STEP = 0.036;
 const ZOOM_SMOOTH = 7.5;
+const PAN_ZOOM_YAW = 0;
+const PAN_ZOOM_PITCH = 0;
 
 export type CameraOrbitPose = {
   yaw: number;
@@ -49,6 +53,8 @@ export type CameraController = {
   /** Recompute and store default home from entity bounds without moving the camera. */
   storeHomeFromEntity: (entity: Entity) => void;
   nudgeZoom: (notches: number) => void;
+  setMode: (mode: CameraMode) => void;
+  getMode: () => CameraMode;
   setEnabled: (enabled: boolean) => void;
   dispose: () => void;
   getTarget: () => Vec3;
@@ -63,6 +69,7 @@ export function createCameraController(
   const settings = () => useSettingsStore.getState();
 
   const state: OrbitState = {
+    mode: "orbit",
     yaw: 35,
     pitch: 28,
     distance: 8,
@@ -86,18 +93,23 @@ export function createCameraController(
 
   const applyPose = () => {
     const s = settings();
-    const pitch = clamp(state.pitch, s.minPitch, s.maxPitch);
-    const yaw = clamp(state.yaw, s.minYaw, s.maxYaw);
-    state.pitch = pitch;
-    state.yaw = yaw;
+    if (state.mode === "panZoom") {
+      state.pitch = PAN_ZOOM_PITCH;
+      state.yaw = PAN_ZOOM_YAW;
+    } else {
+      state.pitch = clamp(state.pitch, s.minPitch, s.maxPitch);
+      state.yaw = clamp(state.yaw, s.minYaw, s.maxYaw);
+    }
     state.distance = clamp(state.distance, s.minDistance, s.maxDistance);
 
-    const pitchRad = (pitch * Math.PI) / 180;
-    const yawRad = (yaw * Math.PI) / 180;
+    const pitchRad = (state.pitch * Math.PI) / 180;
+    const yawRad = (state.yaw * Math.PI) / 180;
 
-    const x = state.target.x + state.distance * Math.sin(yawRad) * Math.cos(pitchRad);
+    const x =
+      state.target.x + state.distance * Math.sin(yawRad) * Math.cos(pitchRad);
     const y = state.target.y + state.distance * Math.sin(pitchRad);
-    const z = state.target.z + state.distance * Math.cos(yawRad) * Math.cos(pitchRad);
+    const z =
+      state.target.z + state.distance * Math.cos(yawRad) * Math.cos(pitchRad);
 
     camera.setPosition(x, y, z);
     camera.lookAt(state.target);
@@ -161,7 +173,7 @@ export function createCameraController(
     });
 
     if (!hasMesh) {
-      bbox.center.set(0, 1, 0);
+      bbox.center.set(0, state.mode === "panZoom" ? 0 : 1, 0);
       bbox.halfExtents.set(1, 1, 1);
     }
 
@@ -183,9 +195,10 @@ export function createCameraController(
     const maxDistance = Math.max(20, +(span * 6).toFixed(1));
     distance = clamp(distance, minDistance, maxDistance);
 
+    const frontal = state.mode === "panZoom";
     return {
-      yaw: 35,
-      pitch: 28,
+      yaw: frontal ? PAN_ZOOM_YAW : 35,
+      pitch: frontal ? PAN_ZOOM_PITCH : 28,
       distance,
       target: bbox.center.clone(),
       minDistance,
@@ -216,8 +229,14 @@ export function createCameraController(
     state.lastX = e.clientX;
     state.lastY = e.clientY;
     if (e.button === 0 || e.button === 2) {
-      state.dragging = e.button === 0;
-      state.panning = e.button === 2 || e.shiftKey;
+      if (state.mode === "panZoom") {
+        // Image scenes: any drag pans; orbit is disabled.
+        state.dragging = false;
+        state.panning = true;
+      } else {
+        state.dragging = e.button === 0;
+        state.panning = e.button === 2 || e.shiftKey;
+      }
       canvas.setPointerCapture(e.pointerId);
     }
   };
@@ -229,7 +248,9 @@ export function createCameraController(
     state.lastX = e.clientX;
     state.lastY = e.clientY;
 
-    if (state.panning || e.shiftKey) {
+    const shouldPan =
+      state.mode === "panZoom" || state.panning || e.shiftKey;
+    if (shouldPan) {
       const panScale = state.distance * 0.0018;
       const right = new pcModule.Vec3().copy(camera.right).mulScalar(-dx * panScale);
       const up = new pcModule.Vec3().copy(camera.up).mulScalar(dy * panScale);
@@ -386,12 +407,34 @@ export function createCameraController(
 
   const resolveOrbitPose = (pose: CameraOrbitPose) => {
     const s = settings();
+    if (state.mode === "panZoom") {
+      return {
+        yaw: PAN_ZOOM_YAW,
+        pitch: PAN_ZOOM_PITCH,
+        distance: clamp(pose.distance, s.minDistance, s.maxDistance),
+        target: new pcModule.Vec3(pose.target.x, pose.target.y, pose.target.z),
+      };
+    }
     return {
       yaw: clamp(pose.yaw, s.minYaw, s.maxYaw),
       pitch: clamp(pose.pitch, s.minPitch, s.maxPitch),
       distance: clamp(pose.distance, s.minDistance, s.maxDistance),
       target: new pcModule.Vec3(pose.target.x, pose.target.y, pose.target.z),
     };
+  };
+
+  const setMode = (mode: CameraMode) => {
+    if (state.mode === mode) return;
+    state.mode = mode;
+    state.anim = null;
+    state.zoomTarget = null;
+    state.dragging = false;
+    state.panning = false;
+    if (mode === "panZoom") {
+      state.yaw = PAN_ZOOM_YAW;
+      state.pitch = PAN_ZOOM_PITCH;
+    }
+    applyPose();
   };
 
   const snapToOrbitPose = (pose: CameraOrbitPose) => {
@@ -445,6 +488,8 @@ export function createCameraController(
     snapToOrbitPose,
     storeHomeFromEntity,
     nudgeZoom,
+    setMode,
+    getMode: () => state.mode,
     setEnabled: (enabled) => {
       state.enabled = enabled;
       if (!enabled) {

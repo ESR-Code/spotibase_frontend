@@ -58,7 +58,7 @@ export function HotspotOutliner() {
             </div>
             <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
               {outlinerTab === "subject"
-                ? "Adjust model size & rotation"
+                ? "Import and adjust the scene subject"
                 : `${hotspots.length} markers in scene`}
             </div>
           </div>

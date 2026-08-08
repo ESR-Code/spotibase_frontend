@@ -10,6 +10,8 @@ import { createModelManager } from "@/lib/editor/engine/model-manager";
 import { createPickingController } from "@/lib/editor/engine/picking-controller";
 import { createScene } from "@/lib/editor/engine/scene-manager";
 import { bindViewportResize } from "@/lib/editor/engine/viewport-resize";
+import type { ImportSubjectDetail } from "@/lib/editor/io/import-subject";
+import { getCameraModeForSceneType } from "@/lib/editor/scene-types/registry";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useEnvironmentStore } from "@/lib/editor/state/environment-store";
 import {
@@ -18,13 +20,21 @@ import {
   DEFAULT_MODEL_SCALE,
   useModelStore,
 } from "@/lib/editor/state/model-store";
-import { sceneModelCache } from "@/lib/editor/state/scene-model-cache";
+import { sceneSubjectCache } from "@/lib/editor/state/scene-subject-cache";
 import {
   syncActiveSceneSettings,
   useScenesStore,
 } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
+import type { SceneTypeId } from "@/lib/editor/types/scene-type";
+
+function getActiveSceneType(): SceneTypeId {
+  const state = useScenesStore.getState();
+  return (
+    state.scenes.find((s) => s.id === state.activeSceneId)?.type ?? "model"
+  );
+}
 
 export function usePlayCanvasEditor() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -63,7 +73,20 @@ export function usePlayCanvasEditor() {
           cameraCtrl,
         );
 
-        models.loadDefault();
+        const applyScenePresentation = (type: SceneTypeId) => {
+          cameraCtrl.setMode(getCameraModeForSceneType(type));
+          // Flat image viewer: hide floor grid / shadow catcher.
+          if (type === "image") {
+            scene.grid.enabled = false;
+            scene.shadowCatcher.enabled = false;
+          } else {
+            scene.applyGridVisibility();
+          }
+        };
+
+        const initialType = getActiveSceneType();
+        applyScenePresentation(initialType);
+        models.loadDefault(initialType);
         cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
 
         const unbindResize = bindViewportResize(app, canvas);
@@ -90,9 +113,18 @@ export function usePlayCanvasEditor() {
 
         const unsubEnv = useEnvironmentStore.subscribe(() => {
           scene.applyEnvironment();
+          if (getActiveSceneType() === "image") {
+            scene.grid.enabled = false;
+            scene.shadowCatcher.enabled = false;
+          }
         });
         const unsubSettings = useSettingsStore.subscribe(() => {
-          scene.applyGridVisibility();
+          if (getActiveSceneType() === "image") {
+            scene.grid.enabled = false;
+            scene.shadowCatcher.enabled = false;
+          } else {
+            scene.applyGridVisibility();
+          }
         });
         const unsubEditor = useEditorStore.subscribe(() => {
           hotspotMgr.syncFromStore();
@@ -114,11 +146,14 @@ export function usePlayCanvasEditor() {
           }
         });
 
-        const onImportGlb = async (event: Event) => {
-          const file = (event as CustomEvent<{ file: File }>).detail?.file;
-          if (!file) return;
-          const entity = await models.replaceFromGlb(file);
+        const onImportSubject = async (event: Event) => {
+          const detail = (event as CustomEvent<Partial<ImportSubjectDetail>>)
+            .detail;
+          if (!detail?.file) return;
+          const type = detail.type ?? getActiveSceneType();
+          const entity = await models.replaceFromFile(detail.file, type);
           if (entity) {
+            applyScenePresentation(type);
             cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
           }
         };
@@ -207,18 +242,22 @@ export function usePlayCanvasEditor() {
           const targetScene = useScenesStore
             .getState()
             .scenes.find((s) => s.id === sceneId);
-          const cached = sceneModelCache.get(sceneId);
+          const sceneType = targetScene?.type ?? "model";
+          applyScenePresentation(sceneType);
 
-          if (cached) {
+          const cached = sceneSubjectCache.get(sceneId);
+
+          if (cached && cached.kind === sceneType) {
             const entity = await models.restoreFromCache(
+              cached.kind,
               cached.fileName,
               cached.buffer,
             );
             if (!entity) {
-              models.loadDefault();
+              models.loadDefault(sceneType);
             }
           } else {
-            models.loadDefault();
+            models.loadDefault(sceneType);
           }
 
           if (targetScene) {
@@ -247,7 +286,9 @@ export function usePlayCanvasEditor() {
           }
         };
 
-        window.addEventListener("editor:import-glb", onImportGlb);
+        window.addEventListener("editor:import-subject", onImportSubject);
+        // Back-compat for any remaining GLB import dispatches.
+        window.addEventListener("editor:import-glb", onImportSubject);
         window.addEventListener("editor:reset-camera", onResetCamera);
         window.addEventListener("editor:set-reset-position", onSetResetPosition);
         window.addEventListener("editor:set-hotspot-camera", onSetHotspotCamera);
@@ -266,7 +307,8 @@ export function usePlayCanvasEditor() {
         toast.success("Welcome to VectorForge — try Preview mode");
 
         cleanup = () => {
-          window.removeEventListener("editor:import-glb", onImportGlb);
+          window.removeEventListener("editor:import-subject", onImportSubject);
+          window.removeEventListener("editor:import-glb", onImportSubject);
           window.removeEventListener("editor:reset-camera", onResetCamera);
           window.removeEventListener(
             "editor:set-reset-position",

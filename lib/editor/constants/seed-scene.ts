@@ -9,8 +9,8 @@ import {
   DEFAULT_ENVIRONMENT_SETTINGS,
 } from "@/lib/editor/constants/default-settings";
 import { DEMO_HOTSPOTS } from "@/lib/editor/constants/demo-hotspots";
+import { getSceneType } from "@/lib/editor/scene-types/registry";
 import {
-  DEFAULT_MODEL_META,
   DEFAULT_MODEL_REFLECTION,
   DEFAULT_MODEL_ROTATION,
   DEFAULT_MODEL_SCALE,
@@ -22,13 +22,17 @@ import type {
 } from "@/lib/editor/types/editor-settings";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 import type { Scene, SceneModelState } from "@/lib/editor/types/scene";
+import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 
 export const INITIAL_SCENE_ID = "scene-1";
 
-export function createEmptyModelState(): SceneModelState {
+export function createEmptyModelState(
+  type: SceneTypeId = "model",
+): SceneModelState {
+  const descriptor = getSceneType(type);
   return {
-    name: DEFAULT_MODEL_META.name,
-    info: DEFAULT_MODEL_META.info,
+    name: descriptor.emptySubjectName,
+    info: descriptor.emptySubjectInfo,
     hasUserModel: false,
     scale: DEFAULT_MODEL_SCALE,
     rotation: { ...DEFAULT_MODEL_ROTATION },
@@ -46,6 +50,7 @@ export function buildDemoHotspots(): Hotspot[] {
 export function createScene(partial: {
   id: string;
   name: string;
+  type: SceneTypeId;
   isPrimary?: boolean;
   hotspots?: Hotspot[];
   nextHotspotId?: number;
@@ -57,11 +62,12 @@ export function createScene(partial: {
   return {
     id: partial.id,
     name: partial.name,
+    type: partial.type,
     isPrimary: partial.isPrimary ?? false,
     hotspots,
     nextHotspotId:
       partial.nextHotspotId ?? (hotspots.length > 0 ? hotspots.length + 1 : 1),
-    model: partial.model ?? createEmptyModelState(),
+    model: partial.model ?? createEmptyModelState(partial.type),
     settings: cloneEditorSettings(partial.settings ?? DEFAULT_EDITOR_SETTINGS),
     environment: cloneEnvironmentSettings(
       partial.environment ?? DEFAULT_ENVIRONMENT_SETTINGS,
@@ -74,6 +80,7 @@ const seedHotspots = buildDemoHotspots();
 export const SEED_SCENE: Scene = createScene({
   id: INITIAL_SCENE_ID,
   name: DEFAULT_SCENE_NAME,
+  type: "model",
   isPrimary: true,
   hotspots: seedHotspots,
   nextHotspotId: seedHotspots.length + 1,
