@@ -96,6 +96,9 @@ export function usePlayCanvasEditor() {
         const onUpdate = (dt: number) => {
           cameraCtrl.update(dt);
           hotspotMgr.update(dt);
+          if (getActiveSceneType() === "model") {
+            scene.fitKeyLightShadows(cameraCtrl.getOrbitPose().distance);
+          }
           frameCount += 1;
           fpsAccum += dt;
           if (fpsAccum >= 0.5) {

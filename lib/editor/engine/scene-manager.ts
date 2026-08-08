@@ -18,6 +18,8 @@ export type SceneHandles = {
   rimLight: Entity;
   applyEnvironment: () => void;
   applyGridVisibility: () => void;
+  /** Keep shadow frustum tight to the orbit distance for texel density. */
+  fitKeyLightShadows: (cameraDistance: number) => void;
 };
 
 export function createScene(app: Application, pcModule: typeof pc): SceneHandles {
@@ -40,28 +42,41 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
   });
   app.root.addChild(camera);
 
-  // Key — warm studio key with soft, readable shadows
+  // Key — warm studio key with detailed, stable shadows.
+  // PlayCanvas guidance:
+  // - cascades restore near-field resolution when orbiting large models
+  // - cascadeBlend dither-crossfades splits (PR #7233) so seams don't read as lines
+  // - smaller shadowDistance = crisper shadows; we refit it to the camera each frame
+  // - PCF3 keeps structure (trusses/pipes) sharper than the softer PCF5 kernel
   const keyLight = new pcModule.Entity("KeyLight");
   keyLight.addComponent("light", {
     type: "directional",
     color: hexToColor(pcModule, env.keyColor),
     intensity: env.keyIntensity,
     castShadows: true,
-    shadowResolution: 2048,
-    // Tight enough for ~6-unit normalized models while still covering orbit.
-    shadowDistance: 28,
+    shadowResolution: 4096,
+    shadowDistance: 32,
     shadowIntensity: env.shadowIntensity,
-    // PlayCanvas default is 0.05; large bias peter-pans contact/self shadows.
-    shadowBias: 0.06,
-    normalOffsetBias: 0.04,
-    shadowType: pcModule.SHADOW_PCF5_32F,
-    // Near cascades restore detail inside dense imported meshes (factories, etc.).
-    numCascades: 3,
-    cascadeDistribution: 0.72,
-    cascadeBlend: 0.12,
+    shadowBias: 0.04,
+    // Prefer normal-offset over large constant bias (avoids acne bands / peter-panning).
+    normalOffsetBias: 0.12,
+    shadowType: pcModule.SHADOW_PCF3_32F,
+    numCascades: 2,
+    cascadeDistribution: 0.5,
+    cascadeBlend: 0.45,
   });
   applyDirectionalSpherical(keyLight, env.keyPitch, env.keyYaw, 16);
   app.root.addChild(keyLight);
+
+  const fitKeyLightShadows = (cameraDistance: number) => {
+    if (!keyLight.light) return;
+    // Cover a bit past the orbit so the hard shadowDistance cutoff never
+    // appears as a seam on the ground, while staying tight for texel density.
+    keyLight.light.shadowDistance = Math.min(
+      70,
+      Math.max(16, cameraDistance * 2.15 + 8),
+    );
+  };
 
   // Fill — cool bounce so dark sides stay readable
   const fillLight = new pcModule.Entity("FillLight");
@@ -146,6 +161,7 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
   };
 
   applyEnvironment();
+  fitKeyLightShadows(12);
 
   return {
     camera,
@@ -158,6 +174,7 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
     rimLight,
     applyEnvironment,
     applyGridVisibility,
+    fitKeyLightShadows,
   };
 }
 
