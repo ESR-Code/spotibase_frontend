@@ -17,8 +17,7 @@ export function useEditorKeyboard() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+      if (isEditableKeyboardTarget(e.target)) return;
 
       const isPreview = useEditorStore.getState().isPreview;
       const ui = useUIStore.getState();
@@ -86,4 +85,12 @@ export function useEditorKeyboard() {
     setMode,
     setPropertiesDrawerOpen,
   ]);
+}
+
+function isEditableKeyboardTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  if (target.isContentEditable) return true;
+  return Boolean(target.closest("[contenteditable='true']"));
 }

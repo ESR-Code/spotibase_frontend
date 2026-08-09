@@ -43,8 +43,7 @@ export function TextBlockPreview({ block, hotspotId }: TextBlockPreviewProps) {
 
   return (
     <div
-      className="editor-rich-text-preview text-[14px] leading-relaxed"
-      style={{ color: "var(--editor-muted)" }}
+      className="editor-rich-text-preview"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
