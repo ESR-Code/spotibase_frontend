@@ -1,4 +1,5 @@
 import type { Hotspot } from "@/lib/editor/types/hotspot";
+import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 import type {
   EditorSettings,
   EffectsSettings,
@@ -30,6 +31,8 @@ export type Scene = {
   isPrimary: boolean;
   hotspots: Hotspot[];
   nextHotspotId: number;
+  /** Runs when this scene becomes active in Preview (after App Start). */
+  startActions: HotspotActionGraph;
   model: SceneModelState;
   /** Per-scene editor settings (formerly global "General Settings"). */
   settings: EditorSettings;

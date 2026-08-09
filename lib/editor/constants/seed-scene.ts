@@ -1,6 +1,7 @@
 import {
   cloneActionGraph,
   createDefaultActionGraph,
+  createEmptyActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
 import {
   cloneEditorSettings,
@@ -24,6 +25,7 @@ import type {
   EnvironmentSettings,
 } from "@/lib/editor/types/editor-settings";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
+import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 import type { Scene, SceneModelState } from "@/lib/editor/types/scene";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 
@@ -57,6 +59,7 @@ export function createScene(partial: {
   isPrimary?: boolean;
   hotspots?: Hotspot[];
   nextHotspotId?: number;
+  startActions?: HotspotActionGraph;
   model?: SceneModelState;
   settings?: EditorSettings;
   environment?: EnvironmentSettings;
@@ -71,6 +74,9 @@ export function createScene(partial: {
     hotspots,
     nextHotspotId:
       partial.nextHotspotId ?? (hotspots.length > 0 ? hotspots.length + 1 : 1),
+    startActions: cloneActionGraph(
+      partial.startActions ?? createEmptyActionGraph(),
+    ),
     model: partial.model ?? createEmptyModelState(partial.type),
     settings: cloneEditorSettings(partial.settings ?? DEFAULT_EDITOR_SETTINGS),
     environment: cloneEnvironmentSettings(

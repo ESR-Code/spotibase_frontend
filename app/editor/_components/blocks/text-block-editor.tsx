@@ -10,6 +10,7 @@ import {
   sanitizeRichTextHtml,
 } from "@/lib/editor/blocks/rich-text";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import type { TextBlock } from "@/lib/editor/types/hotspot-block";
 
 type TextBlockEditorProps = {
@@ -40,10 +41,16 @@ export function TextBlockEditor({
   const hotspot = useEditorStore((s) =>
     hotspotId != null ? s.hotspots.find((h) => h.id === hotspotId) ?? null : null,
   );
+  const appStartActions = useScenesStore((s) => s.appStartActions);
+  const sceneStartActions = useScenesStore((s) => {
+    const scene =
+      s.scenes.find((sc) => sc.id === s.activeSceneId) ?? s.scenes[0];
+    return scene?.startActions ?? null;
+  });
 
   const fieldSources = useMemo(
     () => (hotspot ? listHttpFieldSources(hotspot) : []),
-    [hotspot],
+    [appStartActions, hotspot, sceneStartActions],
   );
 
   useEffect(() => {

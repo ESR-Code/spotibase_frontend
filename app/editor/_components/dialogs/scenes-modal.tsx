@@ -9,6 +9,7 @@ import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import {
   cloneActionGraph,
   createDefaultActionGraph,
+  createEmptyActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
 import { cloneCameraResetPosition } from "@/lib/editor/constants/default-settings";
 import { getSceneType, listSceneTypes } from "@/lib/editor/scene-types/registry";
@@ -45,6 +46,9 @@ function syncActiveSceneSnapshot() {
                 ? cloneActionGraph(h.actions)
                 : createDefaultActionGraph(),
             })),
+            startActions: cloneActionGraph(
+              scene.startActions ?? createEmptyActionGraph(),
+            ),
             nextHotspotId: editor.nextId,
             model: {
               name: model.modelName,

@@ -138,6 +138,15 @@ export function createDefaultActionGraph(): HotspotActionGraph {
   };
 }
 
+/** Empty chain used by Scene Start / App Start (trigger only). */
+export function createEmptyActionGraph(): HotspotActionGraph {
+  return {
+    trigger: { position: { ...DEFAULT_TRIGGER_POS } },
+    nodes: [],
+    edges: [],
+  };
+}
+
 export function cloneActionGraph(
   graph: HotspotActionGraph,
 ): HotspotActionGraph {

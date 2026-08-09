@@ -7,7 +7,7 @@ export type PostMessageEnvelope = {
   source: "vectorforge";
   event: string;
   data: unknown;
-  hotspotId: number;
+  hotspotId: number | null;
 };
 
 export function parsePayloadJson(
@@ -44,7 +44,7 @@ function resolveTargetWindow(target: PostMessageTarget): Window | null {
  */
 export function sendPostMessage(
   node: SendPostMessageActionNode,
-  hotspotId: number,
+  hotspotId: number | null,
 ): string | null {
   const eventName = node.data.eventName.trim();
   if (!eventName) return "Enter an event name";

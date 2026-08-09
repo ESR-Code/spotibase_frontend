@@ -28,7 +28,7 @@ export function ActionsModal() {
   const description =
     scope.kind === "hotspot"
       ? "Define what happens when this hotspot is clicked."
-      : `All action chains in “${activeScene.name}”. Right-click the canvas to add nodes.`;
+      : `App Start, Scene Start, and hotspot chains for “${activeScene.name}”. Right-click a lane to add nodes.`;
 
   const chip =
     scope.kind === "hotspot" ? (
@@ -73,7 +73,10 @@ export function ActionsModal() {
       </EditorDialog.Header>
 
       <EditorDialog.Body className="editor-actions-dialog-body !p-0">
-        <ActionsFlow hotspots={scopedHotspots} />
+        <ActionsFlow
+          hotspots={scopedHotspots}
+          includeStartGraphs={scope.kind === "scene"}
+        />
       </EditorDialog.Body>
     </EditorDialog>
   );

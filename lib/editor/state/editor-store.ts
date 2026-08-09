@@ -102,6 +102,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         previewDown: null,
         previewDragged: false,
       });
+      if (isPreview) {
+        void import("@/lib/editor/actions/run-action-graph").then(
+          ({ runPreviewStartActions }) => {
+            void runPreviewStartActions();
+          },
+        );
+      }
       return;
     }
     if (get().isPreview) clearHttpRequestCache();

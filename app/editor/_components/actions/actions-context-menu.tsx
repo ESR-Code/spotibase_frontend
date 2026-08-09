@@ -12,6 +12,7 @@ export type ActionsContextMenuState =
       y: number;
       hotspotId: number;
       flowPosition: { x: number; y: number };
+      allowedNodeTypes: ActionNodeType[];
     }
   | {
       kind: "node";
@@ -71,7 +72,9 @@ export function ActionsContextMenu({
       {menu.kind === "pane" ? (
         <>
           <div className="editor-actions-context-menu-label">Add node</div>
-          {ACTION_UI_MENU_ITEMS.map((item) => {
+          {ACTION_UI_MENU_ITEMS.filter((item) =>
+            menu.allowedNodeTypes.includes(item.type),
+          ).map((item) => {
             const Icon = item.icon;
             return (
               <button

@@ -1,11 +1,8 @@
+import { patchOwnedActionNodeData } from "@/lib/editor/actions/action-owners";
+import { createActionNode } from "@/lib/editor/actions/create-action-graph";
 import {
-  createActionNode,
-  getActionGraph,
-} from "@/lib/editor/actions/create-action-graph";
-import { updateNodeData } from "@/lib/editor/actions/graph-ops";
-import {
+  clearHttpRequestCached,
   executeHttpRequest,
-  getHttpRequestCached,
   hasHttpRequestCached,
   httpRequestCacheKey,
   markHttpRequestCached,
@@ -31,7 +28,12 @@ import {
 import { toast } from "sonner";
 
 export type ActionRunContext = {
-  hotspotId: number;
+  /** Hotspot id when running from a hotspot click; null for start graphs. */
+  hotspotId: number | null;
+  /** Lane owner id (hotspot id, or synthetic start owner ids). */
+  ownerId: number;
+  /** Stable cache / response key prefix. */
+  ownerKey: string;
 };
 
 export type ActionRunResult = void | "stop";
@@ -57,6 +59,10 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     createDefault: (position) => createActionNode("openModal", position),
     validate: () => null,
     run: (_node, ctx) => {
+      if (ctx.hotspotId == null) {
+        toast.error("Open Modal can only run from a hotspot click");
+        return "stop";
+      }
       openHotspotInPreview(ctx.hotspotId);
     },
   },
@@ -132,7 +138,7 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     run: async (node, ctx) => {
       if (node.type !== "httpRequest") return;
 
-      const key = httpRequestCacheKey(ctx.hotspotId, node.id);
+      const key = httpRequestCacheKey(ctx.ownerKey, node.id);
       const isPreview = useEditorStore.getState().isPreview;
 
       if (node.data.cacheReuse && isPreview && hasHttpRequestCached(key)) {
@@ -142,30 +148,37 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
       const result = await executeHttpRequest(node.data);
       if (result.error && result.status == null) {
         toast.error(`HTTP Request: ${result.error}`);
+        clearHttpRequestCached(key);
+        patchOwnedActionNodeData(ctx.ownerId, node.id, {
+          lastResponseJson: "",
+        });
         return;
       }
       if (!result.ok) {
         toast.error(
           `HTTP Request: ${result.status ?? "—"} ${result.statusText}`.trim(),
         );
+        clearHttpRequestCached(key);
+        patchOwnedActionNodeData(ctx.ownerId, node.id, {
+          lastResponseJson: "",
+        });
+        return;
       }
 
       if (result.json !== undefined) {
         markHttpRequestCached(key, result.json);
-        const hotspot = useEditorStore
-          .getState()
-          .hotspots.find((h) => h.id === ctx.hotspotId);
-        if (hotspot) {
-          const nextGraph = updateNodeData(getActionGraph(hotspot), node.id, {
-            lastResponseJson: JSON.stringify(result.json),
-          });
-          useEditorStore.getState().updateHotspot(ctx.hotspotId, {
-            actions: nextGraph,
-          });
+        patchOwnedActionNodeData(ctx.ownerId, node.id, {
+          lastResponseJson: JSON.stringify(result.json),
+        });
+      } else {
+        clearHttpRequestCached(key);
+        patchOwnedActionNodeData(ctx.ownerId, node.id, {
+          lastResponseJson: "",
+        });
+        if (node.data.cacheReuse && isPreview) {
+          // Mark the attempt so cache-reuse skips a second network call.
+          markHttpRequestCached(key, null);
         }
-      } else if (node.data.cacheReuse && isPreview) {
-        // Still mark the attempt so cache-reuse skips a second network call.
-        markHttpRequestCached(key, getHttpRequestCached(key) ?? null);
       }
     },
   },

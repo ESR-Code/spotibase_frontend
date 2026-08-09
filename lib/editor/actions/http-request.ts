@@ -143,8 +143,8 @@ export async function executeHttpRequest(
   }
 }
 
-export function httpRequestCacheKey(hotspotId: number, nodeId: string): string {
-  return `${hotspotId}:${nodeId}`;
+export function httpRequestCacheKey(ownerKey: string, nodeId: string): string {
+  return `${ownerKey}:${nodeId}`;
 }
 
 export function hasHttpRequestCached(key: string): boolean {
@@ -157,6 +157,10 @@ export function markHttpRequestCached(key: string, data: unknown): void {
 
 export function getHttpRequestCached(key: string): unknown | undefined {
   return useHttpResponseStore.getState().getResponse(key);
+}
+
+export function clearHttpRequestCached(key: string): void {
+  useHttpResponseStore.getState().clearResponse(key);
 }
 
 export function clearHttpRequestCache(): void {

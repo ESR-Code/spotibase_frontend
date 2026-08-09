@@ -1,13 +1,17 @@
 "use client";
 
 import { useMemo } from "react";
+import {
+  findHttpRequestNodeById,
+  ownerKeyFor,
+} from "@/lib/editor/actions/action-owners";
+import { httpRequestCacheKey } from "@/lib/editor/actions/http-request";
 import { resolveHttpFieldsInHtml } from "@/lib/editor/blocks/http-field-chip";
 import { getValueByPath, tryParseJson } from "@/lib/editor/blocks/json-paths";
 import { normalizeRichTextContent } from "@/lib/editor/blocks/rich-text";
-import { getActionGraph } from "@/lib/editor/actions/create-action-graph";
-import { httpRequestCacheKey } from "@/lib/editor/actions/http-request";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useHttpResponseStore } from "@/lib/editor/state/http-response-store";
+import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import type { TextBlock } from "@/lib/editor/types/hotspot-block";
 
 type TextBlockPreviewProps = {
@@ -17,27 +21,44 @@ type TextBlockPreviewProps = {
 
 export function TextBlockPreview({ block, hotspotId }: TextBlockPreviewProps) {
   const hotspot = useEditorStore((s) =>
-    hotspotId != null ? s.hotspots.find((h) => h.id === hotspotId) ?? null : null,
+    hotspotId != null ? (s.hotspots.find((h) => h.id === hotspotId) ?? null) : null,
   );
+  const appStartActions = useScenesStore((s) => s.appStartActions);
+  const sceneStartActions = useScenesStore((s) => {
+    const scene =
+      s.scenes.find((sc) => sc.id === s.activeSceneId) ?? s.scenes[0];
+    return scene?.startActions ?? null;
+  });
   const runtimeResponses = useHttpResponseStore((s) => s.byKey);
 
   const html = useMemo(() => {
     const base = normalizeRichTextContent(block.content);
-    if (!base || !hotspotId || !hotspot) return base;
+    if (!base) return base;
 
     return resolveHttpFieldsInHtml(base, (nodeId, path) => {
-      const key = httpRequestCacheKey(hotspotId, nodeId);
+      const found = findHttpRequestNodeById(nodeId);
+      if (!found) return undefined;
+
+      const key = httpRequestCacheKey(
+        ownerKeyFor(found.ownerId),
+        found.node.id,
+      );
       if (Object.prototype.hasOwnProperty.call(runtimeResponses, key)) {
         return getValueByPath(runtimeResponses[key], path);
       }
 
-      const node = getActionGraph(hotspot).nodes.find((n) => n.id === nodeId);
-      if (node?.type !== "httpRequest") return undefined;
-      const sample = tryParseJson(node.data.lastResponseJson ?? "");
+      const sample = tryParseJson(found.node.data.lastResponseJson ?? "");
       if (sample === undefined) return undefined;
       return getValueByPath(sample, path);
     });
-  }, [block.content, hotspot, hotspotId, runtimeResponses]);
+  }, [
+    appStartActions,
+    block.content,
+    hotspot,
+    hotspotId,
+    runtimeResponses,
+    sceneStartActions,
+  ]);
 
   if (!html) return null;
 

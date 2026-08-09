@@ -25,7 +25,18 @@ import {
   ActionsEditorProvider,
   type ActionsEditorApi,
 } from "@/app/editor/_components/actions/actions-editor-context";
-import { getActionGraph } from "@/lib/editor/actions/create-action-graph";
+import {
+  APP_START_OWNER_ID,
+  HOTSPOT_GRAPH_ALLOWED_NODE_TYPES,
+  SCENE_START_OWNER_ID,
+  START_GRAPH_ALLOWED_NODE_TYPES,
+  getOwnedActionGraph,
+  setOwnedActionGraph,
+} from "@/lib/editor/actions/action-owners";
+import {
+  createEmptyActionGraph,
+  getActionGraph,
+} from "@/lib/editor/actions/create-action-graph";
 import {
   parseFlowNodeId,
   toFlowGraph,
@@ -42,6 +53,7 @@ import {
   updateNodeData,
 } from "@/lib/editor/actions/graph-ops";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useActiveScene, useScenesStore } from "@/lib/editor/state/scenes-store";
 import type {
   ActionNodeType,
   ActionNodeXY,
@@ -52,31 +64,54 @@ import type { Hotspot } from "@/lib/editor/types/hotspot";
 
 type ActionsFlowProps = {
   hotspots: Hotspot[];
+  /** Prepend App Start + Scene Start lanes (scene-wide Actions modal). */
+  includeStartGraphs?: boolean;
 };
+
+function graphFingerprint(graph: HotspotActionGraph): string {
+  const nodes = graph.nodes.map((n) => `${n.id}:${n.type}`).join(",");
+  const edges = graph.edges.map((e) => `${e.source}>${e.target}`).join(",");
+  return `${nodes}|${edges}`;
+}
 
 /**
  * Structural fingerprint — remount only when nodes/edges are added/removed/
  * reconnected. Editable fields (url, sceneId) must NOT be included or inputs
  * remount and lose focus on every keystroke.
  */
-function structureKeyFor(hotspots: Hotspot[]): string {
-  return hotspots
+function structureKeyFor(
+  hotspots: Hotspot[],
+  includeStartGraphs: boolean,
+  appStartActions: HotspotActionGraph,
+  sceneStartActions: HotspotActionGraph,
+): string {
+  const hotspotKey = hotspots
     .map((h) => {
       const g = getActionGraph(h);
-      const nodes = g.nodes.map((n) => `${n.id}:${n.type}`).join(",");
-      const edges = g.edges.map((e) => `${e.source}>${e.target}`).join(",");
-      return `${h.id}[${nodes}|${edges}]`;
+      return `${h.id}[${graphFingerprint(g)}]`;
     })
     .join("||");
+
+  if (!includeStartGraphs) return hotspotKey;
+
+  return [
+    `app[${graphFingerprint(appStartActions)}]`,
+    `scene[${graphFingerprint(sceneStartActions)}]`,
+    hotspotKey,
+  ].join("||");
 }
 
-function ActionsFlowCanvas({ hotspots }: ActionsFlowProps) {
+function ActionsFlowCanvas({
+  hotspots,
+  includeStartGraphs = false,
+}: ActionsFlowProps) {
   const updateHotspot = useEditorStore((s) => s.updateHotspot);
+  const activeScene = useActiveScene();
+  const appStartActions = useScenesStore((s) => s.appStartActions);
   const { screenToFlowPosition } = useReactFlow();
   const flowRootRef = useRef<HTMLDivElement>(null);
   const [rawMenu, setRawMenu] = useState<ActionsContextMenuState | null>(null);
 
-  /** Map viewport coords → flow container local coords (avoids fixed/transform offset). */
   const menuPositionFromEvent = useCallback(
     (event: { clientX: number; clientY: number }) => {
       const rect = flowRootRef.current?.getBoundingClientRect();
@@ -89,29 +124,70 @@ function ActionsFlowCanvas({ hotspots }: ActionsFlowProps) {
     [],
   );
 
-  const laneByHotspotId = useMemo(() => {
-    const map = new Map<number, number>();
-    hotspots.forEach((h, index) => map.set(h.id, index));
-    return map;
-  }, [hotspots]);
+  const entries: ActionFlowEntry[] = useMemo(() => {
+    const list: ActionFlowEntry[] = [];
+    let laneIndex = 0;
 
-  const hotspotIds = useMemo(
-    () => new Set(hotspots.map((h) => h.id)),
-    [hotspots],
+    if (includeStartGraphs) {
+      list.push({
+        ownerId: APP_START_OWNER_ID,
+        title: "All scenes",
+        graph: appStartActions ?? createEmptyActionGraph(),
+        laneIndex: laneIndex++,
+        triggerKind: "appStart",
+        allowedNodeTypes: START_GRAPH_ALLOWED_NODE_TYPES,
+      });
+      list.push({
+        ownerId: SCENE_START_OWNER_ID,
+        title: activeScene.name,
+        graph: activeScene.startActions ?? createEmptyActionGraph(),
+        laneIndex: laneIndex++,
+        triggerKind: "sceneStart",
+        allowedNodeTypes: START_GRAPH_ALLOWED_NODE_TYPES,
+      });
+    }
+
+    for (const hotspot of hotspots) {
+      list.push({
+        ownerId: hotspot.id,
+        title: hotspot.title,
+        graph: getActionGraph(hotspot),
+        laneIndex: laneIndex++,
+        triggerKind: "hotspot",
+        allowedNodeTypes: HOTSPOT_GRAPH_ALLOWED_NODE_TYPES,
+      });
+    }
+
+    return list;
+  }, [
+    activeScene.name,
+    activeScene.startActions,
+    appStartActions,
+    hotspots,
+    includeStartGraphs,
+  ]);
+
+  const laneByOwnerId = useMemo(() => {
+    const map = new Map<number, number>();
+    entries.forEach((entry) => map.set(entry.ownerId, entry.laneIndex));
+    return map;
+  }, [entries]);
+
+  const allowedByOwnerId = useMemo(() => {
+    const map = new Map<number, ActionNodeType[]>();
+    entries.forEach((entry) =>
+      map.set(entry.ownerId, entry.allowedNodeTypes),
+    );
+    return map;
+  }, [entries]);
+
+  const ownerIds = useMemo(
+    () => new Set(entries.map((e) => e.ownerId)),
+    [entries],
   );
 
   const menu =
-    rawMenu && hotspotIds.has(rawMenu.hotspotId) ? rawMenu : null;
-
-  const entries: ActionFlowEntry[] = useMemo(
-    () =>
-      hotspots.map((hotspot, laneIndex) => ({
-        hotspot,
-        graph: getActionGraph(hotspot),
-        laneIndex,
-      })),
-    [hotspots],
-  );
+    rawMenu && ownerIds.has(rawMenu.hotspotId) ? rawMenu : null;
 
   const { nodes: initialNodes, edges } = useMemo(
     () => toFlowGraph(entries),
@@ -121,22 +197,24 @@ function ActionsFlowCanvas({ hotspots }: ActionsFlowProps) {
     useState<Node<ActionFlowNodeData>[]>(initialNodes);
 
   const writeGraph = useCallback(
-    (hotspotId: number, graph: HotspotActionGraph) => {
-      updateHotspot(hotspotId, { actions: graph });
+    (ownerId: number, graph: HotspotActionGraph) => {
+      if (ownerId === APP_START_OWNER_ID || ownerId === SCENE_START_OWNER_ID) {
+        setOwnedActionGraph(ownerId, graph);
+        return;
+      }
+      updateHotspot(ownerId, { actions: graph });
     },
     [updateHotspot],
   );
 
   const updateGraph = useCallback(
     (
-      hotspotId: number,
+      ownerId: number,
       updater: (graph: HotspotActionGraph) => HotspotActionGraph,
     ) => {
-      const hotspot = useEditorStore
-        .getState()
-        .hotspots.find((h) => h.id === hotspotId);
-      if (!hotspot) return;
-      writeGraph(hotspotId, updater(getActionGraph(hotspot)));
+      const current = getOwnedActionGraph(ownerId);
+      if (!current) return;
+      writeGraph(ownerId, updater(current));
     },
     [writeGraph],
   );
@@ -144,22 +222,23 @@ function ActionsFlowCanvas({ hotspots }: ActionsFlowProps) {
   const api: ActionsEditorApi = useMemo(
     () => ({
       updateGraph,
-      deleteNode: (hotspotId, nodeId) => {
-        updateGraph(hotspotId, (graph) => removeNode(graph, nodeId));
+      deleteNode: (ownerId, nodeId) => {
+        updateGraph(ownerId, (graph) => removeNode(graph, nodeId));
       },
-      updateNodeData: (hotspotId, nodeId, patch) => {
-        updateGraph(hotspotId, (graph) =>
-          updateNodeData(graph, nodeId, patch),
-        );
+      updateNodeData: (ownerId, nodeId, patch) => {
+        updateGraph(ownerId, (graph) => updateNodeData(graph, nodeId, patch));
       },
-      addNode: (hotspotId, type, position) => {
-        updateGraph(hotspotId, (graph) => {
+      addNode: (ownerId, type, position) => {
+        const allowed =
+          allowedByOwnerId.get(ownerId) ?? HOTSPOT_GRAPH_ALLOWED_NODE_TYPES;
+        if (!allowed.includes(type)) return;
+        updateGraph(ownerId, (graph) => {
           const { graph: next } = addNode(graph, type, position);
           return next;
         });
       },
     }),
-    [updateGraph],
+    [allowedByOwnerId, updateGraph],
   );
 
   const onNodesChange: OnNodesChange<Node<ActionFlowNodeData>> = useCallback(
@@ -174,7 +253,7 @@ function ActionsFlowCanvas({ hotspots }: ActionsFlowProps) {
         ) {
           const parsed = parseFlowNodeId(change.id);
           if (!parsed) continue;
-          const laneIndex = laneByHotspotId.get(parsed.hotspotId) ?? 0;
+          const laneIndex = laneByOwnerId.get(parsed.hotspotId) ?? 0;
           const position = toGraphPosition(
             change.position.x,
             change.position.y,
@@ -186,7 +265,7 @@ function ActionsFlowCanvas({ hotspots }: ActionsFlowProps) {
         }
       }
     },
-    [laneByHotspotId, updateGraph],
+    [laneByOwnerId, updateGraph],
   );
 
   const onConnect: OnConnect = useCallback(
@@ -207,37 +286,36 @@ function ActionsFlowCanvas({ hotspots }: ActionsFlowProps) {
   const onPaneContextMenu = useCallback(
     (event: MouseEvent | React.MouseEvent) => {
       event.preventDefault();
-      if (hotspots.length === 0) return;
+      if (entries.length === 0) return;
 
       const flowPos = screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
 
-      let best = hotspots[0]!;
-      let bestLane = 0;
+      let best = entries[0]!;
       let bestDist = Infinity;
-      hotspots.forEach((h, laneIndex) => {
-        const localY = toGraphPosition(flowPos.x, flowPos.y, laneIndex).y;
+      for (const entry of entries) {
+        const localY = toGraphPosition(flowPos.x, flowPos.y, entry.laneIndex).y;
         const dist = Math.abs(localY - 120);
         if (dist < bestDist) {
           bestDist = dist;
-          best = h;
-          bestLane = laneIndex;
+          best = entry;
         }
-      });
+      }
 
-      const graphPos = toGraphPosition(flowPos.x, flowPos.y, bestLane);
+      const graphPos = toGraphPosition(flowPos.x, flowPos.y, best.laneIndex);
       const menuPos = menuPositionFromEvent(event);
       setRawMenu({
         kind: "pane",
         x: menuPos.x,
         y: menuPos.y,
-        hotspotId: best.id,
+        hotspotId: best.ownerId,
         flowPosition: graphPos,
+        allowedNodeTypes: best.allowedNodeTypes,
       });
     },
-    [hotspots, menuPositionFromEvent, screenToFlowPosition],
+    [entries, menuPositionFromEvent, screenToFlowPosition],
   );
 
   const onNodeContextMenu = useCallback(
@@ -261,8 +339,8 @@ function ActionsFlowCanvas({ hotspots }: ActionsFlowProps) {
   );
 
   const handleAdd = useCallback(
-    (hotspotId: number, type: ActionNodeType, position: ActionNodeXY) => {
-      api.addNode(hotspotId, type, position);
+    (ownerId: number, type: ActionNodeType, position: ActionNodeXY) => {
+      api.addNode(ownerId, type, position);
     },
     [api],
   );
@@ -320,10 +398,22 @@ function ActionsFlowCanvas({ hotspots }: ActionsFlowProps) {
   );
 }
 
-export function ActionsFlow({ hotspots }: ActionsFlowProps) {
-  const structureKey = structureKeyFor(hotspots);
+export function ActionsFlow({
+  hotspots,
+  includeStartGraphs = false,
+}: ActionsFlowProps) {
+  const appStartActions = useScenesStore((s) => s.appStartActions);
+  const activeScene = useActiveScene();
+  const sceneStartActions =
+    activeScene.startActions ?? createEmptyActionGraph();
+  const structureKey = structureKeyFor(
+    hotspots,
+    includeStartGraphs,
+    appStartActions,
+    sceneStartActions,
+  );
 
-  if (hotspots.length === 0) {
+  if (!includeStartGraphs && hotspots.length === 0) {
     return (
       <div
         className="flex h-full items-center justify-center text-[13px]"
@@ -336,7 +426,10 @@ export function ActionsFlow({ hotspots }: ActionsFlowProps) {
 
   return (
     <ReactFlowProvider key={structureKey}>
-      <ActionsFlowCanvas hotspots={hotspots} />
+      <ActionsFlowCanvas
+        hotspots={hotspots}
+        includeStartGraphs={includeStartGraphs}
+      />
     </ReactFlowProvider>
   );
 }

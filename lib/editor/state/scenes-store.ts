@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import {
   cloneActionGraph,
   createDefaultActionGraph,
+  createEmptyActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
 import {
   cloneCameraResetPosition,
@@ -31,6 +32,7 @@ import {
   readEditorSettingsSnapshot,
   useSettingsStore,
 } from "@/lib/editor/state/settings-store";
+import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 import type { Scene } from "@/lib/editor/types/scene";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 
@@ -49,6 +51,9 @@ function snapshotCurrentIntoScene(scene: Scene): Scene {
         ? cloneActionGraph(h.actions)
         : createDefaultActionGraph(),
     })),
+    startActions: cloneActionGraph(
+      scene.startActions ?? createEmptyActionGraph(),
+    ),
     nextHotspotId: editor.nextId,
     model: {
       name: model.modelName,
@@ -85,6 +90,10 @@ export type AddSceneInput = {
 type ScenesState = {
   scenes: Scene[];
   activeSceneId: string;
+  /** Project-wide graph; runs once when Preview starts. */
+  appStartActions: HotspotActionGraph;
+  setAppStartActions: (graph: HotspotActionGraph) => void;
+  setActiveSceneStartActions: (graph: HotspotActionGraph) => void;
   addScene: (input: AddSceneInput) => string;
   removeScene: (id: string) => void;
   renameScene: (id: string, name: string) => void;
@@ -107,6 +116,9 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
           ? cloneActionGraph(h.actions)
           : createDefaultActionGraph(),
       })),
+      startActions: cloneActionGraph(
+        SEED_SCENE.startActions ?? createEmptyActionGraph(),
+      ),
       model: { ...SEED_SCENE.model, rotation: { ...SEED_SCENE.model.rotation } },
       settings: cloneEditorSettings(SEED_SCENE.settings),
       environment: cloneEnvironmentSettings(SEED_SCENE.environment),
@@ -114,6 +126,22 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
     },
   ],
   activeSceneId: INITIAL_SCENE_ID,
+  appStartActions: createEmptyActionGraph(),
+
+  setAppStartActions: (graph) => {
+    set({ appStartActions: cloneActionGraph(graph) });
+  },
+
+  setActiveSceneStartActions: (graph) => {
+    const state = get();
+    set({
+      scenes: state.scenes.map((scene) =>
+        scene.id === state.activeSceneId
+          ? { ...scene, startActions: cloneActionGraph(graph) }
+          : scene,
+      ),
+    });
+  },
 
   addScene: (input) => {
     const state = get();
@@ -219,6 +247,14 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
           detail: { sceneId: id },
         }),
       );
+      // Scene Start runs after the scene is live in Preview.
+      if (useEditorStore.getState().isPreview) {
+        void import("@/lib/editor/actions/run-action-graph").then(
+          ({ runSceneStartActions }) => {
+            void runSceneStartActions(id);
+          },
+        );
+      }
     }
   },
 }));

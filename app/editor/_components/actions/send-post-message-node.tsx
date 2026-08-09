@@ -5,9 +5,14 @@ import { Radio } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-card";
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
-import { parsePayloadJson } from "@/lib/editor/actions/send-post-message";
+import {
+  APP_START_OWNER_ID,
+  isHotspotOwnerId,
+} from "@/lib/editor/actions/action-owners";
 import type { ActionFlowNodeData } from "@/lib/editor/actions/flow-adapter";
+import { parsePayloadJson } from "@/lib/editor/actions/send-post-message";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import {
   POST_MESSAGE_TARGETS,
   type PostMessageTarget,
@@ -32,13 +37,12 @@ export function SendPostMessageNode({
 }: NodeProps<SendPostMessageFlowNode>) {
   const { deleteNode, updateNodeData } = useActionsEditor();
   const actionNodeId = data.actionNode?.id;
+  const ownerId = data.hotspotId;
 
-  // Select primitives with shallow compare so we don't return a fresh object
-  // reference on every store read (that caused an infinite render loop).
-  const live = useEditorStore(
+  const hotspotLive = useEditorStore(
     useShallow((s) => {
-      if (!actionNodeId) return EMPTY_DATA;
-      const hotspot = s.hotspots.find((h) => h.id === data.hotspotId);
+      if (!actionNodeId || !isHotspotOwnerId(ownerId)) return EMPTY_DATA;
+      const hotspot = s.hotspots.find((h) => h.id === ownerId);
       const node = hotspot?.actions?.nodes.find((n) => n.id === actionNodeId);
       if (!node || node.type !== "sendPostMessage") return EMPTY_DATA;
       return {
@@ -49,6 +53,27 @@ export function SendPostMessageNode({
       };
     }),
   );
+
+  const startLive = useScenesStore(
+    useShallow((s) => {
+      if (!actionNodeId || isHotspotOwnerId(ownerId)) return EMPTY_DATA;
+      const graph =
+        ownerId === APP_START_OWNER_ID
+          ? s.appStartActions
+          : (s.scenes.find((sc) => sc.id === s.activeSceneId)?.startActions ??
+            null);
+      const node = graph?.nodes.find((n) => n.id === actionNodeId);
+      if (!node || node.type !== "sendPostMessage") return EMPTY_DATA;
+      return {
+        eventName: node.data.eventName,
+        payloadJson: node.data.payloadJson,
+        targetOrigin: node.data.targetOrigin,
+        target: node.data.target,
+      };
+    }),
+  );
+
+  const live = isHotspotOwnerId(ownerId) ? hotspotLive : startLive;
 
   if (!actionNodeId) return null;
 
@@ -62,7 +87,7 @@ export function SendPostMessageNode({
         : null;
 
   const patch = (partial: Partial<SendPostMessageActionNode["data"]>) => {
-    updateNodeData(data.hotspotId, actionNodeId, partial);
+    updateNodeData(ownerId, actionNodeId, partial);
   };
 
   const stop = {
@@ -78,7 +103,7 @@ export function SendPostMessageNode({
       accent="#7aa2ff"
       selected={selected}
       wide
-      onDelete={() => deleteNode(data.hotspotId, actionNodeId)}
+      onDelete={() => deleteNode(ownerId, actionNodeId)}
       footer={
         warning ? (
           <div
@@ -88,10 +113,7 @@ export function SendPostMessageNode({
             {warning}
           </div>
         ) : (
-          <div
-            className="text-[10px]"
-            style={{ color: "var(--editor-muted)" }}
-          >
+          <div className="text-[10px]" style={{ color: "var(--editor-muted)" }}>
             Sends {"{ source, event, data, hotspotId }"}
           </div>
         )
