@@ -171,6 +171,10 @@ export function updateNodeData(
               typeof patch.cacheReuse === "boolean"
                 ? patch.cacheReuse
                 : node.data.cacheReuse,
+            lastResponseJson:
+              typeof patch.lastResponseJson === "string"
+                ? patch.lastResponseJson
+                : (node.data.lastResponseJson ?? ""),
           },
         };
       }

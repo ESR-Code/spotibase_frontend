@@ -1,3 +1,5 @@
+import { tryParseJson } from "@/lib/editor/blocks/json-paths";
+import { useHttpResponseStore } from "@/lib/editor/state/http-response-store";
 import type {
   HttpMethod,
   HttpRequestActionNode,
@@ -12,6 +14,8 @@ export type HttpRequestResult = {
   headers: Record<string, string>;
   body: string;
   error: string | null;
+  /** Parsed JSON body when available. */
+  json: unknown | undefined;
 };
 
 const METHODS_WITHOUT_BODY = new Set<HttpMethod>(["GET", "HEAD"]);
@@ -46,7 +50,10 @@ export function parseHeadersJson(
 }
 
 export function validateHttpRequestData(
-  data: HttpRequestActionNode["data"],
+  data: Pick<
+    HttpRequestActionNode["data"],
+    "url" | "headersJson" | "method" | "body" | "cacheReuse"
+  >,
 ): string | null {
   if (!data.url.trim()) return "Enter a URL";
   if (!normalizeExternalUrl(data.url)) return "Enter a valid URL";
@@ -56,7 +63,10 @@ export function validateHttpRequestData(
 }
 
 export async function executeHttpRequest(
-  data: HttpRequestActionNode["data"],
+  data: Pick<
+    HttpRequestActionNode["data"],
+    "method" | "url" | "headersJson" | "body"
+  >,
 ): Promise<HttpRequestResult> {
   const started = performance.now();
   const url = normalizeExternalUrl(data.url);
@@ -69,6 +79,7 @@ export async function executeHttpRequest(
       headers: {},
       body: "",
       error: "Invalid URL",
+      json: undefined,
     };
   }
 
@@ -82,6 +93,7 @@ export async function executeHttpRequest(
       headers: {},
       body: "",
       error: headersParsed.error,
+      json: undefined,
     };
   }
 
@@ -115,6 +127,7 @@ export async function executeHttpRequest(
       headers,
       body,
       error: null,
+      json: tryParseJson(body),
     };
   } catch (error) {
     return {
@@ -125,27 +138,29 @@ export async function executeHttpRequest(
       headers: {},
       body: "",
       error: error instanceof Error ? error.message : "Request failed",
+      json: undefined,
     };
   }
 }
-
-/** Session cache for Preview cache-reuse. */
-const previewCache = new Set<string>();
 
 export function httpRequestCacheKey(hotspotId: number, nodeId: string): string {
   return `${hotspotId}:${nodeId}`;
 }
 
 export function hasHttpRequestCached(key: string): boolean {
-  return previewCache.has(key);
+  return useHttpResponseStore.getState().hasResponse(key);
 }
 
-export function markHttpRequestCached(key: string): void {
-  previewCache.add(key);
+export function markHttpRequestCached(key: string, data: unknown): void {
+  useHttpResponseStore.getState().setResponse(key, data);
+}
+
+export function getHttpRequestCached(key: string): unknown | undefined {
+  return useHttpResponseStore.getState().getResponse(key);
 }
 
 export function clearHttpRequestCache(): void {
-  previewCache.clear();
+  useHttpResponseStore.getState().clear();
 }
 
 export function formatHttpResultPreview(

@@ -116,6 +116,7 @@ export function createActionNode(
           headersJson: "{\n  \n}",
           body: "",
           cacheReuse: false,
+          lastResponseJson: "",
         },
       };
   }
@@ -183,6 +184,7 @@ export function cloneActionGraph(
             headersJson: node.data.headersJson,
             body: node.data.body,
             cacheReuse: Boolean(node.data.cacheReuse),
+            lastResponseJson: node.data.lastResponseJson ?? "",
           },
         };
       }

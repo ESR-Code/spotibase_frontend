@@ -202,7 +202,10 @@ export function PreviewModal() {
       </EditorDialog.Header>
 
       <EditorDialog.Body>
-        <HotspotBlocksPreview blocks={hotspot.blocks} />
+        <HotspotBlocksPreview
+          blocks={hotspot.blocks}
+          hotspotId={hotspot.id}
+        />
       </EditorDialog.Body>
 
       <EditorDialog.Footer>

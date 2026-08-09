@@ -1,18 +1,22 @@
 "use client";
 
-import { Bold, Italic, Underline } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Bold, Braces, Italic, Underline } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import { buildHttpFieldChipHtml } from "@/lib/editor/blocks/http-field-chip";
+import { listHttpFieldSources } from "@/lib/editor/blocks/http-field-sources";
 import {
   normalizeRichTextContent,
   sanitizeRichTextHtml,
 } from "@/lib/editor/blocks/rich-text";
+import { useEditorStore } from "@/lib/editor/state/editor-store";
 import type { TextBlock } from "@/lib/editor/types/hotspot-block";
 
 type TextBlockEditorProps = {
   block: TextBlock;
   onChange: (content: string) => void;
   autoFocus?: boolean;
+  hotspotId?: number;
 };
 
 type FormatCommand = "bold" | "italic" | "underline";
@@ -21,14 +25,26 @@ export function TextBlockEditor({
   block,
   onChange,
   autoFocus,
+  hotspotId,
 }: TextBlockEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const focusedRef = useRef(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [active, setActive] = useState({
     bold: false,
     italic: false,
     underline: false,
   });
+
+  const hotspot = useEditorStore((s) =>
+    hotspotId != null ? s.hotspots.find((h) => h.id === hotspotId) ?? null : null,
+  );
+
+  const fieldSources = useMemo(
+    () => (hotspot ? listHttpFieldSources(hotspot) : []),
+    [hotspot],
+  );
 
   useEffect(() => {
     const el = editorRef.current;
@@ -53,6 +69,24 @@ export function TextBlockEditor({
     selection.addRange(range);
   }, [autoFocus]);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
   const syncActiveFormats = () => {
     setActive({
       bold: document.queryCommandState("bold"),
@@ -76,9 +110,24 @@ export function TextBlockEditor({
     emitChange();
   };
 
+  const insertField = (nodeId: string, path: string) => {
+    const el = editorRef.current;
+    if (!el) return;
+    el.focus();
+    document.execCommand("insertHTML", false, buildHttpFieldChipHtml(nodeId, path));
+    // Keep a trailing space so the caret can leave the chip.
+    document.execCommand("insertText", false, " ");
+    emitChange();
+    setMenuOpen(false);
+  };
+
   return (
     <div className="editor-rich-text">
-      <div className="editor-rich-text-toolbar" role="toolbar" aria-label="Text formatting">
+      <div
+        className="editor-rich-text-toolbar"
+        role="toolbar"
+        aria-label="Text formatting"
+      >
         <IconButton
           type="button"
           title="Bold"
@@ -112,7 +161,64 @@ export function TextBlockEditor({
         >
           <Underline className="h-3.5 w-3.5" />
         </IconButton>
+
+        <div className="editor-vsep" style={{ height: 16, margin: "0 2px" }} />
+
+        <div ref={menuRef} className="relative">
+          <IconButton
+            type="button"
+            title={
+              fieldSources.length > 0
+                ? "Insert API field"
+                : "Test an HTTP Request action to insert fields"
+            }
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+            disabled={fieldSources.length === 0}
+            className={menuOpen ? "is-active" : undefined}
+            style={{ width: 28, height: 28 }}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            <Braces className="h-3.5 w-3.5" />
+          </IconButton>
+
+          {menuOpen ? (
+            <div
+              role="menu"
+              className="editor-http-field-menu absolute left-0 top-full z-30 mt-1 max-h-56 min-w-[220px] overflow-y-auto rounded-lg py-1"
+            >
+              {fieldSources.map((source) => (
+                <button
+                  key={`${source.nodeId}:${source.path}`}
+                  type="button"
+                  role="menuitem"
+                  className="editor-http-field-menu-item"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => insertField(source.nodeId, source.path)}
+                >
+                  <span className="block truncate text-[12px] font-medium">
+                    {source.path}
+                  </span>
+                  <span
+                    className="block truncate text-[10px]"
+                    style={{ color: "var(--editor-muted)" }}
+                  >
+                    {source.sample} · {source.nodeLabel}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
+
+      {fieldSources.length === 0 ? (
+        <div className="text-[10px]" style={{ color: "var(--editor-muted-2)" }}>
+          Tip: Test an HTTP Request action to insert response fields here.
+        </div>
+      ) : null}
+
       <div
         ref={editorRef}
         className="editor-rich-text-input"
@@ -134,7 +240,6 @@ export function TextBlockEditor({
         onMouseUp={syncActiveFormats}
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) {
-            // Prefer paragraph breaks so spacing between paragraphs is preserved.
             e.preventDefault();
             document.execCommand("insertParagraph", false);
             emitChange();

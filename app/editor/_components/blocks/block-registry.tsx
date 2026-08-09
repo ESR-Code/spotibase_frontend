@@ -20,10 +20,12 @@ type BlockEditorProps = {
   block: HotspotBlock;
   onChange: (patch: BlockEditorPatch) => void;
   autoFocus?: boolean;
+  hotspotId?: number;
 };
 
 type BlockPreviewProps = {
   block: HotspotBlock;
+  hotspotId?: number;
 };
 
 export type BlockDefinition = {
@@ -41,10 +43,10 @@ function asBlockEditor(
   return Editor;
 }
 
-function asBlockPreview<T extends HotspotBlock>(
-  Preview: ComponentType<{ block: T }>,
+function asBlockPreview(
+  Preview: ComponentType<BlockPreviewProps>,
 ): ComponentType<BlockPreviewProps> {
-  return Preview as ComponentType<BlockPreviewProps>;
+  return Preview;
 }
 
 export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
@@ -67,7 +69,10 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
         />
       );
     }),
-    Preview: asBlockPreview(HeadingBlockPreview),
+    Preview: asBlockPreview(function HeadingPreviewAdapter({ block }) {
+      if (block.type !== "heading") return null;
+      return <HeadingBlockPreview block={block} />;
+    }),
   },
   text: {
     type: "text",
@@ -78,17 +83,22 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
       block,
       onChange,
       autoFocus,
+      hotspotId,
     }) {
       if (block.type !== "text") return null;
       return (
         <TextBlockEditor
           block={block}
           autoFocus={autoFocus}
+          hotspotId={hotspotId}
           onChange={(content) => onChange({ content })}
         />
       );
     }),
-    Preview: asBlockPreview(TextBlockPreview),
+    Preview: asBlockPreview(function TextPreviewAdapter({ block, hotspotId }) {
+      if (block.type !== "text") return null;
+      return <TextBlockPreview block={block} hotspotId={hotspotId} />;
+    }),
   },
   link: {
     type: "link",
@@ -109,7 +119,10 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
         />
       );
     }),
-    Preview: asBlockPreview(LinkBlockPreview),
+    Preview: asBlockPreview(function LinkPreviewAdapter({ block }) {
+      if (block.type !== "link") return null;
+      return <LinkBlockPreview block={block} />;
+    }),
   },
 };
 

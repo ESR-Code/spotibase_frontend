@@ -31,6 +31,7 @@ const EMPTY_DATA: HttpRequestActionNode["data"] = {
   headersJson: "{\n  \n}",
   body: "",
   cacheReuse: false,
+  lastResponseJson: "",
 };
 
 export function HttpRequestNode({
@@ -54,6 +55,7 @@ export function HttpRequestNode({
         headersJson: node.data.headersJson,
         body: node.data.body,
         cacheReuse: node.data.cacheReuse,
+        lastResponseJson: node.data.lastResponseJson ?? "",
       };
     }),
   );
@@ -86,6 +88,7 @@ export function HttpRequestNode({
         headers: {},
         body: "",
         error,
+        json: undefined,
       });
       return;
     }
@@ -93,10 +96,17 @@ export function HttpRequestNode({
     try {
       const result = await executeHttpRequest(live);
       setTestResult(result);
+      // Persist JSON so Text blocks can offer response fields.
+      patch({
+        lastResponseJson:
+          result.json !== undefined ? JSON.stringify(result.json) : "",
+      });
     } finally {
       setTesting(false);
     }
   };
+
+  const hasFieldSources = Boolean(live.lastResponseJson.trim());
 
   return (
     <ActionNodeCard
@@ -113,6 +123,10 @@ export function HttpRequestNode({
             style={{ color: "var(--editor-amber)" }}
           >
             {warning}
+          </div>
+        ) : hasFieldSources ? (
+          <div className="text-[10px]" style={{ color: "var(--editor-teal)" }}>
+            Response fields available in Text blocks
           </div>
         ) : live.cacheReuse ? (
           <div className="text-[10px]" style={{ color: "var(--editor-muted)" }}>

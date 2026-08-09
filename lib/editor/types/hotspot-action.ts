@@ -61,6 +61,11 @@ export type HttpRequestActionNode = ActionNodeBase<
      * session for the given hotspot/node.
      */
     cacheReuse: boolean;
+    /**
+     * Last successful JSON response body (from Test or Preview).
+     * Used by text blocks to offer selectable field paths.
+     */
+    lastResponseJson: string;
   }
 >;
 export type ActionNode =

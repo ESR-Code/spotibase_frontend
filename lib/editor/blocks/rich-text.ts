@@ -1,3 +1,5 @@
+import { HTTP_FIELD_CHIP_CLASS } from "@/lib/editor/blocks/http-field-chip";
+
 const ALLOWED_TAGS = new Set([
   "B",
   "I",
@@ -35,6 +37,13 @@ export function plainTextToHtml(content: string): string {
     .join("");
 }
 
+function isHttpFieldChip(el: HTMLElement): boolean {
+  return (
+    el.tagName.toUpperCase() === "SPAN" &&
+    el.classList.contains(HTTP_FIELD_CHIP_CLASS)
+  );
+}
+
 function sanitizeNode(node: Node, doc: Document): Node | null {
   if (node.nodeType === Node.TEXT_NODE) {
     return doc.createTextNode(node.textContent ?? "");
@@ -43,6 +52,17 @@ function sanitizeNode(node: Node, doc: Document): Node | null {
 
   const el = node as HTMLElement;
   const tag = el.tagName.toUpperCase();
+
+  if (isHttpFieldChip(el)) {
+    const clean = doc.createElement("span");
+    clean.className = HTTP_FIELD_CHIP_CLASS;
+    clean.setAttribute("contenteditable", "false");
+    clean.setAttribute("data-http-node", el.getAttribute("data-http-node") ?? "");
+    clean.setAttribute("data-http-path", el.getAttribute("data-http-path") ?? "");
+    const path = el.getAttribute("data-http-path") ?? "";
+    clean.textContent = path || (el.textContent ?? "");
+    return clean;
+  }
 
   if (!ALLOWED_TAGS.has(tag)) {
     const fragment = doc.createDocumentFragment();
@@ -53,7 +73,9 @@ function sanitizeNode(node: Node, doc: Document): Node | null {
     return fragment;
   }
 
-  const clean = doc.createElement(tag === "STRONG" ? "b" : tag === "EM" ? "i" : tag.toLowerCase());
+  const clean = doc.createElement(
+    tag === "STRONG" ? "b" : tag === "EM" ? "i" : tag.toLowerCase(),
+  );
   Array.from(el.childNodes).forEach((child) => {
     const sanitized = sanitizeNode(child, doc);
     if (sanitized) clean.appendChild(sanitized);
@@ -64,7 +86,10 @@ function sanitizeNode(node: Node, doc: Document): Node | null {
 /** Keep only basic formatting tags for text blocks. */
 export function sanitizeRichTextHtml(html: string): string {
   if (typeof window === "undefined") {
-    return html.replace(/<(?!\/?(?:b|i|u|strong|em|br|p|div|span)\b)[^>]*>/gi, "");
+    return html.replace(
+      /<(?!\/?(?:b|i|u|strong|em|br|p|div|span)\b)[^>]*>/gi,
+      "",
+    );
   }
 
   const doc = new DOMParser().parseFromString(`<div>${html}</div>`, "text/html");
@@ -94,7 +119,10 @@ export function richTextToPlainPreview(content: string, maxLength = 80): string 
     typeof window === "undefined"
       ? html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
       : (() => {
-          const doc = new DOMParser().parseFromString(`<div>${html}</div>`, "text/html");
+          const doc = new DOMParser().parseFromString(
+            `<div>${html}</div>`,
+            "text/html",
+          );
           return (doc.body.textContent ?? "").replace(/\s+/g, " ").trim();
         })();
   if (plain.length <= maxLength) return plain;

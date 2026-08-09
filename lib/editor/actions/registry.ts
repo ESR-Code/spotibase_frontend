@@ -1,6 +1,11 @@
-import { createActionNode } from "@/lib/editor/actions/create-action-graph";
+import {
+  createActionNode,
+  getActionGraph,
+} from "@/lib/editor/actions/create-action-graph";
+import { updateNodeData } from "@/lib/editor/actions/graph-ops";
 import {
   executeHttpRequest,
+  getHttpRequestCached,
   hasHttpRequestCached,
   httpRequestCacheKey,
   markHttpRequestCached,
@@ -127,11 +132,11 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     run: async (node, ctx) => {
       if (node.type !== "httpRequest") return;
 
+      const key = httpRequestCacheKey(ctx.hotspotId, node.id);
       const isPreview = useEditorStore.getState().isPreview;
-      if (node.data.cacheReuse && isPreview) {
-        const key = httpRequestCacheKey(ctx.hotspotId, node.id);
-        if (hasHttpRequestCached(key)) return;
-        markHttpRequestCached(key);
+
+      if (node.data.cacheReuse && isPreview && hasHttpRequestCached(key)) {
+        return;
       }
 
       const result = await executeHttpRequest(node.data);
@@ -143,6 +148,24 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
         toast.error(
           `HTTP Request: ${result.status ?? "—"} ${result.statusText}`.trim(),
         );
+      }
+
+      if (result.json !== undefined) {
+        markHttpRequestCached(key, result.json);
+        const hotspot = useEditorStore
+          .getState()
+          .hotspots.find((h) => h.id === ctx.hotspotId);
+        if (hotspot) {
+          const nextGraph = updateNodeData(getActionGraph(hotspot), node.id, {
+            lastResponseJson: JSON.stringify(result.json),
+          });
+          useEditorStore.getState().updateHotspot(ctx.hotspotId, {
+            actions: nextGraph,
+          });
+        }
+      } else if (node.data.cacheReuse && isPreview) {
+        // Still mark the attempt so cache-reuse skips a second network call.
+        markHttpRequestCached(key, getHttpRequestCached(key) ?? null);
       }
     },
   },

@@ -316,6 +316,7 @@ export function HotspotBlocksTab({ selected }: HotspotBlocksTabProps) {
                     <Editor
                       block={block}
                       autoFocus={focusBlockId === block.id}
+                      hotspotId={selected.id}
                       onChange={(patch) => handleBlockChange(block.id, patch)}
                     />
                   </div>

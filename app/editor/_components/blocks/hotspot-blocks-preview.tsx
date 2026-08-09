@@ -5,9 +5,13 @@ import type { HotspotBlock } from "@/lib/editor/types/hotspot-block";
 
 type HotspotBlocksPreviewProps = {
   blocks: HotspotBlock[];
+  hotspotId?: number;
 };
 
-export function HotspotBlocksPreview({ blocks }: HotspotBlocksPreviewProps) {
+export function HotspotBlocksPreview({
+  blocks,
+  hotspotId,
+}: HotspotBlocksPreviewProps) {
   if (blocks.length === 0) {
     return (
       <p
@@ -24,7 +28,9 @@ export function HotspotBlocksPreview({ blocks }: HotspotBlocksPreviewProps) {
       {blocks.map((block) => {
         const def = getBlockDefinition(block.type);
         const Preview = def.Preview;
-        return <Preview key={block.id} block={block} />;
+        return (
+          <Preview key={block.id} block={block} hotspotId={hotspotId} />
+        );
       })}
     </div>
   );
