@@ -3,6 +3,7 @@ import {
   cloneActionGraph,
   createDefaultActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
+import { clearHttpRequestCache } from "@/lib/editor/actions/http-request";
 import { DEMO_HOTSPOTS } from "@/lib/editor/constants/demo-hotspots";
 import {
   getSeedHotspots,
@@ -93,6 +94,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setMode: (mode) => {
     if (mode === "preview") {
       const isPreview = !get().isPreview;
+      clearHttpRequestCache();
       set({
         isPreview,
         mode: isPreview ? "preview" : "select",
@@ -102,6 +104,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       });
       return;
     }
+    if (get().isPreview) clearHttpRequestCache();
     set({
       mode,
       isPreview: false,

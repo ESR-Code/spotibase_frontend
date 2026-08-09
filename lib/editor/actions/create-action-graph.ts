@@ -4,13 +4,15 @@ import type {
   ActionNodeType,
   ActionNodeXY,
   HotspotActionGraph,
+  HttpMethod,
+  HttpRequestActionNode,
   OpenModalActionNode,
   GoToSceneActionNode,
   OpenUrlActionNode,
   PostMessageTarget,
   SendPostMessageActionNode,
 } from "@/lib/editor/types/hotspot-action";
-import { TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
+import { HTTP_METHODS, TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
 
 export function newActionId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -34,6 +36,13 @@ function asPostMessageTarget(value: unknown): PostMessageTarget {
   return "parent";
 }
 
+function asHttpMethod(value: unknown): HttpMethod {
+  if (typeof value === "string" && HTTP_METHODS.includes(value as HttpMethod)) {
+    return value as HttpMethod;
+  }
+  return "GET";
+}
+
 export function createActionNode(
   type: "openModal",
   position: ActionNodeXY,
@@ -50,6 +59,10 @@ export function createActionNode(
   type: "sendPostMessage",
   position: ActionNodeXY,
 ): SendPostMessageActionNode;
+export function createActionNode(
+  type: "httpRequest",
+  position: ActionNodeXY,
+): HttpRequestActionNode;
 export function createActionNode(
   type: ActionNodeType,
   position: ActionNodeXY,
@@ -87,9 +100,22 @@ export function createActionNode(
         position: { ...position },
         data: {
           eventName: "",
-          payloadJson: '{\n  \n}',
+          payloadJson: "{\n  \n}",
           targetOrigin: "*",
           target: "parent",
+        },
+      };
+    case "httpRequest":
+      return {
+        id: newActionId(),
+        type: "httpRequest",
+        position: { ...position },
+        data: {
+          method: "GET",
+          url: "",
+          headersJson: "{\n  \n}",
+          body: "",
+          cacheReuse: false,
         },
       };
   }
@@ -143,6 +169,20 @@ export function cloneActionGraph(
             payloadJson: node.data.payloadJson,
             targetOrigin: node.data.targetOrigin,
             target: asPostMessageTarget(node.data.target),
+          },
+        };
+      }
+      if (node.type === "httpRequest") {
+        return {
+          id: node.id,
+          type: "httpRequest",
+          position: { ...node.position },
+          data: {
+            method: asHttpMethod(node.data.method),
+            url: node.data.url,
+            headersJson: node.data.headersJson,
+            body: node.data.body,
+            cacheReuse: Boolean(node.data.cacheReuse),
           },
         };
       }

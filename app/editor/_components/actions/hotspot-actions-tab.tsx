@@ -69,7 +69,11 @@ export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
                       ? node.data.eventName.trim()
                         ? `→ ${node.data.eventName.trim()}`
                         : "→ (no event)"
-                      : null;
+                      : node.type === "httpRequest"
+                        ? node.data.url.trim()
+                          ? `→ ${node.data.method} ${node.data.url.trim()}`
+                          : `→ ${node.data.method} (no url)`
+                        : null;
               return (
                 <li
                   key={node.id}

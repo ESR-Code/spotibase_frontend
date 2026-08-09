@@ -3,6 +3,7 @@
 import type { NodeProps } from "@xyflow/react";
 import {
   ExternalLink,
+  Globe,
   MapPinned,
   PanelRightOpen,
   Radio,
@@ -11,6 +12,7 @@ import {
 import type { ComponentType } from "react";
 import { GoToSceneNode } from "@/app/editor/_components/actions/go-to-scene-node";
 import { HotspotTriggerNode } from "@/app/editor/_components/actions/hotspot-trigger-node";
+import { HttpRequestNode } from "@/app/editor/_components/actions/http-request-node";
 import { OpenModalNode } from "@/app/editor/_components/actions/open-modal-node";
 import { OpenUrlNode } from "@/app/editor/_components/actions/open-url-node";
 import { SendPostMessageNode } from "@/app/editor/_components/actions/send-post-message-node";
@@ -59,6 +61,13 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     accent: "#7aa2ff",
     Node: SendPostMessageNode,
   },
+  httpRequest: {
+    type: "httpRequest",
+    meta: ACTION_NODE_META.httpRequest,
+    icon: Globe,
+    accent: "#56c8a0",
+    Node: HttpRequestNode,
+  },
 };
 
 export const ACTION_UI_MENU_ITEMS = Object.values(ACTION_UI_REGISTRY);
@@ -69,4 +78,5 @@ export const ACTION_FLOW_NODE_TYPES = {
   goToScene: GoToSceneNode,
   openUrl: OpenUrlNode,
   sendPostMessage: SendPostMessageNode,
+  httpRequest: HttpRequestNode,
 };

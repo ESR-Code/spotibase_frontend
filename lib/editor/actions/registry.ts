@@ -1,10 +1,18 @@
 import { createActionNode } from "@/lib/editor/actions/create-action-graph";
 import {
+  executeHttpRequest,
+  hasHttpRequestCached,
+  httpRequestCacheKey,
+  markHttpRequestCached,
+  validateHttpRequestData,
+} from "@/lib/editor/actions/http-request";
+import {
   parsePayloadJson,
   sendPostMessage,
 } from "@/lib/editor/actions/send-post-message";
 import { transitionToScene } from "@/lib/editor/actions/transition-to-scene";
 import { openHotspotInPreview } from "@/lib/editor/preview/open-hotspot-in-preview";
+import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import type {
   ActionNode,
@@ -21,6 +29,8 @@ export type ActionRunContext = {
   hotspotId: number;
 };
 
+export type ActionRunResult = void | "stop";
+
 export type ActionNodeMeta<T extends ActionNodeType = ActionNodeType> = {
   type: T;
   label: string;
@@ -28,7 +38,10 @@ export type ActionNodeMeta<T extends ActionNodeType = ActionNodeType> = {
   createDefault: (position: ActionNodeXY) => ActionNode;
   /** Returns a human message when the node is not runnable yet. */
   validate: (node: ActionNode) => string | null;
-  run: (node: ActionNode, ctx: ActionRunContext) => void | "stop";
+  run: (
+    node: ActionNode,
+    ctx: ActionRunContext,
+  ) => ActionRunResult | Promise<ActionRunResult>;
 };
 
 export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
@@ -99,6 +112,37 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
       if (error) {
         toast.error(`Send Post Message: ${error}`);
         return "stop";
+      }
+    },
+  },
+  httpRequest: {
+    type: "httpRequest",
+    label: "HTTP Request",
+    description: "Send an HTTP request to a URL.",
+    createDefault: (position) => createActionNode("httpRequest", position),
+    validate: (node) => {
+      if (node.type !== "httpRequest") return null;
+      return validateHttpRequestData(node.data);
+    },
+    run: async (node, ctx) => {
+      if (node.type !== "httpRequest") return;
+
+      const isPreview = useEditorStore.getState().isPreview;
+      if (node.data.cacheReuse && isPreview) {
+        const key = httpRequestCacheKey(ctx.hotspotId, node.id);
+        if (hasHttpRequestCached(key)) return;
+        markHttpRequestCached(key);
+      }
+
+      const result = await executeHttpRequest(node.data);
+      if (result.error && result.status == null) {
+        toast.error(`HTTP Request: ${result.error}`);
+        return;
+      }
+      if (!result.ok) {
+        toast.error(
+          `HTTP Request: ${result.status ?? "—"} ${result.statusText}`.trim(),
+        );
       }
     },
   },

@@ -8,7 +8,7 @@ import { toast } from "sonner";
  * Walk the hotspot action chain and run each node's registered handler.
  * Stops early if a node fails validation or returns `"stop"`.
  */
-export function runHotspotActions(hotspotId: number) {
+export async function runHotspotActions(hotspotId: number) {
   const editor = useEditorStore.getState();
   const hotspot = editor.hotspots.find((h) => h.id === hotspotId);
   if (!hotspot) return;
@@ -29,7 +29,7 @@ export function runHotspotActions(hotspotId: number) {
       break;
     }
 
-    const result = meta.run(node, ctx);
+    const result = await Promise.resolve(meta.run(node, ctx));
     if (result === "stop") break;
   }
 }

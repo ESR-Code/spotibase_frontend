@@ -1897,7 +1897,7 @@
 }
 
 .editor-root .editor-action-node.wide {
-  width: 300px;
+  width: 320px;
 }
 
 .editor-root .editor-action-node .editor-textarea-compact {
@@ -1906,6 +1906,25 @@
   font-size: 11px;
   line-height: 1.45;
   resize: vertical;
+}
+
+.editor-root .editor-http-test-result {
+  border-radius: 8px;
+  border: 1px solid var(--editor-line-soft);
+  background: rgba(11, 20, 36, 0.55);
+  padding: 8px;
+}
+
+.editor-root .editor-http-test-result pre {
+  margin: 0;
+  max-height: 160px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--editor-muted);
 }
 
 .editor-root .editor-action-node.selected {

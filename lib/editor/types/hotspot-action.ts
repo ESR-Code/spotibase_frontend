@@ -2,11 +2,21 @@ export type ActionNodeType =
   | "openModal"
   | "goToScene"
   | "openUrl"
-  | "sendPostMessage";
+  | "sendPostMessage"
+  | "httpRequest";
 
 export type ActionNodeXY = { x: number; y: number };
 
 export type PostMessageTarget = "parent" | "opener" | "top" | "self";
+
+export type HttpMethod =
+  | "GET"
+  | "POST"
+  | "PUT"
+  | "PATCH"
+  | "DELETE"
+  | "HEAD"
+  | "OPTIONS";
 
 type ActionNodeBase<T extends ActionNodeType, D> = {
   id: string;
@@ -37,11 +47,28 @@ export type SendPostMessageActionNode = ActionNodeBase<
     target: PostMessageTarget;
   }
 >;
+export type HttpRequestActionNode = ActionNodeBase<
+  "httpRequest",
+  {
+    method: HttpMethod;
+    url: string;
+    /** JSON object of request headers. */
+    headersJson: string;
+    /** Raw request body (ignored for GET/HEAD). */
+    body: string;
+    /**
+     * When true, in Preview mode this node runs at most once per preview
+     * session for the given hotspot/node.
+     */
+    cacheReuse: boolean;
+  }
+>;
 export type ActionNode =
   | OpenModalActionNode
   | GoToSceneActionNode
   | OpenUrlActionNode
-  | SendPostMessageActionNode;
+  | SendPostMessageActionNode
+  | HttpRequestActionNode;
 
 export type ActionEdge = { id: string; source: string; target: string };
 
@@ -65,4 +92,14 @@ export const POST_MESSAGE_TARGETS: {
   { value: "opener", label: "Opener window" },
   { value: "top", label: "Top window" },
   { value: "self", label: "This window" },
+];
+
+export const HTTP_METHODS: HttpMethod[] = [
+  "GET",
+  "POST",
+  "PUT",
+  "PATCH",
+  "DELETE",
+  "HEAD",
+  "OPTIONS",
 ];

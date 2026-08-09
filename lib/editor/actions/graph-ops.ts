@@ -146,6 +146,34 @@ export function updateNodeData(
           },
         };
       }
+      if (node.type === "httpRequest") {
+        const method =
+          patch.method === "GET" ||
+          patch.method === "POST" ||
+          patch.method === "PUT" ||
+          patch.method === "PATCH" ||
+          patch.method === "DELETE" ||
+          patch.method === "HEAD" ||
+          patch.method === "OPTIONS"
+            ? patch.method
+            : node.data.method;
+        return {
+          ...node,
+          data: {
+            method,
+            url: typeof patch.url === "string" ? patch.url : node.data.url,
+            headersJson:
+              typeof patch.headersJson === "string"
+                ? patch.headersJson
+                : node.data.headersJson,
+            body: typeof patch.body === "string" ? patch.body : node.data.body,
+            cacheReuse:
+              typeof patch.cacheReuse === "boolean"
+                ? patch.cacheReuse
+                : node.data.cacheReuse,
+          },
+        };
+      }
       return node;
     }),
   };
