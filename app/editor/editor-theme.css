@@ -1034,10 +1034,9 @@
 }
 
 .editor-root .editor-http-field-chip {
-  display: inline-block;
-  max-width: 100%;
-  margin: 0 0.15em;
-  padding: 0.05em 0.45em;
+  display: inline;
+  margin: 0 0.12em;
+  padding: 0.08em 0.45em;
   border-radius: 999px;
   border: 1px solid rgba(86, 200, 160, 0.35);
   background: rgba(86, 200, 160, 0.14);
@@ -1047,6 +1046,8 @@
   line-height: inherit;
   white-space: nowrap;
   vertical-align: baseline;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
   user-select: none;
 }
 

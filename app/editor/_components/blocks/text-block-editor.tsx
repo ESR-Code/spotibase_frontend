@@ -31,6 +31,7 @@ export function TextBlockEditor({
   const editorRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const focusedRef = useRef(false);
+  const savedRangeRef = useRef<Range | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [active, setActive] = useState({
     bold: false,
@@ -109,6 +110,34 @@ export function TextBlockEditor({
     syncActiveFormats();
   };
 
+  const saveSelection = () => {
+    const el = editorRef.current;
+    const selection = window.getSelection();
+    if (!el || !selection || selection.rangeCount === 0) return;
+    const range = selection.getRangeAt(0);
+    if (!el.contains(range.commonAncestorContainer)) return;
+    savedRangeRef.current = range.cloneRange();
+  };
+
+  const restoreSelection = () => {
+    const el = editorRef.current;
+    const selection = window.getSelection();
+    if (!el || !selection) return;
+
+    el.focus();
+    selection.removeAllRanges();
+
+    if (savedRangeRef.current && el.contains(savedRangeRef.current.startContainer)) {
+      selection.addRange(savedRangeRef.current);
+      return;
+    }
+
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    selection.addRange(range);
+  };
+
   const applyFormat = (command: FormatCommand) => {
     const el = editorRef.current;
     if (!el) return;
@@ -119,11 +148,38 @@ export function TextBlockEditor({
 
   const insertField = (nodeId: string, path: string) => {
     const el = editorRef.current;
-    if (!el) return;
-    el.focus();
-    document.execCommand("insertHTML", false, buildHttpFieldChipHtml(nodeId, path));
-    // Keep a trailing space so the caret can leave the chip.
-    document.execCommand("insertText", false, " ");
+    const selection = window.getSelection();
+    if (!el || !selection) return;
+
+    restoreSelection();
+
+    const range =
+      selection.rangeCount > 0 ? selection.getRangeAt(0) : document.createRange();
+    if (selection.rangeCount === 0) {
+      range.selectNodeContents(el);
+      range.collapse(false);
+      selection.addRange(range);
+    }
+
+    range.deleteContents();
+
+    const template = document.createElement("template");
+    // Insert chip + trailing space in one fragment so browsers don't wrap
+    // the chip in a new block/row.
+    template.innerHTML = `${buildHttpFieldChipHtml(nodeId, path)} `;
+    const fragment = template.content;
+    const lastNode = fragment.lastChild;
+    range.insertNode(fragment);
+
+    if (lastNode) {
+      const next = document.createRange();
+      next.setStartAfter(lastNode);
+      next.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(next);
+      savedRangeRef.current = next.cloneRange();
+    }
+
     emitChange();
     setMenuOpen(false);
   };
@@ -184,7 +240,10 @@ export function TextBlockEditor({
             disabled={fieldSources.length === 0}
             className={menuOpen ? "is-active" : undefined}
             style={{ width: 28, height: 28 }}
-            onMouseDown={(e) => e.preventDefault()}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              saveSelection();
+            }}
             onClick={() => setMenuOpen((v) => !v)}
           >
             <Braces className="h-3.5 w-3.5" />
@@ -240,11 +299,18 @@ export function TextBlockEditor({
         }}
         onBlur={() => {
           focusedRef.current = false;
+          saveSelection();
           emitChange();
         }}
         onInput={emitChange}
-        onKeyUp={syncActiveFormats}
-        onMouseUp={syncActiveFormats}
+        onKeyUp={() => {
+          saveSelection();
+          syncActiveFormats();
+        }}
+        onMouseUp={() => {
+          saveSelection();
+          syncActiveFormats();
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
