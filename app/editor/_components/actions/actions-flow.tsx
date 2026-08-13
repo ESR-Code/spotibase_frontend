@@ -30,6 +30,7 @@ import {
   HOTSPOT_GRAPH_ALLOWED_NODE_TYPES,
   SCENE_START_OWNER_ID,
   START_GRAPH_ALLOWED_NODE_TYPES,
+  canConnectActionOwners,
   getOwnedActionGraph,
   setOwnedActionGraph,
 } from "@/lib/editor/actions/action-owners";
@@ -38,6 +39,7 @@ import {
   getActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
 import {
+  LANE_HEIGHT,
   parseFlowNodeId,
   toFlowGraph,
   toGraphPosition,
@@ -274,13 +276,62 @@ function ActionsFlowCanvas({
       const sourceParsed = parseFlowNodeId(connection.source);
       const targetParsed = parseFlowNodeId(connection.target);
       if (!sourceParsed || !targetParsed) return;
-      if (sourceParsed.hotspotId !== targetParsed.hotspotId) return;
+      if (sourceParsed.nodeId === targetParsed.nodeId) return;
+      if (targetParsed.nodeId === TRIGGER_NODE_ID) return;
+      if (
+        !canConnectActionOwners(
+          sourceParsed.hotspotId,
+          targetParsed.hotspotId,
+        )
+      ) {
+        return;
+      }
 
-      updateGraph(sourceParsed.hotspotId, (graph) =>
-        connect(graph, sourceParsed.nodeId, targetParsed.nodeId),
+      // Same lane — normal connect.
+      if (sourceParsed.hotspotId === targetParsed.hotspotId) {
+        updateGraph(sourceParsed.hotspotId, (graph) =>
+          connect(graph, sourceParsed.nodeId, targetParsed.nodeId),
+        );
+        return;
+      }
+
+      // App Start ↔ Scene Start: move the target node into the source graph.
+      const fromOwner = targetParsed.hotspotId;
+      const toOwner = sourceParsed.hotspotId;
+      const fromGraph = getOwnedActionGraph(fromOwner);
+      const toGraph = getOwnedActionGraph(toOwner);
+      if (!fromGraph || !toGraph) return;
+
+      const moving = fromGraph.nodes.find((n) => n.id === targetParsed.nodeId);
+      if (!moving) return;
+
+      const fromLane = laneByOwnerId.get(fromOwner) ?? 0;
+      const toLane = laneByOwnerId.get(toOwner) ?? 0;
+      const flowY = moving.position.y + fromLane * LANE_HEIGHT;
+      const nextPosition = toGraphPosition(
+        moving.position.x,
+        flowY,
+        toLane,
       );
+
+      const nextFrom = removeNode(fromGraph, moving.id);
+      const movedNode = {
+        ...moving,
+        position: nextPosition,
+      };
+      const nextTo = connect(
+        {
+          ...toGraph,
+          nodes: [...toGraph.nodes, movedNode],
+        },
+        sourceParsed.nodeId,
+        moving.id,
+      );
+
+      writeGraph(fromOwner, nextFrom);
+      writeGraph(toOwner, nextTo);
     },
-    [updateGraph],
+    [laneByOwnerId, updateGraph, writeGraph],
   );
 
   const onPaneContextMenu = useCallback(
@@ -371,10 +422,12 @@ function ActionsFlowCanvas({
             const sourceParsed = parseFlowNodeId(connection.source);
             const targetParsed = parseFlowNodeId(connection.target);
             if (!sourceParsed || !targetParsed) return false;
-            if (sourceParsed.hotspotId !== targetParsed.hotspotId) return false;
             if (sourceParsed.nodeId === targetParsed.nodeId) return false;
             if (targetParsed.nodeId === TRIGGER_NODE_ID) return false;
-            return true;
+            return canConnectActionOwners(
+              sourceParsed.hotspotId,
+              targetParsed.hotspotId,
+            );
           }}
         >
           <Background gap={18} size={1} color="rgba(120, 160, 230, 0.18)" />

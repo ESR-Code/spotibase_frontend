@@ -1,7 +1,7 @@
 "use client";
 
 import type { Node, NodeProps } from "@xyflow/react";
-import { MessagesSquare, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, MessagesSquare, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-card";
@@ -69,6 +69,7 @@ export function SendPostMessageNode({
   const ownerId = data.hotspotId;
   const allowReceive = !isHotspotOwnerId(ownerId);
   const [fieldRows, setFieldRows] = useState<FieldRow[]>([createEmptyFieldRow()]);
+  const [payloadOpen, setPayloadOpen] = useState(false);
 
   const hotspotLive = useEditorStore(
     useShallow((s) => {
@@ -267,23 +268,51 @@ export function SendPostMessageNode({
 
         {mode === "send" ? (
           <>
-            <label className="block">
-              <span
-                className="mb-1 block text-[10px] font-semibold uppercase tracking-wider"
-                style={{ color: "var(--editor-muted-2)" }}
+            <div className="editor-http-headers">
+              <button
+                type="button"
+                className="editor-http-headers-toggle"
+                aria-expanded={payloadOpen}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPayloadOpen((v) => !v);
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
               >
-                Event object (JSON)
-              </span>
-              <textarea
-                className="editor-textarea editor-textarea-compact"
-                rows={4}
-                spellCheck={false}
-                placeholder='{ "key": "value" }'
-                value={live.payloadJson}
-                onChange={(e) => patch({ payloadJson: e.target.value })}
-                {...stop}
-              />
-            </label>
+                <span>Event object (JSON)</span>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform ${payloadOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {payloadOpen ? (
+                <label className="mt-1.5 block">
+                  <textarea
+                    className="editor-textarea editor-textarea-compact"
+                    rows={4}
+                    spellCheck={false}
+                    placeholder='{ "key": "value" }'
+                    value={live.payloadJson}
+                    onChange={(e) => patch({ payloadJson: e.target.value })}
+                    {...stop}
+                  />
+                  {!payloadCheck.ok ? (
+                    <span
+                      className="mt-1 block text-[10px]"
+                      style={{ color: "var(--editor-amber)" }}
+                    >
+                      {payloadCheck.error}
+                    </span>
+                  ) : null}
+                </label>
+              ) : !payloadCheck.ok ? (
+                <span
+                  className="mt-1 block text-[10px]"
+                  style={{ color: "var(--editor-amber)" }}
+                >
+                  {payloadCheck.error}
+                </span>
+              ) : null}
+            </div>
 
             <label className="block">
               <span

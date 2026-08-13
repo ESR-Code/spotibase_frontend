@@ -37,6 +37,19 @@ export function isHotspotOwnerId(ownerId: number): boolean {
   return ownerId > 0;
 }
 
+export function isStartOwnerId(ownerId: number): boolean {
+  return ownerId === APP_START_OWNER_ID || ownerId === SCENE_START_OWNER_ID;
+}
+
+/** Same lane, or App Start ↔ Scene Start (nodes can be reassigned). */
+export function canConnectActionOwners(
+  sourceOwnerId: number,
+  targetOwnerId: number,
+): boolean {
+  if (sourceOwnerId === targetOwnerId) return true;
+  return isStartOwnerId(sourceOwnerId) && isStartOwnerId(targetOwnerId);
+}
+
 export function triggerKindForOwner(ownerId: number): ActionTriggerKind {
   if (ownerId === APP_START_OWNER_ID) return "appStart";
   if (ownerId === SCENE_START_OWNER_ID) return "sceneStart";
