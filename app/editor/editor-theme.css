@@ -1051,6 +1051,19 @@
   user-select: none;
 }
 
+.editor-root .editor-http-field-chip[data-field-kind="http"],
+.editor-root .editor-http-field-chip:not([data-field-kind]) {
+  border-color: rgba(86, 200, 160, 0.35);
+  background: rgba(86, 200, 160, 0.14);
+  color: #9ee6c8;
+}
+
+.editor-root .editor-http-field-chip[data-field-kind="postMessage"] {
+  border-color: rgba(122, 162, 255, 0.4);
+  background: rgba(122, 162, 255, 0.16);
+  color: #b7cbff;
+}
+
 .editor-root .editor-http-field-chip[data-resolved="missing"] {
   border-color: rgba(230, 57, 70, 0.35);
   background: rgba(230, 57, 70, 0.12);
@@ -1061,6 +1074,22 @@
   border: 1px solid var(--editor-line-soft);
   background: rgba(17, 30, 54, 0.98);
   box-shadow: 0 16px 40px -18px rgba(0, 0, 0, 0.75);
+}
+
+.editor-root .editor-http-field-menu-group {
+  padding: 7px 10px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.editor-root .editor-http-field-menu-group[data-field-kind="http"] {
+  color: #9ee6c8;
+}
+
+.editor-root .editor-http-field-menu-group[data-field-kind="postMessage"] {
+  color: #b7cbff;
 }
 
 .editor-root .editor-http-field-menu-item {
@@ -1074,8 +1103,12 @@
   cursor: pointer;
 }
 
-.editor-root .editor-http-field-menu-item:hover {
+.editor-root .editor-http-field-menu-item[data-field-kind="http"]:hover {
   background: rgba(86, 200, 160, 0.12);
+}
+
+.editor-root .editor-http-field-menu-item[data-field-kind="postMessage"]:hover {
+  background: rgba(122, 162, 255, 0.12);
 }
 
 .editor-root .editor-block-drag-handle {

@@ -16,12 +16,26 @@ import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 
+export type FieldSourceKind = "http" | "postMessage";
+
 export type HttpFieldSource = {
+  kind: FieldSourceKind;
   nodeId: string;
   nodeLabel: string;
   path: string;
   sample: string;
   ownerId: number;
+};
+
+export type FieldSourceGroup = {
+  kind: FieldSourceKind;
+  label: string;
+  items: HttpFieldSource[];
+};
+
+const GROUP_META: Record<FieldSourceKind, string> = {
+  http: "HTTP Request",
+  postMessage: "Post Message",
 };
 
 function collectFromGraph(
@@ -41,6 +55,7 @@ function collectFromGraph(
 
       for (const field of flattenJsonPaths(parsed)) {
         sources.push({
+          kind: "http",
           nodeId: node.id,
           nodeLabel: label,
           path: field.path,
@@ -61,13 +76,14 @@ function collectFromGraph(
       if (fields.length === 0) return;
 
       const event = node.data.eventName.trim() || `event ${index + 1}`;
-      const label = `${nodeLabelPrefix} · msg:${event}`;
+      const label = `${nodeLabelPrefix} · ${event}`;
       const parsed = tryParseJson(node.data.lastPayloadJson ?? "");
 
       for (const path of fields) {
         const live =
           parsed === undefined ? undefined : getValueByPath(parsed, path);
         sources.push({
+          kind: "postMessage",
           nodeId: node.id,
           nodeLabel: label,
           path,
@@ -108,4 +124,18 @@ export function listHttpFieldSources(hotspot: Hotspot): HttpFieldSource[] {
 
   collectFromGraph(getActionGraph(hotspot), hotspot.id, "Hotspot", sources);
   return sources;
+}
+
+/** Group field sources for the text-block insert menu. */
+export function groupHttpFieldSources(
+  sources: HttpFieldSource[],
+): FieldSourceGroup[] {
+  const order: FieldSourceKind[] = ["http", "postMessage"];
+  return order
+    .map((kind) => ({
+      kind,
+      label: GROUP_META[kind],
+      items: sources.filter((source) => source.kind === kind),
+    }))
+    .filter((group) => group.items.length > 0);
 }

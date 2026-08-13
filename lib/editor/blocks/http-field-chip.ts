@@ -1,20 +1,28 @@
+import type { FieldSourceKind } from "@/lib/editor/blocks/http-field-sources";
 import {
   formatResolvedFieldValue,
   getValueByPath,
 } from "@/lib/editor/blocks/json-paths";
 
 export const HTTP_FIELD_CHIP_CLASS = "editor-http-field-chip";
+export const FIELD_CHIP_KIND_ATTR = "data-field-kind";
 
-export function buildHttpFieldChipHtml(nodeId: string, path: string): string {
+export function buildHttpFieldChipHtml(
+  nodeId: string,
+  path: string,
+  kind: FieldSourceKind = "http",
+): string {
   const safeNode = escapeAttr(nodeId);
   const safePath = escapeAttr(path);
+  const safeKind = escapeAttr(kind);
   const label = escapeHtml(path);
-  return `<span class="${HTTP_FIELD_CHIP_CLASS}" data-http-node="${safeNode}" data-http-path="${safePath}" contenteditable="false">${label}</span>`;
+  return `<span class="${HTTP_FIELD_CHIP_CLASS}" ${FIELD_CHIP_KIND_ATTR}="${safeKind}" data-http-node="${safeNode}" data-http-path="${safePath}" contenteditable="false">${label}</span>`;
 }
 
 export function resolveHttpFieldsInHtml(
   html: string,
   resolve: (nodeId: string, path: string) => unknown,
+  resolveKind?: (nodeId: string) => FieldSourceKind | undefined,
 ): string {
   if (typeof window === "undefined") return html;
   if (!html.includes(HTTP_FIELD_CHIP_CLASS)) return html;
@@ -29,6 +37,12 @@ export function resolveHttpFieldsInHtml(
     const value = resolve(nodeId, path);
     el.textContent = formatResolvedFieldValue(value);
     el.setAttribute("data-resolved", value === undefined ? "missing" : "ok");
+
+    const existingKind = el.getAttribute(FIELD_CHIP_KIND_ATTR);
+    if (!existingKind && resolveKind) {
+      const kind = resolveKind(nodeId);
+      if (kind) el.setAttribute(FIELD_CHIP_KIND_ATTR, kind);
+    }
   });
 
   return root.innerHTML;

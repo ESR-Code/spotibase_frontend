@@ -4,7 +4,11 @@ import { Bold, Braces, Italic, Underline } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { buildHttpFieldChipHtml } from "@/lib/editor/blocks/http-field-chip";
-import { listHttpFieldSources } from "@/lib/editor/blocks/http-field-sources";
+import {
+  groupHttpFieldSources,
+  listHttpFieldSources,
+  type FieldSourceKind,
+} from "@/lib/editor/blocks/http-field-sources";
 import {
   normalizeRichTextContent,
   sanitizeRichTextHtml,
@@ -52,6 +56,10 @@ export function TextBlockEditor({
   const fieldSources = useMemo(
     () => (hotspot ? listHttpFieldSources(hotspot) : []),
     [appStartActions, hotspot, sceneStartActions],
+  );
+  const fieldGroups = useMemo(
+    () => groupHttpFieldSources(fieldSources),
+    [fieldSources],
   );
 
   useEffect(() => {
@@ -146,7 +154,11 @@ export function TextBlockEditor({
     emitChange();
   };
 
-  const insertField = (nodeId: string, path: string) => {
+  const insertField = (
+    nodeId: string,
+    path: string,
+    kind: FieldSourceKind,
+  ) => {
     const el = editorRef.current;
     const selection = window.getSelection();
     if (!el || !selection) return;
@@ -166,7 +178,7 @@ export function TextBlockEditor({
     const template = document.createElement("template");
     // Insert chip + trailing space in one fragment so browsers don't wrap
     // the chip in a new block/row.
-    template.innerHTML = `${buildHttpFieldChipHtml(nodeId, path)} `;
+    template.innerHTML = `${buildHttpFieldChipHtml(nodeId, path, kind)} `;
     const fragment = template.content;
     const lastNode = fragment.lastChild;
     range.insertNode(fragment);
@@ -252,27 +264,40 @@ export function TextBlockEditor({
           {menuOpen ? (
             <div
               role="menu"
-              className="editor-http-field-menu absolute left-0 top-full z-30 mt-1 max-h-56 min-w-[220px] overflow-y-auto rounded-lg py-1"
+              className="editor-http-field-menu absolute left-0 top-full z-30 mt-1 max-h-56 min-w-[240px] overflow-y-auto rounded-lg py-1"
             >
-              {fieldSources.map((source) => (
-                <button
-                  key={`${source.nodeId}:${source.path}`}
-                  type="button"
-                  role="menuitem"
-                  className="editor-http-field-menu-item"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => insertField(source.nodeId, source.path)}
-                >
-                  <span className="block truncate text-[12px] font-medium">
-                    {source.path}
-                  </span>
-                  <span
-                    className="block truncate text-[10px]"
-                    style={{ color: "var(--editor-muted)" }}
+              {fieldGroups.map((group) => (
+                <div key={group.kind}>
+                  <div
+                    className="editor-http-field-menu-group"
+                    data-field-kind={group.kind}
                   >
-                    {source.sample} · {source.nodeLabel}
-                  </span>
-                </button>
+                    {group.label}
+                  </div>
+                  {group.items.map((source) => (
+                    <button
+                      key={`${source.nodeId}:${source.path}`}
+                      type="button"
+                      role="menuitem"
+                      className="editor-http-field-menu-item"
+                      data-field-kind={source.kind}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() =>
+                        insertField(source.nodeId, source.path, source.kind)
+                      }
+                    >
+                      <span className="block truncate text-[12px] font-medium">
+                        {source.path}
+                      </span>
+                      <span
+                        className="block truncate text-[10px]"
+                        style={{ color: "var(--editor-muted)" }}
+                      >
+                        {source.sample} · {source.nodeLabel}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               ))}
             </div>
           ) : null}

@@ -59,6 +59,10 @@ function sanitizeNode(node: Node, doc: Document): Node | null {
     clean.setAttribute("contenteditable", "false");
     clean.setAttribute("data-http-node", el.getAttribute("data-http-node") ?? "");
     clean.setAttribute("data-http-path", el.getAttribute("data-http-path") ?? "");
+    const kind = el.getAttribute("data-field-kind");
+    if (kind === "http" || kind === "postMessage") {
+      clean.setAttribute("data-field-kind", kind);
+    }
     const path = el.getAttribute("data-http-path") ?? "";
     clean.textContent = path || (el.textContent ?? "");
     return clean;

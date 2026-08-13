@@ -35,22 +35,30 @@ export function TextBlockPreview({ block, hotspotId }: TextBlockPreviewProps) {
     const base = normalizeRichTextContent(block.content);
     if (!base) return base;
 
-    return resolveHttpFieldsInHtml(base, (nodeId, path) => {
-      const found = findHttpRequestNodeById(nodeId);
-      if (!found) return undefined;
+    return resolveHttpFieldsInHtml(
+      base,
+      (nodeId, path) => {
+        const found = findHttpRequestNodeById(nodeId);
+        if (!found) return undefined;
 
-      const key = httpRequestCacheKey(
-        ownerKeyFor(found.ownerId),
-        found.node.id,
-      );
-      if (Object.prototype.hasOwnProperty.call(runtimeResponses, key)) {
-        return getValueByPath(runtimeResponses[key], path);
-      }
+        const key = httpRequestCacheKey(
+          ownerKeyFor(found.ownerId),
+          found.node.id,
+        );
+        if (Object.prototype.hasOwnProperty.call(runtimeResponses, key)) {
+          return getValueByPath(runtimeResponses[key], path);
+        }
 
-      const sample = tryParseJson(found.sampleJson);
-      if (sample === undefined) return undefined;
-      return getValueByPath(sample, path);
-    });
+        const sample = tryParseJson(found.sampleJson);
+        if (sample === undefined) return undefined;
+        return getValueByPath(sample, path);
+      },
+      (nodeId) => {
+        const found = findHttpRequestNodeById(nodeId);
+        if (!found) return undefined;
+        return found.node.type === "sendPostMessage" ? "postMessage" : "http";
+      },
+    );
   }, [
     appStartActions,
     block.content,
