@@ -1990,6 +1990,36 @@
   color: var(--editor-muted);
 }
 
+.editor-root .editor-http-header-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 6px;
+}
+
+.editor-root .editor-http-header-row .editor-input {
+  min-width: 0;
+  font-size: 11px;
+  padding: 6px 8px;
+}
+
+.editor-root .editor-http-headers-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px;
+  border: none;
+  background: transparent;
+  color: var(--editor-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.editor-root .editor-http-headers-add:hover {
+  color: #9ee6c8;
+}
+
 .editor-root .editor-http-test-result {
   border-radius: 8px;
   border: 1px solid var(--editor-line-soft);

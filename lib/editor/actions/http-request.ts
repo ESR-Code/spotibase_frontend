@@ -20,6 +20,23 @@ export type HttpRequestResult = {
 
 const METHODS_WITHOUT_BODY = new Set<HttpMethod>(["GET", "HEAD"]);
 
+export type HttpHeaderRow = {
+  id: string;
+  key: string;
+  value: string;
+};
+
+function newHeaderRowId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `hdr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+export function createEmptyHeaderRow(): HttpHeaderRow {
+  return { id: newHeaderRowId(), key: "", value: "" };
+}
+
 export function parseHeadersJson(
   raw: string,
 ): { ok: true; value: Record<string, string> } | { ok: false; error: string } {
@@ -47,6 +64,36 @@ export function parseHeadersJson(
   } catch {
     return { ok: false, error: "Headers must be valid JSON" };
   }
+}
+
+/** Convert stored headers JSON into editable key/value rows. */
+export function headersJsonToRows(raw: string): HttpHeaderRow[] {
+  const parsed = parseHeadersJson(raw);
+  if (!parsed.ok) return [createEmptyHeaderRow()];
+  const entries = Object.entries(parsed.value);
+  if (entries.length === 0) return [createEmptyHeaderRow()];
+  return entries.map(([key, value]) => ({
+    id: newHeaderRowId(),
+    key,
+    value,
+  }));
+}
+
+/** Serialize editor rows back to headers JSON (skips blank keys). */
+export function rowsToHeadersJson(rows: HttpHeaderRow[]): string {
+  const value: Record<string, string> = {};
+  for (const row of rows) {
+    const key = row.key.trim();
+    if (!key) continue;
+    value[key] = row.value;
+  }
+  return JSON.stringify(value, null, 2);
+}
+
+export function countHeaderRows(raw: string): number {
+  const parsed = parseHeadersJson(raw);
+  if (!parsed.ok) return 0;
+  return Object.keys(parsed.value).length;
 }
 
 export function validateHttpRequestData(

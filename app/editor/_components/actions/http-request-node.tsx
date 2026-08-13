@@ -1,12 +1,13 @@
 "use client";
 
 import type { Node, NodeProps } from "@xyflow/react";
-import { ChevronDown, Globe, Play } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, Globe, Play, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-card";
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
+import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import {
   APP_START_OWNER_ID,
@@ -16,10 +17,14 @@ import {
 import type { ActionFlowNodeData } from "@/lib/editor/actions/flow-adapter";
 import {
   clearHttpRequestCached,
+  countHeaderRows,
+  createEmptyHeaderRow,
   executeHttpRequest,
   formatHttpResultPreview,
+  headersJsonToRows,
   httpRequestCacheKey,
-  parseHeadersJson,
+  rowsToHeadersJson,
+  type HttpHeaderRow,
   type HttpRequestResult,
   validateHttpRequestData,
 } from "@/lib/editor/actions/http-request";
@@ -90,6 +95,9 @@ export function HttpRequestNode({
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<HttpRequestResult | null>(null);
   const [headersOpen, setHeadersOpen] = useState(false);
+  const [headerRows, setHeaderRows] = useState<HttpHeaderRow[]>([
+    createEmptyHeaderRow(),
+  ]);
 
   const hotspotLive = useEditorStore(
     useShallow((s) => {
@@ -131,11 +139,16 @@ export function HttpRequestNode({
 
   const live = isHotspotOwnerId(ownerId) ? hotspotLive : startLive;
 
+  useEffect(() => {
+    if (!actionNodeId) return;
+    setHeaderRows(headersJsonToRows(readHttpData(ownerId, actionNodeId).headersJson));
+  }, [actionNodeId, ownerId]);
+
   if (!actionNodeId) return null;
 
-  const headersCheck = parseHeadersJson(live.headersJson);
   const warning = validateHttpRequestData(live);
   const cacheKey = httpRequestCacheKey(ownerKeyFor(ownerId), actionNodeId);
+  const headerCount = countHeaderRows(live.headersJson);
 
   const patch = (partial: Partial<HttpRequestActionNode["data"]>) => {
     updateNodeData(ownerId, actionNodeId, partial);
@@ -158,6 +171,30 @@ export function HttpRequestNode({
       lastResponseJson: "",
     });
     setTestResult(null);
+  };
+
+  const commitHeaderRows = (rows: HttpHeaderRow[]) => {
+    setHeaderRows(rows);
+    patchRequestField({ headersJson: rowsToHeadersJson(rows) });
+  };
+
+  const updateHeaderRow = (
+    id: string,
+    field: "key" | "value",
+    value: string,
+  ) => {
+    commitHeaderRows(
+      headerRows.map((row) => (row.id === id ? { ...row, [field]: value } : row)),
+    );
+  };
+
+  const addHeaderRow = () => {
+    commitHeaderRows([...headerRows, createEmptyHeaderRow()]);
+  };
+
+  const removeHeaderRow = (id: string) => {
+    const next = headerRows.filter((row) => row.id !== id);
+    commitHeaderRows(next.length > 0 ? next : [createEmptyHeaderRow()]);
   };
 
   const stop = {
@@ -282,40 +319,69 @@ export function HttpRequestNode({
             }}
             onPointerDown={(e) => e.stopPropagation()}
           >
-            <span>Headers (JSON)</span>
+            <span>
+              Headers
+              {headerCount > 0 ? (
+                <span
+                  className="ml-1.5 normal-case tracking-normal"
+                  style={{ color: "var(--editor-muted)" }}
+                >
+                  ({headerCount})
+                </span>
+              ) : null}
+            </span>
             <ChevronDown
               className={`h-3.5 w-3.5 transition-transform ${headersOpen ? "rotate-180" : ""}`}
             />
           </button>
           {headersOpen ? (
-            <label className="mt-1.5 block">
-              <textarea
-                className="editor-textarea editor-textarea-compact"
-                rows={3}
-                spellCheck={false}
-                placeholder='{ "Content-Type": "application/json" }'
-                value={live.headersJson}
-                onChange={(e) =>
-                  patchRequestField({ headersJson: e.target.value })
-                }
-                {...stop}
-              />
-              {!headersCheck.ok ? (
-                <span
-                  className="mt-1 block text-[10px]"
-                  style={{ color: "var(--editor-amber)" }}
-                >
-                  {headersCheck.error}
-                </span>
-              ) : null}
-            </label>
-          ) : !headersCheck.ok ? (
-            <span
-              className="mt-1 block text-[10px]"
-              style={{ color: "var(--editor-amber)" }}
-            >
-              {headersCheck.error}
-            </span>
+            <div className="editor-http-headers-list mt-1.5 space-y-1.5">
+              {headerRows.map((row) => (
+                <div key={row.id} className="editor-http-header-row">
+                  <input
+                    className="editor-input"
+                    placeholder="Key"
+                    value={row.key}
+                    onChange={(e) =>
+                      updateHeaderRow(row.id, "key", e.target.value)
+                    }
+                    {...stop}
+                  />
+                  <input
+                    className="editor-input"
+                    placeholder="Value"
+                    value={row.value}
+                    onChange={(e) =>
+                      updateHeaderRow(row.id, "value", e.target.value)
+                    }
+                    {...stop}
+                  />
+                  <IconButton
+                    title="Remove header"
+                    style={{ width: 28, height: 28 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeHeaderRow(row.id);
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </IconButton>
+                </div>
+              ))}
+              <button
+                type="button"
+                className="editor-http-headers-add"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addHeaderRow();
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add header
+              </button>
+            </div>
           ) : null}
         </div>
 
