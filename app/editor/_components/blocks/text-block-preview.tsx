@@ -47,7 +47,7 @@ export function TextBlockPreview({ block, hotspotId }: TextBlockPreviewProps) {
         return getValueByPath(runtimeResponses[key], path);
       }
 
-      const sample = tryParseJson(found.node.data.lastResponseJson ?? "");
+      const sample = tryParseJson(found.sampleJson);
       if (sample === undefined) return undefined;
       return getValueByPath(sample, path);
     });

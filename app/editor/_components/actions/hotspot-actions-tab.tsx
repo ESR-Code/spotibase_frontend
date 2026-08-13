@@ -67,8 +67,8 @@ export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
                       : "→ (no url)"
                     : node.type === "sendPostMessage"
                       ? node.data.eventName.trim()
-                        ? `→ ${node.data.eventName.trim()}`
-                        : "→ (no event)"
+                        ? `→ ${(node.data.mode ?? "send") === "receive" ? "recv" : "send"} ${node.data.eventName.trim()}`
+                        : `→ ${(node.data.mode ?? "send") === "receive" ? "recv" : "send"} (no event)`
                       : node.type === "httpRequest"
                         ? node.data.url.trim()
                           ? `→ ${node.data.method} ${node.data.url.trim()}`

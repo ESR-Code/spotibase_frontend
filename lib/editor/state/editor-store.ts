@@ -4,6 +4,7 @@ import {
   createDefaultActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
 import { clearHttpRequestCache } from "@/lib/editor/actions/http-request";
+import { clearPostMessageListeners } from "@/lib/editor/actions/send-post-message";
 import { DEMO_HOTSPOTS } from "@/lib/editor/constants/demo-hotspots";
 import {
   getSeedHotspots,
@@ -95,6 +96,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (mode === "preview") {
       const isPreview = !get().isPreview;
       clearHttpRequestCache();
+      clearPostMessageListeners();
       set({
         isPreview,
         mode: isPreview ? "preview" : "select",
@@ -111,7 +113,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       }
       return;
     }
-    if (get().isPreview) clearHttpRequestCache();
+    if (get().isPreview) {
+      clearHttpRequestCache();
+      clearPostMessageListeners();
+    }
     set({
       mode,
       isPreview: false,

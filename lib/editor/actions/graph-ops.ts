@@ -127,9 +127,14 @@ export function updateNodeData(
           patch.target === "self"
             ? patch.target
             : node.data.target;
+        const mode =
+          patch.mode === "send" || patch.mode === "receive"
+            ? patch.mode
+            : (node.data.mode ?? "send");
         return {
           ...node,
           data: {
+            mode,
             eventName:
               typeof patch.eventName === "string"
                 ? patch.eventName
@@ -143,6 +148,15 @@ export function updateNodeData(
                 ? patch.targetOrigin
                 : node.data.targetOrigin,
             target,
+            payloadFields: Array.isArray(patch.payloadFields)
+              ? patch.payloadFields.filter(
+                  (field): field is string => typeof field === "string",
+                )
+              : (node.data.payloadFields ?? []),
+            lastPayloadJson:
+              typeof patch.lastPayloadJson === "string"
+                ? patch.lastPayloadJson
+                : (node.data.lastPayloadJson ?? ""),
           },
         };
       }

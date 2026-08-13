@@ -36,6 +36,10 @@ function asPostMessageTarget(value: unknown): PostMessageTarget {
   return "parent";
 }
 
+function asPostMessageMode(value: unknown): "send" | "receive" {
+  return value === "receive" ? "receive" : "send";
+}
+
 function asHttpMethod(value: unknown): HttpMethod {
   if (typeof value === "string" && HTTP_METHODS.includes(value as HttpMethod)) {
     return value as HttpMethod;
@@ -99,10 +103,13 @@ export function createActionNode(
         type: "sendPostMessage",
         position: { ...position },
         data: {
+          mode: "send",
           eventName: "",
           payloadJson: "{\n  \n}",
           targetOrigin: "*",
           target: "parent",
+          payloadFields: [],
+          lastPayloadJson: "",
         },
       };
     case "httpRequest":
@@ -175,10 +182,17 @@ export function cloneActionGraph(
           type: "sendPostMessage",
           position: { ...node.position },
           data: {
+            mode: asPostMessageMode(node.data.mode),
             eventName: node.data.eventName,
             payloadJson: node.data.payloadJson,
             targetOrigin: node.data.targetOrigin,
             target: asPostMessageTarget(node.data.target),
+            payloadFields: Array.isArray(node.data.payloadFields)
+              ? node.data.payloadFields.filter(
+                  (field): field is string => typeof field === "string",
+                )
+              : [],
+            lastPayloadJson: node.data.lastPayloadJson ?? "",
           },
         };
       }

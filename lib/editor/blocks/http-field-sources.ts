@@ -6,7 +6,12 @@ import {
   createEmptyActionGraph,
   getActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
-import { flattenJsonPaths, tryParseJson } from "@/lib/editor/blocks/json-paths";
+import {
+  flattenJsonPaths,
+  formatResolvedFieldValue,
+  getValueByPath,
+  tryParseJson,
+} from "@/lib/editor/blocks/json-paths";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
@@ -26,27 +31,59 @@ function collectFromGraph(
   sources: HttpFieldSource[],
 ) {
   graph.nodes.forEach((node, index) => {
-    if (node.type !== "httpRequest") return;
-    const parsed = tryParseJson(node.data.lastResponseJson ?? "");
-    if (parsed === undefined) return;
+    if (node.type === "httpRequest") {
+      const parsed = tryParseJson(node.data.lastResponseJson ?? "");
+      if (parsed === undefined) return;
 
-    const label = node.data.url.trim()
-      ? `${nodeLabelPrefix} · ${node.data.method} ${node.data.url.trim()}`
-      : `${nodeLabelPrefix} ${index + 1}`;
+      const label = node.data.url.trim()
+        ? `${nodeLabelPrefix} · ${node.data.method} ${node.data.url.trim()}`
+        : `${nodeLabelPrefix} HTTP ${index + 1}`;
 
-    for (const field of flattenJsonPaths(parsed)) {
-      sources.push({
-        nodeId: node.id,
-        nodeLabel: label,
-        path: field.path,
-        sample: field.sample,
-        ownerId,
-      });
+      for (const field of flattenJsonPaths(parsed)) {
+        sources.push({
+          nodeId: node.id,
+          nodeLabel: label,
+          path: field.path,
+          sample: field.sample,
+          ownerId,
+        });
+      }
+      return;
+    }
+
+    if (
+      node.type === "sendPostMessage" &&
+      (node.data.mode ?? "send") === "receive"
+    ) {
+      const fields = (node.data.payloadFields ?? [])
+        .map((field) => field.trim())
+        .filter(Boolean);
+      if (fields.length === 0) return;
+
+      const event = node.data.eventName.trim() || `event ${index + 1}`;
+      const label = `${nodeLabelPrefix} · msg:${event}`;
+      const parsed = tryParseJson(node.data.lastPayloadJson ?? "");
+
+      for (const path of fields) {
+        const live =
+          parsed === undefined ? undefined : getValueByPath(parsed, path);
+        sources.push({
+          nodeId: node.id,
+          nodeLabel: label,
+          path,
+          sample:
+            live === undefined ? path : formatResolvedFieldValue(live),
+          ownerId,
+        });
+      }
     }
   });
 }
 
-/** Collect selectable JSON field paths from tested HTTP Request nodes. */
+/**
+ * Collect selectable JSON field paths from tested HTTP responses and
+ * declared Post Message receive fields.
+ */
 export function listHttpFieldSources(hotspot: Hotspot): HttpFieldSource[] {
   const sources: HttpFieldSource[] = [];
   const scenes = useScenesStore.getState();
@@ -69,6 +106,6 @@ export function listHttpFieldSources(hotspot: Hotspot): HttpFieldSource[] {
     );
   }
 
-  collectFromGraph(getActionGraph(hotspot), hotspot.id, "HTTP", sources);
+  collectFromGraph(getActionGraph(hotspot), hotspot.id, "Hotspot", sources);
   return sources;
 }

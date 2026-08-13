@@ -1997,6 +1997,19 @@
   gap: 6px;
 }
 
+.editor-root .editor-pm-field-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 6px;
+}
+
+.editor-root .editor-pm-field-row .editor-input {
+  min-width: 0;
+  font-size: 11px;
+  padding: 6px 8px;
+}
+
 .editor-root .editor-http-header-row .editor-input {
   min-width: 0;
   font-size: 11px;

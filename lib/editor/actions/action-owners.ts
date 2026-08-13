@@ -104,30 +104,59 @@ export function findOwnedActionNode(
   return graph?.nodes.find((n) => n.id === nodeId) ?? null;
 }
 
-/** Find an HTTP request node by id across hotspot + start graphs. */
+export type FieldSourceActionNode =
+  | Extract<ActionNode, { type: "httpRequest" }>
+  | Extract<ActionNode, { type: "sendPostMessage" }>;
+
+function isFieldSourceNode(node: ActionNode): node is FieldSourceActionNode {
+  if (node.type === "httpRequest") return true;
+  return (
+    node.type === "sendPostMessage" && (node.data.mode ?? "send") === "receive"
+  );
+}
+
+function fieldSourceJson(node: FieldSourceActionNode): string {
+  if (node.type === "httpRequest") return node.data.lastResponseJson ?? "";
+  return node.data.lastPayloadJson ?? "";
+}
+
+/** Find an HTTP / Post Message receive node by id across graphs. */
 export function findHttpRequestNodeById(nodeId: string): {
   ownerId: number;
-  node: Extract<ActionNode, { type: "httpRequest" }>;
+  node: FieldSourceActionNode;
+  sampleJson: string;
 } | null {
   const editor = useEditorStore.getState();
   for (const hotspot of editor.hotspots) {
     const node = getActionGraph(hotspot).nodes.find((n) => n.id === nodeId);
-    if (node?.type === "httpRequest") {
-      return { ownerId: hotspot.id, node };
+    if (node && isFieldSourceNode(node)) {
+      return {
+        ownerId: hotspot.id,
+        node,
+        sampleJson: fieldSourceJson(node),
+      };
     }
   }
 
   const scenes = useScenesStore.getState();
   const appNode = scenes.appStartActions.nodes.find((n) => n.id === nodeId);
-  if (appNode?.type === "httpRequest") {
-    return { ownerId: APP_START_OWNER_ID, node: appNode };
+  if (appNode && isFieldSourceNode(appNode)) {
+    return {
+      ownerId: APP_START_OWNER_ID,
+      node: appNode,
+      sampleJson: fieldSourceJson(appNode),
+    };
   }
 
   const scene =
     scenes.scenes.find((s) => s.id === scenes.activeSceneId) ?? scenes.scenes[0];
   const sceneNode = scene?.startActions?.nodes.find((n) => n.id === nodeId);
-  if (sceneNode?.type === "httpRequest") {
-    return { ownerId: SCENE_START_OWNER_ID, node: sceneNode };
+  if (sceneNode && isFieldSourceNode(sceneNode)) {
+    return {
+      ownerId: SCENE_START_OWNER_ID,
+      node: sceneNode,
+      sampleJson: fieldSourceJson(sceneNode),
+    };
   }
 
   return null;

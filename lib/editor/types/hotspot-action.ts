@@ -9,6 +9,8 @@ export type ActionNodeXY = { x: number; y: number };
 
 export type PostMessageTarget = "parent" | "opener" | "top" | "self";
 
+export type PostMessageMode = "send" | "receive";
+
 export type HttpMethod =
   | "GET"
   | "POST"
@@ -37,14 +39,26 @@ export type OpenUrlActionNode = ActionNodeBase<"openUrl", { url: string }>;
 export type SendPostMessageActionNode = ActionNodeBase<
   "sendPostMessage",
   {
+    /** Send an event, or listen for an incoming event. */
+    mode: PostMessageMode;
     /** Name/type of the message event. */
     eventName: string;
-    /** JSON object string included as the message payload. */
+    /** JSON object string included as the message payload (send mode). */
     payloadJson: string;
-    /** postMessage targetOrigin. Use "*" to allow any. */
+    /** postMessage targetOrigin. Use "*" to allow any (send mode). */
     targetOrigin: string;
-    /** Which browsing context receives the message. */
+    /** Which browsing context receives the message (send mode). */
     target: PostMessageTarget;
+    /**
+     * Declared payload field paths for receive mode (e.g. `user.name`).
+     * Offered in text blocks as insertable chips.
+     */
+    payloadFields: string[];
+    /**
+     * Last received JSON payload (receive mode).
+     * Used at Preview time to resolve declared field chips.
+     */
+    lastPayloadJson: string;
   }
 >;
 export type HttpRequestActionNode = ActionNodeBase<
@@ -97,6 +111,23 @@ export const POST_MESSAGE_TARGETS: {
   { value: "opener", label: "Opener window" },
   { value: "top", label: "Top window" },
   { value: "self", label: "This window" },
+];
+
+export const POST_MESSAGE_MODES: {
+  value: PostMessageMode;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "send",
+    label: "Send event",
+    description: "postMessage to another window",
+  },
+  {
+    value: "receive",
+    label: "Receive event",
+    description: "Listen for an incoming postMessage",
+  },
 ];
 
 export const HTTP_METHODS: HttpMethod[] = [

@@ -106,12 +106,14 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
   },
   sendPostMessage: {
     type: "sendPostMessage",
-    label: "Send Post Message",
-    description: "Send a postMessage event to another window.",
+    label: "Post Message",
+    description: "Send or receive window postMessage events.",
     createDefault: (position) => createActionNode("sendPostMessage", position),
     validate: (node) => {
       if (node.type !== "sendPostMessage") return null;
       if (!node.data.eventName.trim()) return "Enter an event name";
+      const mode = node.data.mode ?? "send";
+      if (mode === "receive") return null;
       const parsed = parsePayloadJson(node.data.payloadJson);
       if (!parsed.ok) return parsed.error;
       if (!node.data.targetOrigin.trim()) return "Enter a target origin";
@@ -119,9 +121,11 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     },
     run: (node, ctx) => {
       if (node.type !== "sendPostMessage") return;
+      // Receive mode is handled by runActionGraph (registers listener + continues later).
+      if ((node.data.mode ?? "send") === "receive") return "stop";
       const error = sendPostMessage(node, ctx.hotspotId);
       if (error) {
-        toast.error(`Send Post Message: ${error}`);
+        toast.error(`Post Message: ${error}`);
         return "stop";
       }
     },

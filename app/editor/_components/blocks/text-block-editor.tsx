@@ -232,8 +232,8 @@ export function TextBlockEditor({
             type="button"
             title={
               fieldSources.length > 0
-                ? "Insert API field"
-                : "Test an HTTP Request action to insert fields"
+                ? "Insert API / message field"
+                : "Add HTTP test data or Post Message fields to insert"
             }
             aria-expanded={menuOpen}
             aria-haspopup="menu"
@@ -281,7 +281,8 @@ export function TextBlockEditor({
 
       {fieldSources.length === 0 ? (
         <div className="text-[10px]" style={{ color: "var(--editor-muted-2)" }}>
-          Tip: Test an HTTP Request action to insert response fields here.
+          Tip: Test an HTTP Request, or declare Post Message receive fields,
+          to insert values here.
         </div>
       ) : null}
 

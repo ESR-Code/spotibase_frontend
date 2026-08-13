@@ -5,8 +5,8 @@ import {
   ExternalLink,
   Globe,
   MapPinned,
+  MessagesSquare,
   PanelRightOpen,
-  Radio,
   type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
@@ -57,7 +57,7 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
   sendPostMessage: {
     type: "sendPostMessage",
     meta: ACTION_NODE_META.sendPostMessage,
-    icon: Radio,
+    icon: MessagesSquare,
     accent: "#7aa2ff",
     Node: SendPostMessageNode,
   },
