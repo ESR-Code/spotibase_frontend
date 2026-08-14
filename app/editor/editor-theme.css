@@ -1076,8 +1076,19 @@
   box-shadow: 0 16px 40px -18px rgba(0, 0, 0, 0.75);
 }
 
+.editor-root .editor-field-tree-menu {
+  min-width: 240px;
+  max-width: min(320px, 70vw);
+  max-height: 260px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 8px;
+  padding: 4px 0;
+}
+
 .editor-root .editor-http-field-menu-group {
-  padding: 7px 10px 4px;
+  padding: 6px 10px 3px;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -1109,6 +1120,80 @@
 
 .editor-root .editor-http-field-menu-item[data-field-kind="postMessage"]:hover {
   background: rgba(122, 162, 255, 0.12);
+}
+
+.editor-root .editor-field-tree-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 22px;
+  padding-right: 8px;
+}
+
+.editor-root .editor-field-tree-toggle,
+.editor-root .editor-field-tree-toggle-spacer {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--editor-muted);
+  cursor: pointer;
+}
+
+.editor-root .editor-field-tree-toggle:hover {
+  color: var(--editor-fg);
+}
+
+.editor-root .editor-field-tree-leaf,
+.editor-root .editor-field-tree-branch {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 4px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--editor-fg);
+  text-align: left;
+  cursor: pointer;
+}
+
+.editor-root .editor-field-tree-leaf[data-field-kind="http"]:hover,
+.editor-root .editor-field-tree-branch[data-field-kind="http"]:hover {
+  background: rgba(86, 200, 160, 0.12);
+}
+
+.editor-root .editor-field-tree-leaf[data-field-kind="postMessage"]:hover,
+.editor-root .editor-field-tree-branch[data-field-kind="postMessage"]:hover {
+  background: rgba(122, 162, 255, 0.12);
+}
+
+.editor-root .editor-field-tree-key {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.editor-root .editor-field-tree-sample {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  color: var(--editor-muted);
 }
 
 .editor-root .editor-block-drag-handle {
@@ -2049,6 +2134,41 @@
   padding: 6px 8px;
 }
 
+.editor-root .editor-var-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
+}
+
+.editor-root .editor-var-field > .editor-input,
+.editor-root .editor-var-field > .editor-textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.editor-root .editor-var-field-area {
+  align-items: flex-start;
+}
+
+.editor-root .editor-var-insert {
+  position: relative;
+  flex: 0 0 auto;
+  z-index: 2;
+}
+
+.editor-root .editor-var-field-area .editor-var-insert {
+  margin-top: 2px;
+}
+
+.editor-root .editor-var-insert-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 40;
+}
+
 .editor-root .editor-http-headers-add {
   display: inline-flex;
   align-items: center;
@@ -2128,7 +2248,16 @@
 }
 
 .editor-root .editor-action-node-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 0 12px 10px;
+}
+
+.editor-root .editor-action-node-footer .editor-var-insert-menu {
+  top: auto;
+  bottom: calc(100% + 4px);
 }
 
 .editor-root .editor-action-handle {

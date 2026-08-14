@@ -59,8 +59,11 @@ export function OpenUrlNode({ data, selected }: NodeProps<OpenUrlFlowNode>) {
           URL
         </span>
         <input
-          className="editor-input"
-          type="url"
+          className="editor-input nodrag nopan nowheel"
+          type="text"
+          inputMode="url"
+          autoComplete="off"
+          spellCheck={false}
           placeholder="https://…"
           value={url}
           onChange={(e) => {

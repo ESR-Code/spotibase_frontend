@@ -12,6 +12,7 @@ import {
   getValueByPath,
   tryParseJson,
 } from "@/lib/editor/blocks/json-paths";
+import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
@@ -28,12 +29,13 @@ export type HttpFieldSource = {
 };
 
 export type FieldSourceGroup = {
+  id: string;
   kind: FieldSourceKind;
   label: string;
   items: HttpFieldSource[];
 };
 
-const GROUP_META: Record<FieldSourceKind, string> = {
+const KIND_LABEL: Record<FieldSourceKind, string> = {
   http: "HTTP Request",
   postMessage: "Post Message",
 };
@@ -44,14 +46,16 @@ function collectFromGraph(
   nodeLabelPrefix: string,
   sources: HttpFieldSource[],
 ) {
-  graph.nodes.forEach((node, index) => {
+  let httpIndex = 0;
+  let postMessageIndex = 0;
+
+  graph.nodes.forEach((node) => {
     if (node.type === "httpRequest") {
       const parsed = tryParseJson(node.data.lastResponseJson ?? "");
       if (parsed === undefined) return;
 
-      const label = node.data.url.trim()
-        ? `${nodeLabelPrefix} · ${node.data.method} ${node.data.url.trim()}`
-        : `${nodeLabelPrefix} HTTP ${index + 1}`;
+      httpIndex += 1;
+      const label = `${nodeLabelPrefix} · ${KIND_LABEL.http} ${httpIndex}`;
 
       for (const field of flattenJsonPaths(parsed)) {
         sources.push({
@@ -75,8 +79,11 @@ function collectFromGraph(
         .filter(Boolean);
       if (fields.length === 0) return;
 
-      const event = node.data.eventName.trim() || `event ${index + 1}`;
-      const label = `${nodeLabelPrefix} · ${event}`;
+      postMessageIndex += 1;
+      const event = node.data.eventName.trim();
+      const label = event
+        ? `${nodeLabelPrefix} · ${KIND_LABEL.postMessage} ${postMessageIndex} · ${event}`
+        : `${nodeLabelPrefix} · ${KIND_LABEL.postMessage} ${postMessageIndex}`;
       const parsed = tryParseJson(node.data.lastPayloadJson ?? "");
 
       for (const path of fields) {
@@ -100,7 +107,7 @@ function collectFromGraph(
  * Collect selectable JSON field paths from tested HTTP responses and
  * declared Post Message receive fields.
  */
-export function listHttpFieldSources(hotspot: Hotspot): HttpFieldSource[] {
+export function listAllFieldSources(excludeNodeId?: string): HttpFieldSource[] {
   const sources: HttpFieldSource[] = [];
   const scenes = useScenesStore.getState();
 
@@ -122,20 +129,72 @@ export function listHttpFieldSources(hotspot: Hotspot): HttpFieldSource[] {
     );
   }
 
-  collectFromGraph(getActionGraph(hotspot), hotspot.id, "Hotspot", sources);
-  return sources;
+  for (const hotspot of useEditorStore.getState().hotspots) {
+    collectFromGraph(getActionGraph(hotspot), hotspot.id, hotspot.title || "Hotspot", sources);
+  }
+
+  return excludeNodeId
+    ? sources.filter((source) => source.nodeId !== excludeNodeId)
+    : sources;
 }
 
-/** Group field sources for the text-block insert menu. */
+export function listHttpFieldSources(hotspot: Hotspot): HttpFieldSource[] {
+  return listAllFieldSources().filter((source) => {
+    // Keep hotspot-local sources plus start-graph sources (same as before).
+    return (
+      source.ownerId === hotspot.id ||
+      source.ownerId === APP_START_OWNER_ID ||
+      source.ownerId === SCENE_START_OWNER_ID
+    );
+  });
+}
+
+/** Group field sources per source node (HTTP Request 1, HTTP Request 2, …). */
 export function groupHttpFieldSources(
   sources: HttpFieldSource[],
 ): FieldSourceGroup[] {
-  const order: FieldSourceKind[] = ["http", "postMessage"];
-  return order
-    .map((kind) => ({
+  const order: string[] = [];
+  const byNode = new Map<string, HttpFieldSource[]>();
+
+  for (const source of sources) {
+    const existing = byNode.get(source.nodeId);
+    if (!existing) {
+      byNode.set(source.nodeId, [source]);
+      order.push(source.nodeId);
+    } else {
+      existing.push(source);
+    }
+  }
+
+  let httpIndex = 0;
+  let postMessageIndex = 0;
+
+  return order.map((nodeId) => {
+    const items = byNode.get(nodeId) ?? [];
+    const kind = items[0]?.kind ?? "http";
+    const index = kind === "http" ? ++httpIndex : ++postMessageIndex;
+    return {
+      id: nodeId,
       kind,
-      label: GROUP_META[kind],
-      items: sources.filter((source) => source.kind === kind),
-    }))
-    .filter((group) => group.items.length > 0);
+      label: `${KIND_LABEL[kind]} ${index}`,
+      items,
+    };
+  });
+}
+
+/** Build field sources from a single tested HTTP response JSON. */
+export function fieldSourcesFromResponseJson(
+  responseJson: string,
+  meta: Pick<HttpFieldSource, "nodeId" | "ownerId" | "nodeLabel">,
+): HttpFieldSource[] {
+  const parsed = tryParseJson(responseJson);
+  if (parsed === undefined) return [];
+  return flattenJsonPaths(parsed).map((field) => ({
+    kind: "http" as const,
+    nodeId: meta.nodeId,
+    nodeLabel: meta.nodeLabel,
+    path: field.path,
+    sample: field.sample,
+    ownerId: meta.ownerId,
+  }));
 }

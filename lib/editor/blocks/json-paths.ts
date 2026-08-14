@@ -45,6 +45,77 @@ export function flattenJsonPaths(
   return out;
 }
 
+/** Split `a.b[0].c` into display segments: ["a", "b", "[0]", "c"]. */
+export function tokenizeJsonPath(path: string): string[] {
+  const tokens: string[] = [];
+  const re = /([^[.\]]+)|\[(\d+)\]/g;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(path.trim()))) {
+    if (match[1] != null) tokens.push(match[1]);
+    else if (match[2] != null) tokens.push(`[${match[2]}]`);
+  }
+  return tokens;
+}
+
+function joinPathSegment(base: string, segment: string): string {
+  if (!base) return segment;
+  if (segment.startsWith("[")) return `${base}${segment}`;
+  return `${base}.${segment}`;
+}
+
+export type JsonPathTreeNode = {
+  id: string;
+  segment: string;
+  path: string;
+  sample?: string;
+  children: JsonPathTreeNode[];
+};
+
+/** Build a nested tree from flat JSON path entries (collapsed UI source). */
+export function buildJsonPathTree(
+  entries: Array<{ path: string; sample: string }>,
+): JsonPathTreeNode[] {
+  const roots: JsonPathTreeNode[] = [];
+  const byPath = new Map<string, JsonPathTreeNode>();
+
+  const ensure = (
+    path: string,
+    segment: string,
+    siblings: JsonPathTreeNode[],
+  ): JsonPathTreeNode => {
+    const existing = byPath.get(path);
+    if (existing) return existing;
+    const node: JsonPathTreeNode = {
+      id: path,
+      segment,
+      path,
+      children: [],
+    };
+    byPath.set(path, node);
+    siblings.push(node);
+    return node;
+  };
+
+  for (const entry of entries) {
+    const tokens = tokenizeJsonPath(entry.path);
+    if (tokens.length === 0) continue;
+
+    let siblings = roots;
+    let pathSoFar = "";
+    for (let i = 0; i < tokens.length; i += 1) {
+      const segment = tokens[i]!;
+      pathSoFar = joinPathSegment(pathSoFar, segment);
+      const node = ensure(pathSoFar, segment, siblings);
+      if (i === tokens.length - 1) {
+        node.sample = entry.sample;
+      }
+      siblings = node.children;
+    }
+  }
+
+  return roots;
+}
+
 function formatSample(value: string | number | boolean | null): string {
   if (value === null) return "null";
   if (typeof value === "string") {

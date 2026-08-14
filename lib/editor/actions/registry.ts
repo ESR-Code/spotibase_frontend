@@ -12,6 +12,10 @@ import {
   parsePayloadJson,
   sendPostMessage,
 } from "@/lib/editor/actions/send-post-message";
+import {
+  interpolateHttpRequestFields,
+  interpolatePostMessageFields,
+} from "@/lib/editor/actions/interpolate-fields";
 import { transitionToScene } from "@/lib/editor/actions/transition-to-scene";
 import { openHotspotInPreview } from "@/lib/editor/preview/open-hotspot-in-preview";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -111,19 +115,23 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     createDefault: (position) => createActionNode("sendPostMessage", position),
     validate: (node) => {
       if (node.type !== "sendPostMessage") return null;
-      if (!node.data.eventName.trim()) return "Enter an event name";
+      const interpolated = interpolatePostMessageFields(node.data);
+      if (!interpolated.eventName.trim()) return "Enter an event name";
       const mode = node.data.mode ?? "send";
       if (mode === "receive") return null;
-      const parsed = parsePayloadJson(node.data.payloadJson);
+      const parsed = parsePayloadJson(interpolated.payloadJson);
       if (!parsed.ok) return parsed.error;
-      if (!node.data.targetOrigin.trim()) return "Enter a target origin";
+      if (!interpolated.targetOrigin.trim()) return "Enter a target origin";
       return null;
     },
     run: (node, ctx) => {
       if (node.type !== "sendPostMessage") return;
-      // Receive mode is handled by runActionGraph (registers listener + continues later).
       if ((node.data.mode ?? "send") === "receive") return "stop";
-      const error = sendPostMessage(node, ctx.hotspotId);
+      const interpolated = interpolatePostMessageFields(node.data);
+      const error = sendPostMessage(
+        { ...node, data: { ...node.data, ...interpolated } },
+        ctx.hotspotId,
+      );
       if (error) {
         toast.error(`Post Message: ${error}`);
         return "stop";
@@ -137,7 +145,10 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     createDefault: (position) => createActionNode("httpRequest", position),
     validate: (node) => {
       if (node.type !== "httpRequest") return null;
-      return validateHttpRequestData(node.data);
+      return validateHttpRequestData({
+        ...node.data,
+        ...interpolateHttpRequestFields(node.data),
+      });
     },
     run: async (node, ctx) => {
       if (node.type !== "httpRequest") return;
@@ -149,7 +160,11 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
         return;
       }
 
-      const result = await executeHttpRequest(node.data);
+      const interpolated = interpolateHttpRequestFields(node.data);
+      const result = await executeHttpRequest({
+        ...node.data,
+        ...interpolated,
+      });
       if (result.error && result.status == null) {
         toast.error(`HTTP Request: ${result.error}`);
         clearHttpRequestCached(key);

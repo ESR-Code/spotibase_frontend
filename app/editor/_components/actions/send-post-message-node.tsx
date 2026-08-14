@@ -2,17 +2,20 @@
 
 import type { Node, NodeProps } from "@xyflow/react";
 import { ChevronDown, MessagesSquare, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-card";
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
+import { VariableInsertButton } from "@/app/editor/_components/actions/variable-insert-button";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import {
   APP_START_OWNER_ID,
   isHotspotOwnerId,
 } from "@/lib/editor/actions/action-owners";
 import type { ActionFlowNodeData } from "@/lib/editor/actions/flow-adapter";
+import { insertTextAt, substituteTokensForValidation } from "@/lib/editor/actions/interpolate-fields";
 import { parsePayloadJson } from "@/lib/editor/actions/send-post-message";
+import { listAllFieldSources } from "@/lib/editor/blocks/http-field-sources";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import {
@@ -70,6 +73,9 @@ export function SendPostMessageNode({
   const allowReceive = !isHotspotOwnerId(ownerId);
   const [fieldRows, setFieldRows] = useState<FieldRow[]>([createEmptyFieldRow()]);
   const [payloadOpen, setPayloadOpen] = useState(false);
+  const eventNameRef = useRef<HTMLInputElement>(null);
+  const payloadRef = useRef<HTMLTextAreaElement>(null);
+  const originRef = useRef<HTMLInputElement>(null);
 
   const hotspotLive = useEditorStore(
     useShallow((s) => {
@@ -112,6 +118,17 @@ export function SendPostMessageNode({
   );
 
   const live = isHotspotOwnerId(ownerId) ? hotspotLive : startLive;
+  const hotspots = useEditorStore((s) => s.hotspots);
+  const appStartActions = useScenesStore((s) => s.appStartActions);
+  const sceneStartActions = useScenesStore((s) => {
+    const scene =
+      s.scenes.find((sc) => sc.id === s.activeSceneId) ?? s.scenes[0];
+    return scene?.startActions ?? null;
+  });
+  const fieldSources = useMemo(
+    () => listAllFieldSources(actionNodeId),
+    [actionNodeId, appStartActions, hotspots, sceneStartActions],
+  );
   const mode: PostMessageMode =
     allowReceive && live.mode === "receive" ? "receive" : "send";
 
@@ -140,7 +157,9 @@ export function SendPostMessageNode({
 
   if (!actionNodeId) return null;
 
-  const payloadCheck = parsePayloadJson(live.payloadJson);
+  const payloadCheck = parsePayloadJson(
+    substituteTokensForValidation(live.payloadJson, "null"),
+  );
   const declaredFieldCount = rowsToFields(fieldRows).length;
   const warning =
     !live.eventName.trim()
@@ -181,6 +200,23 @@ export function SendPostMessageNode({
     onPointerDown: (e: React.PointerEvent) => e.stopPropagation(),
     onClick: (e: React.MouseEvent) => e.stopPropagation(),
     onKeyDown: (e: React.KeyboardEvent) => e.stopPropagation(),
+  };
+  const fieldClass = "editor-input nodrag nopan nowheel";
+  const areaClass = "editor-textarea editor-textarea-compact nodrag nopan nowheel";
+  const selectClass = "editor-select nodrag nopan nowheel";
+
+  const insertInto = (
+    current: string,
+    token: string,
+    el: HTMLInputElement | HTMLTextAreaElement | null,
+  ) => {
+    if (!el) return insertTextAt(current, token, current.length);
+    return insertTextAt(
+      current,
+      token,
+      el.selectionStart ?? current.length,
+      el.selectionEnd ?? current.length,
+    );
   };
 
   return (
@@ -229,7 +265,7 @@ export function SendPostMessageNode({
             Behavior
           </span>
           <select
-            className="editor-select"
+            className={selectClass}
             value={mode}
             onChange={(e) => {
               const next = e.target.value as PostMessageMode;
@@ -255,15 +291,32 @@ export function SendPostMessageNode({
           >
             Event name
           </span>
-          <input
-            className="editor-input"
-            placeholder={
-              mode === "receive" ? "e.g. app:ready" : "e.g. hotspot:clicked"
-            }
-            value={live.eventName}
-            onChange={(e) => patch({ eventName: e.target.value })}
-            {...stop}
-          />
+          <div className="editor-var-field">
+            <input
+              ref={eventNameRef}
+              className={fieldClass}
+              placeholder={
+                mode === "receive" ? "e.g. app:ready" : "e.g. hotspot:clicked"
+              }
+              value={live.eventName}
+              onChange={(e) => patch({ eventName: e.target.value })}
+              {...stop}
+            />
+            {mode === "send" ? (
+              <VariableInsertButton
+                sources={fieldSources}
+                onInsert={(token) =>
+                  patch({
+                    eventName: insertInto(
+                      live.eventName,
+                      token,
+                      eventNameRef.current,
+                    ),
+                  })
+                }
+              />
+            ) : null}
+          </div>
         </label>
 
         {mode === "send" ? (
@@ -285,25 +338,40 @@ export function SendPostMessageNode({
                 />
               </button>
               {payloadOpen ? (
-                <label className="mt-1.5 block">
-                  <textarea
-                    className="editor-textarea editor-textarea-compact"
-                    rows={4}
-                    spellCheck={false}
-                    placeholder='{ "key": "value" }'
-                    value={live.payloadJson}
-                    onChange={(e) => patch({ payloadJson: e.target.value })}
-                    {...stop}
-                  />
+                <div className="mt-1.5 space-y-1">
+                  <div className="editor-var-field editor-var-field-area">
+                    <textarea
+                      ref={payloadRef}
+                      className={areaClass}
+                      rows={4}
+                      spellCheck={false}
+                      placeholder='{ "userId": "{{userId}}" }'
+                      value={live.payloadJson}
+                      onChange={(e) => patch({ payloadJson: e.target.value })}
+                      {...stop}
+                    />
+                    <VariableInsertButton
+                      sources={fieldSources}
+                      onInsert={(token) =>
+                        patch({
+                          payloadJson: insertInto(
+                            live.payloadJson,
+                            token,
+                            payloadRef.current,
+                          ),
+                        })
+                      }
+                    />
+                  </div>
                   {!payloadCheck.ok ? (
                     <span
-                      className="mt-1 block text-[10px]"
+                      className="block text-[10px]"
                       style={{ color: "var(--editor-amber)" }}
                     >
                       {payloadCheck.error}
                     </span>
                   ) : null}
-                </label>
+                </div>
               ) : !payloadCheck.ok ? (
                 <span
                   className="mt-1 block text-[10px]"
@@ -322,7 +390,7 @@ export function SendPostMessageNode({
                 Target window
               </span>
               <select
-                className="editor-select"
+                className={selectClass}
                 value={live.target}
                 onChange={(e) =>
                   patch({ target: e.target.value as PostMessageTarget })
@@ -345,7 +413,8 @@ export function SendPostMessageNode({
                 Target origin
               </span>
               <input
-                className="editor-input"
+                ref={originRef}
+                className={fieldClass}
                 placeholder="* or https://example.com"
                 value={live.targetOrigin}
                 onChange={(e) => patch({ targetOrigin: e.target.value })}
@@ -364,7 +433,7 @@ export function SendPostMessageNode({
             {fieldRows.map((row) => (
               <div key={row.id} className="editor-pm-field-row">
                 <input
-                  className="editor-input"
+                  className={fieldClass}
                   placeholder="Field key (e.g. user.name)"
                   value={row.path}
                   onChange={(e) => updateFieldRow(row.id, e.target.value)}

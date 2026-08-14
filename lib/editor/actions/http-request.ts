@@ -4,6 +4,7 @@ import type {
   HttpMethod,
   HttpRequestActionNode,
 } from "@/lib/editor/types/hotspot-action";
+import { interpolateHttpRequestFields, substituteTokensForValidation } from "@/lib/editor/actions/interpolate-fields";
 import { normalizeExternalUrl } from "@/lib/editor/utils/open-external-url";
 
 export type HttpRequestResult = {
@@ -103,8 +104,10 @@ export function validateHttpRequestData(
   >,
 ): string | null {
   if (!data.url.trim()) return "Enter a URL";
-  if (!normalizeExternalUrl(data.url)) return "Enter a valid URL";
-  const headers = parseHeadersJson(data.headersJson);
+  const urlForCheck = substituteTokensForValidation(data.url, "0");
+  if (!normalizeExternalUrl(urlForCheck)) return "Enter a valid URL";
+  const headersRaw = substituteTokensForValidation(data.headersJson, "x");
+  const headers = parseHeadersJson(headersRaw);
   if (!headers.ok) return headers.error;
   return null;
 }

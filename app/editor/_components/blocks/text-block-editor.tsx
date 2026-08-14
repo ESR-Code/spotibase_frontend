@@ -2,10 +2,10 @@
 
 import { Bold, Braces, Italic, Underline } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { FieldSourceTreeMenu } from "@/app/editor/_components/actions/field-source-tree-menu";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { buildHttpFieldChipHtml } from "@/lib/editor/blocks/http-field-chip";
 import {
-  groupHttpFieldSources,
   listHttpFieldSources,
   type FieldSourceKind,
 } from "@/lib/editor/blocks/http-field-sources";
@@ -56,10 +56,6 @@ export function TextBlockEditor({
   const fieldSources = useMemo(
     () => (hotspot ? listHttpFieldSources(hotspot) : []),
     [appStartActions, hotspot, sceneStartActions],
-  );
-  const fieldGroups = useMemo(
-    () => groupHttpFieldSources(fieldSources),
-    [fieldSources],
   );
 
   useEffect(() => {
@@ -262,43 +258,13 @@ export function TextBlockEditor({
           </IconButton>
 
           {menuOpen ? (
-            <div
-              role="menu"
-              className="editor-http-field-menu absolute left-0 top-full z-30 mt-1 max-h-56 min-w-[240px] overflow-y-auto rounded-lg py-1"
-            >
-              {fieldGroups.map((group) => (
-                <div key={group.kind}>
-                  <div
-                    className="editor-http-field-menu-group"
-                    data-field-kind={group.kind}
-                  >
-                    {group.label}
-                  </div>
-                  {group.items.map((source) => (
-                    <button
-                      key={`${source.nodeId}:${source.path}`}
-                      type="button"
-                      role="menuitem"
-                      className="editor-http-field-menu-item"
-                      data-field-kind={source.kind}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() =>
-                        insertField(source.nodeId, source.path, source.kind)
-                      }
-                    >
-                      <span className="block truncate text-[12px] font-medium">
-                        {source.path}
-                      </span>
-                      <span
-                        className="block truncate text-[10px]"
-                        style={{ color: "var(--editor-muted)" }}
-                      >
-                        {source.sample} · {source.nodeLabel}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ))}
+            <div className="absolute left-0 top-full z-30 mt-1">
+              <FieldSourceTreeMenu
+                sources={fieldSources}
+                onSelect={(source) =>
+                  insertField(source.nodeId, source.path, source.kind)
+                }
+              />
             </div>
           ) : null}
         </div>
