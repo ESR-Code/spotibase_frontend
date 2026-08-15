@@ -12,7 +12,7 @@ import { createPickingController } from "@/lib/editor/engine/picking-controller"
 import { createScene } from "@/lib/editor/engine/scene-manager";
 import { bindViewportResize } from "@/lib/editor/engine/viewport-resize";
 import type { ImportSubjectDetail } from "@/lib/editor/io/import-subject";
-import { getCameraModeForSceneType } from "@/lib/editor/scene-types/registry";
+import { getCameraModeForSceneType, getSceneType } from "@/lib/editor/scene-types/registry";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useEffectsStore } from "@/lib/editor/state/effects-store";
 import { useEnvironmentStore } from "@/lib/editor/state/environment-store";
@@ -78,8 +78,8 @@ export function usePlayCanvasEditor() {
 
         const applyScenePresentation = (type: SceneTypeId) => {
           cameraCtrl.setMode(getCameraModeForSceneType(type));
-          // Flat image viewer: hide floor grid / shadow catcher.
-          if (type === "image") {
+          const sections = getSceneType(type).settingsSections;
+          if (type === "image" || !sections.grid) {
             scene.grid.enabled = false;
             scene.shadowCatcher.enabled = false;
           } else {

@@ -135,6 +135,14 @@ export function createModelManager(
 
   const loadDefault = (type?: SceneTypeId) => {
     const sceneType = type ?? activeSceneType();
+    if (getSceneType(sceneType).engine !== "playcanvas") {
+      unloadCurrent();
+      const descriptor = getSceneType(sceneType);
+      useModelStore
+        .getState()
+        .setModelMeta(descriptor.emptySubjectName, descriptor.emptySubjectInfo, false);
+      return modelRoot;
+    }
     if (sceneType === "image") {
       return loadDefaultImagePlaceholder();
     }
@@ -265,6 +273,10 @@ export function createModelManager(
     file: File,
     type: SceneTypeId,
   ): Promise<Entity | null> => {
+    if (getSceneType(type).engine !== "playcanvas") {
+      toast.error(`${getSceneType(type).label} scenes do not import a subject file`);
+      return null;
+    }
     toast.message(`Importing ${file.name}...`);
 
     try {

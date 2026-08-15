@@ -9,13 +9,17 @@ import {
 } from "lucide-react";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useModelStore } from "@/lib/editor/state/model-store";
+import { useActiveScene } from "@/lib/editor/state/scenes-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
+import { isGeoSceneType } from "@/lib/editor/scene-types/registry";
 
 export function ViewportControls() {
   const wireframe = useModelStore((s) => s.wireframe);
   const setWireframe = useModelStore((s) => s.setWireframe);
   const isPreview = useEditorStore((s) => s.isPreview);
   const setSettingsDrawerOpen = useUIStore((s) => s.setSettingsDrawerOpen);
+  const scene = useActiveScene();
+  const isGeo = isGeoSceneType(scene.type);
 
   return (
     <div
@@ -47,14 +51,18 @@ export function ViewportControls() {
       >
         <Minus className="h-3.5 w-3.5" />
       </ControlButton>
-      <div className="editor-vsep" style={{ height: 18 }} />
-      <ControlButton
-        title="Wireframe"
-        active={wireframe}
-        onClick={() => setWireframe(!wireframe)}
-      >
-        <Square className="h-3.5 w-3.5" />
-      </ControlButton>
+      {isGeo ? null : (
+        <>
+          <div className="editor-vsep" style={{ height: 18 }} />
+          <ControlButton
+            title="Wireframe"
+            active={wireframe}
+            onClick={() => setWireframe(!wireframe)}
+          >
+            <Square className="h-3.5 w-3.5" />
+          </ControlButton>
+        </>
+      )}
       <div className="editor-vsep" style={{ height: 18 }} />
       <ControlButton
         title="Scene settings"

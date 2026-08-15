@@ -5,6 +5,7 @@ import type {
   EffectsSettings,
   EnvironmentSettings,
 } from "@/lib/editor/types/editor-settings";
+import type { GeoSettings } from "@/lib/editor/types/geo-settings";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 
 export type ModelRotation = {
@@ -40,4 +41,6 @@ export type Scene = {
   environment: EnvironmentSettings;
   /** Per-scene post-processing effects (AO, etc.). */
   effects: EffectsSettings;
+  /** Per-scene geo map start view. Unused for PlayCanvas scenes. */
+  geo: GeoSettings;
 };

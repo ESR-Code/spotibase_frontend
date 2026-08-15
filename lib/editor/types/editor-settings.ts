@@ -16,6 +16,14 @@ export type CameraResetPosition = {
   target: { x: number; y: number; z: number };
   /** Viewport screenshot preview as a data URL. */
   previewUrl: string;
+  /** Geo map center longitude. Present on map poses. */
+  lng?: number;
+  /** Geo map center latitude. Present on map poses. */
+  lat?: number;
+  /** Geo map zoom. Present on map poses. */
+  zoom?: number;
+  /** Geo map bearing in degrees. */
+  bearing?: number;
 };
 
 export type EditorSettings = {
@@ -27,6 +35,10 @@ export type EditorSettings = {
   maxYaw: number;
   minPitch: number;
   maxPitch: number;
+  /** Geo map closest zoom (MapLibre 0–22). */
+  minZoom: number;
+  /** Geo map farthest zoom (MapLibre 0–22). */
+  maxZoom: number;
   /**
    * Custom Reset view pose. When null, Reset view uses the default
    * zoom-extents framing for the current model.

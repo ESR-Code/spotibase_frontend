@@ -2,8 +2,11 @@
 
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
+import { isGeoSceneType } from "@/lib/editor/scene-types/registry";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useMapViewportStore } from "@/lib/editor/state/map-viewport-store";
 import { useModelStore } from "@/lib/editor/state/model-store";
+import { useActiveScene } from "@/lib/editor/state/scenes-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
 const modeLabels = {
@@ -21,6 +24,21 @@ const modeLabels = {
   },
 };
 
+const geoModeLabels = {
+  select: {
+    title: "Select",
+    hint: "Click a marker to edit · Drag to move",
+  },
+  add: {
+    title: "Add",
+    hint: "Click the map to place a hotspot",
+  },
+  preview: {
+    title: "Preview",
+    hint: "Click a hotspot to view · Hover for title",
+  },
+};
+
 export function ViewportHud() {
   const mode = useEditorStore((s) => s.mode);
   const isPreview = useEditorStore((s) => s.isPreview);
@@ -29,8 +47,12 @@ export function ViewportHud() {
   const triangleCount = useModelStore((s) => s.triangleCount);
   const collapsed = useUIStore((s) => s.hudCollapsed);
   const setCollapsed = useUIStore((s) => s.setHudCollapsed);
-
-  const label = isPreview ? modeLabels.preview : modeLabels[mode];
+  const scene = useActiveScene();
+  const isGeo = isGeoSceneType(scene.type);
+  const mapZoom = useMapViewportStore((s) => s.zoom);
+  const mapCenter = useMapViewportStore((s) => s.center);
+  const labels = isGeo ? geoModeLabels : modeLabels;
+  const label = isPreview ? labels.preview : labels[mode];
 
   return (
     <GlassPanel
@@ -75,13 +97,30 @@ export function ViewportHud() {
           {label.hint}
         </div>
         <div className="grid grid-cols-3 gap-2">
-          <Stat label="FPS" value={String(fps)} />
-          <Stat
-            label="Hotspots"
-            value={String(hotspots.length)}
-            accent="var(--editor-crimson-2)"
-          />
-          <Stat label="Tris" value={triangleCount.toLocaleString()} />
+          {isGeo ? (
+            <>
+              <Stat label="Zoom" value={mapZoom.toFixed(1)} />
+              <Stat
+                label="Hotspots"
+                value={String(hotspots.length)}
+                accent="var(--editor-crimson-2)"
+              />
+              <Stat
+                label="Lat"
+                value={mapCenter[1].toFixed(2)}
+              />
+            </>
+          ) : (
+            <>
+              <Stat label="FPS" value={String(fps)} />
+              <Stat
+                label="Hotspots"
+                value={String(hotspots.length)}
+                accent="var(--editor-crimson-2)"
+              />
+              <Stat label="Tris" value={triangleCount.toLocaleString()} />
+            </>
+          )}
         </div>
       </div>
     </GlassPanel>

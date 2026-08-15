@@ -13,6 +13,7 @@ import { SceneModelRow } from "@/app/editor/_components/outliner/scene-model-row
 import { HotspotListItem } from "@/app/editor/_components/outliner/hotspot-list-item";
 import { SubjectPanel } from "@/app/editor/_components/outliner/subject-panel";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useActiveScene } from "@/lib/editor/state/scenes-store";
 import { useUIStore, type OutlinerTab } from "@/lib/editor/state/ui-store";
 
 const TABS: { id: OutlinerTab; label: string; icon: typeof Layers }[] = [
@@ -23,6 +24,7 @@ const TABS: { id: OutlinerTab; label: string; icon: typeof Layers }[] = [
 export function HotspotOutliner() {
   const hotspots = useEditorStore((s) => s.hotspots);
   const selectedId = useEditorStore((s) => s.selectedId);
+  const scene = useActiveScene();
   const selectHotspot = useEditorStore((s) => s.selectHotspot);
   const removeHotspot = useEditorStore((s) => s.removeHotspot);
   const collapsed = useUIStore((s) => s.outlinerCollapsed);
@@ -58,7 +60,9 @@ export function HotspotOutliner() {
             </div>
             <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
               {outlinerTab === "subject"
-                ? "Import and adjust the scene subject"
+                ? scene.type === "geo"
+                  ? "Geo map subject"
+                  : "Import and adjust the scene subject"
                 : `${hotspots.length} markers in scene`}
             </div>
           </div>

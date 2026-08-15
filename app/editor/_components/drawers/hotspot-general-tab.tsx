@@ -14,6 +14,7 @@ import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
 import type { HotspotFormValues } from "@/lib/editor/forms/schemas/hotspot-form.schema";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useActiveScene } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { markerColorSwatches, markerIcons } from "@/lib/editor/theme/tokens";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
@@ -44,6 +45,8 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
   const legendCategories = useSettingsStore((s) => s.legendCategories);
   const setSettings = useSettingsStore((s) => s.setSettings);
   const values = form.watch();
+  const scene = useActiveScene();
+  const isGeo = scene.type === "geo";
 
   const handleCategoriesChange = (
     categories: typeof legendCategories,
@@ -197,44 +200,73 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
       </FormSection>
 
       <FormSection title="Position">
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <FieldLabel className="mb-1.5">X</FieldLabel>
-            <PositionAxisInput
-              aria-label="Position X"
-              value={selected.position.x}
-              onChange={(x) =>
-                updateHotspot(selected.id, {
-                  position: { ...selected.position, x },
-                })
-              }
-            />
+        {isGeo ? (
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <FieldLabel className="mb-1.5">Longitude</FieldLabel>
+              <PositionAxisInput
+                aria-label="Longitude"
+                value={selected.position.x}
+                onChange={(x) =>
+                  updateHotspot(selected.id, {
+                    position: { ...selected.position, x },
+                  })
+                }
+              />
+            </div>
+            <div>
+              <FieldLabel className="mb-1.5">Latitude</FieldLabel>
+              <PositionAxisInput
+                aria-label="Latitude"
+                value={selected.position.y}
+                onChange={(y) =>
+                  updateHotspot(selected.id, {
+                    position: { ...selected.position, y },
+                  })
+                }
+              />
+            </div>
           </div>
-          <div>
-            <FieldLabel className="mb-1.5">Y</FieldLabel>
-            <PositionAxisInput
-              aria-label="Position Y"
-              value={selected.position.y}
-              onChange={(y) =>
-                updateHotspot(selected.id, {
-                  position: { ...selected.position, y },
-                })
-              }
-            />
+        ) : (
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <FieldLabel className="mb-1.5">X</FieldLabel>
+              <PositionAxisInput
+                aria-label="Position X"
+                value={selected.position.x}
+                onChange={(x) =>
+                  updateHotspot(selected.id, {
+                    position: { ...selected.position, x },
+                  })
+                }
+              />
+            </div>
+            <div>
+              <FieldLabel className="mb-1.5">Y</FieldLabel>
+              <PositionAxisInput
+                aria-label="Position Y"
+                value={selected.position.y}
+                onChange={(y) =>
+                  updateHotspot(selected.id, {
+                    position: { ...selected.position, y },
+                  })
+                }
+              />
+            </div>
+            <div>
+              <FieldLabel className="mb-1.5">Z</FieldLabel>
+              <PositionAxisInput
+                aria-label="Position Z"
+                value={selected.position.z}
+                onChange={(z) =>
+                  updateHotspot(selected.id, {
+                    position: { ...selected.position, z },
+                  })
+                }
+              />
+            </div>
           </div>
-          <div>
-            <FieldLabel className="mb-1.5">Z</FieldLabel>
-            <PositionAxisInput
-              aria-label="Position Z"
-              value={selected.position.z}
-              onChange={(z) =>
-                updateHotspot(selected.id, {
-                  position: { ...selected.position, z },
-                })
-              }
-            />
-          </div>
-        </div>
+        )}
       </FormSection>
 
       <FormSection title="Custom camera">

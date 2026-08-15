@@ -4,12 +4,15 @@ import {
   createEmptyActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
 import {
+  cloneCameraResetPosition,
   cloneEditorSettings,
   cloneEffectsSettings,
   cloneEnvironmentSettings,
+  cloneGeoSettings,
   DEFAULT_EDITOR_SETTINGS,
   DEFAULT_EFFECTS_SETTINGS,
   DEFAULT_ENVIRONMENT_SETTINGS,
+  DEFAULT_GEO_SETTINGS,
 } from "@/lib/editor/constants/default-settings";
 import { DEMO_HOTSPOTS } from "@/lib/editor/constants/demo-hotspots";
 import { getSceneType } from "@/lib/editor/scene-types/registry";
@@ -24,6 +27,7 @@ import type {
   EffectsSettings,
   EnvironmentSettings,
 } from "@/lib/editor/types/editor-settings";
+import type { GeoSettings } from "@/lib/editor/types/geo-settings";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 import type { Scene, SceneModelState } from "@/lib/editor/types/scene";
@@ -64,6 +68,7 @@ export function createScene(partial: {
   settings?: EditorSettings;
   environment?: EnvironmentSettings;
   effects?: EffectsSettings;
+  geo?: GeoSettings;
 }): Scene {
   const hotspots = partial.hotspots ?? [];
   return {
@@ -83,6 +88,7 @@ export function createScene(partial: {
       partial.environment ?? DEFAULT_ENVIRONMENT_SETTINGS,
     ),
     effects: cloneEffectsSettings(partial.effects ?? DEFAULT_EFFECTS_SETTINGS),
+    geo: cloneGeoSettings(partial.geo ?? DEFAULT_GEO_SETTINGS),
   };
 }
 
@@ -103,15 +109,7 @@ export function getSeedHotspots(): Hotspot[] {
     position: { ...h.position },
     blocks: [...h.blocks],
     customCameraEnabled: h.customCameraEnabled ?? false,
-    customCamera: h.customCamera
-      ? {
-          yaw: h.customCamera.yaw,
-          pitch: h.customCamera.pitch,
-          distance: h.customCamera.distance,
-          target: { ...h.customCamera.target },
-          previewUrl: h.customCamera.previewUrl,
-        }
-      : null,
+    customCamera: cloneCameraResetPosition(h.customCamera ?? null),
     actions: h.actions
       ? cloneActionGraph(h.actions)
       : createDefaultActionGraph(),

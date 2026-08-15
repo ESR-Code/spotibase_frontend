@@ -22,6 +22,8 @@ function toFormValues(
     maxYaw: settings.maxYaw,
     minPitch: settings.minPitch,
     maxPitch: settings.maxPitch,
+    minZoom: settings.minZoom,
+    maxZoom: settings.maxZoom,
     gridColor: settings.gridColor,
     gridOpacity: settings.gridOpacity,
     gridSize: settings.gridSize,

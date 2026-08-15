@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   Camera,
   ChevronDown,
+  Globe,
   ImageIcon,
   Info,
   LayoutGrid,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-image-field";
+import { GeoDetailsSection } from "@/app/editor/_components/drawers/geo-details-section";
 import { CameraPoseCaptureField } from "@/app/editor/_components/ui/camera-pose-capture-field";
 import { CheckboxField } from "@/app/editor/_components/ui/checkbox-field";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
@@ -28,7 +30,9 @@ import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
 import { useEffectsForm } from "@/lib/editor/forms/use-effects-form";
 import { useEnvironmentForm } from "@/lib/editor/forms/use-environment-form";
+import { useGeoForm } from "@/lib/editor/forms/use-geo-form";
 import { useSettingsForm } from "@/lib/editor/forms/use-settings-form";
+import { getSceneType } from "@/lib/editor/scene-types/registry";
 import type {
   MarkerDialogPresentation,
   MarkerDialogSize,
@@ -65,10 +69,13 @@ export function SettingsDrawer() {
   const { form, reset: resetSettings } = useSettingsForm();
   const { form: envForm, reset: resetEnvironment } = useEnvironmentForm();
   const { form: effectsForm, reset: resetEffects } = useEffectsForm();
+  const { reset: resetGeo } = useGeoForm();
   const values = form.watch();
   const env = envForm.watch();
   const effects = effectsForm.watch();
   const scene = useActiveScene();
+  const sections = getSceneType(scene.type).settingsSections;
+  const isGeoScene = scene.type === "geo";
   const isModelScene = scene.type === "model";
   const resetPosition = useSettingsStore((s) => s.resetPosition);
   const setSettings = useSettingsStore((s) => s.setSettings);
@@ -77,6 +84,7 @@ export function SettingsDrawer() {
     resetSettings();
     resetEnvironment();
     resetEffects();
+    resetGeo();
   };
 
   const clearResetPosition = () => {
@@ -110,6 +118,16 @@ export function SettingsDrawer() {
       </div>
 
       <div className="editor-settings-sections min-h-0 flex-1 space-y-2.5 overflow-y-auto p-4">
+        {sections.geoDetails ? (
+          <SettingsSection
+            title="Geo details"
+            icon={<Globe className="h-3.5 w-3.5" />}
+            defaultOpen
+          >
+            <GeoDetailsSection />
+          </SettingsSection>
+        ) : null}
+
         <SettingsSection title="Logo" icon={<ImageIcon className="h-3.5 w-3.5" />}>
           <HotspotImageField
             layout="split"
@@ -292,7 +310,11 @@ export function SettingsDrawer() {
             previewUrl={resetPosition?.previewUrl}
             captureLabel="Set reset position"
             emptyLabel="No reset position"
-            hint="Per scene — saves the current camera as this scene's Reset view home. If unset, Reset view frames the model."
+            hint={
+              isGeoScene
+                ? "Per scene — saves the current map view as this scene's Reset view home. If unset, Reset view uses Geo details (or the globe)."
+                : "Per scene — saves the current camera as this scene's Reset view home. If unset, Reset view frames the model."
+            }
             previewAlt="Reset view preview"
             onCapture={setResetPosition}
             onClear={clearResetPosition}
@@ -307,85 +329,111 @@ export function SettingsDrawer() {
           >
             Zoom Limits
           </div>
-          <SliderField
-            label="Max Zoom (closest)"
-            value={values.minDistance}
-            display={values.minDistance.toFixed(1)}
-            min={0.2}
-            max={20}
-            step={0.1}
-            onChange={(v) => form.setValue("minDistance", v)}
-          />
-          <SliderField
-            label="Min Zoom (farthest)"
-            value={values.maxDistance}
-            display={String(values.maxDistance)}
-            min={5}
-            max={120}
-            step={1}
-            onChange={(v) => form.setValue("maxDistance", v)}
-          />
+          {isGeoScene ? (
+            <>
+              <SliderField
+                label="Min zoom (farthest)"
+                value={values.minZoom}
+                display={values.minZoom.toFixed(1)}
+                min={0}
+                max={22}
+                step={0.1}
+                onChange={(v) => form.setValue("minZoom", Math.min(v, values.maxZoom))}
+              />
+              <SliderField
+                label="Max zoom (closest)"
+                value={values.maxZoom}
+                display={values.maxZoom.toFixed(1)}
+                min={0}
+                max={22}
+                step={0.1}
+                onChange={(v) => form.setValue("maxZoom", Math.max(v, values.minZoom))}
+              />
+            </>
+          ) : (
+            <>
+              <SliderField
+                label="Max Zoom (closest)"
+                value={values.minDistance}
+                display={values.minDistance.toFixed(1)}
+                min={0.2}
+                max={20}
+                step={0.1}
+                onChange={(v) => form.setValue("minDistance", v)}
+              />
+              <SliderField
+                label="Min Zoom (farthest)"
+                value={values.maxDistance}
+                display={String(values.maxDistance)}
+                min={5}
+                max={120}
+                step={1}
+                onChange={(v) => form.setValue("maxDistance", v)}
+              />
 
-          <div
-            className="mb-1 mt-3 pt-3 text-[10px] font-bold uppercase tracking-wider"
-            style={{
-              color: "var(--editor-muted-2)",
-              borderTop: "1px solid var(--editor-line-soft)",
-            }}
-          >
-            Orbit Yaw
-          </div>
-          <SliderField
-            label="Min Yaw"
-            value={values.minYaw}
-            display={`${values.minYaw}°`}
-            min={-180}
-            max={180}
-            step={5}
-            onChange={(v) => form.setValue("minYaw", v)}
-          />
-          <SliderField
-            label="Max Yaw"
-            value={values.maxYaw}
-            display={`${values.maxYaw}°`}
-            min={-180}
-            max={180}
-            step={5}
-            onChange={(v) => form.setValue("maxYaw", v)}
-          />
+              <div
+                className="mb-1 mt-3 pt-3 text-[10px] font-bold uppercase tracking-wider"
+                style={{
+                  color: "var(--editor-muted-2)",
+                  borderTop: "1px solid var(--editor-line-soft)",
+                }}
+              >
+                Orbit Yaw
+              </div>
+              <SliderField
+                label="Min Yaw"
+                value={values.minYaw}
+                display={`${values.minYaw}°`}
+                min={-180}
+                max={180}
+                step={5}
+                onChange={(v) => form.setValue("minYaw", v)}
+              />
+              <SliderField
+                label="Max Yaw"
+                value={values.maxYaw}
+                display={`${values.maxYaw}°`}
+                min={-180}
+                max={180}
+                step={5}
+                onChange={(v) => form.setValue("maxYaw", v)}
+              />
 
-          <div
-            className="mb-1 mt-3 pt-3 text-[10px] font-bold uppercase tracking-wider"
-            style={{
-              color: "var(--editor-muted-2)",
-              borderTop: "1px solid var(--editor-line-soft)",
-            }}
-          >
-            Orbit Pitch
-          </div>
-          <SliderField
-            label="Min Pitch"
-            value={values.minPitch}
-            display={`${values.minPitch}°`}
-            min={0}
-            max={180}
-            step={1}
-            onChange={(v) => form.setValue("minPitch", v)}
-          />
-          <SliderField
-            label="Max Pitch"
-            value={values.maxPitch}
-            display={`${values.maxPitch}°`}
-            min={0}
-            max={180}
-            step={1}
-            onChange={(v) => form.setValue("maxPitch", v)}
-          />
-          <p className="mt-1.5 text-[11px]" style={{ color: "var(--editor-muted)" }}>
-            Pitch: 0° top-down, 90° horizon, 180° underside.
-          </p>
+              <div
+                className="mb-1 mt-3 pt-3 text-[10px] font-bold uppercase tracking-wider"
+                style={{
+                  color: "var(--editor-muted-2)",
+                  borderTop: "1px solid var(--editor-line-soft)",
+                }}
+              >
+                Orbit Pitch
+              </div>
+              <SliderField
+                label="Min Pitch"
+                value={values.minPitch}
+                display={`${values.minPitch}°`}
+                min={0}
+                max={180}
+                step={1}
+                onChange={(v) => form.setValue("minPitch", v)}
+              />
+              <SliderField
+                label="Max Pitch"
+                value={values.maxPitch}
+                display={`${values.maxPitch}°`}
+                min={0}
+                max={180}
+                step={1}
+                onChange={(v) => form.setValue("maxPitch", v)}
+              />
+              <p className="mt-1.5 text-[11px]" style={{ color: "var(--editor-muted)" }}>
+                Pitch: 0° top-down, 90° horizon, 180° underside.
+              </p>
+            </>
+          )}
         </SettingsSection>
 
+        {sections.grid ? (
         <SettingsSection title="Grid" icon={<LayoutGrid className="h-3.5 w-3.5" />}>
           <label className="mb-3 flex items-center justify-between text-[12px]">
             <span>Show Ground Grid</span>
@@ -424,6 +472,7 @@ export function SettingsDrawer() {
             Overall ground grid extent. Outer edges still fade out.
           </p>
         </SettingsSection>
+        ) : null}
 
         <SettingsSection title="Legend" icon={<ListTree className="h-3.5 w-3.5" />}>
           <SwitchField
@@ -434,7 +483,7 @@ export function SettingsDrawer() {
           />
         </SettingsSection>
 
-        {isModelScene ? (
+        {sections.effects ? (
           <SettingsSection title="Effects" icon={<Sparkles className="h-3.5 w-3.5" />}>
             <EnvGroup title="Ambient Occlusion" icon={<Moon className="h-3 w-3" />}>
               <SwitchField
@@ -497,6 +546,7 @@ export function SettingsDrawer() {
           </SettingsSection>
         ) : null}
 
+        {sections.environment ? (
         <SettingsSection
           title={isModelScene ? "Environment & Lighting" : "Environment"}
           icon={<Sun className="h-3.5 w-3.5" />}
@@ -623,6 +673,7 @@ export function SettingsDrawer() {
             </>
           ) : null}
         </SettingsSection>
+        ) : null}
       </div>
 
       <div

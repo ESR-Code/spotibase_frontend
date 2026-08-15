@@ -3,7 +3,7 @@
 import { EditorHeader } from "@/app/editor/_components/editor-header";
 import { LoadingOverlay } from "@/app/editor/_components/loading-overlay";
 import { HotspotOutliner, OutlinerExpandTab } from "@/app/editor/_components/outliner/hotspot-outliner";
-import { PlayCanvasViewport } from "@/app/editor/_components/viewport/playcanvas-viewport";
+import { ViewportFrame } from "@/app/editor/_components/viewport/viewport-frame";
 import { HotspotPropertiesDrawer } from "@/app/editor/_components/drawers/hotspot-properties-drawer";
 import {
   LegendButton,
@@ -29,7 +29,7 @@ export function EditorShell() {
 
   return (
     <div
-      className={`editor-root relative flex h-dvh w-full flex-col ${outlinerCollapsed ? "outliner-collapsed" : ""}`}
+      className={`editor-root relative flex h-dvh w-full flex-col dark ${outlinerCollapsed ? "outliner-collapsed" : ""}`}
       data-preview={isPreview ? "true" : undefined}
       data-preview-borders={
         isPreview ? (generalStyle.bordersEnabled ? "on" : "off") : undefined
@@ -40,7 +40,7 @@ export function EditorShell() {
       <EditorHeader />
 
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <PlayCanvasViewport />
+        <ViewportFrame />
         <HotspotOutliner />
         <OutlinerExpandTab />
         <HotspotPropertiesDrawer />

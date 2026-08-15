@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, ImageIcon } from "lucide-react";
+import { Box, Globe, ImageIcon } from "lucide-react";
 import { getSceneType } from "@/lib/editor/scene-types/registry";
 import { useModelStore } from "@/lib/editor/state/model-store";
 import { useActiveScene } from "@/lib/editor/state/scenes-store";
@@ -12,7 +12,8 @@ export function SceneModelRow() {
   const modelName = useModelStore((s) => s.modelName);
   const modelInfo = useModelStore((s) => s.modelInfo);
   const hasUserModel = useModelStore((s) => s.hasUserModel);
-  const Icon = scene.type === "image" ? ImageIcon : Box;
+  const Icon =
+    scene.type === "image" ? ImageIcon : scene.type === "geo" ? Globe : Box;
 
   return (
     <div
@@ -29,7 +30,9 @@ export function SceneModelRow() {
           <div className="text-[10px]" style={{ color: "var(--editor-muted-2)" }}>
             {hasUserModel
               ? modelInfo
-              : `${descriptor.label} · manage in Subject`}
+              : scene.type === "geo"
+                ? `${descriptor.label} · manage in Geo details`
+                : `${descriptor.label} · manage in Subject`}
           </div>
         </div>
       </div>

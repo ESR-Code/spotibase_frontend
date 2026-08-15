@@ -20,6 +20,11 @@ export async function importSubjectFile(file: File) {
   const type: SceneTypeId = scene?.type ?? "model";
   const descriptor = getSceneType(type);
 
+  if (descriptor.engine !== "playcanvas" || descriptor.extensions.length === 0) {
+    toast.error(`${descriptor.label} scenes do not import a subject file`);
+    return;
+  }
+
   if (!isValidSubjectExtension(type, file.name)) {
     const formats = descriptor.extensions.map((e) => `.${e}`).join(", ");
     toast.error(`Unsupported format for ${descriptor.label}. Use ${formats}`);

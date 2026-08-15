@@ -1,19 +1,32 @@
-export type SceneTypeId = "model" | "image";
+export type SceneTypeId = "model" | "image" | "geo";
 
-export type CameraMode = "orbit" | "panZoom";
+export type SceneEngine = "playcanvas" | "map";
+
+export type CameraMode = "orbit" | "panZoom" | "globe";
+
+export type SceneSettingsSections = {
+  grid: boolean;
+  effects: boolean;
+  environment: boolean;
+  camera: boolean;
+  geoDetails: boolean;
+};
 
 export type SceneTypeDescriptor = {
   id: SceneTypeId;
   label: string;
   shortLabel: string;
+  description: string;
   accept: string;
   extensions: readonly string[];
+  engine: SceneEngine;
   cameraMode: CameraMode;
   subjectControls: {
     scale: boolean;
     rotation: boolean;
     reflection: boolean;
   };
+  settingsSections: SceneSettingsSections;
   emptySubjectName: string;
   emptySubjectInfo: string;
 };

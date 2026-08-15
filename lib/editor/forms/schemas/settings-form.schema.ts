@@ -8,6 +8,8 @@ export const settingsFormSchema = z.object({
   maxYaw: z.number().min(-180).max(180),
   minPitch: z.number().min(0).max(180),
   maxPitch: z.number().min(0).max(180),
+  minZoom: z.number().min(0).max(22),
+  maxZoom: z.number().min(0).max(22),
   gridColor: z.string(),
   gridOpacity: z.number().min(0.05).max(1),
   gridSize: z.number().min(16).max(80),

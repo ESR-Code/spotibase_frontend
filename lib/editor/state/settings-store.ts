@@ -21,6 +21,8 @@ function pickSettings(state: SettingsState): EditorSettings {
     maxYaw: state.maxYaw,
     minPitch: state.minPitch,
     maxPitch: state.maxPitch,
+    minZoom: state.minZoom,
+    maxZoom: state.maxZoom,
     resetPosition: state.resetPosition,
     gridColor: state.gridColor,
     gridOpacity: state.gridOpacity,

@@ -5,6 +5,7 @@ import {
 } from "@/lib/editor/actions/create-action-graph";
 import { clearHttpRequestCache } from "@/lib/editor/actions/http-request";
 import { clearPostMessageListeners } from "@/lib/editor/actions/send-post-message";
+import { cloneCameraResetPosition } from "@/lib/editor/constants/default-settings";
 import { DEMO_HOTSPOTS } from "@/lib/editor/constants/demo-hotspots";
 import {
   getSeedHotspots,
@@ -65,15 +66,7 @@ function createHotspotData(
     position,
     blocks: data.blocks ?? [],
     customCameraEnabled: data.customCameraEnabled ?? false,
-    customCamera: data.customCamera
-      ? {
-          yaw: data.customCamera.yaw,
-          pitch: data.customCamera.pitch,
-          distance: data.customCamera.distance,
-          target: { ...data.customCamera.target },
-          previewUrl: data.customCamera.previewUrl,
-        }
-      : null,
+    customCamera: cloneCameraResetPosition(data.customCamera ?? null),
     actions: data.actions
       ? cloneActionGraph(data.actions)
       : createDefaultActionGraph(),
@@ -192,15 +185,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         position: { ...h.position },
         blocks: [...h.blocks],
         customCameraEnabled: h.customCameraEnabled ?? false,
-        customCamera: h.customCamera
-          ? {
-              yaw: h.customCamera.yaw,
-              pitch: h.customCamera.pitch,
-              distance: h.customCamera.distance,
-              target: { ...h.customCamera.target },
-              previewUrl: h.customCamera.previewUrl,
-            }
-          : null,
+        customCamera: cloneCameraResetPosition(h.customCamera ?? null),
         actions: h.actions
           ? cloneActionGraph(h.actions)
           : createDefaultActionGraph(),

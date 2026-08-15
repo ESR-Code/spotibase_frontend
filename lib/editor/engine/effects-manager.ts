@@ -1,5 +1,6 @@
 import type { Application, CameraFrame, Entity } from "playcanvas";
 import type * as pc from "playcanvas";
+import { getSceneType } from "@/lib/editor/scene-types/registry";
 import { useEffectsStore } from "@/lib/editor/state/effects-store";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 
@@ -41,7 +42,8 @@ export function createEffectsManager(
 
   const applyEffects = (sceneType: SceneTypeId) => {
     const state = useEffectsStore.getState();
-    const wantAo = sceneType === "model" && state.aoEnabled;
+    const wantAo =
+      getSceneType(sceneType).settingsSections.effects && state.aoEnabled;
 
     if (!wantAo) {
       tearDownCameraFrame();

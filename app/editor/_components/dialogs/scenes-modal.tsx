@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, ImageIcon, Layers, Pencil, Plus, Star, Trash2, X } from "lucide-react";
+import { Box, Globe, ImageIcon, Layers, Pencil, Plus, Star, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { EditorChip } from "@/app/editor/_components/ui/editor-chip";
@@ -15,6 +15,7 @@ import { cloneCameraResetPosition } from "@/lib/editor/constants/default-setting
 import { getSceneType, listSceneTypes } from "@/lib/editor/scene-types/registry";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { readEffectsSnapshot } from "@/lib/editor/state/effects-store";
+import { readGeoSnapshot } from "@/lib/editor/state/geo-store";
 import {
   readEnvironmentSnapshot,
 } from "@/lib/editor/state/environment-store";
@@ -61,6 +62,7 @@ function syncActiveSceneSnapshot() {
             settings: readEditorSettingsSnapshot(),
             environment: readEnvironmentSnapshot(),
             effects: readEffectsSnapshot(),
+            geo: readGeoSnapshot(),
           }
         : scene,
     ),
@@ -203,10 +205,15 @@ export function ScenesModal() {
               >
                 Scene type
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {listSceneTypes().map((descriptor) => {
                   const selected = draftType === descriptor.id;
-                  const Icon = descriptor.id === "image" ? ImageIcon : Box;
+                  const Icon =
+                    descriptor.id === "image"
+                      ? ImageIcon
+                      : descriptor.id === "geo"
+                        ? Globe
+                        : Box;
                   return (
                     <button
                       key={descriptor.id}
@@ -234,9 +241,7 @@ export function ScenesModal() {
                           className="block text-[10px]"
                           style={{ color: "var(--editor-muted-2)" }}
                         >
-                          {descriptor.id === "image"
-                            ? "Pan & zoom image plane"
-                            : "Orbit a 3D model"}
+                          {descriptor.description}
                         </span>
                       </span>
                     </button>
@@ -323,9 +328,7 @@ function SceneListItem({
 
   const subjectLabel = scene.model.hasUserModel
     ? scene.model.name
-    : scene.type === "image"
-      ? "No image"
-      : "Default model";
+    : typeDescriptor.emptySubjectName;
 
   return (
     <div

@@ -430,7 +430,7 @@ export function createCameraController(
     state.zoomTarget = null;
     state.dragging = false;
     state.panning = false;
-    if (mode === "panZoom") {
+    if (mode === "panZoom" || mode === "globe") {
       state.yaw = PAN_ZOOM_YAW;
       state.pitch = PAN_ZOOM_PITCH;
     }

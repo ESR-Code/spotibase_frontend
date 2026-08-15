@@ -4,6 +4,7 @@ import type {
   EffectsSettings,
   EnvironmentSettings,
 } from "@/lib/editor/types/editor-settings";
+import type { GeoSettings } from "@/lib/editor/types/geo-settings";
 import type { LegendCategory } from "@/lib/editor/types/legend-category";
 
 export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
@@ -15,6 +16,8 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   maxYaw: 180,
   minPitch: 0,
   maxPitch: 94,
+  minZoom: 0,
+  maxZoom: 22,
   resetPosition: null,
   gridColor: "#ffffff",
   gridOpacity: 0.45,
@@ -44,6 +47,40 @@ export function cloneCameraResetPosition(
     distance: resetPosition.distance,
     target: { ...resetPosition.target },
     previewUrl: resetPosition.previewUrl,
+    lng: resetPosition.lng,
+    lat: resetPosition.lat,
+    zoom: resetPosition.zoom,
+    bearing: resetPosition.bearing,
+  };
+}
+
+export function isMapViewportPose(
+  pose: CameraResetPosition | null | undefined,
+): pose is CameraResetPosition & { lng: number; lat: number; zoom: number } {
+  return (
+    pose != null &&
+    pose.lng != null &&
+    pose.lat != null &&
+    pose.zoom != null
+  );
+}
+
+/** Default globe look when a geo scene has no start pin. */
+export const DEFAULT_GEO_GLOBE_CENTER: [number, number] = [0, 20];
+export const DEFAULT_GEO_GLOBE_ZOOM = 1.6;
+export const DEFAULT_GEO_PIN_ZOOM = 12;
+export const GEO_MIN_ZOOM = 0;
+export const GEO_MAX_ZOOM = 22;
+
+export const DEFAULT_GEO_SETTINGS: GeoSettings = {
+  start: null,
+  startZoom: DEFAULT_GEO_GLOBE_ZOOM,
+};
+
+export function cloneGeoSettings(geo: Partial<GeoSettings> = {}): GeoSettings {
+  return {
+    start: geo.start ? { ...geo.start } : null,
+    startZoom: geo.startZoom ?? DEFAULT_GEO_SETTINGS.startZoom,
   };
 }
 
@@ -104,6 +141,8 @@ export function cloneEditorSettings(settings: EditorSettings): EditorSettings {
 
   return {
     ...settings,
+    minZoom: settings.minZoom ?? DEFAULT_EDITOR_SETTINGS.minZoom,
+    maxZoom: settings.maxZoom ?? DEFAULT_EDITOR_SETTINGS.maxZoom,
     markerDialogPresentation: presentation,
     markerDialogSize: size,
     markerDialogBackdrop:

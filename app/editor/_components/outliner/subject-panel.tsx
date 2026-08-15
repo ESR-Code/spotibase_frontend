@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, ImageIcon, RefreshCw, RotateCcw, Upload } from "lucide-react";
+import { Box, Globe, ImageIcon, RefreshCw, RotateCcw, Upload } from "lucide-react";
 import { useRef } from "react";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
@@ -13,6 +13,8 @@ import {
   useModelStore,
 } from "@/lib/editor/state/model-store";
 import { useActiveScene } from "@/lib/editor/state/scenes-store";
+import { useGeoStore } from "@/lib/editor/state/geo-store";
+import { useUIStore } from "@/lib/editor/state/ui-store";
 
 export function SubjectPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -38,7 +40,59 @@ export function SubjectPanel() {
     modelRotation.z === DEFAULT_MODEL_ROTATION.z;
 
   const openFilePicker = () => fileInputRef.current?.click();
-  const SubjectIcon = scene.type === "image" ? ImageIcon : Box;
+  const SubjectIcon =
+    scene.type === "image" ? ImageIcon : scene.type === "geo" ? Globe : Box;
+  const geoStart = useGeoStore((s) => s.start);
+  const geoZoom = useGeoStore((s) => s.startZoom);
+
+  if (descriptor.engine === "map") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div
+          className="flex items-center gap-2.5 px-4 py-3"
+          style={{ borderBottom: "1px solid var(--editor-line-soft)" }}
+        >
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+            style={{
+              background: "rgba(244, 162, 89, 0.12)",
+              border: "1px solid rgba(244, 162, 89, 0.35)",
+              color: "var(--editor-amber)",
+            }}
+          >
+            <Globe className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[12.5px] font-semibold">
+              {descriptor.emptySubjectName}
+            </div>
+            <div className="text-[10px]" style={{ color: "var(--editor-muted-2)" }}>
+              {geoStart
+                ? `${geoStart.lat.toFixed(4)}, ${geoStart.lng.toFixed(4)} · z${geoZoom.toFixed(1)}`
+                : "World globe — no start pin"}
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
+          <p className="text-[12px] leading-snug" style={{ color: "var(--editor-muted)" }}>
+            This scene uses a geo map instead of a 3D model. Set the opening
+            coordinates in Geo details.
+          </p>
+          <EditorButton
+            type="button"
+            className="w-full justify-center text-[12.5px]"
+            onClick={() => {
+              useUIStore.getState().setGeneralSettingsDrawerOpen(false);
+              useUIStore.getState().setSettingsDrawerOpen(true);
+            }}
+          >
+            <Globe className="h-4 w-4" />
+            Edit in Geo details
+          </EditorButton>
+        </div>
+      </div>
+    );
+  }
 
   const emptyHint =
     scene.type === "image"
