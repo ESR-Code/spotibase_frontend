@@ -11,6 +11,7 @@ import {
   ListTree,
   MapPin,
   Moon,
+  Palette,
   PanelRight,
   Sparkles,
   Square,
@@ -20,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-image-field";
 import { GeoDetailsSection } from "@/app/editor/_components/drawers/geo-details-section";
+import { MapStyleSection } from "@/app/editor/_components/drawers/map-style-section";
 import { CameraPoseCaptureField } from "@/app/editor/_components/ui/camera-pose-capture-field";
 import { CheckboxField } from "@/app/editor/_components/ui/checkbox-field";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
@@ -125,6 +127,15 @@ export function SettingsDrawer() {
             defaultOpen
           >
             <GeoDetailsSection />
+          </SettingsSection>
+        ) : null}
+
+        {sections.mapStyle ? (
+          <SettingsSection
+            title="Map style"
+            icon={<Palette className="h-3.5 w-3.5" />}
+          >
+            <MapStyleSection />
           </SettingsSection>
         ) : null}
 

@@ -20,7 +20,7 @@ function toFormValues(geo: GeoSettings): GeoFormValues {
   };
 }
 
-function toGeoSettings(values: GeoFormValues): GeoSettings {
+function toGeoSettings(values: GeoFormValues): Partial<GeoSettings> {
   const hasStart = values.startLng != null && values.startLat != null;
   return {
     start: hasStart

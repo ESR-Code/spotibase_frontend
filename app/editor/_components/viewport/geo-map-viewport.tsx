@@ -14,6 +14,7 @@ import {
   handleGeoMarkerLeave,
   useGeoMapEditor,
 } from "@/lib/editor/hooks/use-geo-map-editor";
+import { geoMapStyleUrls } from "@/lib/editor/geo/map-styles";
 import { resolveGeoHomeViewport } from "@/lib/editor/geo/resolve-home-viewport";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useGeoStore } from "@/lib/editor/state/geo-store";
@@ -33,6 +34,10 @@ export function GeoMapViewport() {
   const resetPosition = useSettingsStore((s) => s.resetPosition);
   const minZoom = useSettingsStore((s) => s.minZoom);
   const maxZoom = useSettingsStore((s) => s.maxZoom);
+  const mapStyles = useMemo(
+    () => geoMapStyleUrls(geo.mapStyleId),
+    [geo.mapStyleId],
+  );
   const home = useMemo(
     () => resolveGeoHomeViewport(resetPosition, geo),
     [resetPosition, geo],
@@ -52,6 +57,7 @@ export function GeoMapViewport() {
     <div className="absolute inset-0 overflow-hidden">
       <Map
         theme="dark"
+        styles={mapStyles}
         projection={{ type: "globe" }}
         canvasContextAttributes={{ preserveDrawingBuffer: true }}
         minZoom={minZoom}

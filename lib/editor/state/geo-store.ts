@@ -15,6 +15,7 @@ function pickGeo(state: GeoState): GeoSettings {
   return cloneGeoSettings({
     start: state.start,
     startZoom: state.startZoom,
+    mapStyleId: state.mapStyleId,
   });
 }
 

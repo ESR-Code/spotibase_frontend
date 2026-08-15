@@ -1,7 +1,7 @@
 "use client";
 
 import "@/lib/editor/geo/init-maplibre";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Map, MapMarker, MarkerContent, useMap } from "@/components/ui/map";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
@@ -9,6 +9,7 @@ import {
   DEFAULT_GEO_GLOBE_ZOOM,
   DEFAULT_GEO_PIN_ZOOM,
 } from "@/lib/editor/constants/default-settings";
+import { geoMapStyleUrls } from "@/lib/editor/geo/map-styles";
 import { searchNominatimPlaces, type NominatimHit } from "@/lib/editor/geo/nominatim";
 import { resolveGeoHomeViewport } from "@/lib/editor/geo/resolve-home-viewport";
 import { useGeoForm } from "@/lib/editor/forms/use-geo-form";
@@ -68,6 +69,8 @@ function GeoPickerClickBridge({
 export function GeoDetailsSection() {
   const { form } = useGeoForm();
   const values = form.watch();
+  const mapStyleId = useGeoStore((s) => s.mapStyleId);
+  const mapStyles = useMemo(() => geoMapStyleUrls(mapStyleId), [mapStyleId]);
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<NominatimHit[]>([]);
   const [searching, setSearching] = useState(false);
@@ -196,6 +199,7 @@ export function GeoDetailsSection() {
       <div className="editor-geo-picker">
         <Map
           theme="dark"
+          styles={mapStyles}
           projection={{ type: "globe" }}
           viewport={pickerViewport}
           attributionControl={false}

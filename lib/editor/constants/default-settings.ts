@@ -4,6 +4,7 @@ import type {
   EffectsSettings,
   EnvironmentSettings,
 } from "@/lib/editor/types/editor-settings";
+import { DEFAULT_GEO_MAP_STYLE_ID, isGeoMapStyleId } from "@/lib/editor/geo/map-styles";
 import type { GeoSettings } from "@/lib/editor/types/geo-settings";
 import type { LegendCategory } from "@/lib/editor/types/legend-category";
 
@@ -75,12 +76,16 @@ export const GEO_MAX_ZOOM = 22;
 export const DEFAULT_GEO_SETTINGS: GeoSettings = {
   start: null,
   startZoom: DEFAULT_GEO_GLOBE_ZOOM,
+  mapStyleId: DEFAULT_GEO_MAP_STYLE_ID,
 };
 
 export function cloneGeoSettings(geo: Partial<GeoSettings> = {}): GeoSettings {
   return {
     start: geo.start ? { ...geo.start } : null,
     startZoom: geo.startZoom ?? DEFAULT_GEO_SETTINGS.startZoom,
+    mapStyleId: isGeoMapStyleId(geo.mapStyleId)
+      ? geo.mapStyleId
+      : DEFAULT_GEO_SETTINGS.mapStyleId,
   };
 }
 

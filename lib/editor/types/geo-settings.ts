@@ -8,4 +8,6 @@ export type GeoSettings = {
   start: GeoLngLat | null;
   /** Zoom used with `start`, or the default globe zoom when start is null. */
   startZoom: number;
+  /** Basemap color template id from `GEO_MAP_STYLES`. */
+  mapStyleId: string;
 };

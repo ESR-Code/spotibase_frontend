@@ -25,7 +25,7 @@ export function defaultGeoGlobeViewport(): GeoMapViewport {
 /** Home view: custom reset pose → start coords → default globe. */
 export function resolveGeoHomeViewport(
   resetPosition: CameraResetPosition | null,
-  geo: GeoSettings,
+  geo: Pick<GeoSettings, "start" | "startZoom">,
 ): GeoMapViewport {
   if (isMapViewportPose(resetPosition)) {
     return {
