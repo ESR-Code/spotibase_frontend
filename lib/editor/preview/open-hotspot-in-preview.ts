@@ -44,7 +44,10 @@ export function openHotspotInPreview(id: number) {
     }),
   );
 
-  if (settings.markerDialogPresentation !== "off") {
-    ui.setPreviewModalOpen(true);
+  // Drop stale anchor so the info box repositions on the next frame.
+  if (settings.markerDialogPresentation === "infobox") {
+    ui.setInfoBoxAnchor(null);
   }
+
+  ui.setPreviewModalOpen(true);
 }

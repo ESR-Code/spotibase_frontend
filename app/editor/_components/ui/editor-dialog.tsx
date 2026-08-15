@@ -14,7 +14,7 @@ import type {
   MarkerDialogSize,
 } from "@/lib/editor/types/editor-settings";
 
-export type EditorDialogPresentation = Exclude<MarkerDialogPresentation, "off">;
+export type EditorDialogPresentation = MarkerDialogPresentation;
 
 type EditorDialogContextValue = {
   titleId: string;
@@ -37,9 +37,9 @@ function useEditorDialogContext() {
 export type EditorDialogProps = {
   open: boolean;
   onClose: () => void;
-  /** Visual presentation. `"off"` renders nothing. */
+  /** Visual presentation. */
   presentation?: MarkerDialogPresentation;
-  /** Dimmed overlay behind the surface. */
+  /** Dimmed overlay behind the surface. Ignored for info box. */
   backdrop?: boolean;
   /** Blur content behind the backdrop (requires backdrop). */
   backdropBlur?: boolean;
@@ -51,6 +51,10 @@ export type EditorDialogProps = {
   side?: "left" | "right";
   /** Desktop size. Mobile always renders fullscreen. Default `"medium"`. */
   size?: MarkerDialogSize;
+  /** Screen-space anchor for `"infobox"` presentation (hotspot center). */
+  anchor?: { x: number; y: number } | null;
+  /** Hide the surface when the anchor is behind the camera. */
+  anchorVisible?: boolean;
   className?: string;
   children: React.ReactNode;
 };
@@ -65,11 +69,14 @@ export function EditorDialog({
   closeOnEscape = true,
   side = "right",
   size = "medium",
+  anchor = null,
+  anchorVisible = true,
   className,
   children,
 }: EditorDialogProps) {
   const titleId = useId();
-  const showBackdrop = backdrop && presentation !== "off";
+  const isInfoBox = presentation === "infobox";
+  const showBackdrop = backdrop && !isInfoBox;
   const allowBackdropClose = closeOnBackdrop ?? showBackdrop;
 
   const handleKeyDown = useCallback(
@@ -80,24 +87,25 @@ export function EditorDialog({
   );
 
   useEffect(() => {
-    if (!open || presentation === "off") return;
+    if (!open) return;
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, presentation, handleKeyDown]);
+  }, [open, handleKeyDown]);
 
   const ctx = useMemo(
     () => ({
       titleId,
       onClose,
-      presentation: (presentation === "off" ? "drawer" : presentation) as EditorDialogPresentation,
+      presentation,
     }),
     [titleId, onClose, presentation],
   );
 
-  if (!open || presentation === "off") return null;
+  if (!open) return null;
 
-  const surfaceClass =
-    presentation === "modal"
+  const surfaceClass = isInfoBox
+    ? "editor-dialog-infobox"
+    : presentation === "modal"
       ? "editor-dialog-modal"
       : cn(
           "editor-dialog-drawer",
@@ -105,6 +113,7 @@ export function EditorDialog({
         );
 
   const sizeClass = `editor-dialog-size-${size}`;
+  const showSurface = !isInfoBox || (anchor != null && anchorVisible);
 
   return (
     <EditorDialogContext.Provider value={ctx}>
@@ -113,6 +122,7 @@ export function EditorDialog({
           "editor-dialog-root",
           presentation === "modal" && "editor-dialog-root-modal",
           presentation === "drawer" && "editor-dialog-root-drawer",
+          isInfoBox && "editor-dialog-root-infobox",
           sizeClass,
           open && "open",
         )}
@@ -132,19 +142,26 @@ export function EditorDialog({
           />
         ) : null}
 
-        <div
-          role="dialog"
-          aria-modal={showBackdrop || presentation === "modal"}
-          aria-labelledby={titleId}
-          className={cn(
-            "editor-dialog-surface editor-glass editor-panel-shadow",
-            surfaceClass,
-            sizeClass,
-            className,
-          )}
-        >
-          {children}
-        </div>
+        {showSurface ? (
+          <div
+            role="dialog"
+            aria-modal={showBackdrop || presentation === "modal"}
+            aria-labelledby={titleId}
+            className={cn(
+              "editor-dialog-surface editor-glass editor-panel-shadow",
+              surfaceClass,
+              sizeClass,
+              className,
+            )}
+            style={
+              isInfoBox && anchor
+                ? { left: anchor.x, top: anchor.y }
+                : undefined
+            }
+          >
+            {children}
+          </div>
+        ) : null}
       </div>
     </EditorDialogContext.Provider>
   );

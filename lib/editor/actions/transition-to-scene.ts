@@ -36,6 +36,7 @@ export function transitionToScene(sceneId: string): "stop" {
     latestUi.setPreviewActiveHotspotId(null);
     latestUi.setPreviewLabelPending(false);
     latestUi.setHoverTooltip(null);
+    latestUi.setInfoBoxAnchor(null);
     latestUi.setLegendDrawerOpen(false);
 
     useScenesStore.getState().switchScene(sceneId);

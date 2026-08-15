@@ -1,7 +1,7 @@
 import type { LegendCategory } from "@/lib/editor/types/legend-category";
 
 /** How marker content is presented when a hotspot is opened in preview. */
-export type MarkerDialogPresentation = "modal" | "drawer" | "off";
+export type MarkerDialogPresentation = "modal" | "drawer" | "infobox";
 
 /** Desktop width of the marker dialog. Mobile always uses fullscreen. */
 export type MarkerDialogSize = "medium" | "large" | "fullscreen";
@@ -43,9 +43,9 @@ export type EditorSettings = {
   hotspotLabelTextColor: string;
   /** Hotspot label border color. */
   hotspotLabelBorderColor: string;
-  /** Marker dialog presentation: centered modal, side drawer, or disabled. */
+  /** Marker dialog presentation: centered modal, side drawer, or anchored info box. */
   markerDialogPresentation: MarkerDialogPresentation;
-  /** Desktop size for drawer/modal presentation. */
+  /** Desktop size for drawer/modal/info box presentation. */
   markerDialogSize: MarkerDialogSize;
   /** Dimmed overlay behind the marker dialog. */
   markerDialogBackdrop: boolean;

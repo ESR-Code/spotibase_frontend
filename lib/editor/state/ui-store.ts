@@ -9,6 +9,14 @@ export type HoverTooltipState = {
   pinned?: boolean;
 } | null;
 
+/** Screen-space anchor for the marker info box presentation. */
+export type InfoBoxAnchorState = {
+  x: number;
+  y: number;
+  /** False when the hotspot is behind the camera. */
+  visible: boolean;
+} | null;
+
 export type OutlinerTab = "outliner" | "subject";
 
 export type ActionsModalScope =
@@ -40,6 +48,8 @@ type UIState = {
   /** Hide select label briefly after click before revealing with transition. */
   previewLabelPending: boolean;
   hoverTooltip: HoverTooltipState;
+  /** Screen position of the active hotspot for info box presentation. */
+  infoBoxAnchor: InfoBoxAnchorState;
   scenesModalOpen: boolean;
   actionsModal: ActionsModalScope | null;
   /** Splash overlay for Go To Scene action transitions. */
@@ -58,6 +68,7 @@ type UIState = {
   setPreviewActiveHotspotId: (id: number | null) => void;
   setPreviewLabelPending: (value: boolean) => void;
   setHoverTooltip: (value: HoverTooltipState) => void;
+  setInfoBoxAnchor: (value: InfoBoxAnchorState) => void;
   setScenesModalOpen: (value: boolean) => void;
   openActionsModal: (scope: ActionsModalScope) => void;
   closeActionsModal: () => void;
@@ -83,6 +94,7 @@ export const useUIStore = create<UIState>((set) => ({
   previewActiveHotspotId: null,
   previewLabelPending: false,
   hoverTooltip: null,
+  infoBoxAnchor: null,
   scenesModalOpen: false,
   actionsModal: null,
   sceneTransition: null,
@@ -105,6 +117,7 @@ export const useUIStore = create<UIState>((set) => ({
   setPreviewLabelPending: (previewLabelPending) =>
     set({ previewLabelPending }),
   setHoverTooltip: (hoverTooltip) => set({ hoverTooltip }),
+  setInfoBoxAnchor: (infoBoxAnchor) => set({ infoBoxAnchor }),
   setScenesModalOpen: (scenesModalOpen) => set({ scenesModalOpen }),
   openActionsModal: (actionsModal) => set({ actionsModal }),
   closeActionsModal: () => set({ actionsModal: null }),
@@ -136,5 +149,6 @@ export const useUIStore = create<UIState>((set) => ({
       previewActiveHotspotId: null,
       previewLabelPending: false,
       hoverTooltip: null,
+      infoBoxAnchor: null,
     }),
 }));

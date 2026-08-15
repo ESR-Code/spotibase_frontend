@@ -5,10 +5,10 @@ import {
   Camera,
   ChevronDown,
   ImageIcon,
+  Info,
   LayoutGrid,
   ListTree,
   MapPin,
-  Ban,
   Moon,
   PanelRight,
   Sparkles,
@@ -47,7 +47,7 @@ const MARKER_DIALOG_MODES: {
 }[] = [
   { id: "drawer", label: "Drawer", icon: PanelRight },
   { id: "modal", label: "Modal", icon: Square },
-  { id: "off", label: "Off", icon: Ban },
+  { id: "infobox", label: "Info box", icon: Info },
 ];
 
 const MARKER_DIALOG_SIZES: {
@@ -208,9 +208,16 @@ export function SettingsDrawer() {
                   <TypePill
                     key={mode.id}
                     active={values.markerDialogPresentation === mode.id}
-                    onClick={() =>
-                      form.setValue("markerDialogPresentation", mode.id)
-                    }
+                    onClick={() => {
+                      form.setValue("markerDialogPresentation", mode.id);
+                      if (mode.id === "infobox") {
+                        if (values.markerDialogSize === "fullscreen") {
+                          form.setValue("markerDialogSize", "medium");
+                        }
+                        form.setValue("markerDialogBackdrop", false);
+                        form.setValue("markerDialogBackdropBlur", false);
+                      }
+                    }}
                   >
                     <Icon className="mr-1 inline h-3 w-3" />
                     {mode.label}
@@ -219,7 +226,7 @@ export function SettingsDrawer() {
               })}
             </div>
             <p className="mt-1.5 text-[11px]" style={{ color: "var(--editor-muted)" }}>
-              How hotspot details open in Preview. Off only focuses the camera.
+              How hotspot details open in Preview. Info box anchors a compact card above the marker.
             </p>
           </div>
 
@@ -230,7 +237,10 @@ export function SettingsDrawer() {
                 <TypePill
                   key={size.id}
                   active={values.markerDialogSize === size.id}
-                  disabled={values.markerDialogPresentation === "off"}
+                  disabled={
+                    values.markerDialogPresentation === "infobox" &&
+                    size.id === "fullscreen"
+                  }
                   onClick={() => form.setValue("markerDialogSize", size.id)}
                 >
                   {size.label}
@@ -238,7 +248,7 @@ export function SettingsDrawer() {
               ))}
             </div>
             <p className="mt-1.5 text-[11px]" style={{ color: "var(--editor-muted)" }}>
-              Desktop width for drawer and modal. Mobile always uses full screen.
+              Desktop width for drawer, modal, and info box. Full screen is unavailable for info box.
             </p>
           </div>
 
@@ -246,7 +256,7 @@ export function SettingsDrawer() {
             label="Show backdrop"
             description="Dim the viewport behind the dialog"
             checked={values.markerDialogBackdrop}
-            disabled={values.markerDialogPresentation === "off"}
+            disabled={values.markerDialogPresentation === "infobox"}
             onChange={(checked) => {
               form.setValue("markerDialogBackdrop", checked);
               if (!checked) form.setValue("markerDialogBackdropBlur", false);
@@ -257,7 +267,7 @@ export function SettingsDrawer() {
             description="Soft-focus the scene through the overlay"
             checked={values.markerDialogBackdropBlur}
             disabled={
-              values.markerDialogPresentation === "off" ||
+              values.markerDialogPresentation === "infobox" ||
               !values.markerDialogBackdrop
             }
             onChange={(checked) =>
@@ -268,7 +278,6 @@ export function SettingsDrawer() {
             label="Reset camera on close"
             description="Return to the home view when the marker dialog closes"
             checked={values.markerDialogResetCameraOnClose}
-            disabled={values.markerDialogPresentation === "off"}
             onChange={(checked) =>
               form.setValue("markerDialogResetCameraOnClose", checked)
             }

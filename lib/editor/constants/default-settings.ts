@@ -82,9 +82,34 @@ export function cloneLegendCategories(
   return categories.map((c) => ({ ...c }));
 }
 
+/** Normalize legacy presentation values (e.g. removed `"off"`). */
+export function normalizeMarkerDialogPresentation(
+  value: string | undefined,
+): EditorSettings["markerDialogPresentation"] {
+  if (value === "modal" || value === "drawer" || value === "infobox") {
+    return value;
+  }
+  // Legacy `"off"` (camera-only) — Actions now control whether the dialog opens.
+  return DEFAULT_EDITOR_SETTINGS.markerDialogPresentation;
+}
+
 export function cloneEditorSettings(settings: EditorSettings): EditorSettings {
+  const presentation = normalizeMarkerDialogPresentation(
+    settings.markerDialogPresentation,
+  );
+  const size =
+    presentation === "infobox" && settings.markerDialogSize === "fullscreen"
+      ? "medium"
+      : settings.markerDialogSize;
+
   return {
     ...settings,
+    markerDialogPresentation: presentation,
+    markerDialogSize: size,
+    markerDialogBackdrop:
+      presentation === "infobox" ? false : settings.markerDialogBackdrop,
+    markerDialogBackdropBlur:
+      presentation === "infobox" ? false : settings.markerDialogBackdropBlur,
     resetPosition: cloneCameraResetPosition(settings.resetPosition ?? null),
     legendCategories: cloneLegendCategories(settings.legendCategories ?? []),
   };

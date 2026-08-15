@@ -46,6 +46,7 @@ export function ModeToolbar() {
         setPreviewActiveHotspotId(null);
         setPreviewLabelPending(false);
         setHoverTooltip(null);
+        useUIStore.getState().setInfoBoxAnchor(null);
         useUIStore.getState().setLegendDrawerOpen(false);
         useUIStore.getState().setLegendFilterCategory(LEGEND_CATEGORY_ALL);
         window.dispatchEvent(new CustomEvent("editor:reset-camera"));

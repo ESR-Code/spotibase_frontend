@@ -33,6 +33,7 @@ export function useEditorKeyboard() {
           ui.setPreviewActiveHotspotId(null);
           ui.setPreviewLabelPending(false);
           ui.setHoverTooltip(null);
+          ui.setInfoBoxAnchor(null);
           ui.setLegendDrawerOpen(false);
           ui.setLegendFilterCategory(LEGEND_CATEGORY_ALL);
           window.dispatchEvent(new CustomEvent("editor:reset-camera"));

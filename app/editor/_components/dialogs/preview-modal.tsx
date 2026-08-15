@@ -10,12 +10,15 @@ import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
+import { cn } from "@/lib/utils";
 
 export function PreviewModal() {
   const open = useUIStore((s) => s.previewModalOpen);
   const index = useUIStore((s) => s.previewModalIndex);
   const setOpen = useUIStore((s) => s.setPreviewModalOpen);
   const setIndex = useUIStore((s) => s.setPreviewModalIndex);
+  const infoBoxAnchor = useUIStore((s) => s.infoBoxAnchor);
+  const setInfoBoxAnchor = useUIStore((s) => s.setInfoBoxAnchor);
   const hotspots = useEditorStore((s) => s.hotspots);
   const presentation = useSettingsStore((s) => s.markerDialogPresentation);
   const size = useSettingsStore((s) => s.markerDialogSize);
@@ -23,6 +26,7 @@ export function PreviewModal() {
   const backdropBlur = useSettingsStore((s) => s.markerDialogBackdropBlur);
   const legendCategories = useSettingsStore((s) => s.legendCategories);
 
+  const isInfoBox = presentation === "infobox";
   const hotspot = hotspots[index] ?? null;
   const count = hotspots.length;
   const category =
@@ -41,7 +45,7 @@ export function PreviewModal() {
   const revealSelectLabel = useCallback(
     (hotspotId: number) => {
       setHoverTooltip(null);
-      if (!showLabelOnSelect) {
+      if (!showLabelOnSelect || isInfoBox) {
         setPreviewLabelPending(false);
         return;
       }
@@ -53,7 +57,7 @@ export function PreviewModal() {
         }
       }, 280);
     },
-    [showLabelOnSelect, setHoverTooltip, setPreviewLabelPending],
+    [showLabelOnSelect, isInfoBox, setHoverTooltip, setPreviewLabelPending],
   );
 
   const close = useCallback(() => {
@@ -61,6 +65,7 @@ export function PreviewModal() {
     setPreviewActiveHotspotId(null);
     setPreviewLabelPending(false);
     setHoverTooltip(null);
+    setInfoBoxAnchor(null);
     if (resetCameraOnClose) {
       window.dispatchEvent(new CustomEvent("editor:reset-camera"));
     }
@@ -69,6 +74,7 @@ export function PreviewModal() {
     setPreviewActiveHotspotId,
     setPreviewLabelPending,
     setHoverTooltip,
+    setInfoBoxAnchor,
     resetCameraOnClose,
   ]);
 
@@ -109,30 +115,26 @@ export function PreviewModal() {
   ]);
 
   useEffect(() => {
-    if (presentation === "off" && open) setOpen(false);
-  }, [presentation, open, setOpen]);
-
-  useEffect(() => {
-    if (!open || !hotspot || presentation === "off") return;
+    if (!open || !hotspot) return;
     setPreviewActiveHotspotId(hotspot.id);
     window.dispatchEvent(
       new CustomEvent("editor:focus-hotspot", { detail: { id: hotspot.id } }),
     );
-  }, [open, hotspot?.id, presentation, setPreviewActiveHotspotId]);
+  }, [open, hotspot?.id, setPreviewActiveHotspotId]);
 
   useEffect(() => {
-    if (!showLabelOnSelect) setHoverTooltip(null);
-  }, [showLabelOnSelect, setHoverTooltip]);
+    if (!showLabelOnSelect || isInfoBox) setHoverTooltip(null);
+  }, [showLabelOnSelect, isInfoBox, setHoverTooltip]);
 
   useEffect(() => {
-    if (!open || presentation === "off") return;
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") goPrev();
       else if (e.key === "ArrowRight") goNext();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, presentation, goPrev, goNext]);
+  }, [open, goPrev, goNext]);
 
   if (!hotspot) return null;
 
@@ -169,18 +171,30 @@ export function PreviewModal() {
       onClose={close}
       presentation={presentation}
       size={size}
-      backdrop={backdrop}
-      backdropBlur={backdropBlur}
-      className="editor-marker-dialog"
+      backdrop={isInfoBox ? false : backdrop}
+      backdropBlur={isInfoBox ? false : backdropBlur}
+      anchor={isInfoBox ? infoBoxAnchor : null}
+      anchorVisible={infoBoxAnchor?.visible ?? true}
+      className={cn(
+        "editor-marker-dialog",
+        isInfoBox && "editor-marker-infobox",
+      )}
     >
       {hasHeaderImage ? (
-        <EditorDialog.Media>
+        <EditorDialog.Media
+          className={isInfoBox ? "editor-dialog-media-infobox" : undefined}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={headerImage} alt="" className="h-full w-full object-cover" />
           <div className="editor-marker-dialog-media-fade" />
           <div className="absolute right-3 top-3 z-10">{closeButton}</div>
           {typeChip ? (
-            <div className="absolute bottom-3 left-5 flex items-center gap-2">
+            <div
+              className={cn(
+                "absolute flex items-center gap-2",
+                isInfoBox ? "bottom-2 left-3" : "bottom-3 left-5",
+              )}
+            >
               {typeChip}
             </div>
           ) : null}

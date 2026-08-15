@@ -19,7 +19,7 @@ export const GENERAL_STYLE_SURFACES = [
   },
   {
     id: "hotspotDialog",
-    label: "Hotspot modal / drawer",
+    label: "Hotspot modal / drawer / info box",
     description: "Content surface shown when a hotspot is opened in Preview",
   },
 ] as const;

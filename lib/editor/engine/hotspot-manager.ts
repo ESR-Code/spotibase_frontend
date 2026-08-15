@@ -143,14 +143,19 @@ export function createHotspotManager(
 
     // Pin title label to the selected preview hotspot after the click reveal delay.
     // Skip while hovering a *different* hotspot (that uses the mouse-follow label).
+    // Skip when the info box is open — it occupies the same screen space.
     const hoveringOther =
       editor.hoveredId != null && editor.hoveredId !== previewActiveId;
+    const infoBoxOpen =
+      ui.previewModalOpen &&
+      settings.markerDialogPresentation === "infobox";
     if (
       editor.isPreview &&
       settings.previewShowLabelOnSelect &&
       previewActiveId != null &&
       !ui.previewLabelPending &&
       !hoveringOther &&
+      !infoBoxOpen &&
       camera.camera
     ) {
       const active = editor.hotspots.find((h) => h.id === previewActiveId);
@@ -168,6 +173,40 @@ export function createHotspotManager(
           });
         }
       }
+    }
+
+    // Keep the info box anchored to the active hotspot's screen position.
+    if (editor.isPreview && infoBoxOpen && previewActiveId != null && camera.camera) {
+      const visual = visuals.get(previewActiveId);
+      if (visual) {
+        const world = visual.root.getPosition();
+        const toHotspot = new pcModule.Vec3().sub2(world, camPos);
+        const inFront = toHotspot.dot(camera.forward) > 0;
+        if (inFront) {
+          camera.camera.worldToScreen(world, screenPos);
+          const prev = ui.infoBoxAnchor;
+          if (
+            !prev ||
+            !prev.visible ||
+            Math.abs(prev.x - screenPos.x) > 0.5 ||
+            Math.abs(prev.y - screenPos.y) > 0.5
+          ) {
+            useUIStore.getState().setInfoBoxAnchor({
+              x: screenPos.x,
+              y: screenPos.y,
+              visible: true,
+            });
+          }
+        } else if (ui.infoBoxAnchor?.visible !== false) {
+          useUIStore.getState().setInfoBoxAnchor(
+            ui.infoBoxAnchor
+              ? { ...ui.infoBoxAnchor, visible: false }
+              : { x: 0, y: 0, visible: false },
+          );
+        }
+      }
+    } else if (ui.infoBoxAnchor != null) {
+      useUIStore.getState().setInfoBoxAnchor(null);
     }
   };
 
