@@ -281,6 +281,7 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
         {selected.customCameraEnabled ? (
           <CameraPoseCaptureField
             previewUrl={selected.customCamera?.previewUrl}
+            pose={selected.customCamera}
             captureLabel="Set camera position"
             emptyLabel="No camera position"
             hint="Captures the current viewport camera. Leave unset to keep the default focus framing."
@@ -295,6 +296,12 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
             onClear={() => {
               updateHotspot(selected.id, { customCamera: null });
               toast.success("Hotspot camera cleared");
+            }}
+            onPastePose={(pose) => {
+              updateHotspot(selected.id, {
+                customCamera: pose,
+                customCameraEnabled: true,
+              });
             }}
           />
         ) : null}
