@@ -111,6 +111,7 @@ export function getSeedHotspots(): Hotspot[] {
     ...h,
     position: { ...h.position },
     blocks: [...h.blocks],
+    enabled: h.enabled ?? true,
     customCameraEnabled: h.customCameraEnabled ?? false,
     customCamera: cloneCameraResetPosition(h.customCamera ?? null),
     actions: h.actions

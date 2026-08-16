@@ -3,6 +3,7 @@ import type {
   ActionNode,
   ActionNodeType,
   ActionNodeXY,
+  EnableDisableActionNode,
   HotspotActionGraph,
   HttpMethod,
   HttpRequestActionNode,
@@ -47,6 +48,20 @@ function asHttpMethod(value: unknown): HttpMethod {
   return "GET";
 }
 
+function asNumberIds(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (id): id is number => typeof id === "number" && Number.isFinite(id),
+  );
+}
+
+function asStringIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (id): id is string => typeof id === "string" && id.length > 0,
+  );
+}
+
 export function createActionNode(
   type: "openModal",
   position: ActionNodeXY,
@@ -67,6 +82,10 @@ export function createActionNode(
   type: "httpRequest",
   position: ActionNodeXY,
 ): HttpRequestActionNode;
+export function createActionNode(
+  type: "enableDisable",
+  position: ActionNodeXY,
+): EnableDisableActionNode;
 export function createActionNode(
   type: ActionNodeType,
   position: ActionNodeXY,
@@ -124,6 +143,16 @@ export function createActionNode(
           body: "",
           cacheReuse: false,
           lastResponseJson: "",
+        },
+      };
+    case "enableDisable":
+      return {
+        id: newActionId(),
+        type: "enableDisable",
+        position: { ...position },
+        data: {
+          disabledHotspotIds: [],
+          disabledLayerIds: [],
         },
       };
   }
@@ -208,6 +237,17 @@ export function cloneActionGraph(
             body: node.data.body,
             cacheReuse: Boolean(node.data.cacheReuse),
             lastResponseJson: node.data.lastResponseJson ?? "",
+          },
+        };
+      }
+      if (node.type === "enableDisable") {
+        return {
+          id: node.id,
+          type: "enableDisable",
+          position: { ...node.position },
+          data: {
+            disabledHotspotIds: asNumberIds(node.data.disabledHotspotIds),
+            disabledLayerIds: asStringIds(node.data.disabledLayerIds),
           },
         };
       }

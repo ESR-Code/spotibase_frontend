@@ -2161,6 +2161,107 @@
   width: 320px;
 }
 
+.editor-root .editor-enable-disable-panel {
+  border-radius: 8px;
+  border: 1px solid var(--editor-line-soft);
+  background: rgba(11, 20, 36, 0.45);
+  overflow: hidden;
+}
+
+.editor-root .editor-enable-disable-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: var(--editor-muted-2);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.editor-root .editor-enable-disable-toggle:hover {
+  color: var(--editor-muted);
+}
+
+.editor-root .editor-enable-disable-targets {
+  display: flex;
+  max-height: 180px;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+  border-top: 1px solid var(--editor-line-soft);
+  padding: 6px;
+}
+
+.editor-root .editor-enable-disable-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.editor-root .editor-enable-disable-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 2px 4px 6px;
+}
+
+.editor-root .editor-enable-disable-group-label {
+  color: var(--editor-muted-2);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.editor-root .editor-enable-disable-group-all {
+  flex-shrink: 0;
+  border-radius: 4px;
+  border: 1px solid var(--editor-line-soft);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1px 6px;
+  color: var(--editor-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.editor-root .editor-enable-disable-group-all:hover:not(:disabled) {
+  color: var(--editor-fg);
+  border-color: rgba(196, 163, 90, 0.45);
+  background: rgba(196, 163, 90, 0.1);
+}
+
+.editor-root .editor-enable-disable-group-all:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.editor-root .editor-enable-disable-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 6px;
+  padding: 5px 6px;
+  color: var(--editor-fg);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.editor-root .editor-enable-disable-option:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
 .editor-root .editor-action-node .editor-textarea-compact {
   min-height: 72px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;

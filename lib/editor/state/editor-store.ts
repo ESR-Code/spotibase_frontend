@@ -61,6 +61,7 @@ function createHotspotData(
     icon: data.icon ?? "ℹ",
     markerImage: data.markerImage ?? "",
     pulse: data.pulse ?? false,
+    enabled: data.enabled ?? true,
     category: data.category ?? "",
     legendName: data.legendName ?? title,
     position,
@@ -184,6 +185,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         ...h,
         position: { ...h.position },
         blocks: [...h.blocks],
+        enabled: h.enabled ?? true,
         customCameraEnabled: h.customCameraEnabled ?? false,
         customCamera: cloneCameraResetPosition(h.customCamera ?? null),
         actions: h.actions

@@ -91,10 +91,11 @@ export function createHotspotManager(
 
       const categoryVisible =
         !filterByLegend || hotspot.category === legendFilter;
-      if (visual.root.enabled !== categoryVisible) {
-        visual.root.enabled = categoryVisible;
+      const enabled = (hotspot.enabled ?? true) && categoryVisible;
+      if (visual.root.enabled !== enabled) {
+        visual.root.enabled = enabled;
       }
-      if (!categoryVisible) {
+      if (!enabled) {
         index += 1;
         continue;
       }

@@ -26,6 +26,11 @@ export type Hotspot = {
   icon: string;
   markerImage: string;
   pulse: boolean;
+  /**
+   * When false, the hotspot is hidden on the map/model and cannot be
+   * interacted with. Toggled by Enable/Disable action nodes.
+   */
+  enabled: boolean;
   /** Legend category id; empty means uncategorized. */
   category: string;
   /** Display name in the Legend drawer; defaults to title. */

@@ -1,6 +1,10 @@
 import { patchOwnedActionNodeData } from "@/lib/editor/actions/action-owners";
 import { createActionNode } from "@/lib/editor/actions/create-action-graph";
 import {
+  applyEnableDisable,
+  validateEnableDisableData,
+} from "@/lib/editor/actions/enable-disable";
+import {
   clearHttpRequestCached,
   executeHttpRequest,
   hasHttpRequestCached,
@@ -199,6 +203,20 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
           markHttpRequestCached(key, null);
         }
       }
+    },
+  },
+  enableDisable: {
+    type: "enableDisable",
+    label: "Enable / Disable",
+    description: "Show or hide hotspots and layers per checkbox.",
+    createDefault: (position) => createActionNode("enableDisable", position),
+    validate: (node) => {
+      if (node.type !== "enableDisable") return null;
+      return validateEnableDisableData(node.data);
+    },
+    run: (node) => {
+      if (node.type !== "enableDisable") return;
+      applyEnableDisable(node.data);
     },
   },
 };

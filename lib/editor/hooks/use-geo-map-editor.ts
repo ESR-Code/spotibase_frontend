@@ -381,6 +381,8 @@ export function visibleGeoHotspots() {
   const filterByLegend =
     editor.isPreview && legendFilter !== LEGEND_CATEGORY_ALL;
   return editor.hotspots.filter(
-    (hotspot) => !filterByLegend || hotspot.category === legendFilter,
+    (hotspot) =>
+      (hotspot.enabled ?? true) &&
+      (!filterByLegend || hotspot.category === legendFilter),
   );
 }

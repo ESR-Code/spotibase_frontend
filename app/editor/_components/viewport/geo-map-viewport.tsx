@@ -49,9 +49,10 @@ export function GeoMapViewport() {
   const legendFilter = useUIStore((s) => s.legendFilterCategory);
   const visible = hotspots.filter(
     (hotspot) =>
-      !isPreview ||
-      legendFilter === LEGEND_CATEGORY_ALL ||
-      hotspot.category === legendFilter,
+      (hotspot.enabled ?? true) &&
+      (!isPreview ||
+        legendFilter === LEGEND_CATEGORY_ALL ||
+        hotspot.category === legendFilter),
   );
 
   return (

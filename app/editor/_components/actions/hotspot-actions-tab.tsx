@@ -73,7 +73,13 @@ export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
                         ? node.data.url.trim()
                           ? `→ ${node.data.method} ${node.data.url.trim()}`
                           : `→ ${node.data.method} (no url)`
-                        : null;
+                        : node.type === "enableDisable"
+                          ? (node.data.disabledHotspotIds?.length ?? 0) +
+                              (node.data.disabledLayerIds?.length ?? 0) >
+                            0
+                            ? `→ ${(node.data.disabledHotspotIds?.length ?? 0) + (node.data.disabledLayerIds?.length ?? 0)} disabled`
+                            : "→ all enabled"
+                          : null;
               return (
                 <li
                   key={node.id}

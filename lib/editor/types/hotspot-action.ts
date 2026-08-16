@@ -3,7 +3,8 @@ export type ActionNodeType =
   | "goToScene"
   | "openUrl"
   | "sendPostMessage"
-  | "httpRequest";
+  | "httpRequest"
+  | "enableDisable";
 
 export type ActionNodeXY = { x: number; y: number };
 
@@ -82,12 +83,28 @@ export type HttpRequestActionNode = ActionNodeBase<
     lastResponseJson: string;
   }
 >;
+export type EnableDisableActionNode = ActionNodeBase<
+  "enableDisable",
+  {
+    /**
+     * Unchecked hotspot ids — disabled when this node runs.
+     * All other scene hotspots are enabled. Empty = everything enabled.
+     */
+    disabledHotspotIds: number[];
+    /**
+     * Unchecked layer ids — hidden when this node runs.
+     * All other scene layers stay visible. Empty = everything enabled.
+     */
+    disabledLayerIds: string[];
+  }
+>;
 export type ActionNode =
   | OpenModalActionNode
   | GoToSceneActionNode
   | OpenUrlActionNode
   | SendPostMessageActionNode
-  | HttpRequestActionNode;
+  | HttpRequestActionNode
+  | EnableDisableActionNode;
 
 export type ActionEdge = { id: string; source: string; target: string };
 

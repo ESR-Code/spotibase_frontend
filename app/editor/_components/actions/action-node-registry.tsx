@@ -3,6 +3,7 @@
 import type { NodeProps } from "@xyflow/react";
 import {
   ExternalLink,
+  Eye,
   Globe,
   MapPinned,
   MessagesSquare,
@@ -10,6 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
+import { EnableDisableNode } from "@/app/editor/_components/actions/enable-disable-node";
 import { GoToSceneNode } from "@/app/editor/_components/actions/go-to-scene-node";
 import { HotspotTriggerNode } from "@/app/editor/_components/actions/hotspot-trigger-node";
 import { HttpRequestNode } from "@/app/editor/_components/actions/http-request-node";
@@ -68,6 +70,13 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     accent: "#56c8a0",
     Node: HttpRequestNode,
   },
+  enableDisable: {
+    type: "enableDisable",
+    meta: ACTION_NODE_META.enableDisable,
+    icon: Eye,
+    accent: "#c4a35a",
+    Node: EnableDisableNode,
+  },
 };
 
 export const ACTION_UI_MENU_ITEMS = Object.values(ACTION_UI_REGISTRY);
@@ -79,4 +88,5 @@ export const ACTION_FLOW_NODE_TYPES = {
   openUrl: OpenUrlNode,
   sendPostMessage: SendPostMessageNode,
   httpRequest: HttpRequestNode,
+  enableDisable: EnableDisableNode,
 };

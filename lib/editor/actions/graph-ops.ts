@@ -192,6 +192,24 @@ export function updateNodeData(
           },
         };
       }
+      if (node.type === "enableDisable") {
+        return {
+          ...node,
+          data: {
+            disabledHotspotIds: Array.isArray(patch.disabledHotspotIds)
+              ? patch.disabledHotspotIds.filter(
+                  (id): id is number =>
+                    typeof id === "number" && Number.isFinite(id),
+                )
+              : node.data.disabledHotspotIds,
+            disabledLayerIds: Array.isArray(patch.disabledLayerIds)
+              ? patch.disabledLayerIds.filter(
+                  (id): id is string => typeof id === "string" && id.length > 0,
+                )
+              : node.data.disabledLayerIds,
+          },
+        };
+      }
       return node;
     }),
   };

@@ -55,6 +55,7 @@ function snapshotCurrentIntoScene(scene: Scene): Scene {
       ...h,
       position: { ...h.position },
       blocks: [...h.blocks],
+      enabled: h.enabled ?? true,
       customCameraEnabled: h.customCameraEnabled ?? false,
       customCamera: cloneCameraResetPosition(h.customCamera ?? null),
       actions: h.actions
@@ -122,6 +123,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
         ...h,
         position: { ...h.position },
         blocks: [...h.blocks],
+        enabled: h.enabled ?? true,
         customCameraEnabled: h.customCameraEnabled ?? false,
         customCamera: cloneCameraResetPosition(h.customCamera ?? null),
         actions: h.actions

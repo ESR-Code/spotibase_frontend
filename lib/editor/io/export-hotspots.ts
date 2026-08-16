@@ -28,6 +28,7 @@ export function exportHotspots() {
       icon: h.icon,
       markerImage: h.markerImage || "",
       pulse: h.pulse,
+      enabled: h.enabled ?? true,
       category: h.category || "",
       categoryName: categoryById.get(h.category)?.name ?? "",
       legendName: h.legendName || h.title,
