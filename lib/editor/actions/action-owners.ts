@@ -21,6 +21,7 @@ export type ActionTriggerKind = "hotspot" | "sceneStart" | "appStart";
 
 export const START_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "goToScene",
+  "goToHotspot",
   "sendPostMessage",
   "httpRequest",
   "enableDisable",
@@ -31,6 +32,7 @@ export const START_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
 export const HOTSPOT_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "openModal",
   "goToScene",
+  "goToHotspot",
   "openUrl",
   "sendPostMessage",
   "httpRequest",

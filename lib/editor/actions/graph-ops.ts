@@ -111,6 +111,25 @@ export function updateNodeData(
           },
         };
       }
+      if (node.type === "goToHotspot") {
+        const offset =
+          patch.offset === "self" ||
+          patch.offset === "next" ||
+          patch.offset === "prev"
+            ? patch.offset
+            : node.data.offset;
+        return {
+          ...node,
+          data: {
+            hotspotId:
+              typeof patch.hotspotId === "number" &&
+              Number.isFinite(patch.hotspotId)
+                ? patch.hotspotId
+                : node.data.hotspotId,
+            offset,
+          },
+        };
+      }
       if (node.type === "openUrl") {
         return {
           ...node,

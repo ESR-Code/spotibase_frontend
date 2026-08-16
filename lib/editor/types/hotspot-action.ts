@@ -1,12 +1,16 @@
 export type ActionNodeType =
   | "openModal"
   | "goToScene"
+  | "goToHotspot"
   | "openUrl"
   | "sendPostMessage"
   | "httpRequest"
   | "enableDisable"
   | "changeHotspotColor"
   | "changeHotspotIcon";
+
+/** Relative destination from the selected target hotspot. */
+export type GoToHotspotOffset = "self" | "next" | "prev";
 
 export type ActionNodeXY = { x: number; y: number };
 
@@ -37,6 +41,18 @@ export type OpenModalActionNode = ActionNodeBase<
 export type GoToSceneActionNode = ActionNodeBase<
   "goToScene",
   { sceneId: string }
+>;
+export type GoToHotspotActionNode = ActionNodeBase<
+  "goToHotspot",
+  {
+    /** Reference hotspot id in the scene list. `0` = unset. */
+    hotspotId: number;
+    /**
+     * `self` → fly to the selected hotspot.
+     * `next` / `prev` → fly to the neighbor after / before it (scene order, wraps).
+     */
+    offset: GoToHotspotOffset;
+  }
 >;
 export type OpenUrlActionNode = ActionNodeBase<"openUrl", { url: string }>;
 export type SendPostMessageActionNode = ActionNodeBase<
@@ -127,6 +143,7 @@ export type ChangeHotspotIconActionNode = ActionNodeBase<
 export type ActionNode =
   | OpenModalActionNode
   | GoToSceneActionNode
+  | GoToHotspotActionNode
   | OpenUrlActionNode
   | SendPostMessageActionNode
   | HttpRequestActionNode
@@ -183,4 +200,13 @@ export const HTTP_METHODS: HttpMethod[] = [
   "DELETE",
   "HEAD",
   "OPTIONS",
+];
+
+export const GO_TO_HOTSPOT_OFFSETS: {
+  value: GoToHotspotOffset;
+  label: string;
+}[] = [
+  { value: "self", label: "Target" },
+  { value: "prev", label: "Prev" },
+  { value: "next", label: "Next" },
 ];

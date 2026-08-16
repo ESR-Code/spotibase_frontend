@@ -2,6 +2,7 @@
 
 import type { NodeProps } from "@xyflow/react";
 import {
+  Crosshair,
   ExternalLink,
   Eye,
   Globe,
@@ -16,6 +17,7 @@ import type { ComponentType } from "react";
 import { ChangeHotspotColorNode } from "@/app/editor/_components/actions/change-hotspot-color-node";
 import { ChangeHotspotIconNode } from "@/app/editor/_components/actions/change-hotspot-icon-node";
 import { EnableDisableNode } from "@/app/editor/_components/actions/enable-disable-node";
+import { GoToHotspotNode } from "@/app/editor/_components/actions/go-to-hotspot-node";
 import { GoToSceneNode } from "@/app/editor/_components/actions/go-to-scene-node";
 import { HotspotTriggerNode } from "@/app/editor/_components/actions/hotspot-trigger-node";
 import { HttpRequestNode } from "@/app/editor/_components/actions/http-request-node";
@@ -52,6 +54,13 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     icon: MapPinned,
     accent: "var(--editor-amber)",
     Node: GoToSceneNode,
+  },
+  goToHotspot: {
+    type: "goToHotspot",
+    meta: ACTION_NODE_META.goToHotspot,
+    icon: Crosshair,
+    accent: "#f0a35a",
+    Node: GoToHotspotNode,
   },
   openUrl: {
     type: "openUrl",
@@ -103,6 +112,7 @@ export const ACTION_FLOW_NODE_TYPES = {
   [TRIGGER_FLOW_TYPE]: HotspotTriggerNode,
   openModal: OpenModalNode,
   goToScene: GoToSceneNode,
+  goToHotspot: GoToHotspotNode,
   openUrl: OpenUrlNode,
   sendPostMessage: SendPostMessageNode,
   httpRequest: HttpRequestNode,

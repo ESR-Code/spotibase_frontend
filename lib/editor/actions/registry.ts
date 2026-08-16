@@ -11,6 +11,10 @@ import {
   validateEnableDisableData,
 } from "@/lib/editor/actions/enable-disable";
 import {
+  applyGoToHotspot,
+  validateGoToHotspotData,
+} from "@/lib/editor/actions/go-to-hotspot";
+import {
   clearHttpRequestCached,
   executeHttpRequest,
   hasHttpRequestCached,
@@ -97,6 +101,20 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     run: (node) => {
       if (node.type !== "goToScene") return;
       return transitionToScene(node.data.sceneId);
+    },
+  },
+  goToHotspot: {
+    type: "goToHotspot",
+    label: "Go To Hotspot",
+    description: "Fly the camera to a hotspot, or its next/previous neighbor.",
+    createDefault: (position) => createActionNode("goToHotspot", position),
+    validate: (node) => {
+      if (node.type !== "goToHotspot") return null;
+      return validateGoToHotspotData(node.data);
+    },
+    run: (node) => {
+      if (node.type !== "goToHotspot") return;
+      applyGoToHotspot(node.data);
     },
   },
   openUrl: {

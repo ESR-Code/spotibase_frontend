@@ -5,6 +5,7 @@ import { ACTION_UI_REGISTRY } from "@/app/editor/_components/actions/action-node
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { getActionGraph } from "@/lib/editor/actions/create-action-graph";
 import { chainFromTrigger } from "@/lib/editor/actions/graph-ops";
+import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
@@ -16,6 +17,7 @@ type HotspotActionsTabProps = {
 export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
   const openActionsModal = useUIStore((s) => s.openActionsModal);
   const scenes = useScenesStore((s) => s.scenes);
+  const hotspots = useEditorStore((s) => s.hotspots);
   const graph = getActionGraph(selected);
   const chain = chainFromTrigger(graph);
 
@@ -61,6 +63,13 @@ export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
                         "missing scene"
                       }`
                     : "→ (no scene)"
+                  : node.type === "goToHotspot"
+                    ? node.data.hotspotId
+                      ? `→ ${node.data.offset === "next" ? "next of " : node.data.offset === "prev" ? "prev of " : ""}${
+                          hotspots.find((h) => h.id === node.data.hotspotId)
+                            ?.title ?? `HSP-${String(node.data.hotspotId).padStart(3, "0")}`
+                        }`
+                      : "→ (no hotspot)"
                   : node.type === "openUrl"
                     ? node.data.url.trim()
                       ? `→ ${node.data.url.trim()}`

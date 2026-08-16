@@ -6,6 +6,7 @@ import type {
   ChangeHotspotColorActionNode,
   ChangeHotspotIconActionNode,
   EnableDisableActionNode,
+  GoToHotspotActionNode,
   HotspotActionGraph,
   HttpMethod,
   HttpRequestActionNode,
@@ -16,6 +17,7 @@ import type {
   SendPostMessageActionNode,
 } from "@/lib/editor/types/hotspot-action";
 import { HTTP_METHODS, TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
+import { asGoToHotspotOffset } from "@/lib/editor/actions/go-to-hotspot";
 import { markerColorSwatches } from "@/lib/editor/theme/tokens";
 
 export function newActionId(): string {
@@ -74,6 +76,10 @@ export function createActionNode(
   position: ActionNodeXY,
 ): GoToSceneActionNode;
 export function createActionNode(
+  type: "goToHotspot",
+  position: ActionNodeXY,
+): GoToHotspotActionNode;
+export function createActionNode(
   type: "openUrl",
   position: ActionNodeXY,
 ): OpenUrlActionNode;
@@ -119,6 +125,13 @@ export function createActionNode(
         type: "goToScene",
         position: { ...position },
         data: { sceneId: "" },
+      };
+    case "goToHotspot":
+      return {
+        id: newActionId(),
+        type: "goToHotspot",
+        position: { ...position },
+        data: { hotspotId: 0, offset: "self" },
       };
     case "openUrl":
       return {
@@ -226,6 +239,21 @@ export function cloneActionGraph(
           type: "goToScene",
           position: { ...node.position },
           data: { sceneId: node.data.sceneId },
+        };
+      }
+      if (node.type === "goToHotspot") {
+        return {
+          id: node.id,
+          type: "goToHotspot",
+          position: { ...node.position },
+          data: {
+            hotspotId:
+              typeof node.data.hotspotId === "number" &&
+              Number.isFinite(node.data.hotspotId)
+                ? node.data.hotspotId
+                : 0,
+            offset: asGoToHotspotOffset(node.data.offset),
+          },
         };
       }
       if (node.type === "openUrl") {
