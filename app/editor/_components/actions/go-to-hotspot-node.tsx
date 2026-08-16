@@ -5,6 +5,7 @@ import { Crosshair } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-card";
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
+import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
 import {
   APP_START_OWNER_ID,
@@ -25,6 +26,7 @@ export type GoToHotspotFlowNode = Node<ActionFlowNodeData, "goToHotspot">;
 const EMPTY_DATA: GoToHotspotActionNode["data"] = {
   hotspotId: 0,
   offset: "self",
+  runTargetActions: false,
 };
 
 export function GoToHotspotNode({
@@ -45,6 +47,7 @@ export function GoToHotspotNode({
       return {
         hotspotId: node.data.hotspotId ?? 0,
         offset: node.data.offset ?? "self",
+        runTargetActions: Boolean(node.data.runTargetActions),
       };
     }),
   );
@@ -62,6 +65,7 @@ export function GoToHotspotNode({
       return {
         hotspotId: node.data.hotspotId ?? 0,
         offset: node.data.offset ?? "self",
+        runTargetActions: Boolean(node.data.runTargetActions),
       };
     }),
   );
@@ -91,7 +95,6 @@ export function GoToHotspotNode({
   };
 
   const setOffset = (offset: GoToHotspotOffset) => {
-    // Toggle next/prev off → back to target; Target always selects self.
     if (offset !== "self" && live.offset === offset) {
       patch({ offset: "self" });
       return;
@@ -120,6 +123,7 @@ export function GoToHotspotNode({
             style={{ color: "var(--editor-muted)" }}
           >
             → {resolved.title || `Hotspot ${resolved.id}`}
+            {live.runTargetActions ? " + actions" : ""}
           </div>
         ) : null
       }
@@ -153,7 +157,7 @@ export function GoToHotspotNode({
         </select>
       </label>
 
-      <div>
+      <div className="mb-2">
         <span
           className="mb-1 block text-[10px] font-semibold uppercase tracking-wider"
           style={{ color: "var(--editor-muted-2)" }}
@@ -175,6 +179,19 @@ export function GoToHotspotNode({
             </TypePill>
           ))}
         </div>
+      </div>
+
+      <div
+        className="nodrag nopan"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <SwitchField
+          label="Run target actions"
+          description="After focusing, fire the destination hotspot's action chain"
+          checked={live.runTargetActions}
+          onChange={(checked) => patch({ runTargetActions: checked })}
+        />
       </div>
     </ActionNodeCard>
   );

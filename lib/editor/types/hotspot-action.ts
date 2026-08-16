@@ -52,6 +52,11 @@ export type GoToHotspotActionNode = ActionNodeBase<
      * `next` / `prev` → fly to the neighbor after / before it (scene order, wraps).
      */
     offset: GoToHotspotOffset;
+    /**
+     * When true, also run the destination hotspot's action chain after
+     * the camera focuses. Default false.
+     */
+    runTargetActions: boolean;
   }
 >;
 export type OpenUrlActionNode = ActionNodeBase<"openUrl", { url: string }>;

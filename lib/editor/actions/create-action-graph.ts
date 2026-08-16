@@ -17,7 +17,7 @@ import type {
   SendPostMessageActionNode,
 } from "@/lib/editor/types/hotspot-action";
 import { HTTP_METHODS, TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
-import { asGoToHotspotOffset } from "@/lib/editor/actions/go-to-hotspot";
+import type { GoToHotspotOffset } from "@/lib/editor/types/hotspot-action";
 import { markerColorSwatches } from "@/lib/editor/theme/tokens";
 
 export function newActionId(): string {
@@ -51,6 +51,11 @@ function asHttpMethod(value: unknown): HttpMethod {
     return value as HttpMethod;
   }
   return "GET";
+}
+
+function asGoToHotspotOffset(value: unknown): GoToHotspotOffset {
+  if (value === "next" || value === "prev" || value === "self") return value;
+  return "self";
 }
 
 function asNumberIds(value: unknown): number[] {
@@ -131,7 +136,7 @@ export function createActionNode(
         id: newActionId(),
         type: "goToHotspot",
         position: { ...position },
-        data: { hotspotId: 0, offset: "self" },
+        data: { hotspotId: 0, offset: "self", runTargetActions: false },
       };
     case "openUrl":
       return {
@@ -253,6 +258,7 @@ export function cloneActionGraph(
                 ? node.data.hotspotId
                 : 0,
             offset: asGoToHotspotOffset(node.data.offset),
+            runTargetActions: Boolean(node.data.runTargetActions),
           },
         };
       }

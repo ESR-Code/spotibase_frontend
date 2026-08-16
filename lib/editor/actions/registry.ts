@@ -114,7 +114,7 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     },
     run: (node) => {
       if (node.type !== "goToHotspot") return;
-      applyGoToHotspot(node.data);
+      return applyGoToHotspot(node.data);
     },
   },
   openUrl: {

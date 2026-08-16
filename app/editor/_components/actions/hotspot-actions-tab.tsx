@@ -68,7 +68,7 @@ export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
                       ? `→ ${node.data.offset === "next" ? "next of " : node.data.offset === "prev" ? "prev of " : ""}${
                           hotspots.find((h) => h.id === node.data.hotspotId)
                             ?.title ?? `HSP-${String(node.data.hotspotId).padStart(3, "0")}`
-                        }`
+                        }${node.data.runTargetActions ? " + actions" : ""}`
                       : "→ (no hotspot)"
                   : node.type === "openUrl"
                     ? node.data.url.trim()

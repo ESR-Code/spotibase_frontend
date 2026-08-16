@@ -127,6 +127,10 @@ export function updateNodeData(
                 ? patch.hotspotId
                 : node.data.hotspotId,
             offset,
+            runTargetActions:
+              typeof patch.runTargetActions === "boolean"
+                ? patch.runTargetActions
+                : Boolean(node.data.runTargetActions),
           },
         };
       }

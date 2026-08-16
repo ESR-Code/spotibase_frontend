@@ -2481,8 +2481,11 @@
 .editor-root .editor-actions-context-menu {
   position: absolute;
   z-index: 80;
+  display: flex;
+  max-height: min(420px, calc(100% - 24px));
   min-width: 220px;
   max-width: 280px;
+  flex-direction: column;
   overflow: hidden;
   border-radius: 10px;
   border: 1px solid var(--editor-line);
@@ -2493,12 +2496,47 @@
 }
 
 .editor-root .editor-actions-context-menu-label {
+  flex-shrink: 0;
   padding: 6px 12px 4px;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--editor-muted-2);
+}
+
+.editor-root .editor-actions-context-menu-search {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 8px 6px;
+  border-radius: 7px;
+  border: 1px solid var(--editor-line-soft);
+  background: rgba(11, 20, 36, 0.65);
+  padding: 6px 8px;
+}
+
+.editor-root .editor-actions-context-menu-search-input {
+  min-width: 0;
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--editor-fg);
+  font-size: 12px;
+  outline: none;
+}
+
+.editor-root .editor-actions-context-menu-search-input::placeholder {
+  color: var(--editor-muted-2);
+}
+
+.editor-root .editor-actions-context-menu-list {
+  min-height: 0;
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .editor-root .editor-actions-context-menu-item {
