@@ -210,6 +210,35 @@ export function updateNodeData(
           },
         };
       }
+      if (node.type === "changeHotspotColor") {
+        return {
+          ...node,
+          data: {
+            hotspotIds: Array.isArray(patch.hotspotIds)
+              ? patch.hotspotIds.filter(
+                  (id): id is number =>
+                    typeof id === "number" && Number.isFinite(id),
+                )
+              : node.data.hotspotIds,
+            color:
+              typeof patch.color === "string" ? patch.color : node.data.color,
+          },
+        };
+      }
+      if (node.type === "changeHotspotIcon") {
+        return {
+          ...node,
+          data: {
+            hotspotIds: Array.isArray(patch.hotspotIds)
+              ? patch.hotspotIds.filter(
+                  (id): id is number =>
+                    typeof id === "number" && Number.isFinite(id),
+                )
+              : node.data.hotspotIds,
+            icon: typeof patch.icon === "string" ? patch.icon : node.data.icon,
+          },
+        };
+      }
       return node;
     }),
   };

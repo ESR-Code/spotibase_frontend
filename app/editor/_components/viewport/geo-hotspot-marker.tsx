@@ -3,6 +3,10 @@
 import { MapMarker, MarkerContent } from "@/components/ui/map";
 import { HotspotMarkerIcon } from "@/app/editor/_components/ui/hotspot-marker-icon";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import {
+  resolveHotspotAppearance,
+  usePreviewAppearanceStore,
+} from "@/lib/editor/state/preview-appearance-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { hotspotTypeColors } from "@/lib/editor/theme/tokens";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
@@ -30,10 +34,16 @@ export function GeoHotspotMarker({
   const hoveredId = useEditorStore((s) => s.hoveredId);
   const isPreview = useEditorStore((s) => s.isPreview);
   const mode = useEditorStore((s) => s.mode);
+  const appearanceOverride = usePreviewAppearanceStore(
+    (s) => s.overrides[hotspot.id],
+  );
   const hotspotSize = useSettingsStore((s) => s.hotspotSize);
+  const resolved = resolveHotspotAppearance(hotspot, isPreview);
+  // Keep subscription so color/icon overrides re-render this marker.
+  void appearanceOverride;
   const selected = selectedId === hotspot.id;
   const hovered = hoveredId === hotspot.id;
-  const color = hotspot.color || hotspotTypeColors[hotspot.type];
+  const color = resolved.color || hotspotTypeColors[resolved.type];
   const scale = Math.max(0.55, hotspotSize) * (selected || hovered ? 1.15 : 1);
   const draggable = !hidden && !isPreview && mode === "select";
   const lng = hotspot.position.x;
@@ -71,7 +81,7 @@ export function GeoHotspotMarker({
         <div
           className={cn(
             "editor-geo-marker",
-            hotspot.pulse && !hidden && "editor-geo-marker-pulse",
+            resolved.pulse && !hidden && "editor-geo-marker-pulse",
             selected && "editor-geo-marker-selected",
           )}
           style={
@@ -83,15 +93,18 @@ export function GeoHotspotMarker({
         >
           <span className="editor-geo-marker-stick" />
           <span className="editor-geo-marker-core">
-            {hotspot.style === "number" ? (
-              <span className="editor-geo-marker-label">{hotspot.number}</span>
-            ) : hotspot.style === "icon" ? (
+            {resolved.style === "number" ? (
+              <span className="editor-geo-marker-label">{resolved.number}</span>
+            ) : resolved.style === "icon" ? (
               <span className="editor-geo-marker-label">
-                <HotspotMarkerIcon icon={hotspot.icon} className="h-3.5 w-3.5" />
+                <HotspotMarkerIcon
+                  icon={resolved.icon}
+                  className="h-3.5 w-3.5"
+                />
               </span>
-            ) : hotspot.style === "image" && hotspot.markerImage ? (
+            ) : resolved.style === "image" && resolved.markerImage ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={hotspot.markerImage} alt="" />
+              <img src={resolved.markerImage} alt="" />
             ) : null}
           </span>
         </div>

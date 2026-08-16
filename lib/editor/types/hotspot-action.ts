@@ -4,7 +4,9 @@ export type ActionNodeType =
   | "openUrl"
   | "sendPostMessage"
   | "httpRequest"
-  | "enableDisable";
+  | "enableDisable"
+  | "changeHotspotColor"
+  | "changeHotspotIcon";
 
 export type ActionNodeXY = { x: number; y: number };
 
@@ -98,13 +100,39 @@ export type EnableDisableActionNode = ActionNodeBase<
     disabledLayerIds: string[];
   }
 >;
+export type ChangeHotspotColorActionNode = ActionNodeBase<
+  "changeHotspotColor",
+  {
+    /** Checked hotspot ids that receive the color change when this node runs. */
+    hotspotIds: number[];
+    /**
+     * Color to apply in Preview. Empty string = restore each target's
+     * authored (original) color.
+     */
+    color: string;
+  }
+>;
+export type ChangeHotspotIconActionNode = ActionNodeBase<
+  "changeHotspotIcon",
+  {
+    /** Checked hotspot ids that receive the icon change when this node runs. */
+    hotspotIds: number[];
+    /**
+     * Icon name to apply in Preview. Empty string = restore each target's
+     * authored (original) icon/style.
+     */
+    icon: string;
+  }
+>;
 export type ActionNode =
   | OpenModalActionNode
   | GoToSceneActionNode
   | OpenUrlActionNode
   | SendPostMessageActionNode
   | HttpRequestActionNode
-  | EnableDisableActionNode;
+  | EnableDisableActionNode
+  | ChangeHotspotColorActionNode
+  | ChangeHotspotIconActionNode;
 
 export type ActionEdge = { id: string; source: string; target: string };
 

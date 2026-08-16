@@ -79,7 +79,19 @@ export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
                             0
                             ? `→ ${(node.data.disabledHotspotIds?.length ?? 0) + (node.data.disabledLayerIds?.length ?? 0)} disabled`
                             : "→ all enabled"
-                          : null;
+                          : node.type === "changeHotspotColor"
+                            ? (node.data.hotspotIds?.length ?? 0) > 0
+                              ? node.data.color.trim()
+                                ? `→ ${node.data.hotspotIds.length} recolor`
+                                : `→ ${node.data.hotspotIds.length} reset color`
+                              : "→ (no hotspots)"
+                            : node.type === "changeHotspotIcon"
+                              ? (node.data.hotspotIds?.length ?? 0) > 0
+                                ? node.data.icon.trim()
+                                  ? `→ ${node.data.hotspotIds.length} icon`
+                                  : `→ ${node.data.hotspotIds.length} reset icon`
+                                : "→ (no hotspots)"
+                              : null;
               return (
                 <li
                   key={node.id}

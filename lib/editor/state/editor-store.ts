@@ -11,6 +11,7 @@ import {
   getSeedHotspots,
   getSeedNextHotspotId,
 } from "@/lib/editor/constants/seed-scene";
+import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
 import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import { hotspotTypeColors, PROJECT_NAME } from "@/lib/editor/theme/tokens";
 import type { EditorMode, Hotspot, Vec3 } from "@/lib/editor/types/hotspot";
@@ -93,6 +94,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       clearHttpRequestCache();
       clearPostMessageListeners();
       usePreviewVisibilityStore.getState().reset();
+      usePreviewAppearanceStore.getState().reset();
       set({
         isPreview,
         mode: isPreview ? "preview" : "select",
@@ -113,6 +115,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       clearHttpRequestCache();
       clearPostMessageListeners();
       usePreviewVisibilityStore.getState().reset();
+      usePreviewAppearanceStore.getState().reset();
     }
     set({
       mode,

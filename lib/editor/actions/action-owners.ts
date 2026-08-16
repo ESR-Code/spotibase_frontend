@@ -24,6 +24,8 @@ export const START_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "sendPostMessage",
   "httpRequest",
   "enableDisable",
+  "changeHotspotColor",
+  "changeHotspotIcon",
 ];
 
 export const HOTSPOT_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
@@ -33,6 +35,8 @@ export const HOTSPOT_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "sendPostMessage",
   "httpRequest",
   "enableDisable",
+  "changeHotspotColor",
+  "changeHotspotIcon",
 ];
 
 export function isHotspotOwnerId(ownerId: number): boolean {

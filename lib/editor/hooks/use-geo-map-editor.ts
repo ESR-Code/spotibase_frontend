@@ -31,6 +31,7 @@ import {
   isPreviewHotspotEnabled,
   usePreviewVisibilityStore,
 } from "@/lib/editor/state/preview-visibility-store";
+import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
 import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
 import { isGeoImageOverlay } from "@/lib/editor/types/scene-layer";
 
@@ -336,6 +337,9 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
     const unsubPreview = usePreviewVisibilityStore.subscribe(() =>
       syncOverlayAnchors(map),
     );
+    const unsubAppearance = usePreviewAppearanceStore.subscribe(() =>
+      syncOverlayAnchors(map),
+    );
 
     return () => {
       map.off("click", onClick);
@@ -355,6 +359,7 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
       unsubEditor();
       unsubUi();
       unsubPreview();
+      unsubAppearance();
     };
   }, [map, isLoaded]);
 }

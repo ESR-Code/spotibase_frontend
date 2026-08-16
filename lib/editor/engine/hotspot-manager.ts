@@ -10,7 +10,10 @@ import {
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
-import { isPreviewHotspotEnabled } from "@/lib/editor/state/preview-visibility-store";
+import {
+  isPreviewHotspotEnabled,
+} from "@/lib/editor/state/preview-visibility-store";
+import { resolveHotspotAppearance } from "@/lib/editor/state/preview-appearance-store";
 import type { Vec3 } from "@/lib/editor/types/hotspot";
 import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
 
@@ -32,7 +35,7 @@ export function createHotspotManager(
   let elapsed = 0;
 
   const syncFromStore = () => {
-    const { hotspots } = useEditorStore.getState();
+    const { hotspots, isPreview } = useEditorStore.getState();
     const alive = new Set(hotspots.map((h) => h.id));
 
     for (const [id, visual] of visuals) {
@@ -43,9 +46,10 @@ export function createHotspotManager(
     }
 
     for (const hotspot of hotspots) {
+      const resolved = resolveHotspotAppearance(hotspot, isPreview);
       const existing = visuals.get(hotspot.id);
       if (!existing) {
-        const visual = createHotspotVisual(app, pcModule, hotspot);
+        const visual = createHotspotVisual(app, pcModule, resolved);
         hotspotRoot.addChild(visual.root);
         visuals.set(hotspot.id, visual);
         continue;
@@ -57,11 +61,11 @@ export function createHotspotManager(
         hotspot.position.z,
       );
 
-      const nextKey = visualStyleKey(hotspot);
+      const nextKey = visualStyleKey(resolved);
       if (existing.styleKey !== nextKey) {
-        void rebuildCore(app, pcModule, existing, hotspot);
+        void rebuildCore(app, pcModule, existing, resolved);
       } else {
-        existing.ring.enabled = !!hotspot.pulse;
+        existing.ring.enabled = !!resolved.pulse;
       }
     }
   };

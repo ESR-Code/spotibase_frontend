@@ -10,6 +10,10 @@ import { HotspotMarkerIcon } from "@/app/editor/_components/ui/hotspot-marker-ic
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { runHotspotActions } from "@/lib/editor/actions/run-hotspot-actions";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import {
+  resolveHotspotAppearance,
+  usePreviewAppearanceStore,
+} from "@/lib/editor/state/preview-appearance-store";
 import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
@@ -200,7 +204,14 @@ function LegendListItem({
 }
 
 function LegendMarkerVisual({ hotspot }: { hotspot: Hotspot }) {
-  if (hotspot.style === "image" && hotspot.markerImage) {
+  const isPreview = useEditorStore((s) => s.isPreview);
+  const appearanceOverride = usePreviewAppearanceStore(
+    (s) => s.overrides[hotspot.id],
+  );
+  void appearanceOverride;
+  const resolved = resolveHotspotAppearance(hotspot, isPreview);
+
+  if (resolved.style === "image" && resolved.markerImage) {
     return (
       <span
         className="editor-hot-dot editor-hot-dot-lg overflow-hidden border"
@@ -208,7 +219,7 @@ function LegendMarkerVisual({ hotspot }: { hotspot: Hotspot }) {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={hotspot.markerImage}
+          src={resolved.markerImage}
           alt=""
           className="h-full w-full object-cover"
         />
@@ -216,24 +227,24 @@ function LegendMarkerVisual({ hotspot }: { hotspot: Hotspot }) {
     );
   }
 
-  if (hotspot.style === "number" && hotspot.number !== "") {
+  if (resolved.style === "number" && resolved.number !== "") {
     return (
       <span
         className="editor-hot-dot editor-hot-dot-lg"
-        style={{ background: hotspot.color }}
+        style={{ background: resolved.color }}
       >
-        {hotspot.number}
+        {resolved.number}
       </span>
     );
   }
 
-  if (hotspot.style === "icon" && hotspot.icon) {
+  if (resolved.style === "icon" && resolved.icon) {
     return (
       <span
         className="editor-hot-dot editor-hot-dot-lg"
-        style={{ background: hotspot.color }}
+        style={{ background: resolved.color }}
       >
-        <HotspotMarkerIcon icon={hotspot.icon} className="h-3.5 w-3.5" />
+        <HotspotMarkerIcon icon={resolved.icon} className="h-3.5 w-3.5" />
       </span>
     );
   }
@@ -241,7 +252,7 @@ function LegendMarkerVisual({ hotspot }: { hotspot: Hotspot }) {
   return (
     <span
       className="editor-hot-dot editor-hot-dot-lg"
-      style={{ background: hotspot.color }}
+      style={{ background: resolved.color }}
     />
   );
 }

@@ -3,6 +3,8 @@ import type {
   ActionNode,
   ActionNodeType,
   ActionNodeXY,
+  ChangeHotspotColorActionNode,
+  ChangeHotspotIconActionNode,
   EnableDisableActionNode,
   HotspotActionGraph,
   HttpMethod,
@@ -14,6 +16,7 @@ import type {
   SendPostMessageActionNode,
 } from "@/lib/editor/types/hotspot-action";
 import { HTTP_METHODS, TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
+import { markerColorSwatches } from "@/lib/editor/theme/tokens";
 
 export function newActionId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -87,6 +90,14 @@ export function createActionNode(
   position: ActionNodeXY,
 ): EnableDisableActionNode;
 export function createActionNode(
+  type: "changeHotspotColor",
+  position: ActionNodeXY,
+): ChangeHotspotColorActionNode;
+export function createActionNode(
+  type: "changeHotspotIcon",
+  position: ActionNodeXY,
+): ChangeHotspotIconActionNode;
+export function createActionNode(
   type: ActionNodeType,
   position: ActionNodeXY,
 ): ActionNode;
@@ -153,6 +164,26 @@ export function createActionNode(
         data: {
           disabledHotspotIds: [],
           disabledLayerIds: [],
+        },
+      };
+    case "changeHotspotColor":
+      return {
+        id: newActionId(),
+        type: "changeHotspotColor",
+        position: { ...position },
+        data: {
+          hotspotIds: [],
+          color: markerColorSwatches[0],
+        },
+      };
+    case "changeHotspotIcon":
+      return {
+        id: newActionId(),
+        type: "changeHotspotIcon",
+        position: { ...position },
+        data: {
+          hotspotIds: [],
+          icon: "Info",
         },
       };
   }
@@ -248,6 +279,28 @@ export function cloneActionGraph(
           data: {
             disabledHotspotIds: asNumberIds(node.data.disabledHotspotIds),
             disabledLayerIds: asStringIds(node.data.disabledLayerIds),
+          },
+        };
+      }
+      if (node.type === "changeHotspotColor") {
+        return {
+          id: node.id,
+          type: "changeHotspotColor",
+          position: { ...node.position },
+          data: {
+            hotspotIds: asNumberIds(node.data.hotspotIds),
+            color: typeof node.data.color === "string" ? node.data.color : "",
+          },
+        };
+      }
+      if (node.type === "changeHotspotIcon") {
+        return {
+          id: node.id,
+          type: "changeHotspotIcon",
+          position: { ...node.position },
+          data: {
+            hotspotIds: asNumberIds(node.data.hotspotIds),
+            icon: typeof node.data.icon === "string" ? node.data.icon : "",
           },
         };
       }

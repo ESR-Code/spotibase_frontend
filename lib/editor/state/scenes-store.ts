@@ -19,6 +19,7 @@ import {
   SEED_SCENE,
 } from "@/lib/editor/constants/seed-scene";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
 import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import {
   readEffectsSnapshot,
@@ -269,6 +270,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
       // Scene Start runs after the scene is live in Preview.
       if (useEditorStore.getState().isPreview) {
         usePreviewVisibilityStore.getState().reset();
+        usePreviewAppearanceStore.getState().reset();
         void import("@/lib/editor/actions/run-action-graph").then(
           ({ runSceneStartActions }) => {
             void runSceneStartActions(id);

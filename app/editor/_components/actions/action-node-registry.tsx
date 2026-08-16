@@ -7,10 +7,14 @@ import {
   Globe,
   MapPinned,
   MessagesSquare,
+  Palette,
   PanelRightOpen,
+  Shapes,
   type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
+import { ChangeHotspotColorNode } from "@/app/editor/_components/actions/change-hotspot-color-node";
+import { ChangeHotspotIconNode } from "@/app/editor/_components/actions/change-hotspot-icon-node";
 import { EnableDisableNode } from "@/app/editor/_components/actions/enable-disable-node";
 import { GoToSceneNode } from "@/app/editor/_components/actions/go-to-scene-node";
 import { HotspotTriggerNode } from "@/app/editor/_components/actions/hotspot-trigger-node";
@@ -77,6 +81,20 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     accent: "#c4a35a",
     Node: EnableDisableNode,
   },
+  changeHotspotColor: {
+    type: "changeHotspotColor",
+    meta: ACTION_NODE_META.changeHotspotColor,
+    icon: Palette,
+    accent: "#ff7a59",
+    Node: ChangeHotspotColorNode,
+  },
+  changeHotspotIcon: {
+    type: "changeHotspotIcon",
+    meta: ACTION_NODE_META.changeHotspotIcon,
+    icon: Shapes,
+    accent: "#6ec6ff",
+    Node: ChangeHotspotIconNode,
+  },
 };
 
 export const ACTION_UI_MENU_ITEMS = Object.values(ACTION_UI_REGISTRY);
@@ -89,4 +107,6 @@ export const ACTION_FLOW_NODE_TYPES = {
   sendPostMessage: SendPostMessageNode,
   httpRequest: HttpRequestNode,
   enableDisable: EnableDisableNode,
+  changeHotspotColor: ChangeHotspotColorNode,
+  changeHotspotIcon: ChangeHotspotIconNode,
 };

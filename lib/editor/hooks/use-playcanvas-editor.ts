@@ -22,6 +22,7 @@ import {
   DEFAULT_MODEL_SCALE,
   useModelStore,
 } from "@/lib/editor/state/model-store";
+import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
 import { sceneSubjectCache } from "@/lib/editor/state/scene-subject-cache";
 import {
   syncActiveSceneSettings,
@@ -137,6 +138,9 @@ export function usePlayCanvasEditor() {
           }
         });
         const unsubEditor = useEditorStore.subscribe(() => {
+          hotspotMgr.syncFromStore();
+        });
+        const unsubAppearance = usePreviewAppearanceStore.subscribe(() => {
           hotspotMgr.syncFromStore();
         });
         const unsubWire = useModelStore.subscribe((state, prev) => {
@@ -335,6 +339,7 @@ export function usePlayCanvasEditor() {
           unsubEffects();
           unsubSettings();
           unsubEditor();
+          unsubAppearance();
           unsubWire();
           app.off("update", onUpdate);
           unbindResize();

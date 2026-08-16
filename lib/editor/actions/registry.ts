@@ -1,6 +1,12 @@
 import { patchOwnedActionNodeData } from "@/lib/editor/actions/action-owners";
 import { createActionNode } from "@/lib/editor/actions/create-action-graph";
 import {
+  applyChangeHotspotColor,
+  applyChangeHotspotIcon,
+  validateChangeHotspotColorData,
+  validateChangeHotspotIconData,
+} from "@/lib/editor/actions/change-hotspot-appearance";
+import {
   applyEnableDisable,
   validateEnableDisableData,
 } from "@/lib/editor/actions/enable-disable";
@@ -217,6 +223,36 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     run: (node) => {
       if (node.type !== "enableDisable") return;
       applyEnableDisable(node.data);
+    },
+  },
+  changeHotspotColor: {
+    type: "changeHotspotColor",
+    label: "Change Hotspot Color",
+    description: "Change selected hotspot marker colors in Preview.",
+    createDefault: (position) =>
+      createActionNode("changeHotspotColor", position),
+    validate: (node) => {
+      if (node.type !== "changeHotspotColor") return null;
+      return validateChangeHotspotColorData(node.data);
+    },
+    run: (node) => {
+      if (node.type !== "changeHotspotColor") return;
+      applyChangeHotspotColor(node.data);
+    },
+  },
+  changeHotspotIcon: {
+    type: "changeHotspotIcon",
+    label: "Change Hotspot Icon",
+    description: "Change selected hotspot marker icons in Preview.",
+    createDefault: (position) =>
+      createActionNode("changeHotspotIcon", position),
+    validate: (node) => {
+      if (node.type !== "changeHotspotIcon") return null;
+      return validateChangeHotspotIconData(node.data);
+    },
+    run: (node) => {
+      if (node.type !== "changeHotspotIcon") return;
+      applyChangeHotspotIcon(node.data);
     },
   },
 };
