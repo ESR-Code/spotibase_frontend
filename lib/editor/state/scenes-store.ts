@@ -28,6 +28,10 @@ import {
   useGeoStore,
 } from "@/lib/editor/state/geo-store";
 import {
+  readLayersSnapshot,
+  useLayersStore,
+} from "@/lib/editor/state/layers-store";
+import {
   readEnvironmentSnapshot,
   useEnvironmentStore,
 } from "@/lib/editor/state/environment-store";
@@ -38,6 +42,7 @@ import {
   useSettingsStore,
 } from "@/lib/editor/state/settings-store";
 import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
+import { cloneLayers } from "@/lib/editor/types/scene-layer";
 import type { Scene } from "@/lib/editor/types/scene";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 
@@ -72,6 +77,7 @@ function snapshotCurrentIntoScene(scene: Scene): Scene {
     environment: readEnvironmentSnapshot(),
     effects: readEffectsSnapshot(),
     geo: readGeoSnapshot(),
+    layers: readLayersSnapshot(),
   };
 }
 
@@ -130,6 +136,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
       environment: cloneEnvironmentSettings(SEED_SCENE.environment),
       effects: cloneEffectsSettings(SEED_SCENE.effects),
       geo: cloneGeoSettings(SEED_SCENE.geo),
+      layers: cloneLayers(SEED_SCENE.layers),
     },
   ],
   activeSceneId: INITIAL_SCENE_ID,
@@ -248,6 +255,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
     useEnvironmentStore.getState().hydrateEnvironment(next.environment);
     useEffectsStore.getState().hydrateEffects(next.effects);
     useGeoStore.getState().hydrateGeo(next.geo);
+    useLayersStore.getState().hydrateLayers(next.layers);
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(
@@ -295,6 +303,18 @@ export function syncActiveSceneGeo() {
     scenes: state.scenes.map((scene) =>
       scene.id === state.activeSceneId
         ? { ...scene, geo: readGeoSnapshot() }
+        : scene,
+    ),
+  });
+}
+
+/** Persist the live layers store into the active scene entry. */
+export function syncActiveSceneLayers() {
+  const state = useScenesStore.getState();
+  useScenesStore.setState({
+    scenes: state.scenes.map((scene) =>
+      scene.id === state.activeSceneId
+        ? { ...scene, layers: readLayersSnapshot() }
         : scene,
     ),
   });

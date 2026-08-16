@@ -5,36 +5,57 @@ import {
   ChevronLeft,
   ChevronRight,
   Layers,
+  ListTree,
   MapPin,
 } from "lucide-react";
+import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { SceneModelRow } from "@/app/editor/_components/outliner/scene-model-row";
 import { HotspotListItem } from "@/app/editor/_components/outliner/hotspot-list-item";
+import { LayersPanel } from "@/app/editor/_components/outliner/layers-panel";
 import { SubjectPanel } from "@/app/editor/_components/outliner/subject-panel";
+import { getSceneType } from "@/lib/editor/scene-types/registry";
+import { selectHotspotExclusive } from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useLayersStore } from "@/lib/editor/state/layers-store";
 import { useActiveScene } from "@/lib/editor/state/scenes-store";
 import { useUIStore, type OutlinerTab } from "@/lib/editor/state/ui-store";
 
-const TABS: { id: OutlinerTab; label: string; icon: typeof Layers }[] = [
-  { id: "outliner", label: "Outliner", icon: Layers },
+const BASE_TABS: { id: OutlinerTab; label: string; icon: typeof Layers }[] = [
+  { id: "outliner", label: "Outliner", icon: ListTree },
   { id: "subject", label: "Subject", icon: Box },
 ];
 
 export function HotspotOutliner() {
   const hotspots = useEditorStore((s) => s.hotspots);
   const selectedId = useEditorStore((s) => s.selectedId);
+  const layerCount = useLayersStore((s) => s.layers.length);
   const scene = useActiveScene();
-  const selectHotspot = useEditorStore((s) => s.selectHotspot);
   const removeHotspot = useEditorStore((s) => s.removeHotspot);
   const collapsed = useUIStore((s) => s.outlinerCollapsed);
   const setCollapsed = useUIStore((s) => s.setOutlinerCollapsed);
   const outlinerTab = useUIStore((s) => s.outlinerTab);
   const setOutlinerTab = useUIStore((s) => s.setOutlinerTab);
   const setPropertiesDrawerOpen = useUIStore((s) => s.setPropertiesDrawerOpen);
+  const showLayersTab = getSceneType(scene.type).outlinerTabs.layers;
+
+  const tabs = useMemo(() => {
+    if (!showLayersTab) return BASE_TABS;
+    return [
+      ...BASE_TABS,
+      { id: "layers" as const, label: "Layers", icon: Layers },
+    ];
+  }, [showLayersTab]);
+
+  useEffect(() => {
+    if (outlinerTab === "layers" && !showLayersTab) {
+      setOutlinerTab("outliner");
+    }
+  }, [outlinerTab, showLayersTab, setOutlinerTab]);
 
   const handleSelect = (id: number) => {
-    selectHotspot(id);
+    selectHotspotExclusive(id);
     setPropertiesDrawerOpen(true);
   };
 
@@ -43,6 +64,21 @@ export function HotspotOutliner() {
     if (selectedId === id) setPropertiesDrawerOpen(false);
     toast.success("Hotspot deleted");
   };
+
+  const heading =
+    outlinerTab === "subject"
+      ? "Subject"
+      : outlinerTab === "layers"
+        ? "Layers"
+        : "Hotspot Outliner";
+  const subheading =
+    outlinerTab === "subject"
+      ? scene.type === "geo"
+        ? "Geo map subject"
+        : "Import and adjust the scene subject"
+      : outlinerTab === "layers"
+        ? `${layerCount} overlay${layerCount === 1 ? "" : "s"} in scene`
+        : `${hotspots.length} markers in scene`;
 
   return (
     <aside
@@ -55,15 +91,9 @@ export function HotspotOutliner() {
           style={{ borderBottom: "1px solid var(--editor-line-soft)" }}
         >
           <div>
-            <div className="font-display text-[14px] font-bold">
-              {outlinerTab === "subject" ? "Subject" : "Hotspot Outliner"}
-            </div>
+            <div className="font-display text-[14px] font-bold">{heading}</div>
             <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
-              {outlinerTab === "subject"
-                ? scene.type === "geo"
-                  ? "Geo map subject"
-                  : "Import and adjust the scene subject"
-                : `${hotspots.length} markers in scene`}
+              {subheading}
             </div>
           </div>
           <IconButton
@@ -79,7 +109,7 @@ export function HotspotOutliner() {
           role="tablist"
           aria-label="Outliner panels"
         >
-          {TABS.map((tab) => {
+          {tabs.map((tab) => {
             const Icon = tab.icon;
             const active = outlinerTab === tab.id;
             return (
@@ -100,6 +130,8 @@ export function HotspotOutliner() {
 
         {outlinerTab === "subject" ? (
           <SubjectPanel />
+        ) : outlinerTab === "layers" ? (
+          <LayersPanel />
         ) : (
           <>
             <div

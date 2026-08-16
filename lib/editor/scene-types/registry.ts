@@ -27,6 +27,9 @@ const MODEL_TYPE: SceneTypeDescriptor = {
     geoDetails: false,
     mapStyle: false,
   },
+  outlinerTabs: {
+    layers: false,
+  },
   emptySubjectName: "Default_Box.glb",
   emptySubjectInfo: "Default sample model",
 };
@@ -53,6 +56,9 @@ const IMAGE_TYPE: SceneTypeDescriptor = {
     geoDetails: false,
     mapStyle: false,
   },
+  outlinerTabs: {
+    layers: false,
+  },
   emptySubjectName: "No image",
   emptySubjectInfo: "Import a PNG, JPG, or WebP",
 };
@@ -78,6 +84,9 @@ const GEO_TYPE: SceneTypeDescriptor = {
     camera: true,
     geoDetails: true,
     mapStyle: true,
+  },
+  outlinerTabs: {
+    layers: true,
   },
   emptySubjectName: "Earth",
   emptySubjectInfo: "World globe — set start coordinates in Scene Settings",

@@ -8,6 +8,7 @@ import {
   Workflow,
 } from "lucide-react";
 import { HeaderNavMenu } from "@/app/editor/_components/toolbar/header-nav-menu";
+import { clearEditorSelection } from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
@@ -40,7 +41,7 @@ export function ModeToolbar() {
         if (keepGeneralSettings) setGeneralSettingsDrawerOpen(true);
         setPropertiesDrawerOpen(false);
         useUIStore.getState().setOutlinerCollapsed(true);
-        useEditorStore.getState().selectHotspot(null);
+        clearEditorSelection();
       } else {
         setPreviewModalOpen(false);
         setPreviewActiveHotspotId(null);

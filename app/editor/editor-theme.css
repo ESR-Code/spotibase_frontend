@@ -1750,13 +1750,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 7px 10px;
+  gap: 4px;
+  padding: 7px 6px;
   border-radius: 8px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--editor-muted);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.02em;
   cursor: pointer;
@@ -2663,6 +2663,113 @@
   font-size: 10px;
   line-height: 1.35;
   color: var(--editor-muted-2);
+}
+
+.editor-layer-thumb {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid var(--editor-line-soft);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.editor-layer-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.editor-layer-fields {
+  margin: 4px 0 10px;
+  border: 1px solid var(--editor-line-soft);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  overflow: hidden;
+}
+
+.editor-layer-fields-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: var(--editor-fg);
+  font-family: var(--font-sora), sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.editor-layer-fields-head:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.editor-layer-fields-chevron {
+  color: var(--editor-muted);
+  transition: transform 0.2s;
+}
+
+.editor-layer-fields.open .editor-layer-fields-chevron {
+  transform: rotate(180deg);
+}
+
+.editor-layer-fields-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 10px 10px;
+  border-top: 1px solid var(--editor-line-soft);
+  padding-top: 10px;
+}
+
+.editor-layer-blend-preview {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background:
+    radial-gradient(
+      circle,
+      #fff 0%,
+      #fff var(--blend-inner, 70%),
+      #111 100%
+    );
+}
+
+.editor-overlay-gizmo {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.editor-overlay-gizmo svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.editor-overlay-gizmo-hit,
+.editor-overlay-gizmo-handle,
+.editor-overlay-gizmo-rotate {
+  pointer-events: auto;
+  cursor: move;
+}
+
+.editor-overlay-gizmo-handle {
+  cursor: nwse-resize;
+}
+
+.editor-overlay-gizmo-rotate {
+  cursor: grab;
 }
 
 

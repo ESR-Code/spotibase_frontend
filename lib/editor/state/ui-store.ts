@@ -17,7 +17,7 @@ export type InfoBoxAnchorState = {
   visible: boolean;
 } | null;
 
-export type OutlinerTab = "outliner" | "subject";
+export type OutlinerTab = "outliner" | "subject" | "layers";
 
 export type ActionsModalScope =
   | { kind: "hotspot"; hotspotId: number }

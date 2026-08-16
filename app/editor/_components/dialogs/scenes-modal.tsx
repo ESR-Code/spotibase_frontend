@@ -16,6 +16,7 @@ import { getSceneType, listSceneTypes } from "@/lib/editor/scene-types/registry"
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { readEffectsSnapshot } from "@/lib/editor/state/effects-store";
 import { readGeoSnapshot } from "@/lib/editor/state/geo-store";
+import { readLayersSnapshot } from "@/lib/editor/state/layers-store";
 import {
   readEnvironmentSnapshot,
 } from "@/lib/editor/state/environment-store";
@@ -63,6 +64,7 @@ function syncActiveSceneSnapshot() {
             environment: readEnvironmentSnapshot(),
             effects: readEffectsSnapshot(),
             geo: readGeoSnapshot(),
+            layers: readLayersSnapshot(),
           }
         : scene,
     ),

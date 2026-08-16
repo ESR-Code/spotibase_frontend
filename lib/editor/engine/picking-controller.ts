@@ -10,6 +10,7 @@ import {
 } from "@/lib/editor/engine/ray-utils";
 import { PREVIEW_CLICK_PX } from "@/lib/editor/constants/default-settings";
 import { runHotspotActions } from "@/lib/editor/actions/run-hotspot-actions";
+import { selectHotspotExclusive } from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
@@ -56,7 +57,11 @@ export function createPickingController(
   };
 
   const selectAndOpen = (id: number | null) => {
-    useEditorStore.getState().selectHotspot(id);
+    if (id == null) {
+      useEditorStore.getState().selectHotspot(null);
+    } else {
+      selectHotspotExclusive(id);
+    }
     useUIStore.getState().setPropertiesDrawerOpen(id != null);
   };
 

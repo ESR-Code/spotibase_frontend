@@ -8,6 +8,7 @@ import {
   type MapViewport,
 } from "@/components/ui/map";
 import { GeoHotspotMarker } from "@/app/editor/_components/viewport/geo-hotspot-marker";
+import { GeoOverlayLayers } from "@/app/editor/_components/viewport/geo-overlay-layers";
 import {
   handleGeoMarkerClick,
   handleGeoMarkerEnter,
@@ -69,6 +70,7 @@ export function GeoMapViewport() {
         }}
       >
         <GeoMapBridge />
+        <GeoOverlayLayers />
         {visible.map((hotspot) => (
           <GeoHotspotMarker
             key={hotspot.id}

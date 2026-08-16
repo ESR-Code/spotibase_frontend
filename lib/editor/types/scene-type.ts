@@ -28,6 +28,9 @@ export type SceneTypeDescriptor = {
     reflection: boolean;
   };
   settingsSections: SceneSettingsSections;
+  outlinerTabs: {
+    layers: boolean;
+  };
   emptySubjectName: string;
   emptySubjectInfo: string;
 };

@@ -10,6 +10,7 @@ import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { useHotspotForm } from "@/lib/editor/forms/use-hotspot-form";
+import { clearEditorSelection } from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import { hotspotTypeLabel } from "@/lib/editor/types/hotspot";
@@ -33,7 +34,6 @@ export function HotspotPropertiesDrawer() {
   const selectedId = useEditorStore((s) => s.selectedId);
   const removeHotspot = useEditorStore((s) => s.removeHotspot);
   const duplicateHotspot = useEditorStore((s) => s.duplicateHotspot);
-  const selectHotspot = useEditorStore((s) => s.selectHotspot);
   const { form, selected } = useHotspotForm();
   const [tabState, setTabState] = useState<{
     hotspotId: number | null;
@@ -84,7 +84,7 @@ export function HotspotPropertiesDrawer() {
           title="Close"
           onClick={() => {
             setOpen(false);
-            selectHotspot(null);
+            clearEditorSelection();
           }}
         >
           <X />

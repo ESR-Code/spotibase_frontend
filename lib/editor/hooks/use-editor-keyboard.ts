@@ -2,7 +2,10 @@
 
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { clearEditorSelection } from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useLayersStore } from "@/lib/editor/state/layers-store";
+import { syncActiveSceneLayers } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
@@ -11,7 +14,6 @@ export function useEditorKeyboard() {
   const setMode = useEditorStore((s) => s.setMode);
   const selectedId = useEditorStore((s) => s.selectedId);
   const removeHotspot = useEditorStore((s) => s.removeHotspot);
-  const selectHotspot = useEditorStore((s) => s.selectHotspot);
   const closeAllOverlays = useUIStore((s) => s.closeAllOverlays);
   const setPropertiesDrawerOpen = useUIStore((s) => s.setPropertiesDrawerOpen);
 
@@ -45,7 +47,7 @@ export function useEditorKeyboard() {
           }
           setPropertiesDrawerOpen(false);
           useUIStore.getState().setOutlinerCollapsed(true);
-          selectHotspot(null);
+          clearEditorSelection();
         }
         return;
       }
@@ -63,7 +65,7 @@ export function useEditorKeyboard() {
         }
         closeAllOverlays();
         setPropertiesDrawerOpen(false);
-        selectHotspot(null);
+        clearEditorSelection();
       } else if (
         !isPreview &&
         !actionsOpen &&
@@ -73,6 +75,18 @@ export function useEditorKeyboard() {
         removeHotspot(selectedId);
         setPropertiesDrawerOpen(false);
         toast.success("Hotspot deleted");
+      } else if (
+        !isPreview &&
+        !actionsOpen &&
+        (e.key === "Delete" || e.key === "Backspace") &&
+        useLayersStore.getState().selectedId
+      ) {
+        const layerId = useLayersStore.getState().selectedId;
+        if (layerId) {
+          useLayersStore.getState().removeLayer(layerId);
+          syncActiveSceneLayers();
+          toast.success("Overlay deleted");
+        }
       }
     };
 
@@ -81,7 +95,6 @@ export function useEditorKeyboard() {
   }, [
     closeAllOverlays,
     removeHotspot,
-    selectHotspot,
     selectedId,
     setMode,
     setPropertiesDrawerOpen,

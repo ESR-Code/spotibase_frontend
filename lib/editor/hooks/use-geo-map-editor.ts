@@ -11,8 +11,15 @@ import {
   type GeoMapViewport,
 } from "@/lib/editor/geo/resolve-home-viewport";
 import { isMapViewportPose } from "@/lib/editor/constants/default-settings";
+import { overlayHitLayerId, layerIdFromHitLayer } from "@/lib/editor/layers/overlay-ids";
+import {
+  clearEditorSelection,
+  selectHotspotExclusive,
+  selectLayerExclusive,
+} from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useGeoStore } from "@/lib/editor/state/geo-store";
+import { useLayersStore } from "@/lib/editor/state/layers-store";
 import { useMapViewportStore } from "@/lib/editor/state/map-viewport-store";
 import {
   syncActiveSceneSettings,
@@ -21,6 +28,7 @@ import {
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
+import { isGeoImageOverlay } from "@/lib/editor/types/scene-layer";
 
 function currentViewport(map: MapLibreMap): GeoMapViewport {
   const center = map.getCenter();
@@ -145,7 +153,8 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
       const target = event.originalEvent.target;
       if (
         target instanceof Element &&
-        target.closest(".maplibregl-marker")
+        (target.closest(".maplibregl-marker") ||
+          target.closest(".editor-overlay-gizmo"))
       ) {
         return;
       }
@@ -159,7 +168,7 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
           y: event.lngLat.lat,
           z: 0,
         });
-        editor.selectHotspot(created.id);
+        selectHotspotExclusive(created.id);
         useUIStore.getState().setPropertiesDrawerOpen(true);
         editor.setMode("select");
         toast.success("Hotspot added — drag to reposition");
@@ -167,7 +176,25 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
       }
 
       if (editor.mode === "select") {
-        editor.selectHotspot(null);
+        const hitLayerIds = useLayersStore
+          .getState()
+          .layers.filter(isGeoImageOverlay)
+          .filter((layer) => layer.visible)
+          .map((layer) => overlayHitLayerId(layer.id))
+          .filter((id) => map.getLayer(id));
+        if (hitLayerIds.length > 0) {
+          const hits = map.queryRenderedFeatures(event.point, {
+            layers: hitLayerIds,
+          });
+          const hitId = hits[0] ? layerIdFromHitLayer(hits[0].layer.id) : null;
+          if (hitId) {
+            selectLayerExclusive(hitId);
+            useUIStore.getState().setOutlinerTab("layers");
+            useUIStore.getState().setPropertiesDrawerOpen(false);
+            return;
+          }
+        }
+        clearEditorSelection();
         useUIStore.getState().setPropertiesDrawerOpen(false);
       }
     };
@@ -313,6 +340,7 @@ export function handleGeoMarkerClick(id: number) {
     return;
   }
   editor.selectHotspot(id);
+  useLayersStore.getState().setSelectedId(null);
   useUIStore.getState().setPropertiesDrawerOpen(true);
 }
 
