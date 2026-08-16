@@ -23,7 +23,7 @@ export function useHotspotForm() {
       desc: "",
       image: "",
       link: "",
-      type: "info",
+      type: "none",
       style: "dot",
       number: 1,
       icon: "Info",

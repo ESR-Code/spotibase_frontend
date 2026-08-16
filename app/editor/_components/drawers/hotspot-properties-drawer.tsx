@@ -69,12 +69,14 @@ export function HotspotPropertiesDrawer() {
             <span className="editor-chip">
               HSP-{String(selected.id).padStart(3, "0")}
             </span>
-            <span
-              className="text-[11px] capitalize"
-              style={{ color: "var(--editor-muted-2)" }}
-            >
-              {hotspotTypeLabel(selected.type)}
-            </span>
+            {selected.type !== "none" ? (
+              <span
+                className="text-[11px] capitalize"
+                style={{ color: "var(--editor-muted-2)" }}
+              >
+                {hotspotTypeLabel(selected.type)}
+              </span>
+            ) : null}
           </div>
           <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
             Edit marker properties

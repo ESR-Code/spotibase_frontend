@@ -41,6 +41,9 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
   const values = form.watch();
   const scene = useActiveScene();
   const isGeo = scene.type === "geo";
+  const isCustomColor = !markerColorSwatches.includes(
+    values.color as (typeof markerColorSwatches)[number],
+  );
 
   const handleCategoriesChange = (
     categories: typeof legendCategories,
@@ -165,6 +168,22 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
                 onClick={() => form.setValue("color", color)}
               />
             ))}
+            <label
+              className={`editor-swatch editor-swatch-custom ${isCustomColor ? "selected" : ""}`}
+              title="Custom color"
+              style={isCustomColor ? { background: values.color } : undefined}
+            >
+              <input
+                type="color"
+                aria-label="Custom color"
+                value={
+                  /^#[0-9a-fA-F]{6}$/.test(values.color)
+                    ? values.color
+                    : "#e63946"
+                }
+                onChange={(e) => form.setValue("color", e.target.value)}
+              />
+            </label>
           </div>
         </div>
 
@@ -244,6 +263,7 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
       <SettingsSection
         title="Position"
         icon={<Move3D className="h-3.5 w-3.5" />}
+        defaultOpen
       >
         {isGeo ? (
           <div className="grid grid-cols-2 gap-2">

@@ -45,7 +45,7 @@ function createHotspotData(
   position: Vec3,
   data: Partial<Omit<Hotspot, "id" | "position">> = {},
 ): Hotspot {
-  const type = data.type ?? "info";
+  const type = data.type ?? "none";
   const title = data.title ?? `Hotspot ${String(id).padStart(3, "0")}`;
   return {
     id,

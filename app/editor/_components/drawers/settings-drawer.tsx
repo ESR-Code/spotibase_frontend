@@ -445,14 +445,11 @@ export function SettingsDrawer() {
 
         {sections.grid ? (
         <SettingsSection title="Grid" icon={<LayoutGrid className="h-3.5 w-3.5" />}>
-          <label className="mb-3 flex items-center justify-between text-[12px]">
-            <span>Show Ground Grid</span>
-            <input
-              type="checkbox"
-              checked={env.show3dGrid}
-              onChange={(e) => envForm.setValue("show3dGrid", e.target.checked)}
-            />
-          </label>
+          <SwitchField
+            label="Show Ground Grid"
+            checked={env.show3dGrid}
+            onChange={(checked) => envForm.setValue("show3dGrid", checked)}
+          />
           <FieldLabel>Grid Color</FieldLabel>
           <input
             type="color"

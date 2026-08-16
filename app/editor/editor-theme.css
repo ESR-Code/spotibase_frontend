@@ -748,6 +748,33 @@
   border-color: #fff;
 }
 
+.editor-root .editor-swatch-custom {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  background: conic-gradient(
+    from 0deg,
+    #e63946,
+    #f4a259,
+    #ffd166,
+    #06d6a0,
+    #3fb8af,
+    #4361ee,
+    #9b8cff,
+    #ff006e,
+    #e63946
+  );
+}
+
+.editor-root .editor-swatch-custom input[type="color"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
 .editor-root .editor-drawer {
   position: absolute;
   top: 0;
