@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import {
   Camera,
-  ChevronDown,
   Globe,
   ImageIcon,
   Info,
@@ -28,6 +26,7 @@ import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import { SettingsSection } from "@/app/editor/_components/ui/settings-section";
 import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
 import { useEffectsForm } from "@/lib/editor/forms/use-effects-form";
@@ -699,37 +698,6 @@ export function SettingsDrawer() {
         </EditorButton>
       </div>
     </GlassPanel>
-  );
-}
-
-function SettingsSection({
-  title,
-  icon,
-  children,
-  defaultOpen = false,
-}: {
-  title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-
-  return (
-    <div className={`editor-settings-section ${open ? "open" : ""}`}>
-      <button
-        type="button"
-        className="editor-settings-section-head"
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span className="editor-settings-sec-icon">{icon}</span>
-        {title}
-        <ChevronDown className="editor-settings-sec-chevron h-3 w-3" />
-      </button>
-      {open ? (
-        <div className="editor-settings-section-body space-y-2.5">{children}</div>
-      ) : null}
-    </div>
   );
 }
 

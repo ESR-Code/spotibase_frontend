@@ -1,6 +1,13 @@
 "use client";
 
-import type { ReactNode } from "react";
+import {
+  Camera,
+  ImageIcon,
+  ListTree,
+  MapPin,
+  Move3D,
+  Type,
+} from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-image-field";
@@ -10,6 +17,7 @@ import { CameraPoseCaptureField } from "@/app/editor/_components/ui/camera-pose-
 import { CategorySelect } from "@/app/editor/_components/ui/category-select";
 import { ColorSwatch } from "@/app/editor/_components/ui/color-swatch";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
+import { SettingsSection } from "@/app/editor/_components/ui/settings-section";
 import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
 import type { HotspotFormValues } from "@/lib/editor/forms/schemas/hotspot-form.schema";
@@ -23,21 +31,6 @@ type HotspotGeneralTabProps = {
   form: UseFormReturn<HotspotFormValues>;
   selected: Hotspot;
 };
-
-function FormSection({
-  title,
-  children,
-}: {
-  title?: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="editor-form-section">
-      {title ? <div className="editor-form-section-title">{title}</div> : null}
-      <div className="space-y-3">{children}</div>
-    </section>
-  );
-}
 
 export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
   const updateHotspot = useEditorStore((s) => s.updateHotspot);
@@ -69,8 +62,12 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
   };
 
   return (
-    <div className="editor-general-tab">
-      <FormSection title="Content">
+    <div className="editor-general-tab space-y-2.5">
+      <SettingsSection
+        title="Title"
+        icon={<Type className="h-3.5 w-3.5" />}
+        defaultOpen
+      >
         <div>
           <FieldLabel>Title</FieldLabel>
           <input
@@ -79,10 +76,13 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
             {...form.register("title")}
           />
         </div>
-      </FormSection>
+      </SettingsSection>
 
       {legendEnabled ? (
-        <FormSection title="Legend">
+        <SettingsSection
+          title="Legend"
+          icon={<ListTree className="h-3.5 w-3.5" />}
+        >
           <CategorySelect
             value={values.category ?? ""}
             categories={legendCategories}
@@ -90,10 +90,10 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
             onChange={(category) => form.setValue("category", category)}
             onCategoriesChange={handleCategoriesChange}
           />
-        </FormSection>
+        </SettingsSection>
       ) : null}
 
-      <FormSection title="Marker">
+      <SettingsSection title="Marker" icon={<MapPin className="h-3.5 w-3.5" />}>
         <div>
           <FieldLabel>Type</FieldLabel>
           <div className="editor-pill-row">
@@ -173,33 +173,77 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
           checked={values.pulse}
           onChange={(checked) => form.setValue("pulse", checked)}
         />
-      </FormSection>
+      </SettingsSection>
 
-      <FormSection>
-        <div>
-          <FieldLabel>Header image</FieldLabel>
-          <HotspotImageField
-            layout="split"
-            value={values.image ?? ""}
-            onChange={(dataUrl) => form.setValue("image", dataUrl)}
-            uploadLabel="Upload image"
-            emptyLabel="No header image"
-            hint="Optional. Shown at the top of the preview dialog."
-            clearTitle="Clear header image"
-            successMessage="Header image applied"
-            sizeErrorMessage="Header image must be under 2.5 MB"
-            urlInput={
-              <input
-                className="editor-input"
-                placeholder="https://…"
-                {...form.register("image")}
-              />
-            }
+      <SettingsSection
+        title="Header image"
+        icon={<ImageIcon className="h-3.5 w-3.5" />}
+      >
+        <HotspotImageField
+          layout="split"
+          value={values.image ?? ""}
+          onChange={(dataUrl) => form.setValue("image", dataUrl)}
+          uploadLabel="Upload image"
+          emptyLabel="No header image"
+          hint="Optional. Shown at the top of the preview dialog."
+          clearTitle="Clear header image"
+          successMessage="Header image applied"
+          sizeErrorMessage="Header image must be under 2.5 MB"
+          urlInput={
+            <input
+              className="editor-input"
+              placeholder="https://…"
+              {...form.register("image")}
+            />
+          }
+        />
+      </SettingsSection>
+
+      <SettingsSection
+        title="Custom camera"
+        icon={<Camera className="h-3.5 w-3.5" />}
+      >
+        <SwitchField
+          label="Use custom camera"
+          description="When enabled, focusing this hotspot moves the camera to a saved view"
+          checked={selected.customCameraEnabled}
+          onChange={(checked) =>
+            updateHotspot(selected.id, { customCameraEnabled: checked })
+          }
+        />
+        {selected.customCameraEnabled ? (
+          <CameraPoseCaptureField
+            previewUrl={selected.customCamera?.previewUrl}
+            pose={selected.customCamera}
+            captureLabel="Set camera position"
+            emptyLabel="No camera position"
+            hint="Captures the current viewport camera. Leave unset to keep the default focus framing."
+            previewAlt="Hotspot camera preview"
+            onCapture={() => {
+              window.dispatchEvent(
+                new CustomEvent("editor:set-hotspot-camera", {
+                  detail: { id: selected.id },
+                }),
+              );
+            }}
+            onClear={() => {
+              updateHotspot(selected.id, { customCamera: null });
+              toast.success("Hotspot camera cleared");
+            }}
+            onPastePose={(pose) => {
+              updateHotspot(selected.id, {
+                customCamera: pose,
+                customCameraEnabled: true,
+              });
+            }}
           />
-        </div>
-      </FormSection>
+        ) : null}
+      </SettingsSection>
 
-      <FormSection title="Position">
+      <SettingsSection
+        title="Position"
+        icon={<Move3D className="h-3.5 w-3.5" />}
+      >
         {isGeo ? (
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -267,45 +311,7 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
             </div>
           </div>
         )}
-      </FormSection>
-
-      <FormSection title="Custom camera">
-        <SwitchField
-          label="Use custom camera"
-          description="When enabled, focusing this hotspot moves the camera to a saved view"
-          checked={selected.customCameraEnabled}
-          onChange={(checked) =>
-            updateHotspot(selected.id, { customCameraEnabled: checked })
-          }
-        />
-        {selected.customCameraEnabled ? (
-          <CameraPoseCaptureField
-            previewUrl={selected.customCamera?.previewUrl}
-            pose={selected.customCamera}
-            captureLabel="Set camera position"
-            emptyLabel="No camera position"
-            hint="Captures the current viewport camera. Leave unset to keep the default focus framing."
-            previewAlt="Hotspot camera preview"
-            onCapture={() => {
-              window.dispatchEvent(
-                new CustomEvent("editor:set-hotspot-camera", {
-                  detail: { id: selected.id },
-                }),
-              );
-            }}
-            onClear={() => {
-              updateHotspot(selected.id, { customCamera: null });
-              toast.success("Hotspot camera cleared");
-            }}
-            onPastePose={(pose) => {
-              updateHotspot(selected.id, {
-                customCamera: pose,
-                customCameraEnabled: true,
-              });
-            }}
-          />
-        ) : null}
-      </FormSection>
+      </SettingsSection>
     </div>
   );
 }
