@@ -59,7 +59,7 @@ function createHotspotData(
     color: data.color ?? hotspotTypeColors[type],
     style: data.style ?? "dot",
     number: data.number !== undefined ? data.number : id,
-    icon: data.icon ?? "ℹ",
+    icon: data.icon ?? "Info",
     markerImage: data.markerImage ?? "",
     pulse: data.pulse ?? false,
     enabled: data.enabled ?? true,

@@ -1,6 +1,7 @@
 "use client";
 
 import { MapMarker, MarkerContent } from "@/components/ui/map";
+import { HotspotMarkerIcon } from "@/app/editor/_components/ui/hotspot-marker-icon";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { hotspotTypeColors } from "@/lib/editor/theme/tokens";
@@ -85,7 +86,9 @@ export function GeoHotspotMarker({
             {hotspot.style === "number" ? (
               <span className="editor-geo-marker-label">{hotspot.number}</span>
             ) : hotspot.style === "icon" ? (
-              <span className="editor-geo-marker-label">{hotspot.icon}</span>
+              <span className="editor-geo-marker-label">
+                <HotspotMarkerIcon icon={hotspot.icon} className="h-3.5 w-3.5" />
+              </span>
             ) : hotspot.style === "image" && hotspot.markerImage ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={hotspot.markerImage} alt="" />

@@ -6,6 +6,7 @@ import { CategorySelect } from "@/app/editor/_components/ui/category-select";
 import { CategoryOptionBadge } from "@/app/editor/_components/ui/category-option";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
+import { HotspotMarkerIcon } from "@/app/editor/_components/ui/hotspot-marker-icon";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { runHotspotActions } from "@/lib/editor/actions/run-hotspot-actions";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -232,7 +233,7 @@ function LegendMarkerVisual({ hotspot }: { hotspot: Hotspot }) {
         className="editor-hot-dot editor-hot-dot-lg"
         style={{ background: hotspot.color }}
       >
-        {hotspot.icon}
+        <HotspotMarkerIcon icon={hotspot.icon} className="h-3.5 w-3.5" />
       </span>
     );
   }

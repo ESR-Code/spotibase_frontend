@@ -49,17 +49,6 @@ export const markerColorSwatches = [
   "#1a1a1a",
 ] as const;
 
-export const markerIcons = [
-  { value: "ℹ", label: "Info (ℹ)" },
-  { value: "⚠", label: "Warning (⚠)" },
-  { value: "⚙", label: "Gear (⚙)" },
-  { value: "★", label: "Star (★)" },
-  { value: "⚡", label: "Bolt (⚡)" },
-  { value: "✓", label: "Check (✓)" },
-  { value: "❓", label: "Question (❓)" },
-  { value: "✋", label: "Stop (✋)" },
-] as const;
-
 export const PROJECT_NAME = "Factory Tour";
 export const DEFAULT_SCENE_NAME = "Assembly Line B";
 export const DEFAULT_MODEL_NAME = "Default_Box.glb";

@@ -14,6 +14,7 @@ import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-imag
 import { HotspotMarkerImageField } from "@/app/editor/_components/drawers/hotspot-marker-image-field";
 import { PositionAxisInput } from "@/app/editor/_components/drawers/position-axis-input";
 import { CameraPoseCaptureField } from "@/app/editor/_components/ui/camera-pose-capture-field";
+import { CategoryIconPicker } from "@/app/editor/_components/ui/category-icon-picker";
 import { CategorySelect } from "@/app/editor/_components/ui/category-select";
 import { ColorSwatch } from "@/app/editor/_components/ui/color-swatch";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
@@ -24,7 +25,7 @@ import type { HotspotFormValues } from "@/lib/editor/forms/schemas/hotspot-form.
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useActiveScene } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
-import { markerColorSwatches, markerIcons } from "@/lib/editor/theme/tokens";
+import { markerColorSwatches } from "@/lib/editor/theme/tokens";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 
 type HotspotGeneralTabProps = {
@@ -134,13 +135,13 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
             />
           )}
           {values.style === "icon" && (
-            <select className="editor-select mt-2" {...form.register("icon")}>
-              {markerIcons.map((icon) => (
-                <option key={icon.value} value={icon.value}>
-                  {icon.label}
-                </option>
-              ))}
-            </select>
+            <div className="mt-2">
+              <CategoryIconPicker
+                value={values.icon ?? "Info"}
+                color={values.color}
+                onChange={(icon) => form.setValue("icon", icon)}
+              />
+            </div>
           )}
           {values.style === "image" && (
             <HotspotMarkerImageField

@@ -1,6 +1,7 @@
 "use client";
 
 import { Focus, Trash2 } from "lucide-react";
+import { HotspotMarkerIcon } from "@/app/editor/_components/ui/hotspot-marker-icon";
 import {
   hotspotTypeLabel,
   type Hotspot,
@@ -104,7 +105,7 @@ function MarkerVisual({ hotspot }: { hotspot: Hotspot }) {
   if (hotspot.style === "icon" && hotspot.icon) {
     return (
       <span className="editor-hot-dot" style={{ background: hotspot.color }}>
-        {hotspot.icon}
+        <HotspotMarkerIcon icon={hotspot.icon} className="h-3 w-3" />
       </span>
     );
   }

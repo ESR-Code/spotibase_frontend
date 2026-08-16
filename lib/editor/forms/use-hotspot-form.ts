@@ -8,6 +8,7 @@ import {
   type HotspotFormValues,
 } from "@/lib/editor/forms/schemas/hotspot-form.schema";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { normalizeCategoryIcon } from "@/lib/editor/theme/category-icons";
 
 export function useHotspotForm() {
   const selected = useEditorStore((s) =>
@@ -25,7 +26,7 @@ export function useHotspotForm() {
       type: "info",
       style: "dot",
       number: 1,
-      icon: "ℹ",
+      icon: "Info",
       markerImage: "",
       color: "#e63946",
       pulse: false,
@@ -46,7 +47,7 @@ export function useHotspotForm() {
       type: selected.type,
       style: selected.style,
       number: selected.number,
-      icon: selected.icon,
+      icon: normalizeCategoryIcon(selected.icon),
       markerImage: selected.markerImage,
       color: selected.color,
       pulse: selected.pulse,

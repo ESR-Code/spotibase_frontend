@@ -338,7 +338,8 @@ export function normalizeCategoryIcon(icon: string): string {
     "⚡": "Zap",
     "✓": "BadgeCheck",
     "❓": "Info",
-    "✋": "Shield",
+    "✋": "Hand",
+    "↗": "ArrowUpRight",
   };
   if (legacy[icon]) return legacy[icon];
   if (CATEGORY_ICON_MAP.has(icon)) return icon;

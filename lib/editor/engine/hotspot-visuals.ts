@@ -3,6 +3,7 @@ import type * as pc from "playcanvas";
 import { MARKER_SPRITE_SIZE } from "@/lib/editor/constants/default-settings";
 import {
   createImageTexture,
+  createLucideIconTexture,
   createPulseRingTexture,
   createTextTexture,
 } from "@/lib/editor/engine/hotspot-text-texture";
@@ -183,17 +184,26 @@ export async function rebuildCore(
       pcModule,
     );
   } else if (hotspot.style === "icon" && hotspot.icon) {
-    attachSpriteCore(
-      visual,
-      createTextTexture(
+    try {
+      const texture = await createLucideIconTexture(
         pcModule,
         app.graphicsDevice,
         hotspot.icon,
         colorHex,
-        true,
-      ),
-      pcModule,
-    );
+      );
+      if (visual.styleKey !== requestKey) {
+        texture.destroy();
+        return;
+      }
+      destroyCore(visual);
+      attachSpriteCore(visual, texture, pcModule);
+    } catch {
+      attachSpriteCore(
+        visual,
+        createTextTexture(pcModule, app.graphicsDevice, "", colorHex, false),
+        pcModule,
+      );
+    }
   } else {
     // Dot (and image placeholder): same billboard sprite path as number/icon.
     // Unlit mesh spheres were failing to show under the transparent pass.
