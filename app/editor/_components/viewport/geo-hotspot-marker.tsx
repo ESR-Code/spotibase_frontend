@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 
 type GeoHotspotMarkerProps = {
   hotspot: Hotspot;
+  /** Keep the MapLibre marker mounted but invisible/non-interactive. */
+  hidden?: boolean;
   onMarkerClick: (hotspot: Hotspot, event: MouseEvent) => void;
   onMarkerEnter: (hotspot: Hotspot, event: MouseEvent) => void;
   onMarkerLeave: (hotspot: Hotspot, event: MouseEvent) => void;
@@ -17,6 +19,7 @@ type GeoHotspotMarkerProps = {
 
 export function GeoHotspotMarker({
   hotspot,
+  hidden = false,
   onMarkerClick,
   onMarkerEnter,
   onMarkerLeave,
@@ -31,26 +34,43 @@ export function GeoHotspotMarker({
   const hovered = hoveredId === hotspot.id;
   const color = hotspot.color || hotspotTypeColors[hotspot.type];
   const scale = Math.max(0.55, hotspotSize) * (selected || hovered ? 1.15 : 1);
-  const draggable = !isPreview && mode === "select";
+  const draggable = !hidden && !isPreview && mode === "select";
+  const lng = hotspot.position.x;
+  const lat = hotspot.position.y;
+  if (!Number.isFinite(lng) || !Number.isFinite(lat)) return null;
 
   return (
     <MapMarker
-      longitude={hotspot.position.x}
-      latitude={hotspot.position.y}
+      longitude={lng}
+      latitude={lat}
       draggable={draggable}
       onClick={(event) => {
+        if (hidden) return;
         event.stopPropagation();
         onMarkerClick(hotspot, event);
       }}
-      onMouseEnter={(event) => onMarkerEnter(hotspot, event)}
-      onMouseLeave={(event) => onMarkerLeave(hotspot, event)}
-      onDragEnd={(lngLat) => onDragEnd(hotspot, lngLat)}
+      onMouseEnter={(event) => {
+        if (hidden) return;
+        onMarkerEnter(hotspot, event);
+      }}
+      onMouseLeave={(event) => {
+        onMarkerLeave(hotspot, event);
+      }}
+      onDragEnd={(lngLat) => {
+        if (hidden) return;
+        onDragEnd(hotspot, lngLat);
+      }}
     >
-      <MarkerContent className="editor-geo-marker-wrap">
+      <MarkerContent
+        className={cn(
+          "editor-geo-marker-wrap",
+          hidden && "editor-geo-marker-hidden",
+        )}
+      >
         <div
           className={cn(
             "editor-geo-marker",
-            hotspot.pulse && "editor-geo-marker-pulse",
+            hotspot.pulse && !hidden && "editor-geo-marker-pulse",
             selected && "editor-geo-marker-selected",
           )}
           style={

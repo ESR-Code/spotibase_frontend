@@ -27,6 +27,10 @@ import {
 } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
+import {
+  isPreviewHotspotEnabled,
+  usePreviewVisibilityStore,
+} from "@/lib/editor/state/preview-visibility-store";
 import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
 import { isGeoImageOverlay } from "@/lib/editor/types/scene-layer";
 
@@ -45,9 +49,14 @@ function projectHotspot(
   lng: number,
   lat: number,
 ): { x: number; y: number } | null {
-  const point = map.project({ lng, lat });
-  if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
-  return { x: point.x, y: point.y };
+  if (!Number.isFinite(lng) || !Number.isFinite(lat)) return null;
+  try {
+    const point = map.project({ lng, lat });
+    if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
+    return { x: point.x, y: point.y };
+  } catch {
+    return null;
+  }
 }
 
 function syncOverlayAnchors(map: MapLibreMap) {
@@ -60,7 +69,7 @@ function syncOverlayAnchors(map: MapLibreMap) {
 
   if (editor.isPreview && infoBoxOpen && previewActiveId != null) {
     const hotspot = editor.hotspots.find((h) => h.id === previewActiveId);
-    if (hotspot) {
+    if (hotspot && isPreviewHotspotEnabled(editor.isPreview, hotspot.id)) {
       const point = projectHotspot(map, hotspot.position.x, hotspot.position.y);
       if (point) {
         const prev = ui.infoBoxAnchor;
@@ -89,7 +98,7 @@ function syncOverlayAnchors(map: MapLibreMap) {
     !infoBoxOpen
   ) {
     const active = editor.hotspots.find((h) => h.id === previewActiveId);
-    if (active) {
+    if (active && isPreviewHotspotEnabled(editor.isPreview, active.id)) {
       const point = projectHotspot(map, active.position.x, active.position.y);
       if (point) {
         ui.setHoverTooltip({
@@ -99,6 +108,8 @@ function syncOverlayAnchors(map: MapLibreMap) {
           pinned: true,
         });
       }
+    } else if (ui.hoverTooltip) {
+      ui.setHoverTooltip(null);
     }
   }
 }
@@ -265,19 +276,30 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
         .getState()
         .hotspots.find((h) => h.id === id);
       if (!hotspot) return;
-      if (hotspot.customCameraEnabled && isMapViewportPose(hotspot.customCamera)) {
+
+      if (
+        hotspot.customCameraEnabled &&
+        isMapViewportPose(hotspot.customCamera)
+      ) {
         map.flyTo({
           center: [hotspot.customCamera.lng, hotspot.customCamera.lat],
           zoom: hotspot.customCamera.zoom,
           bearing: hotspot.customCamera.bearing ?? 0,
-          pitch: hotspot.customCamera.pitch ?? 0,
+          pitch: Number.isFinite(hotspot.customCamera.pitch)
+            ? hotspot.customCamera.pitch
+            : 0,
           essential: true,
           duration: 900,
         });
         return;
       }
+
+      const lng = hotspot.position.x;
+      const lat = hotspot.position.y;
+      if (!Number.isFinite(lng) || !Number.isFinite(lat)) return;
+
       map.flyTo({
-        center: [hotspot.position.x, hotspot.position.y],
+        center: [lng, lat],
         zoom: Math.max(map.getZoom(), 6),
         essential: true,
         duration: 800,
@@ -311,6 +333,9 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
 
     const unsubEditor = useEditorStore.subscribe(() => syncOverlayAnchors(map));
     const unsubUi = useUIStore.subscribe(() => syncOverlayAnchors(map));
+    const unsubPreview = usePreviewVisibilityStore.subscribe(() =>
+      syncOverlayAnchors(map),
+    );
 
     return () => {
       map.off("click", onClick);
@@ -329,12 +354,15 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
       window.removeEventListener("editor:scene-switched", onSceneSwitched);
       unsubEditor();
       unsubUi();
+      unsubPreview();
     };
   }, [map, isLoaded]);
 }
 
 export function handleGeoMarkerClick(id: number) {
   const editor = useEditorStore.getState();
+  const hotspot = editor.hotspots.find((h) => h.id === id);
+  if (!hotspot || !isPreviewHotspotEnabled(editor.isPreview, id)) return;
   if (editor.isPreview) {
     void runHotspotActions(id);
     return;
@@ -382,7 +410,7 @@ export function visibleGeoHotspots() {
     editor.isPreview && legendFilter !== LEGEND_CATEGORY_ALL;
   return editor.hotspots.filter(
     (hotspot) =>
-      (hotspot.enabled ?? true) &&
+      isPreviewHotspotEnabled(editor.isPreview, hotspot.id) &&
       (!filterByLegend || hotspot.category === legendFilter),
   );
 }

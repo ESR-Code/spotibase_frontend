@@ -9,6 +9,7 @@ import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { runHotspotActions } from "@/lib/editor/actions/run-hotspot-actions";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
@@ -50,6 +51,9 @@ export function LegendDrawer() {
   const legendEnabled = useSettingsStore((s) => s.legendEnabled);
   const legendCategories = useSettingsStore((s) => s.legendCategories);
   const hotspots = useEditorStore((s) => s.hotspots);
+  const disabledHotspotIds = usePreviewVisibilityStore(
+    (s) => s.disabledHotspotIds,
+  );
   const previewActiveHotspotId = useUIStore((s) => s.previewActiveHotspotId);
   const open = useUIStore((s) => s.legendDrawerOpen);
   const setOpen = useUIStore((s) => s.setLegendDrawerOpen);
@@ -63,6 +67,7 @@ export function LegendDrawer() {
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     return hotspots.filter((hotspot) => {
+      if (disabledHotspotIds.includes(hotspot.id)) return false;
       if (category !== LEGEND_CATEGORY_ALL && hotspot.category !== category) {
         return false;
       }
@@ -71,7 +76,7 @@ export function LegendDrawer() {
       const title = hotspot.title.toLowerCase();
       return legendName.includes(query) || title.includes(query);
     });
-  }, [hotspots, category, search]);
+  }, [hotspots, category, search, disabledHotspotIds]);
 
   const categoryById = useMemo(() => {
     const map = new Map<string, LegendCategory>();

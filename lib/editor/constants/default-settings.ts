@@ -60,9 +60,9 @@ export function isMapViewportPose(
 ): pose is CameraResetPosition & { lng: number; lat: number; zoom: number } {
   return (
     pose != null &&
-    pose.lng != null &&
-    pose.lat != null &&
-    pose.zoom != null
+    Number.isFinite(pose.lng) &&
+    Number.isFinite(pose.lat) &&
+    Number.isFinite(pose.zoom)
   );
 }
 

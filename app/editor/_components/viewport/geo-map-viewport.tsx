@@ -20,6 +20,7 @@ import { resolveGeoHomeViewport } from "@/lib/editor/geo/resolve-home-viewport";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useGeoStore } from "@/lib/editor/state/geo-store";
 import { useMapViewportStore } from "@/lib/editor/state/map-viewport-store";
+import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
@@ -47,12 +48,14 @@ export function GeoMapViewport() {
   const hotspots = useEditorStore((s) => s.hotspots);
   const isPreview = useEditorStore((s) => s.isPreview);
   const legendFilter = useUIStore((s) => s.legendFilterCategory);
-  const visible = hotspots.filter(
+  const disabledHotspotIds = usePreviewVisibilityStore(
+    (s) => s.disabledHotspotIds,
+  );
+  const legendVisible = hotspots.filter(
     (hotspot) =>
-      (hotspot.enabled ?? true) &&
-      (!isPreview ||
-        legendFilter === LEGEND_CATEGORY_ALL ||
-        hotspot.category === legendFilter),
+      !isPreview ||
+      legendFilter === LEGEND_CATEGORY_ALL ||
+      hotspot.category === legendFilter,
   );
 
   return (
@@ -72,10 +75,13 @@ export function GeoMapViewport() {
       >
         <GeoMapBridge />
         <GeoOverlayLayers />
-        {visible.map((hotspot) => (
+        {legendVisible.map((hotspot) => (
           <GeoHotspotMarker
             key={hotspot.id}
             hotspot={hotspot}
+            hidden={
+              isPreview && disabledHotspotIds.includes(hotspot.id)
+            }
             onMarkerClick={(item) => handleGeoMarkerClick(item.id)}
             onMarkerEnter={(item, event) =>
               handleGeoMarkerEnter(item.id, event.clientX, event.clientY)

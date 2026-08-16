@@ -10,6 +10,7 @@ import {
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
+import { isPreviewHotspotEnabled } from "@/lib/editor/state/preview-visibility-store";
 import type { Vec3 } from "@/lib/editor/types/hotspot";
 import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
 
@@ -91,7 +92,10 @@ export function createHotspotManager(
 
       const categoryVisible =
         !filterByLegend || hotspot.category === legendFilter;
-      const enabled = (hotspot.enabled ?? true) && categoryVisible;
+      const enabled =
+        categoryVisible &&
+        (!editor.isPreview ||
+          isPreviewHotspotEnabled(editor.isPreview, hotspot.id));
       if (visual.root.enabled !== enabled) {
         visual.root.enabled = enabled;
       }
@@ -161,7 +165,7 @@ export function createHotspotManager(
     ) {
       const active = editor.hotspots.find((h) => h.id === previewActiveId);
       const visual = visuals.get(previewActiveId);
-      if (active && visual) {
+      if (active && visual && isPreviewHotspotEnabled(editor.isPreview, active.id)) {
         const world = visual.root.getPosition();
         const toHotspot = new pcModule.Vec3().sub2(world, camPos);
         if (toHotspot.dot(camera.forward) > 0) {

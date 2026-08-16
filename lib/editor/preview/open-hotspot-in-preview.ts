@@ -5,6 +5,15 @@ import { useUIStore } from "@/lib/editor/state/ui-store";
 /** Delay before the select-pinned label fades back in after a click. */
 const SELECT_LABEL_REVEAL_MS = 280;
 
+/** Fly the viewport camera to this hotspot (custom pose when set). */
+export function focusHotspotCamera(id: number) {
+  window.dispatchEvent(
+    new CustomEvent("editor:focus-hotspot", {
+      detail: { id },
+    }),
+  );
+}
+
 /**
  * Shared preview selection path: focus camera, set active hotspot, open marker dialog.
  * Used by canvas picking and the Legend drawer.
@@ -38,11 +47,7 @@ export function openHotspotInPreview(id: number) {
     }, SELECT_LABEL_REVEAL_MS);
   }
 
-  window.dispatchEvent(
-    new CustomEvent("editor:focus-hotspot", {
-      detail: { id: hotspot.id },
-    }),
-  );
+  focusHotspotCamera(hotspot.id);
 
   // Drop stale anchor so the info box repositions on the next frame.
   if (settings.markerDialogPresentation === "infobox") {

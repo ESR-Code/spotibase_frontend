@@ -2584,6 +2584,11 @@
   cursor: pointer;
 }
 
+.editor-geo-marker-wrap.editor-geo-marker-hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .editor-geo-marker {
   position: relative;
   display: flex;

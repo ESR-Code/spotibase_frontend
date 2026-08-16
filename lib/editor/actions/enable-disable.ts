@@ -1,5 +1,6 @@
 import { useEditorStore } from "@/lib/editor/state/editor-store";
-import { useLayersStore } from "@/lib/editor/state/layers-store";
+import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
+import { useUIStore } from "@/lib/editor/state/ui-store";
 import type { EnableDisableActionNode } from "@/lib/editor/types/hotspot-action";
 
 export function validateEnableDisableData(
@@ -9,28 +10,32 @@ export function validateEnableDisableData(
 }
 
 /**
- * Apply per-item enable state: checked (not in disabled lists) → enable,
- * unchecked → disable. Covers every hotspot/layer currently in the scene.
+ * Apply per-item enable state for the current Preview session only.
+ * Checked (not in disabled lists) → show; unchecked → hide.
+ * Editor visibility is left unchanged.
  */
 export function applyEnableDisable(
   data: EnableDisableActionNode["data"],
 ): void {
-  const disabledHotspots = new Set(data.disabledHotspotIds);
-  const disabledLayers = new Set(data.disabledLayerIds);
+  usePreviewVisibilityStore
+    .getState()
+    .apply(data.disabledHotspotIds, data.disabledLayerIds);
+
   const editor = useEditorStore.getState();
-  const layers = useLayersStore.getState();
+  const ui = useUIStore.getState();
+  const hoveredId = editor.hoveredId;
+  const activeId = ui.previewActiveHotspotId;
+  const hidesHovered =
+    hoveredId != null && data.disabledHotspotIds.includes(hoveredId);
+  const hidesActive =
+    activeId != null && data.disabledHotspotIds.includes(activeId);
 
-  for (const hotspot of editor.hotspots) {
-    const enabled = !disabledHotspots.has(hotspot.id);
-    if ((hotspot.enabled ?? true) !== enabled) {
-      editor.updateHotspot(hotspot.id, { enabled });
-    }
+  if (hidesHovered) editor.setHoveredHotspot(null);
+  if (hidesHovered || hidesActive || ui.hoverTooltip) {
+    ui.setHoverTooltip(null);
   }
-
-  for (const layer of layers.layers) {
-    const visible = !disabledLayers.has(layer.id);
-    if (layer.visible !== visible) {
-      layers.updateLayer(layer.id, { visible });
-    }
+  if (hidesActive) {
+    ui.setPreviewLabelPending(false);
+    ui.setInfoBoxAnchor(null);
   }
 }

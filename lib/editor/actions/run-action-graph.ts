@@ -24,10 +24,12 @@ import {
 } from "@/lib/editor/actions/send-post-message";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
+import { useUIStore } from "@/lib/editor/state/ui-store";
 import type {
   ActionNode,
   HotspotActionGraph,
 } from "@/lib/editor/types/hotspot-action";
+import { focusHotspotCamera } from "@/lib/editor/preview/open-hotspot-in-preview";
 import { toast } from "sonner";
 
 export type { ActionRunContext };
@@ -106,6 +108,12 @@ export async function runHotspotActions(hotspotId: number) {
     .getState()
     .hotspots.find((h) => h.id === hotspotId);
   if (!hotspot) return;
+
+  const editor = useEditorStore.getState();
+  editor.setHoveredHotspot(null);
+  useUIStore.getState().setHoverTooltip(null);
+
+  focusHotspotCamera(hotspotId);
 
   await runActionGraph(getActionGraph(hotspot), {
     hotspotId,

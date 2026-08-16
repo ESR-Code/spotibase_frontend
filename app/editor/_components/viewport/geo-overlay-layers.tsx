@@ -20,6 +20,10 @@ import {
 } from "@/lib/editor/layers/overlay-ids";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useLayersStore } from "@/lib/editor/state/layers-store";
+import {
+  isPreviewLayerVisible,
+  usePreviewVisibilityStore,
+} from "@/lib/editor/state/preview-visibility-store";
 import { syncActiveSceneLayers } from "@/lib/editor/state/scenes-store";
 import {
   isGeoImageOverlay,
@@ -38,12 +42,22 @@ function removeOverlay(map: MapLibreMap, layerId: string) {
 }
 
 function visibleGeoOverlays(layers: ReturnType<typeof useLayersStore.getState>["layers"]) {
-  return layers.filter(isGeoImageOverlay).filter((layer) => layer.visible);
+  return layers
+    .filter(isGeoImageOverlay)
+    .filter((layer) =>
+      isPreviewLayerVisible(
+        useEditorStore.getState().isPreview,
+        layer.id,
+        layer.visible,
+      ),
+    );
 }
 
 export function GeoOverlayLayers() {
   const { map, isLoaded } = useMap();
   const layers = useLayersStore((s) => s.layers);
+  const disabledLayerIds = usePreviewVisibilityStore((s) => s.disabledLayerIds);
+  const isPreview = useEditorStore((s) => s.isPreview);
   const contentKeysRef = useRef(new Map<string, string>());
 
   useEffect(() => {
@@ -158,7 +172,7 @@ export function GeoOverlayLayers() {
     return () => {
       cancelled = true;
     };
-  }, [map, isLoaded, layers]);
+  }, [map, isLoaded, layers, disabledLayerIds, isPreview]);
 
   useEffect(() => {
     if (!map) return;
