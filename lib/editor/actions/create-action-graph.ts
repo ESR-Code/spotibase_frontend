@@ -58,6 +58,22 @@ function asGoToHotspotOffset(value: unknown): GoToHotspotOffset {
   return "self";
 }
 
+function asHotspotRef(data: {
+  hotspotRef?: unknown;
+  hotspotId?: unknown;
+}): string {
+  if (typeof data.hotspotRef === "string") return data.hotspotRef;
+  if (typeof data.hotspotId === "string") return data.hotspotId;
+  if (
+    typeof data.hotspotId === "number" &&
+    Number.isFinite(data.hotspotId) &&
+    data.hotspotId > 0
+  ) {
+    return `HSP-${String(data.hotspotId).padStart(3, "0")}`;
+  }
+  return "";
+}
+
 function asNumberIds(value: unknown): number[] {
   if (!Array.isArray(value)) return [];
   return value.filter(
@@ -136,7 +152,7 @@ export function createActionNode(
         id: newActionId(),
         type: "goToHotspot",
         position: { ...position },
-        data: { hotspotId: 0, offset: "self", runTargetActions: false },
+        data: { hotspotRef: "", offset: "self", runTargetActions: false },
       };
     case "openUrl":
       return {
@@ -252,11 +268,7 @@ export function cloneActionGraph(
           type: "goToHotspot",
           position: { ...node.position },
           data: {
-            hotspotId:
-              typeof node.data.hotspotId === "number" &&
-              Number.isFinite(node.data.hotspotId)
-                ? node.data.hotspotId
-                : 0,
+            hotspotRef: asHotspotRef(node.data),
             offset: asGoToHotspotOffset(node.data.offset),
             runTargetActions: Boolean(node.data.runTargetActions),
           },

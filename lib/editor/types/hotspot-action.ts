@@ -45,8 +45,11 @@ export type GoToSceneActionNode = ActionNodeBase<
 export type GoToHotspotActionNode = ActionNodeBase<
   "goToHotspot",
   {
-    /** Reference hotspot id in the scene list. `0` = unset. */
-    hotspotId: number;
+    /**
+     * Target hotspot reference. Static examples: `3`, `HSP-003`.
+     * Dynamic: `HSP-{{id}}` or `{{hotspotId}}` (resolved at Preview).
+     */
+    hotspotRef: string;
     /**
      * `self` → fly to the selected hotspot.
      * `next` / `prev` → fly to the neighbor after / before it (scene order, wraps).

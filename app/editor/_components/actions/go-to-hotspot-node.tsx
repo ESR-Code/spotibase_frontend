@@ -2,17 +2,28 @@
 
 import type { Node, NodeProps } from "@xyflow/react";
 import { Crosshair } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-card";
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
+import { VariableInsertButton } from "@/app/editor/_components/actions/variable-insert-button";
 import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
 import {
   APP_START_OWNER_ID,
   isHotspotOwnerId,
 } from "@/lib/editor/actions/action-owners";
-import { resolveGoToHotspotId } from "@/lib/editor/actions/go-to-hotspot";
 import type { ActionFlowNodeData } from "@/lib/editor/actions/flow-adapter";
+import {
+  formatHotspotRef,
+  resolveGoToHotspotId,
+  resolveHotspotRefToId,
+} from "@/lib/editor/actions/go-to-hotspot";
+import {
+  hasFieldTokens,
+  insertTextAt,
+} from "@/lib/editor/actions/interpolate-fields";
+import { listAllFieldSources } from "@/lib/editor/blocks/http-field-sources";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import {
@@ -24,10 +35,42 @@ import {
 export type GoToHotspotFlowNode = Node<ActionFlowNodeData, "goToHotspot">;
 
 const EMPTY_DATA: GoToHotspotActionNode["data"] = {
-  hotspotId: 0,
+  hotspotRef: "",
   offset: "self",
   runTargetActions: false,
 };
+
+function readGoToHotspotData(
+  ownerId: number,
+  actionNodeId: string,
+): GoToHotspotActionNode["data"] {
+  if (isHotspotOwnerId(ownerId)) {
+    const hotspot = useEditorStore
+      .getState()
+      .hotspots.find((h) => h.id === ownerId);
+    const node = hotspot?.actions?.nodes.find((n) => n.id === actionNodeId);
+    if (!node || node.type !== "goToHotspot") return EMPTY_DATA;
+    return {
+      hotspotRef: node.data.hotspotRef ?? "",
+      offset: node.data.offset ?? "self",
+      runTargetActions: Boolean(node.data.runTargetActions),
+    };
+  }
+
+  const scenes = useScenesStore.getState();
+  const graph =
+    ownerId === APP_START_OWNER_ID
+      ? scenes.appStartActions
+      : (scenes.scenes.find((sc) => sc.id === scenes.activeSceneId)
+          ?.startActions ?? null);
+  const node = graph?.nodes.find((n) => n.id === actionNodeId);
+  if (!node || node.type !== "goToHotspot") return EMPTY_DATA;
+  return {
+    hotspotRef: node.data.hotspotRef ?? "",
+    offset: node.data.offset ?? "self",
+    runTargetActions: Boolean(node.data.runTargetActions),
+  };
+}
 
 export function GoToHotspotNode({
   data,
@@ -37,6 +80,9 @@ export function GoToHotspotNode({
   const actionNodeId = data.actionNode?.id;
   const ownerId = data.hotspotId;
   const hotspots = useEditorStore((s) => s.hotspots);
+  const refInputRef = useRef<HTMLInputElement>(null);
+  const refFocusedRef = useRef(false);
+  const [refDraft, setRefDraft] = useState("");
 
   const hotspotLive = useEditorStore(
     useShallow((s) => {
@@ -45,7 +91,7 @@ export function GoToHotspotNode({
       const node = hotspot?.actions?.nodes.find((n) => n.id === actionNodeId);
       if (!node || node.type !== "goToHotspot") return EMPTY_DATA;
       return {
-        hotspotId: node.data.hotspotId ?? 0,
+        hotspotRef: node.data.hotspotRef ?? "",
         offset: node.data.offset ?? "self",
         runTargetActions: Boolean(node.data.runTargetActions),
       };
@@ -63,7 +109,7 @@ export function GoToHotspotNode({
       const node = graph?.nodes.find((n) => n.id === actionNodeId);
       if (!node || node.type !== "goToHotspot") return EMPTY_DATA;
       return {
-        hotspotId: node.data.hotspotId ?? 0,
+        hotspotRef: node.data.hotspotRef ?? "",
         offset: node.data.offset ?? "self",
         runTargetActions: Boolean(node.data.runTargetActions),
       };
@@ -71,27 +117,58 @@ export function GoToHotspotNode({
   );
 
   const live = isHotspotOwnerId(ownerId) ? hotspotLive : startLive;
+  const fieldSources = useMemo(
+    () => (actionNodeId ? listAllFieldSources(actionNodeId) : []),
+    [actionNodeId],
+  );
 
   if (!actionNodeId) return null;
 
-  const exists =
-    !live.hotspotId || hotspots.some((hotspot) => hotspot.id === live.hotspotId);
+  const hotspotRef = refFocusedRef.current ? refDraft : live.hotspotRef;
+  const staticId = hasFieldTokens(hotspotRef)
+    ? null
+    : resolveHotspotRefToId(hotspotRef, { interpolate: false });
+  const selectValue =
+    staticId && hotspots.some((h) => h.id === staticId) ? String(staticId) : "";
   const resolvedId =
-    live.hotspotId && exists
-      ? resolveGoToHotspotId(live.hotspotId, live.offset)
+    staticId != null
+      ? resolveGoToHotspotId(staticId, live.offset)
       : null;
   const resolved = resolvedId
     ? hotspots.find((hotspot) => hotspot.id === resolvedId)
     : null;
 
-  const warning = !live.hotspotId
-    ? "Select a target hotspot"
-    : !exists
-      ? "Target hotspot no longer exists"
-      : null;
+  const warning = !hotspotRef.trim()
+    ? "Select or enter a target hotspot"
+    : hasFieldTokens(hotspotRef)
+      ? null
+      : staticId == null
+        ? "Enter HSP-###, a numeric id, or HSP-{{field}}"
+        : !hotspots.some((h) => h.id === staticId)
+          ? "Target hotspot no longer exists"
+          : null;
 
   const patch = (partial: Partial<GoToHotspotActionNode["data"]>) => {
     updateNodeData(ownerId, actionNodeId, partial);
+  };
+
+  const commitRef = (next: string) => {
+    setRefDraft(next);
+    patch({ hotspotRef: next });
+  };
+
+  const insertInto = (
+    current: string,
+    token: string,
+    el: HTMLInputElement | null,
+  ) => {
+    if (!el) return insertTextAt(current, token, current.length);
+    return insertTextAt(
+      current,
+      token,
+      el.selectionStart ?? current.length,
+      el.selectionEnd ?? current.length,
+    );
   };
 
   const setOffset = (offset: GoToHotspotOffset) => {
@@ -117,6 +194,14 @@ export function GoToHotspotNode({
           >
             {warning}
           </div>
+        ) : hasFieldTokens(hotspotRef) ? (
+          <div
+            className="truncate text-[10px] font-medium"
+            style={{ color: "var(--editor-muted)" }}
+          >
+            → dynamic {hotspotRef}
+            {live.runTargetActions ? " + actions" : ""}
+          </div>
         ) : resolved ? (
           <div
             className="truncate text-[10px] font-medium"
@@ -136,25 +221,66 @@ export function GoToHotspotNode({
           Target hotspot
         </span>
         <select
-          className="editor-select"
-          value={live.hotspotId || ""}
+          className="editor-select nodrag nopan nowheel mb-1.5"
+          value={selectValue}
           onChange={(e) => {
             e.stopPropagation();
-            patch({
-              hotspotId: e.target.value ? Number(e.target.value) : 0,
-            });
+            const id = e.target.value ? Number(e.target.value) : 0;
+            const next = id > 0 ? formatHotspotRef(id) : "";
+            commitRef(next);
           }}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
-          <option value="">Select hotspot…</option>
+          <option value="">
+            {hasFieldTokens(hotspotRef) ? "Custom / variable…" : "Select hotspot…"}
+          </option>
           {hotspots.map((hotspot) => (
             <option key={hotspot.id} value={hotspot.id}>
-              {hotspot.title || `Hotspot ${hotspot.id}`} (HSP-
-              {String(hotspot.id).padStart(3, "0")})
+              {hotspot.title || `Hotspot ${hotspot.id}`} (
+              {formatHotspotRef(hotspot.id)})
             </option>
           ))}
         </select>
+        <div className="editor-var-field">
+          <input
+            ref={refInputRef}
+            className="editor-input nodrag nopan nowheel"
+            type="text"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="HSP-001 or HSP-{{id}}"
+            value={hotspotRef}
+            onFocus={() => {
+              refFocusedRef.current = true;
+              setRefDraft(live.hotspotRef);
+            }}
+            onChange={(e) => commitRef(e.target.value)}
+            onBlur={(e) => {
+              refFocusedRef.current = false;
+              commitRef(e.currentTarget.value);
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          />
+          <VariableInsertButton
+            sources={fieldSources}
+            onInsert={(token) => {
+              const current = readGoToHotspotData(ownerId, actionNodeId)
+                .hotspotRef;
+              const base = refFocusedRef.current ? refDraft : current;
+              // Prefer HSP-{{field}} when the field is empty.
+              const insert =
+                !base.trim() && token.startsWith("{{")
+                  ? `HSP-${token}`
+                  : token;
+              const next = insertInto(base, insert, refInputRef.current);
+              commitRef(next);
+              requestAnimationFrame(() => refInputRef.current?.focus());
+            }}
+          />
+        </div>
       </label>
 
       <div className="mb-2">

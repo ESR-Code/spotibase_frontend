@@ -121,11 +121,10 @@ export function updateNodeData(
         return {
           ...node,
           data: {
-            hotspotId:
-              typeof patch.hotspotId === "number" &&
-              Number.isFinite(patch.hotspotId)
-                ? patch.hotspotId
-                : node.data.hotspotId,
+            hotspotRef:
+              typeof patch.hotspotRef === "string"
+                ? patch.hotspotRef
+                : node.data.hotspotRef,
             offset,
             runTargetActions:
               typeof patch.runTargetActions === "boolean"
