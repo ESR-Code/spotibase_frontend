@@ -95,6 +95,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       clearPostMessageListeners();
       usePreviewVisibilityStore.getState().reset();
       usePreviewAppearanceStore.getState().reset();
+      if (!isPreview) {
+        void Promise.all([
+          import("@/lib/editor/state/ui-store"),
+          import("@/lib/editor/actions/open-modal-events"),
+        ]).then(([{ useUIStore }, { clearOpenModalCloseHandler }]) => {
+          if (useUIStore.getState().previewModalOpen) {
+            useUIStore.getState().setPreviewModalOpen(false);
+          } else {
+            clearOpenModalCloseHandler();
+          }
+        });
+      }
       set({
         isPreview,
         mode: isPreview ? "preview" : "select",
@@ -116,6 +128,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       clearPostMessageListeners();
       usePreviewVisibilityStore.getState().reset();
       usePreviewAppearanceStore.getState().reset();
+      void Promise.all([
+        import("@/lib/editor/state/ui-store"),
+        import("@/lib/editor/actions/open-modal-events"),
+      ]).then(([{ useUIStore }, { clearOpenModalCloseHandler }]) => {
+        if (useUIStore.getState().previewModalOpen) {
+          useUIStore.getState().setPreviewModalOpen(false);
+        } else {
+          clearOpenModalCloseHandler();
+        }
+      });
     }
     set({
       mode,

@@ -2167,7 +2167,9 @@
 }
 
 .editor-root .editor-action-node {
+  position: relative;
   width: 240px;
+  overflow: visible;
   border-radius: 12px;
   border: 1px solid var(--editor-line-soft);
   background: linear-gradient(
@@ -2476,6 +2478,40 @@
 
 .editor-root .editor-action-trigger .editor-action-handle {
   background: var(--editor-teal) !important;
+}
+
+.editor-root .editor-action-event-handles {
+  position: relative;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.editor-root .editor-action-event-handle-row {
+  position: relative;
+  display: flex;
+  min-height: 18px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.editor-root .editor-action-event-handle-label {
+  margin-right: 10px;
+  color: var(--editor-muted-2);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.editor-root .editor-action-handle-event {
+  position: absolute !important;
+  top: 50% !important;
+  right: -6px !important;
+  left: auto !important;
+  transform: translate(50%, -50%) !important;
 }
 
 .editor-root .editor-actions-context-menu {

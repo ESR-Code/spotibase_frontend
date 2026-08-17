@@ -54,7 +54,26 @@ export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
               const ui = ACTION_UI_REGISTRY[node.type];
               const Icon = ui.icon;
               const detail =
-                node.type === "goToScene"
+                node.type === "openModal"
+                  ? (() => {
+                      const hasOnOpen = graph.edges.some(
+                        (edge) =>
+                          edge.source === node.id &&
+                          (edge.sourceHandle === "onOpen" ||
+                            edge.sourceHandle == null ||
+                            edge.sourceHandle === ""),
+                      );
+                      const hasOnClose = graph.edges.some(
+                        (edge) =>
+                          edge.source === node.id &&
+                          edge.sourceHandle === "onClose",
+                      );
+                      if (hasOnOpen && hasOnClose) return "→ onOpen + onClose";
+                      if (hasOnOpen) return "→ onOpen";
+                      if (hasOnClose) return "→ onClose";
+                      return null;
+                    })()
+                  : node.type === "goToScene"
                   ? node.data.sceneId
                     ? `→ ${
                         scenes.find((s) => s.id === node.data.sceneId)?.name ??
@@ -67,37 +86,37 @@ export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
                           node.data.hotspotRef
                         }${node.data.runTargetActions ? " + actions" : ""}`
                       : "→ (no hotspot)"
-                  : node.type === "openUrl"
-                    ? node.data.url.trim()
-                      ? `→ ${node.data.url.trim()}`
-                      : "→ (no url)"
-                    : node.type === "sendPostMessage"
-                      ? node.data.eventName.trim()
-                        ? `→ ${(node.data.mode ?? "send") === "receive" ? "recv" : "send"} ${node.data.eventName.trim()}`
-                        : `→ ${(node.data.mode ?? "send") === "receive" ? "recv" : "send"} (no event)`
-                      : node.type === "httpRequest"
-                        ? node.data.url.trim()
-                          ? `→ ${node.data.method} ${node.data.url.trim()}`
-                          : `→ ${node.data.method} (no url)`
-                        : node.type === "enableDisable"
-                          ? (node.data.disabledHotspotIds?.length ?? 0) +
-                              (node.data.disabledLayerIds?.length ?? 0) >
-                            0
-                            ? `→ ${(node.data.disabledHotspotIds?.length ?? 0) + (node.data.disabledLayerIds?.length ?? 0)} disabled`
-                            : "→ all enabled"
-                          : node.type === "changeHotspotColor"
-                            ? (node.data.hotspotIds?.length ?? 0) > 0
-                              ? node.data.color.trim()
-                                ? `→ ${node.data.hotspotIds.length} recolor`
-                                : `→ ${node.data.hotspotIds.length} reset color`
-                              : "→ (no hotspots)"
-                            : node.type === "changeHotspotIcon"
+                    : node.type === "openUrl"
+                      ? node.data.url.trim()
+                        ? `→ ${node.data.url.trim()}`
+                        : "→ (no url)"
+                      : node.type === "sendPostMessage"
+                        ? node.data.eventName.trim()
+                          ? `→ ${(node.data.mode ?? "send") === "receive" ? "recv" : "send"} ${node.data.eventName.trim()}`
+                          : `→ ${(node.data.mode ?? "send") === "receive" ? "recv" : "send"} (no event)`
+                        : node.type === "httpRequest"
+                          ? node.data.url.trim()
+                            ? `→ ${node.data.method} ${node.data.url.trim()}`
+                            : `→ ${node.data.method} (no url)`
+                          : node.type === "enableDisable"
+                            ? (node.data.disabledHotspotIds?.length ?? 0) +
+                                (node.data.disabledLayerIds?.length ?? 0) >
+                              0
+                              ? `→ ${(node.data.disabledHotspotIds?.length ?? 0) + (node.data.disabledLayerIds?.length ?? 0)} disabled`
+                              : "→ all enabled"
+                            : node.type === "changeHotspotColor"
                               ? (node.data.hotspotIds?.length ?? 0) > 0
-                                ? node.data.icon.trim()
-                                  ? `→ ${node.data.hotspotIds.length} icon`
-                                  : `→ ${node.data.hotspotIds.length} reset icon`
+                                ? node.data.color.trim()
+                                  ? `→ ${node.data.hotspotIds.length} recolor`
+                                  : `→ ${node.data.hotspotIds.length} reset color`
                                 : "→ (no hotspots)"
-                              : null;
+                              : node.type === "changeHotspotIcon"
+                                ? (node.data.hotspotIds?.length ?? 0) > 0
+                                  ? node.data.icon.trim()
+                                    ? `→ ${node.data.hotspotIds.length} icon`
+                                    : `→ ${node.data.hotspotIds.length} reset icon`
+                                  : "→ (no hotspots)"
+                                : null;
               return (
                 <li
                   key={node.id}

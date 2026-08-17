@@ -159,7 +159,20 @@ export type ActionNode =
   | ChangeHotspotColorActionNode
   | ChangeHotspotIconActionNode;
 
-export type ActionEdge = { id: string; source: string; target: string };
+export type ActionEdge = {
+  id: string;
+  source: string;
+  target: string;
+  /**
+   * Optional source handle id for multi-output nodes.
+   * Open Modal uses `"onOpen"` / `"onClose"`. Omitted = default output.
+   */
+  sourceHandle?: string | null;
+};
+
+/** Source handle ids on the Open Modal action node. */
+export const OPEN_MODAL_HANDLE_ON_OPEN = "onOpen";
+export const OPEN_MODAL_HANDLE_ON_CLOSE = "onClose";
 
 /**
  * Trigger ("hotspot clicked") is implicit; its id is TRIGGER_NODE_ID

@@ -79,7 +79,7 @@ type UIState = {
   closeAllOverlays: () => void;
 };
 
-export const useUIStore = create<UIState>((set) => ({
+export const useUIStore = create<UIState>((set, get) => ({
   isLoading: true,
   outlinerCollapsed: false,
   outlinerTab: "outliner",
@@ -110,7 +110,17 @@ export const useUIStore = create<UIState>((set) => ({
   setLegendDrawerOpen: (legendDrawerOpen) => set({ legendDrawerOpen }),
   setLegendFilterCategory: (legendFilterCategory) =>
     set({ legendFilterCategory }),
-  setPreviewModalOpen: (previewModalOpen) => set({ previewModalOpen }),
+  setPreviewModalOpen: (previewModalOpen) => {
+    const wasOpen = get().previewModalOpen;
+    set({ previewModalOpen });
+    if (wasOpen && !previewModalOpen) {
+      void import("@/lib/editor/actions/open-modal-events").then(
+        ({ notifyPreviewModalClosed }) => {
+          notifyPreviewModalClosed();
+        },
+      );
+    }
+  },
   setPreviewModalIndex: (previewModalIndex) => set({ previewModalIndex }),
   setPreviewActiveHotspotId: (previewActiveHotspotId) =>
     set({ previewActiveHotspotId }),
@@ -136,7 +146,8 @@ export const useUIStore = create<UIState>((set) => ({
         : state,
     ),
   endSceneTransition: () => set({ sceneTransition: null }),
-  closeAllOverlays: () =>
+  closeAllOverlays: () => {
+    const wasOpen = get().previewModalOpen;
     set({
       settingsDrawerOpen: false,
       generalSettingsDrawerOpen: false,
@@ -150,5 +161,13 @@ export const useUIStore = create<UIState>((set) => ({
       previewLabelPending: false,
       hoverTooltip: null,
       infoBoxAnchor: null,
-    }),
+    });
+    if (wasOpen) {
+      void import("@/lib/editor/actions/open-modal-events").then(
+        ({ notifyPreviewModalClosed }) => {
+          notifyPreviewModalClosed();
+        },
+      );
+    }
+  },
 }));

@@ -96,6 +96,9 @@ export function toFlowGraph(entries: ActionFlowEntry[]): {
         id: flowNodeId(ownerId, edge.id),
         source: flowNodeId(ownerId, edge.source),
         target: flowNodeId(ownerId, edge.target),
+        ...(edge.sourceHandle
+          ? { sourceHandle: edge.sourceHandle }
+          : {}),
       });
     }
   }

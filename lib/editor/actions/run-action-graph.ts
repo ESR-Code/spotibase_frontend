@@ -34,7 +34,7 @@ import { toast } from "sonner";
 
 export type { ActionRunContext };
 
-async function runActionNodeList(
+export async function runActionNodeList(
   nodes: ActionNode[],
   ctx: ActionRunContext,
 ): Promise<void> {

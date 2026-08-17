@@ -1,5 +1,5 @@
 import { patchOwnedActionNodeData } from "@/lib/editor/actions/action-owners";
-import { createActionNode } from "@/lib/editor/actions/create-action-graph";
+import { createActionNode, getActionGraph } from "@/lib/editor/actions/create-action-graph";
 import {
   applyChangeHotspotColor,
   applyChangeHotspotIcon,
@@ -14,6 +14,7 @@ import {
   applyGoToHotspot,
   validateGoToHotspotData,
 } from "@/lib/editor/actions/go-to-hotspot";
+import { chainFrom } from "@/lib/editor/actions/graph-ops";
 import {
   clearHttpRequestCached,
   executeHttpRequest,
@@ -22,6 +23,7 @@ import {
   markHttpRequestCached,
   validateHttpRequestData,
 } from "@/lib/editor/actions/http-request";
+import { registerOpenModalCloseHandler } from "@/lib/editor/actions/open-modal-events";
 import {
   parsePayloadJson,
   sendPostMessage,
@@ -39,6 +41,7 @@ import type {
   ActionNodeType,
   ActionNodeXY,
 } from "@/lib/editor/types/hotspot-action";
+import { OPEN_MODAL_HANDLE_ON_OPEN } from "@/lib/editor/types/hotspot-action";
 import {
   normalizeExternalUrl,
   openExternalUrl,
@@ -73,15 +76,45 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
   openModal: {
     type: "openModal",
     label: "Open Modal",
-    description: "Focus the hotspot and open its marker dialog.",
+    description: "Open the marker dialog; wire onOpen / onClose for follow-ups.",
     createDefault: (position) => createActionNode("openModal", position),
     validate: () => null,
-    run: (_node, ctx) => {
+    run: async (node, ctx) => {
+      if (node.type !== "openModal") return;
       if (ctx.hotspotId == null) {
         toast.error("Open Modal can only run from a hotspot click");
         return "stop";
       }
+
       openHotspotInPreview(ctx.hotspotId);
+
+      registerOpenModalCloseHandler({
+        ownerId: ctx.ownerId,
+        nodeId: node.id,
+        hotspotId: ctx.hotspotId,
+        ownerKey: ctx.ownerKey,
+      });
+
+      const hotspot = useEditorStore
+        .getState()
+        .hotspots.find((item) => item.id === ctx.ownerId);
+      const graph = hotspot ? getActionGraph(hotspot) : null;
+      if (graph) {
+        const onOpenChain = chainFrom(
+          graph,
+          node.id,
+          OPEN_MODAL_HANDLE_ON_OPEN,
+        );
+        if (onOpenChain.length > 0) {
+          const { runActionNodeList } = await import(
+            "@/lib/editor/actions/run-action-graph"
+          );
+          await runActionNodeList(onOpenChain, ctx);
+        }
+      }
+
+      // Branches continue from onOpen / onClose — stop the primary walk.
+      return "stop";
     },
   },
   goToScene: {

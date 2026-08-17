@@ -72,7 +72,9 @@ type ActionsFlowProps = {
 
 function graphFingerprint(graph: HotspotActionGraph): string {
   const nodes = graph.nodes.map((n) => `${n.id}:${n.type}`).join(",");
-  const edges = graph.edges.map((e) => `${e.source}>${e.target}`).join(",");
+  const edges = graph.edges
+    .map((e) => `${e.source}:${e.sourceHandle ?? ""}>${e.target}`)
+    .join(",");
   return `${nodes}|${edges}`;
 }
 
@@ -290,7 +292,12 @@ function ActionsFlowCanvas({
       // Same lane — normal connect.
       if (sourceParsed.hotspotId === targetParsed.hotspotId) {
         updateGraph(sourceParsed.hotspotId, (graph) =>
-          connect(graph, sourceParsed.nodeId, targetParsed.nodeId),
+          connect(
+            graph,
+            sourceParsed.nodeId,
+            targetParsed.nodeId,
+            connection.sourceHandle,
+          ),
         );
         return;
       }
@@ -326,6 +333,7 @@ function ActionsFlowCanvas({
         },
         sourceParsed.nodeId,
         moving.id,
+        connection.sourceHandle,
       );
 
       writeGraph(fromOwner, nextFrom);

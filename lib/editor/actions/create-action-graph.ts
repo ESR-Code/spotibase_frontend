@@ -18,6 +18,7 @@ import type {
 } from "@/lib/editor/types/hotspot-action";
 import { HTTP_METHODS, TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
 import type { GoToHotspotOffset } from "@/lib/editor/types/hotspot-action";
+import { OPEN_MODAL_HANDLE_ON_OPEN } from "@/lib/editor/types/hotspot-action";
 import { markerColorSwatches } from "@/lib/editor/theme/tokens";
 
 export function newActionId(): string {
@@ -357,7 +358,20 @@ export function cloneActionGraph(
         data: {},
       };
     }),
-    edges: graph.edges.map((edge) => ({ ...edge })),
+    edges: graph.edges.map((edge) => {
+      const sourceNode = graph.nodes.find((node) => node.id === edge.source);
+      const legacyOpenModal =
+        sourceNode?.type === "openModal" &&
+        (edge.sourceHandle == null || edge.sourceHandle === "");
+      return {
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        sourceHandle: legacyOpenModal
+          ? OPEN_MODAL_HANDLE_ON_OPEN
+          : (edge.sourceHandle ?? null),
+      };
+    }),
   };
 }
 

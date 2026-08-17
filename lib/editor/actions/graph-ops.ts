@@ -4,35 +4,107 @@ import {
   TRIGGER_NODE_ID,
 } from "@/lib/editor/actions/create-action-graph";
 import type {
+  ActionEdge,
   ActionNode,
   ActionNodeType,
   ActionNodeXY,
   HotspotActionGraph,
 } from "@/lib/editor/types/hotspot-action";
+import {
+  OPEN_MODAL_HANDLE_ON_CLOSE,
+  OPEN_MODAL_HANDLE_ON_OPEN,
+} from "@/lib/editor/types/hotspot-action";
 
-/** Walk the linear chain starting from the trigger. */
-export function chainFromTrigger(graph: HotspotActionGraph): ActionNode[] {
-  const byId = new Map(graph.nodes.map((n) => [n.id, n]));
-  const outgoing = new Map(graph.edges.map((e) => [e.source, e.target]));
+export function normalizeSourceHandle(
+  handle: string | null | undefined,
+): string | null {
+  if (handle == null || handle === "") return null;
+  return handle;
+}
+
+/**
+ * Whether an edge should be treated as coming from `handle`.
+ * Legacy Open Modal edges (no handle) count as `onOpen`.
+ */
+export function edgeMatchesHandle(
+  edge: ActionEdge,
+  handle: string | null,
+): boolean {
+  const edgeHandle = normalizeSourceHandle(edge.sourceHandle);
+  if (handle === OPEN_MODAL_HANDLE_ON_OPEN) {
+    return (
+      edgeHandle === OPEN_MODAL_HANDLE_ON_OPEN || edgeHandle === null
+    );
+  }
+  if (handle === null) {
+    return edgeHandle === null;
+  }
+  return edgeHandle === handle;
+}
+
+function nextAlongHandle(
+  graph: HotspotActionGraph,
+  sourceId: string,
+  handle: string | null,
+): string | undefined {
+  return graph.edges.find(
+    (edge) => edge.source === sourceId && edgeMatchesHandle(edge, handle),
+  )?.target;
+}
+
+/** Walk a linear chain starting from `startId`'s outgoing `handle`. */
+export function chainFrom(
+  graph: HotspotActionGraph,
+  startId: string,
+  handle: string | null = null,
+): ActionNode[] {
+  const byId = new Map(graph.nodes.map((node) => [node.id, node]));
   const chain: ActionNode[] = [];
   const visited = new Set<string>();
 
-  let currentId = outgoing.get(TRIGGER_NODE_ID);
+  let currentId = nextAlongHandle(graph, startId, handle);
   while (currentId && !visited.has(currentId)) {
     visited.add(currentId);
     const node = byId.get(currentId);
     if (!node) break;
     chain.push(node);
-    currentId = outgoing.get(currentId);
+    // After the first hop, continue along the default (unnamed) output.
+    currentId = nextAlongHandle(graph, currentId, null);
   }
   return chain;
 }
 
-/** Connect source → target, replacing any existing edge from source. */
+/**
+ * Walk the primary chain from the trigger.
+ * Open Modal continues via its onOpen branch (including legacy unlabeled edges).
+ */
+export function chainFromTrigger(graph: HotspotActionGraph): ActionNode[] {
+  const byId = new Map(graph.nodes.map((node) => [node.id, node]));
+  const chain: ActionNode[] = [];
+  const visited = new Set<string>();
+
+  let currentId = nextAlongHandle(graph, TRIGGER_NODE_ID, null);
+  while (currentId && !visited.has(currentId)) {
+    visited.add(currentId);
+    const node = byId.get(currentId);
+    if (!node) break;
+    chain.push(node);
+    const nextHandle =
+      node.type === "openModal" ? OPEN_MODAL_HANDLE_ON_OPEN : null;
+    currentId = nextAlongHandle(graph, currentId, nextHandle);
+  }
+  return chain;
+}
+
+/**
+ * Connect source → target, replacing any existing edge from the same
+ * source handle. For Open Modal `onOpen`, also replaces legacy unlabeled edges.
+ */
 export function connect(
   graph: HotspotActionGraph,
   source: string,
   target: string,
+  sourceHandle?: string | null,
 ): HotspotActionGraph {
   if (source === target) return graph;
   if (source !== TRIGGER_NODE_ID && !graph.nodes.some((n) => n.id === source)) {
@@ -40,14 +112,34 @@ export function connect(
   }
   if (!graph.nodes.some((n) => n.id === target)) return graph;
 
-  const edges = graph.edges.filter((e) => e.source !== source);
-  edges.push({ id: newActionId(), source, target });
+  const handle = normalizeSourceHandle(sourceHandle);
+  const edges = graph.edges.filter((edge) => {
+    if (edge.source !== source) return true;
+    if (handle === OPEN_MODAL_HANDLE_ON_OPEN) {
+      return !edgeMatchesHandle(edge, OPEN_MODAL_HANDLE_ON_OPEN);
+    }
+    if (handle === OPEN_MODAL_HANDLE_ON_CLOSE) {
+      return (
+        normalizeSourceHandle(edge.sourceHandle) !== OPEN_MODAL_HANDLE_ON_CLOSE
+      );
+    }
+    return normalizeSourceHandle(edge.sourceHandle) !== null;
+  });
+
+  const nextEdge: ActionEdge = {
+    id: newActionId(),
+    source,
+    target,
+  };
+  if (handle) nextEdge.sourceHandle = handle;
+  edges.push(nextEdge);
+
   return { ...graph, edges };
 }
 
 /**
- * Remove a node and relink its predecessor to its successor so the
- * chain stays connected.
+ * Remove a node. When it has exactly one inbound and one outbound edge,
+ * relink them so a simple chain stays connected.
  */
 export function removeNode(
   graph: HotspotActionGraph,
@@ -56,17 +148,29 @@ export function removeNode(
   if (id === TRIGGER_NODE_ID) return graph;
   if (!graph.nodes.some((n) => n.id === id)) return graph;
 
-  const inbound = graph.edges.find((e) => e.target === id);
-  const outbound = graph.edges.find((e) => e.source === id);
+  const inbound = graph.edges.filter((e) => e.target === id);
+  const outbound = graph.edges.filter((e) => e.source === id);
 
   let edges = graph.edges.filter((e) => e.source !== id && e.target !== id);
-  if (inbound && outbound) {
-    edges = edges.filter((e) => e.source !== inbound.source);
-    edges.push({
+  if (inbound.length === 1 && outbound.length === 1) {
+    const inEdge = inbound[0]!;
+    const outEdge = outbound[0]!;
+    edges = edges.filter(
+      (e) =>
+        !(
+          e.source === inEdge.source &&
+          normalizeSourceHandle(e.sourceHandle) ===
+            normalizeSourceHandle(inEdge.sourceHandle)
+        ),
+    );
+    const bridged: ActionEdge = {
       id: newActionId(),
-      source: inbound.source,
-      target: outbound.target,
-    });
+      source: inEdge.source,
+      target: outEdge.target,
+    };
+    const handle = normalizeSourceHandle(inEdge.sourceHandle);
+    if (handle) bridged.sourceHandle = handle;
+    edges.push(bridged);
   }
 
   return {
