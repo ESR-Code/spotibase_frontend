@@ -44,8 +44,21 @@ export type GeneralStyleGlobalTokens = {
   surfaceBlur: number;
 };
 
+/** Preview styling for the viewport bottom controls bar. */
+export type BottomMenuStyleTokens = {
+  backgroundColor: string;
+  iconColor: string;
+  /** Border / stroke around the bottom menu glass. */
+  strokeColor: string;
+  /** Opacity of the bottom menu glass (0–1). */
+  opacity: number;
+  /** Backdrop blur radius in px. */
+  blur: number;
+};
+
 export type GeneralStyleSettings = GeneralStyleGlobalTokens & {
   surfaces: Record<GeneralStyleSurfaceId, SurfaceColorTokens>;
+  bottomMenu: BottomMenuStyleTokens;
 };
 
 type GlobalColorKey = "accentColor" | "inputBackgroundColor" | "inputTextColor";

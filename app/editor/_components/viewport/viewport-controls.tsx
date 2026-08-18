@@ -22,9 +22,7 @@ export function ViewportControls() {
   const isGeo = isGeoSceneType(scene.type);
 
   return (
-    <div
-      className="editor-glass editor-panel-shadow absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-xl px-2 py-2"
-    >
+    <div className="editor-viewport-controls editor-glass editor-panel-shadow absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-xl px-2 py-2">
       <ControlButton
         title="Reset view"
         onClick={() => window.dispatchEvent(new Event("editor:reset-camera"))}
@@ -51,7 +49,7 @@ export function ViewportControls() {
       >
         <Minus className="h-3.5 w-3.5" />
       </ControlButton>
-      {isGeo ? null : (
+      {!isPreview && !isGeo ? (
         <>
           <div className="editor-vsep" style={{ height: 18 }} />
           <ControlButton
@@ -62,18 +60,21 @@ export function ViewportControls() {
             <Square className="h-3.5 w-3.5" />
           </ControlButton>
         </>
-      )}
-      <div className="editor-vsep" style={{ height: 18 }} />
-      <ControlButton
-        title="Scene settings"
-        disabled={isPreview}
-        onClick={() => {
-          useUIStore.getState().setGeneralSettingsDrawerOpen(false);
-          setSettingsDrawerOpen(true);
-        }}
-      >
-        <SlidersHorizontal className="h-3.5 w-3.5" />
-      </ControlButton>
+      ) : null}
+      {!isPreview ? (
+        <>
+          <div className="editor-vsep" style={{ height: 18 }} />
+          <ControlButton
+            title="Scene settings"
+            onClick={() => {
+              useUIStore.getState().setGeneralSettingsDrawerOpen(false);
+              setSettingsDrawerOpen(true);
+            }}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+          </ControlButton>
+        </>
+      ) : null}
     </div>
   );
 }

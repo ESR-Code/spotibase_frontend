@@ -4,6 +4,7 @@ import {
   DEFAULT_GENERAL_STYLE,
 } from "@/lib/editor/constants/default-general-style";
 import type {
+  BottomMenuStyleTokens,
   GeneralStyleGlobalTokens,
   GeneralStyleSettings,
   GeneralStyleSurfaceId,
@@ -20,6 +21,10 @@ type GeneralSettingsState = {
   setSurfaceColors: (
     surfaceId: GeneralStyleSurfaceId,
     patch: Partial<SurfaceColorTokens>,
+  ) => void;
+  setBottomMenuToken: <K extends keyof BottomMenuStyleTokens>(
+    key: K,
+    value: BottomMenuStyleTokens[K],
   ) => void;
   setStyle: (patch: Partial<GeneralStyleSettings>) => void;
   resetStyle: () => void;
@@ -59,12 +64,25 @@ export const useGeneralSettingsStore = create<GeneralSettingsState>((set) => ({
         },
       },
     })),
+  setBottomMenuToken: (key, value) =>
+    set((state) => ({
+      style: {
+        ...state.style,
+        bottomMenu: {
+          ...state.style.bottomMenu,
+          [key]: value,
+        },
+      },
+    })),
   setStyle: (patch) =>
     set((state) => ({
       style: {
         ...state.style,
         ...patch,
         surfaces: mergeSurfaces(state.style.surfaces, patch.surfaces),
+        bottomMenu: patch.bottomMenu
+          ? { ...state.style.bottomMenu, ...patch.bottomMenu }
+          : state.style.bottomMenu,
       },
     })),
   resetStyle: () => set({ style: cloneGeneralStyle(DEFAULT_GENERAL_STYLE) }),

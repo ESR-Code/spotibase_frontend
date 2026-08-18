@@ -5,6 +5,7 @@ import {
   ChevronDown,
   ListTree,
   Palette,
+  PanelBottom,
   PanelRight,
   SlidersHorizontal,
   X,
@@ -38,6 +39,7 @@ export function GeneralSettingsDrawer() {
   const style = useGeneralSettingsStore((s) => s.style);
   const setGlobalToken = useGeneralSettingsStore((s) => s.setGlobalToken);
   const setSurfaceColors = useGeneralSettingsStore((s) => s.setSurfaceColors);
+  const setBottomMenuToken = useGeneralSettingsStore((s) => s.setBottomMenuToken);
   const resetStyle = useGeneralSettingsStore((s) => s.resetStyle);
 
   return (
@@ -125,6 +127,57 @@ export function GeneralSettingsDrawer() {
               max={40}
               step={1}
               onChange={(value) => setGlobalToken("surfaceBlur", value)}
+            />
+          </StyleGroup>
+
+          <StyleGroup
+            title="Bottom menu"
+            description="Viewport zoom / reset controls bar in Preview"
+            icon={<PanelBottom className="h-3.5 w-3.5" />}
+          >
+            <div>
+              <FieldLabel>Background color</FieldLabel>
+              <ColorSwatch
+                value={style.bottomMenu.backgroundColor}
+                onChange={(value) =>
+                  setBottomMenuToken("backgroundColor", value)
+                }
+                fallback={DEFAULT_GENERAL_STYLE.bottomMenu.backgroundColor}
+              />
+            </div>
+            <div>
+              <FieldLabel>Icon color</FieldLabel>
+              <ColorSwatch
+                value={style.bottomMenu.iconColor}
+                onChange={(value) => setBottomMenuToken("iconColor", value)}
+                fallback={DEFAULT_GENERAL_STYLE.bottomMenu.iconColor}
+              />
+            </div>
+            <div>
+              <FieldLabel>Stroke color</FieldLabel>
+              <ColorSwatch
+                value={style.bottomMenu.strokeColor}
+                onChange={(value) => setBottomMenuToken("strokeColor", value)}
+                fallback={DEFAULT_GENERAL_STYLE.bottomMenu.strokeColor}
+              />
+            </div>
+            <SliderField
+              label="Opacity"
+              value={style.bottomMenu.opacity}
+              display={`${Math.round(style.bottomMenu.opacity * 100)}%`}
+              min={0.2}
+              max={1}
+              step={0.05}
+              onChange={(value) => setBottomMenuToken("opacity", value)}
+            />
+            <SliderField
+              label="Background blur"
+              value={style.bottomMenu.blur}
+              display={`${style.bottomMenu.blur}px`}
+              min={0}
+              max={40}
+              step={1}
+              onChange={(value) => setBottomMenuToken("blur", value)}
             />
           </StyleGroup>
 

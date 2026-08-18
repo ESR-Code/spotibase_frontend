@@ -33,6 +33,10 @@ export function generalStyleToCssVars(
   const opacityPct = `${Math.round(clamp01(style.surfaceOpacity) * 100)}%`;
   const blurPx = `${Math.max(0, style.surfaceBlur)}px`;
 
+  const bottomMenu = style.bottomMenu;
+  const bottomMenuOpacityPct = `${Math.round(clamp01(bottomMenu.opacity) * 100)}%`;
+  const bottomMenuBlurPx = `${Math.max(0, bottomMenu.blur)}px`;
+
   const vars: Record<string, string> = {
     "--preview-accent": style.accentColor,
     "--preview-input-bg": style.inputBackgroundColor,
@@ -40,6 +44,11 @@ export function generalStyleToCssVars(
     "--preview-border": style.bordersEnabled ? style.borderColor : "transparent",
     "--preview-surface-opacity": opacityPct,
     "--preview-surface-blur": blurPx,
+    "--preview-bottom-menu-bg": bottomMenu.backgroundColor,
+    "--preview-bottom-menu-icon": bottomMenu.iconColor,
+    "--preview-bottom-menu-stroke": bottomMenu.strokeColor,
+    "--preview-bottom-menu-opacity": bottomMenuOpacityPct,
+    "--preview-bottom-menu-blur": bottomMenuBlurPx,
   };
 
   for (const surface of GENERAL_STYLE_SURFACES) {

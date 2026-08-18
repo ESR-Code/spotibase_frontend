@@ -1,5 +1,6 @@
 import {
   GENERAL_STYLE_SURFACES,
+  type BottomMenuStyleTokens,
   type GeneralStyleSettings,
   type GeneralStyleSurfaceId,
   type SurfaceColorTokens,
@@ -17,6 +18,15 @@ function defaultSurfaces(): GeneralStyleSettings["surfaces"] {
   return surfaces;
 }
 
+/** Matches `.editor-glass` + `.editor-tool-btn` on the editor bottom menu. */
+export const DEFAULT_BOTTOM_MENU_STYLE: BottomMenuStyleTokens = {
+  backgroundColor: editorColors.panel2,
+  iconColor: editorColors.muted,
+  strokeColor: editorColors.line,
+  opacity: 0.85,
+  blur: 14,
+};
+
 /** Defaults mirror editor chrome / glass so Preview starts looking like the studio. */
 export const DEFAULT_GENERAL_STYLE: GeneralStyleSettings = {
   accentColor: editorColors.crimson,
@@ -29,6 +39,7 @@ export const DEFAULT_GENERAL_STYLE: GeneralStyleSettings = {
   /** Matches `.editor-glass` backdrop blur. */
   surfaceBlur: 14,
   surfaces: defaultSurfaces(),
+  bottomMenu: { ...DEFAULT_BOTTOM_MENU_STYLE },
 };
 
 export function cloneGeneralStyle(
@@ -43,6 +54,10 @@ export function cloneGeneralStyle(
     };
     surfaces[id] = { ...tokens };
   }
+  const bottomMenu: BottomMenuStyleTokens = {
+    ...DEFAULT_BOTTOM_MENU_STYLE,
+    ...(style.bottomMenu ?? {}),
+  };
   return {
     accentColor: style.accentColor,
     inputBackgroundColor: style.inputBackgroundColor,
@@ -52,5 +67,6 @@ export function cloneGeneralStyle(
     surfaceOpacity: style.surfaceOpacity,
     surfaceBlur: style.surfaceBlur,
     surfaces,
+    bottomMenu,
   };
 }
