@@ -3,18 +3,14 @@
 import type { Node, NodeProps } from "@xyflow/react";
 import { ChevronDown, ToggleLeft } from "lucide-react";
 import { useState } from "react";
-import { useShallow } from "zustand/react/shallow";
 import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-card";
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
-import {
-  APP_START_OWNER_ID,
-  isHotspotOwnerId,
-} from "@/lib/editor/actions/action-owners";
 import type { ActionFlowNodeData } from "@/lib/editor/actions/flow-adapter";
+import { useOwnedActionNode } from "@/lib/editor/actions/use-owned-action-node";
 import { getSceneType } from "@/lib/editor/scene-types/registry";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useLayersStore } from "@/lib/editor/state/layers-store";
-import { useActiveScene, useScenesStore } from "@/lib/editor/state/scenes-store";
+import { useActiveScene } from "@/lib/editor/state/scenes-store";
 import type { EnableDisableActionNode } from "@/lib/editor/types/hotspot-action";
 
 export type EnableDisableFlowNode = Node<ActionFlowNodeData, "enableDisable">;
@@ -87,38 +83,14 @@ export function EnableDisableNode({
   const hotspots = useEditorStore((s) => s.hotspots);
   const layers = useLayersStore((s) => s.layers);
   const [targetsOpen, setTargetsOpen] = useState(false);
-
-  const hotspotLive = useEditorStore(
-    useShallow((s) => {
-      if (!actionNodeId || !isHotspotOwnerId(ownerId)) return EMPTY_DATA;
-      const hotspot = s.hotspots.find((h) => h.id === ownerId);
-      const node = hotspot?.actions?.nodes.find((n) => n.id === actionNodeId);
-      if (!node || node.type !== "enableDisable") return EMPTY_DATA;
-      return {
-        disabledHotspotIds: node.data.disabledHotspotIds ?? [],
-        disabledLayerIds: node.data.disabledLayerIds ?? [],
-      };
-    }),
-  );
-
-  const startLive = useScenesStore(
-    useShallow((s) => {
-      if (!actionNodeId || isHotspotOwnerId(ownerId)) return EMPTY_DATA;
-      const graph =
-        ownerId === APP_START_OWNER_ID
-          ? s.appStartActions
-          : (s.scenes.find((sc) => sc.id === s.activeSceneId)?.startActions ??
-            null);
-      const node = graph?.nodes.find((n) => n.id === actionNodeId);
-      if (!node || node.type !== "enableDisable") return EMPTY_DATA;
-      return {
-        disabledHotspotIds: node.data.disabledHotspotIds ?? [],
-        disabledLayerIds: node.data.disabledLayerIds ?? [],
-      };
-    }),
-  );
-
-  const live = isHotspotOwnerId(ownerId) ? hotspotLive : startLive;
+  const ownedNode = useOwnedActionNode(ownerId, actionNodeId);
+  const live =
+    ownedNode?.type === "enableDisable"
+      ? {
+          disabledHotspotIds: ownedNode.data.disabledHotspotIds ?? [],
+          disabledLayerIds: ownedNode.data.disabledLayerIds ?? [],
+        }
+      : EMPTY_DATA;
 
   if (!actionNodeId) return null;
 

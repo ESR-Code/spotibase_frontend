@@ -3,6 +3,11 @@
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { MousePointerClick, Play, Rocket } from "lucide-react";
 import type { ActionFlowNodeData } from "@/lib/editor/actions/flow-adapter";
+import { getCategoryLucideIcon } from "@/lib/editor/theme/category-icons";
+import {
+  MENU_BUTTON_HANDLE_NORMAL,
+  MENU_BUTTON_HANDLE_TOGGLED,
+} from "@/lib/editor/types/hotspot-action";
 
 export type HotspotTriggerFlowNode = Node<
   ActionFlowNodeData,
@@ -14,6 +19,8 @@ export function HotspotTriggerNode({
   selected,
 }: NodeProps<HotspotTriggerFlowNode>) {
   const kind = data.triggerKind ?? "hotspot";
+  const MenuIcon = getCategoryLucideIcon(data.triggerIcon ?? "Star");
+  const toggleEnabled = kind === "menuButton" && Boolean(data.toggleEnabled);
   const meta =
     kind === "appStart"
       ? {
@@ -35,15 +42,25 @@ export function HotspotTriggerNode({
             bg: "rgba(242, 169, 59, 0.15)",
             border: "rgba(242, 169, 59, 0.4)",
           }
-        : {
-            label: "Hotspot clicked",
-            subtitle: data.hotspotTitle,
-            chip: `HSP-${String(data.hotspotId).padStart(3, "0")}`,
-            Icon: MousePointerClick,
-            color: "var(--editor-teal)",
-            bg: "rgba(63,184,175,0.15)",
-            border: "rgba(63,184,175,0.4)",
-          };
+        : kind === "menuButton"
+          ? {
+              label: data.hotspotTitle || "Custom button",
+              subtitle: toggleEnabled ? "Bottom menu · toggle" : "Bottom menu",
+              chip: "MENU",
+              Icon: MenuIcon,
+              color: "var(--editor-teal)",
+              bg: "rgba(63,184,175,0.15)",
+              border: "rgba(63,184,175,0.4)",
+            }
+          : {
+              label: "Hotspot clicked",
+              subtitle: data.hotspotTitle,
+              chip: `HSP-${String(data.hotspotId).padStart(3, "0")}`,
+              Icon: MousePointerClick,
+              color: "var(--editor-teal)",
+              bg: "rgba(63,184,175,0.15)",
+              border: "rgba(63,184,175,0.4)",
+            };
 
   const Icon = meta.Icon;
 
@@ -51,11 +68,13 @@ export function HotspotTriggerNode({
     <div
       className={`editor-action-node editor-action-trigger ${selected ? "selected" : ""}`}
     >
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="editor-action-handle"
-      />
+      {toggleEnabled ? null : (
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="editor-action-handle"
+        />
+      )}
       <div className="editor-action-node-header">
         <span
           className="editor-action-node-icon"
@@ -78,6 +97,28 @@ export function HotspotTriggerNode({
         </div>
         <span className="editor-chip">{meta.chip}</span>
       </div>
+      {toggleEnabled ? (
+        <div className="editor-action-event-handles" aria-hidden>
+          <div className="editor-action-event-handle-row">
+            <span className="editor-action-event-handle-label">normal</span>
+            <Handle
+              id={MENU_BUTTON_HANDLE_NORMAL}
+              type="source"
+              position={Position.Right}
+              className="editor-action-handle editor-action-handle-event"
+            />
+          </div>
+          <div className="editor-action-event-handle-row">
+            <span className="editor-action-event-handle-label">toggled</span>
+            <Handle
+              id={MENU_BUTTON_HANDLE_TOGGLED}
+              type="source"
+              position={Position.Right}
+              className="editor-action-handle editor-action-handle-event"
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

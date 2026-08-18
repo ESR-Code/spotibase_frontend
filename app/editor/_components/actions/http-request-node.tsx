@@ -3,7 +3,6 @@
 import type { Node, NodeProps } from "@xyflow/react";
 import { ChevronDown, Globe, Play, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useShallow } from "zustand/react/shallow";
 import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-card";
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
@@ -11,8 +10,7 @@ import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import { VariableInsertButton } from "@/app/editor/_components/actions/variable-insert-button";
 import {
-  APP_START_OWNER_ID,
-  isHotspotOwnerId,
+  findOwnedActionNode,
   ownerKeyFor,
 } from "@/lib/editor/actions/action-owners";
 import type { ActionFlowNodeData } from "@/lib/editor/actions/flow-adapter";
@@ -34,8 +32,10 @@ import {
   insertTextAt,
 } from "@/lib/editor/actions/interpolate-fields";
 import { listAllFieldSources, fieldSourcesFromResponseJson } from "@/lib/editor/blocks/http-field-sources";
+import { useOwnedActionNode } from "@/lib/editor/actions/use-owned-action-node";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
+import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import {
   HTTP_METHODS,
   type HttpMethod,
@@ -57,29 +57,7 @@ function readHttpData(
   ownerId: number,
   actionNodeId: string,
 ): HttpRequestActionNode["data"] {
-  if (isHotspotOwnerId(ownerId)) {
-    const hotspot = useEditorStore
-      .getState()
-      .hotspots.find((h) => h.id === ownerId);
-    const node = hotspot?.actions?.nodes.find((n) => n.id === actionNodeId);
-    if (!node || node.type !== "httpRequest") return EMPTY_DATA;
-    return {
-      method: node.data.method,
-      url: node.data.url,
-      headersJson: node.data.headersJson,
-      body: node.data.body,
-      cacheReuse: node.data.cacheReuse,
-      lastResponseJson: node.data.lastResponseJson ?? "",
-    };
-  }
-
-  const scenes = useScenesStore.getState();
-  const graph =
-    ownerId === APP_START_OWNER_ID
-      ? scenes.appStartActions
-      : (scenes.scenes.find((s) => s.id === scenes.activeSceneId)?.startActions ??
-        null);
-  const node = graph?.nodes.find((n) => n.id === actionNodeId);
+  const node = findOwnedActionNode(ownerId, actionNodeId);
   if (!node || node.type !== "httpRequest") return EMPTY_DATA;
   return {
     method: node.data.method,
@@ -117,45 +95,18 @@ export function HttpRequestNode({
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const headerValueRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  const hotspotLive = useEditorStore(
-    useShallow((s) => {
-      if (!actionNodeId || !isHotspotOwnerId(ownerId)) return EMPTY_DATA;
-      const hotspot = s.hotspots.find((h) => h.id === ownerId);
-      const node = hotspot?.actions?.nodes.find((n) => n.id === actionNodeId);
-      if (!node || node.type !== "httpRequest") return EMPTY_DATA;
-      return {
-        method: node.data.method,
-        url: node.data.url,
-        headersJson: node.data.headersJson,
-        body: node.data.body,
-        cacheReuse: node.data.cacheReuse,
-        lastResponseJson: node.data.lastResponseJson ?? "",
-      };
-    }),
-  );
-
-  const startLive = useScenesStore(
-    useShallow((s) => {
-      if (!actionNodeId || isHotspotOwnerId(ownerId)) return EMPTY_DATA;
-      const graph =
-        ownerId === APP_START_OWNER_ID
-          ? s.appStartActions
-          : (s.scenes.find((sc) => sc.id === s.activeSceneId)?.startActions ??
-            null);
-      const node = graph?.nodes.find((n) => n.id === actionNodeId);
-      if (!node || node.type !== "httpRequest") return EMPTY_DATA;
-      return {
-        method: node.data.method,
-        url: node.data.url,
-        headersJson: node.data.headersJson,
-        body: node.data.body,
-        cacheReuse: node.data.cacheReuse,
-        lastResponseJson: node.data.lastResponseJson ?? "",
-      };
-    }),
-  );
-
-  const live = isHotspotOwnerId(ownerId) ? hotspotLive : startLive;
+  const ownedNode = useOwnedActionNode(ownerId, actionNodeId);
+  const live =
+    ownedNode?.type === "httpRequest"
+      ? {
+          method: ownedNode.data.method,
+          url: ownedNode.data.url,
+          headersJson: ownedNode.data.headersJson,
+          body: ownedNode.data.body,
+          cacheReuse: ownedNode.data.cacheReuse,
+          lastResponseJson: ownedNode.data.lastResponseJson ?? "",
+        }
+      : EMPTY_DATA;
   const hotspots = useEditorStore((s) => s.hotspots);
   const appStartActions = useScenesStore((s) => s.appStartActions);
   const sceneStartActions = useScenesStore((s) => {
@@ -163,9 +114,10 @@ export function HttpRequestNode({
       s.scenes.find((sc) => sc.id === s.activeSceneId) ?? s.scenes[0];
     return scene?.startActions ?? null;
   });
+  const customMenuButtons = useSettingsStore((s) => s.customMenuButtons);
   const fieldSources = useMemo(
     () => listAllFieldSources(actionNodeId),
-    [actionNodeId, appStartActions, hotspots, sceneStartActions],
+    [actionNodeId, appStartActions, hotspots, sceneStartActions, customMenuButtons],
   );
   const ownFieldSources = useMemo(
     () =>

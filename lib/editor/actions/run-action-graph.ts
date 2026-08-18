@@ -1,15 +1,16 @@
 import {
   APP_START_OWNER_ID,
-  isHotspotOwnerId,
+  isStartOwnerId,
   ownerKeyFor,
   patchOwnedActionNodeData,
   SCENE_START_OWNER_ID,
 } from "@/lib/editor/actions/action-owners";
+import { findCustomMenuButtonByOwnerId } from "@/lib/editor/actions/custom-menu-buttons";
 import {
   createEmptyActionGraph,
   getActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
-import { chainFromTrigger } from "@/lib/editor/actions/graph-ops";
+import { chainFrom, chainFromTrigger } from "@/lib/editor/actions/graph-ops";
 import {
   httpRequestCacheKey,
   markHttpRequestCached,
@@ -22,12 +23,16 @@ import {
   clearPostMessageListeners,
   registerPostMessageReceive,
 } from "@/lib/editor/actions/send-post-message";
+import { useCustomMenuToggleStore } from "@/lib/editor/state/custom-menu-toggle-store";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
-import type {
-  ActionNode,
-  HotspotActionGraph,
+import {
+  MENU_BUTTON_HANDLE_NORMAL,
+  MENU_BUTTON_HANDLE_TOGGLED,
+  TRIGGER_NODE_ID,
+  type ActionNode,
+  type HotspotActionGraph,
 } from "@/lib/editor/types/hotspot-action";
 import { focusHotspotCamera } from "@/lib/editor/preview/open-hotspot-in-preview";
 import { toast } from "sonner";
@@ -56,7 +61,7 @@ export async function runActionNodeList(
       node.type === "sendPostMessage" &&
       (node.data.mode ?? "send") === "receive"
     ) {
-      if (isHotspotOwnerId(ctx.ownerId)) {
+      if (!isStartOwnerId(ctx.ownerId)) {
         toast.error(
           "Post Message: Receive event is only available on App Start / Scene Start",
         );
@@ -145,6 +150,32 @@ export async function runSceneStartActions(sceneId?: string) {
     ownerId: SCENE_START_OWNER_ID,
     ownerKey: ownerKeyFor(SCENE_START_OWNER_ID, id),
   });
+}
+
+export async function runCustomMenuButtonActions(ownerId: number) {
+  const button = findCustomMenuButtonByOwnerId(ownerId);
+  if (!button) return;
+
+  const ctx = {
+    hotspotId: null as number | null,
+    ownerId,
+    ownerKey: ownerKeyFor(ownerId),
+  };
+
+  if (!button.toggleEnabled) {
+    await runActionGraph(button.actions, ctx);
+    return;
+  }
+
+  const wasOn = useCustomMenuToggleStore.getState().isToggled(button.id);
+  useCustomMenuToggleStore.getState().setToggled(button.id, !wasOn);
+  const handle = wasOn
+    ? MENU_BUTTON_HANDLE_TOGGLED
+    : MENU_BUTTON_HANDLE_NORMAL;
+  await runActionNodeList(
+    chainFrom(button.actions, TRIGGER_NODE_ID, handle),
+    ctx,
+  );
 }
 
 /** App Start, then Scene Start for the active scene. */

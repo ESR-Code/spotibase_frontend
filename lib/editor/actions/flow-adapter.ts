@@ -11,13 +11,19 @@ export const LANE_HEIGHT = 220;
 export const TRIGGER_FLOW_TYPE = "hotspotTrigger";
 
 export type ActionFlowNodeData = {
-  /** Hotspot id, or synthetic App/Scene Start owner id. */
+  /** Hotspot id, or synthetic App/Scene Start / menu-button owner id. */
   hotspotId: number;
   hotspotTitle: string;
   actionNode?: ActionNode;
   /** Present on trigger nodes. */
   isTrigger?: boolean;
   triggerKind?: ActionTriggerKind;
+  /** Lucide icon name for custom menu-button triggers. */
+  triggerIcon?: string;
+  /** Toggled-state icon for toggle-enabled custom menu buttons. */
+  toggledIcon?: string;
+  /** Dual normal/toggled outputs on the trigger. */
+  toggleEnabled?: boolean;
   allowedNodeTypes?: ActionNodeType[];
 };
 
@@ -27,6 +33,9 @@ export type ActionFlowEntry = {
   graph: HotspotActionGraph;
   laneIndex: number;
   triggerKind: ActionTriggerKind;
+  triggerIcon?: string;
+  toggledIcon?: string;
+  toggleEnabled?: boolean;
   allowedNodeTypes: ActionNodeType[];
 };
 
@@ -50,8 +59,17 @@ export function toFlowGraph(entries: ActionFlowEntry[]): {
   const edges: Edge[] = [];
 
   for (const entry of entries) {
-    const { ownerId, title, graph, laneIndex, triggerKind, allowedNodeTypes } =
-      entry;
+    const {
+      ownerId,
+      title,
+      graph,
+      laneIndex,
+      triggerKind,
+      triggerIcon,
+      toggledIcon,
+      toggleEnabled,
+      allowedNodeTypes,
+    } = entry;
     const yOffset = laneIndex * LANE_HEIGHT;
 
     nodes.push({
@@ -66,6 +84,9 @@ export function toFlowGraph(entries: ActionFlowEntry[]): {
         hotspotTitle: title,
         isTrigger: true,
         triggerKind,
+        triggerIcon,
+        toggledIcon,
+        toggleEnabled,
         allowedNodeTypes,
       },
       deletable: false,

@@ -14,6 +14,8 @@ type CategoryIconPickerProps = {
   value: string;
   onChange: (icon: string) => void;
   color?: string;
+  /** Icon-only trigger, no field label — for compact rows. */
+  compact?: boolean;
 };
 
 type MenuPosition = {
@@ -26,6 +28,7 @@ export function CategoryIconPicker({
   value,
   onChange,
   color = "#3fb8af",
+  compact = false,
 }: CategoryIconPickerProps) {
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -62,7 +65,7 @@ export function CategoryIconPicker({
     setMenuPos({
       top,
       left: rect.left,
-      width: rect.width,
+      width: compact ? Math.max(rect.width, 240) : rect.width,
     });
   };
 
@@ -164,15 +167,19 @@ export function CategoryIconPicker({
       : null;
 
   return (
-    <div className="relative w-full space-y-1.5" ref={rootRef}>
-      <FieldLabel>Icon</FieldLabel>
+    <div
+      className={`relative ${compact ? "" : "w-full space-y-1.5"}`}
+      ref={rootRef}
+    >
+      {compact ? null : <FieldLabel>Icon</FieldLabel>}
       <button
         ref={triggerRef}
         type="button"
-        className={`editor-category-select-trigger w-full ${open ? "open" : ""}`}
+        className={`${compact ? "editor-custom-menu-icon-trigger" : "editor-category-select-trigger w-full"} ${open ? "open" : ""}`}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listId}
+        title={compact ? (CATEGORY_ICONS.find((i) => i.name === iconName)?.label ?? iconName) : undefined}
         onClick={() => setOpen((v) => !v)}
       >
         <span
@@ -182,10 +189,14 @@ export function CategoryIconPicker({
         >
           <SelectedIcon className="h-3 w-3" />
         </span>
-        <span className="editor-category-option-name">
-          {CATEGORY_ICONS.find((i) => i.name === iconName)?.label ?? iconName}
-        </span>
-        <ChevronDown className="editor-category-select-chevron h-3.5 w-3.5" />
+        {compact ? null : (
+          <>
+            <span className="editor-category-option-name">
+              {CATEGORY_ICONS.find((i) => i.name === iconName)?.label ?? iconName}
+            </span>
+            <ChevronDown className="editor-category-select-chevron h-3.5 w-3.5" />
+          </>
+        )}
       </button>
       {menu}
     </div>

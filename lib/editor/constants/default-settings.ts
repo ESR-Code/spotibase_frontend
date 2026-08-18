@@ -1,5 +1,10 @@
+import {
+  cloneActionGraph,
+  createEmptyActionGraph,
+} from "@/lib/editor/actions/create-action-graph";
 import type {
   CameraResetPosition,
+  CustomMenuButton,
   EditorSettings,
   EffectsSettings,
   EnvironmentSettings,
@@ -7,6 +12,7 @@ import type {
 import { DEFAULT_GEO_MAP_STYLE_ID, isGeoMapStyleId } from "@/lib/editor/geo/map-styles";
 import type { GeoSettings } from "@/lib/editor/types/geo-settings";
 import type { LegendCategory } from "@/lib/editor/types/legend-category";
+import { DEFAULT_CATEGORY_ICON } from "@/lib/editor/theme/category-icons";
 
 export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   hotspotSize: 1,
@@ -36,6 +42,7 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   legendCategories: [],
   logoUrl: "",
   logoScale: 1,
+  customMenuButtons: [],
 };
 
 export function cloneCameraResetPosition(
@@ -124,6 +131,23 @@ export function cloneLegendCategories(
   return categories.map((c) => ({ ...c }));
 }
 
+export function cloneCustomMenuButtons(
+  buttons: CustomMenuButton[] | undefined,
+): CustomMenuButton[] {
+  return (buttons ?? []).map((button) => {
+    const icon = button.icon || DEFAULT_CATEGORY_ICON;
+    return {
+      id: button.id,
+      ownerId: button.ownerId,
+      icon,
+      tooltip: button.tooltip ?? "",
+      toggleEnabled: Boolean(button.toggleEnabled),
+      toggledIcon: button.toggledIcon || icon,
+      actions: cloneActionGraph(button.actions ?? createEmptyActionGraph()),
+    };
+  });
+}
+
 /** Normalize legacy presentation values (e.g. removed `"off"`). */
 export function normalizeMarkerDialogPresentation(
   value: string | undefined,
@@ -156,6 +180,7 @@ export function cloneEditorSettings(settings: EditorSettings): EditorSettings {
       presentation === "infobox" ? false : settings.markerDialogBackdropBlur,
     resetPosition: cloneCameraResetPosition(settings.resetPosition ?? null),
     legendCategories: cloneLegendCategories(settings.legendCategories ?? []),
+    customMenuButtons: cloneCustomMenuButtons(settings.customMenuButtons),
   };
 }
 

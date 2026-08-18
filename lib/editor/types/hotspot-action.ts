@@ -165,7 +165,9 @@ export type ActionEdge = {
   target: string;
   /**
    * Optional source handle id for multi-output nodes.
-   * Open Modal uses `"onOpen"` / `"onClose"`. Omitted = default output.
+   * Open Modal uses `"onOpen"` / `"onClose"`.
+   * Toggle custom-menu triggers use `"normal"` / `"toggled"`.
+   * Omitted = default output.
    */
   sourceHandle?: string | null;
 };
@@ -173,6 +175,10 @@ export type ActionEdge = {
 /** Source handle ids on the Open Modal action node. */
 export const OPEN_MODAL_HANDLE_ON_OPEN = "onOpen";
 export const OPEN_MODAL_HANDLE_ON_CLOSE = "onClose";
+
+/** Source handle ids on a toggle-enabled custom menu-button trigger. */
+export const MENU_BUTTON_HANDLE_NORMAL = "normal";
+export const MENU_BUTTON_HANDLE_TOGGLED = "toggled";
 
 /**
  * Trigger ("hotspot clicked") is implicit; its id is TRIGGER_NODE_ID

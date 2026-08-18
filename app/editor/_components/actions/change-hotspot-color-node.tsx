@@ -2,19 +2,14 @@
 
 import type { Node, NodeProps } from "@xyflow/react";
 import { Palette, RotateCcw } from "lucide-react";
-import { useShallow } from "zustand/react/shallow";
 import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-card";
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
 import { HotspotTargetsPanel } from "@/app/editor/_components/actions/hotspot-targets-panel";
 import { ColorSwatch } from "@/app/editor/_components/ui/color-swatch";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
-import {
-  APP_START_OWNER_ID,
-  isHotspotOwnerId,
-} from "@/lib/editor/actions/action-owners";
 import type { ActionFlowNodeData } from "@/lib/editor/actions/flow-adapter";
+import { useOwnedActionNode } from "@/lib/editor/actions/use-owned-action-node";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
-import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { markerColorSwatches } from "@/lib/editor/theme/tokens";
 import type { ChangeHotspotColorActionNode } from "@/lib/editor/types/hotspot-action";
 
@@ -36,38 +31,14 @@ export function ChangeHotspotColorNode({
   const actionNodeId = data.actionNode?.id;
   const ownerId = data.hotspotId;
   const hotspots = useEditorStore((s) => s.hotspots);
-
-  const hotspotLive = useEditorStore(
-    useShallow((s) => {
-      if (!actionNodeId || !isHotspotOwnerId(ownerId)) return EMPTY_DATA;
-      const hotspot = s.hotspots.find((h) => h.id === ownerId);
-      const node = hotspot?.actions?.nodes.find((n) => n.id === actionNodeId);
-      if (!node || node.type !== "changeHotspotColor") return EMPTY_DATA;
-      return {
-        hotspotIds: node.data.hotspotIds ?? [],
-        color: node.data.color ?? "",
-      };
-    }),
-  );
-
-  const startLive = useScenesStore(
-    useShallow((s) => {
-      if (!actionNodeId || isHotspotOwnerId(ownerId)) return EMPTY_DATA;
-      const graph =
-        ownerId === APP_START_OWNER_ID
-          ? s.appStartActions
-          : (s.scenes.find((sc) => sc.id === s.activeSceneId)?.startActions ??
-            null);
-      const node = graph?.nodes.find((n) => n.id === actionNodeId);
-      if (!node || node.type !== "changeHotspotColor") return EMPTY_DATA;
-      return {
-        hotspotIds: node.data.hotspotIds ?? [],
-        color: node.data.color ?? "",
-      };
-    }),
-  );
-
-  const live = isHotspotOwnerId(ownerId) ? hotspotLive : startLive;
+  const ownedNode = useOwnedActionNode(ownerId, actionNodeId);
+  const live =
+    ownedNode?.type === "changeHotspotColor"
+      ? {
+          hotspotIds: ownedNode.data.hotspotIds ?? [],
+          color: ownedNode.data.color ?? "",
+        }
+      : EMPTY_DATA;
 
   if (!actionNodeId) return null;
 

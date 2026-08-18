@@ -1,23 +1,38 @@
 import {
+  findCustomMenuButtonByOwnerId,
+  isMenuButtonOwnerId,
+  listCustomMenuButtonGraphs,
+} from "@/lib/editor/actions/custom-menu-buttons";
+import {
   cloneActionGraph,
   createEmptyActionGraph,
   getActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
 import { updateNodeData } from "@/lib/editor/actions/graph-ops";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
-import { useScenesStore } from "@/lib/editor/state/scenes-store";
+import {
+  syncActiveSceneSettings,
+  useScenesStore,
+} from "@/lib/editor/state/scenes-store";
+import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import type {
   ActionNode,
   ActionNodeType,
   HotspotActionGraph,
 } from "@/lib/editor/types/hotspot-action";
 
+export { isMenuButtonOwnerId } from "@/lib/editor/actions/custom-menu-buttons";
+
 /** Synthetic lane owner for the project-wide App Start graph. */
 export const APP_START_OWNER_ID = -1;
 /** Synthetic lane owner for the active scene's Scene Start graph. */
 export const SCENE_START_OWNER_ID = -2;
 
-export type ActionTriggerKind = "hotspot" | "sceneStart" | "appStart";
+export type ActionTriggerKind =
+  | "hotspot"
+  | "sceneStart"
+  | "appStart"
+  | "menuButton";
 
 export const START_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "goToScene",
@@ -31,6 +46,18 @@ export const START_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
 
 export const HOTSPOT_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "openModal",
+  "goToScene",
+  "goToHotspot",
+  "openUrl",
+  "sendPostMessage",
+  "httpRequest",
+  "enableDisable",
+  "changeHotspotColor",
+  "changeHotspotIcon",
+];
+
+/** Click triggers on the Preview bottom bar — no hotspot-owned Open Modal. */
+export const MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "goToScene",
   "goToHotspot",
   "openUrl",
@@ -61,6 +88,7 @@ export function canConnectActionOwners(
 export function triggerKindForOwner(ownerId: number): ActionTriggerKind {
   if (ownerId === APP_START_OWNER_ID) return "appStart";
   if (ownerId === SCENE_START_OWNER_ID) return "sceneStart";
+  if (isMenuButtonOwnerId(ownerId)) return "menuButton";
   return "hotspot";
 }
 
@@ -70,6 +98,11 @@ export function ownerKeyFor(ownerId: number, sceneId?: string): string {
     const id =
       sceneId ?? useScenesStore.getState().activeSceneId ?? "unknown";
     return `sceneStart:${id}`;
+  }
+  if (isMenuButtonOwnerId(ownerId)) {
+    const id =
+      sceneId ?? useScenesStore.getState().activeSceneId ?? "unknown";
+    return `menuButton:${id}:${ownerId}`;
   }
   return `h:${ownerId}`;
 }
@@ -84,6 +117,11 @@ export function getOwnedActionGraph(ownerId: number): HotspotActionGraph | null 
       state.scenes.find((s) => s.id === state.activeSceneId) ?? state.scenes[0];
     if (!scene) return createEmptyActionGraph();
     return cloneActionGraph(scene.startActions ?? createEmptyActionGraph());
+  }
+  if (isMenuButtonOwnerId(ownerId)) {
+    const button = findCustomMenuButtonByOwnerId(ownerId);
+    if (!button) return null;
+    return cloneActionGraph(button.actions);
   }
   const hotspot = useEditorStore
     .getState()
@@ -102,6 +140,17 @@ export function setOwnedActionGraph(
   }
   if (ownerId === SCENE_START_OWNER_ID) {
     useScenesStore.getState().setActiveSceneStartActions(graph);
+    return;
+  }
+  if (isMenuButtonOwnerId(ownerId)) {
+    const buttons = useSettingsStore.getState().customMenuButtons;
+    const next = buttons.map((button) =>
+      button.ownerId === ownerId
+        ? { ...button, actions: cloneActionGraph(graph) }
+        : button,
+    );
+    useSettingsStore.getState().setSettings({ customMenuButtons: next });
+    syncActiveSceneSettings();
     return;
   }
   useEditorStore.getState().updateHotspot(ownerId, { actions: graph });
@@ -178,6 +227,17 @@ export function findHttpRequestNodeById(nodeId: string): {
       node: sceneNode,
       sampleJson: fieldSourceJson(sceneNode),
     };
+  }
+
+  for (const entry of listCustomMenuButtonGraphs()) {
+    const node = entry.graph.nodes.find((n) => n.id === nodeId);
+    if (node && isFieldSourceNode(node)) {
+      return {
+        ownerId: entry.ownerId,
+        node,
+        sampleJson: fieldSourceJson(node),
+      };
+    }
   }
 
   return null;

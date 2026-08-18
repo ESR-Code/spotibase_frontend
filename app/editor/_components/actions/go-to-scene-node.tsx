@@ -4,12 +4,8 @@ import type { Node, NodeProps } from "@xyflow/react";
 import { MapPinned } from "lucide-react";
 import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-card";
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
-import {
-  APP_START_OWNER_ID,
-  isHotspotOwnerId,
-} from "@/lib/editor/actions/action-owners";
+import { useOwnedActionNode } from "@/lib/editor/actions/use-owned-action-node";
 import type { ActionFlowNodeData } from "@/lib/editor/actions/flow-adapter";
-import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 
 export type GoToSceneFlowNode = Node<ActionFlowNodeData, "goToScene">;
@@ -22,28 +18,10 @@ export function GoToSceneNode({
   const scenes = useScenesStore((s) => s.scenes);
   const actionNodeId = data.actionNode?.id;
   const ownerId = data.hotspotId;
-
-  const hotspotSceneId = useEditorStore((s) => {
-    if (!actionNodeId || !isHotspotOwnerId(ownerId)) return "";
-    const hotspot = s.hotspots.find((h) => h.id === ownerId);
-    const node = hotspot?.actions?.nodes.find((n) => n.id === actionNodeId);
-    return node?.type === "goToScene" ? node.data.sceneId : "";
-  });
-
-  const startSceneId = useScenesStore((s) => {
-    if (!actionNodeId || isHotspotOwnerId(ownerId)) return "";
-    const graph =
-      ownerId === APP_START_OWNER_ID
-        ? s.appStartActions
-        : (s.scenes.find((sc) => sc.id === s.activeSceneId)?.startActions ??
-          null);
-    const node = graph?.nodes.find((n) => n.id === actionNodeId);
-    return node?.type === "goToScene" ? node.data.sceneId : "";
-  });
+  const node = useOwnedActionNode(ownerId, actionNodeId);
+  const sceneId = node?.type === "goToScene" ? node.data.sceneId : "";
 
   if (!actionNodeId) return null;
-
-  const sceneId = isHotspotOwnerId(ownerId) ? hotspotSceneId : startSceneId;
   const exists = !sceneId || scenes.some((s) => s.id === sceneId);
   const warning = !sceneId
     ? "Select a target scene"

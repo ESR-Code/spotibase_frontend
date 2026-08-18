@@ -11,6 +11,8 @@ import type {
   HotspotActionGraph,
 } from "@/lib/editor/types/hotspot-action";
 import {
+  MENU_BUTTON_HANDLE_NORMAL,
+  MENU_BUTTON_HANDLE_TOGGLED,
   OPEN_MODAL_HANDLE_ON_CLOSE,
   OPEN_MODAL_HANDLE_ON_OPEN,
 } from "@/lib/editor/types/hotspot-action";
@@ -34,6 +36,11 @@ export function edgeMatchesHandle(
   if (handle === OPEN_MODAL_HANDLE_ON_OPEN) {
     return (
       edgeHandle === OPEN_MODAL_HANDLE_ON_OPEN || edgeHandle === null
+    );
+  }
+  if (handle === MENU_BUTTON_HANDLE_NORMAL) {
+    return (
+      edgeHandle === MENU_BUTTON_HANDLE_NORMAL || edgeHandle === null
     );
   }
   if (handle === null) {
@@ -121,6 +128,14 @@ export function connect(
     if (handle === OPEN_MODAL_HANDLE_ON_CLOSE) {
       return (
         normalizeSourceHandle(edge.sourceHandle) !== OPEN_MODAL_HANDLE_ON_CLOSE
+      );
+    }
+    if (handle === MENU_BUTTON_HANDLE_NORMAL) {
+      return !edgeMatchesHandle(edge, MENU_BUTTON_HANDLE_NORMAL);
+    }
+    if (handle === MENU_BUTTON_HANDLE_TOGGLED) {
+      return (
+        normalizeSourceHandle(edge.sourceHandle) !== MENU_BUTTON_HANDLE_TOGGLED
       );
     }
     return normalizeSourceHandle(edge.sourceHandle) !== null;
@@ -397,4 +412,31 @@ export function moveTrigger(
     ...graph,
     trigger: { position: { ...position } },
   };
+}
+
+/**
+ * When enabling toggle on a custom button, unlabeled trigger edges become
+ * `normal`. When disabling, `normal` edges become unlabeled and `toggled`
+ * trigger edges are dropped.
+ */
+export function migrateMenuButtonToggleHandles(
+  graph: HotspotActionGraph,
+  toggleEnabled: boolean,
+): HotspotActionGraph {
+  const edges = graph.edges.flatMap((edge) => {
+    if (edge.source !== TRIGGER_NODE_ID) return [edge];
+    const handle = normalizeSourceHandle(edge.sourceHandle);
+    if (toggleEnabled) {
+      if (handle === null) {
+        return [{ ...edge, sourceHandle: MENU_BUTTON_HANDLE_NORMAL }];
+      }
+      return [edge];
+    }
+    if (handle === MENU_BUTTON_HANDLE_TOGGLED) return [];
+    if (handle === MENU_BUTTON_HANDLE_NORMAL) {
+      return [{ id: edge.id, source: edge.source, target: edge.target }];
+    }
+    return [edge];
+  });
+  return { ...graph, edges };
 }

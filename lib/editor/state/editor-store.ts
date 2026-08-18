@@ -13,6 +13,7 @@ import {
 } from "@/lib/editor/constants/seed-scene";
 import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
 import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
+import { useCustomMenuToggleStore } from "@/lib/editor/state/custom-menu-toggle-store";
 import { hotspotTypeColors, PROJECT_NAME } from "@/lib/editor/theme/tokens";
 import type { EditorMode, Hotspot, Vec3 } from "@/lib/editor/types/hotspot";
 
@@ -95,6 +96,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       clearPostMessageListeners();
       usePreviewVisibilityStore.getState().reset();
       usePreviewAppearanceStore.getState().reset();
+      useCustomMenuToggleStore.getState().reset();
       if (!isPreview) {
         void Promise.all([
           import("@/lib/editor/state/ui-store"),
@@ -128,6 +130,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       clearPostMessageListeners();
       usePreviewVisibilityStore.getState().reset();
       usePreviewAppearanceStore.getState().reset();
+      useCustomMenuToggleStore.getState().reset();
       void Promise.all([
         import("@/lib/editor/state/ui-store"),
         import("@/lib/editor/actions/open-modal-events"),

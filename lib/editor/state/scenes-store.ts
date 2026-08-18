@@ -180,6 +180,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
       settings: {
         ...primary.settings,
         resetPosition: null,
+        customMenuButtons: [],
       },
       environment: primary.environment,
     });

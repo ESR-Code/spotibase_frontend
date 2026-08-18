@@ -3,16 +3,12 @@
 import type { Node, NodeProps } from "@xyflow/react";
 import { Crosshair } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
-import { useShallow } from "zustand/react/shallow";
 import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-card";
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
 import { VariableInsertButton } from "@/app/editor/_components/actions/variable-insert-button";
 import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
-import {
-  APP_START_OWNER_ID,
-  isHotspotOwnerId,
-} from "@/lib/editor/actions/action-owners";
+import { findOwnedActionNode } from "@/lib/editor/actions/action-owners";
 import type { ActionFlowNodeData } from "@/lib/editor/actions/flow-adapter";
 import {
   formatHotspotRef,
@@ -24,8 +20,8 @@ import {
   insertTextAt,
 } from "@/lib/editor/actions/interpolate-fields";
 import { listAllFieldSources } from "@/lib/editor/blocks/http-field-sources";
+import { useOwnedActionNode } from "@/lib/editor/actions/use-owned-action-node";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
-import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import {
   GO_TO_HOTSPOT_OFFSETS,
   type GoToHotspotActionNode,
@@ -44,26 +40,7 @@ function readGoToHotspotData(
   ownerId: number,
   actionNodeId: string,
 ): GoToHotspotActionNode["data"] {
-  if (isHotspotOwnerId(ownerId)) {
-    const hotspot = useEditorStore
-      .getState()
-      .hotspots.find((h) => h.id === ownerId);
-    const node = hotspot?.actions?.nodes.find((n) => n.id === actionNodeId);
-    if (!node || node.type !== "goToHotspot") return EMPTY_DATA;
-    return {
-      hotspotRef: node.data.hotspotRef ?? "",
-      offset: node.data.offset ?? "self",
-      runTargetActions: Boolean(node.data.runTargetActions),
-    };
-  }
-
-  const scenes = useScenesStore.getState();
-  const graph =
-    ownerId === APP_START_OWNER_ID
-      ? scenes.appStartActions
-      : (scenes.scenes.find((sc) => sc.id === scenes.activeSceneId)
-          ?.startActions ?? null);
-  const node = graph?.nodes.find((n) => n.id === actionNodeId);
+  const node = findOwnedActionNode(ownerId, actionNodeId);
   if (!node || node.type !== "goToHotspot") return EMPTY_DATA;
   return {
     hotspotRef: node.data.hotspotRef ?? "",
@@ -84,39 +61,15 @@ export function GoToHotspotNode({
   const refFocusedRef = useRef(false);
   const [refDraft, setRefDraft] = useState("");
 
-  const hotspotLive = useEditorStore(
-    useShallow((s) => {
-      if (!actionNodeId || !isHotspotOwnerId(ownerId)) return EMPTY_DATA;
-      const hotspot = s.hotspots.find((h) => h.id === ownerId);
-      const node = hotspot?.actions?.nodes.find((n) => n.id === actionNodeId);
-      if (!node || node.type !== "goToHotspot") return EMPTY_DATA;
-      return {
-        hotspotRef: node.data.hotspotRef ?? "",
-        offset: node.data.offset ?? "self",
-        runTargetActions: Boolean(node.data.runTargetActions),
-      };
-    }),
-  );
-
-  const startLive = useScenesStore(
-    useShallow((s) => {
-      if (!actionNodeId || isHotspotOwnerId(ownerId)) return EMPTY_DATA;
-      const graph =
-        ownerId === APP_START_OWNER_ID
-          ? s.appStartActions
-          : (s.scenes.find((sc) => sc.id === s.activeSceneId)?.startActions ??
-            null);
-      const node = graph?.nodes.find((n) => n.id === actionNodeId);
-      if (!node || node.type !== "goToHotspot") return EMPTY_DATA;
-      return {
-        hotspotRef: node.data.hotspotRef ?? "",
-        offset: node.data.offset ?? "self",
-        runTargetActions: Boolean(node.data.runTargetActions),
-      };
-    }),
-  );
-
-  const live = isHotspotOwnerId(ownerId) ? hotspotLive : startLive;
+  const ownedNode = useOwnedActionNode(ownerId, actionNodeId);
+  const live =
+    ownedNode?.type === "goToHotspot"
+      ? {
+          hotspotRef: ownedNode.data.hotspotRef ?? "",
+          offset: ownedNode.data.offset ?? "self",
+          runTargetActions: Boolean(ownedNode.data.runTargetActions),
+        }
+      : EMPTY_DATA;
   const fieldSources = useMemo(
     () => (actionNodeId ? listAllFieldSources(actionNodeId) : []),
     [actionNodeId],

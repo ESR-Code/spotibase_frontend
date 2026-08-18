@@ -1,3 +1,4 @@
+import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 import type { LegendCategory } from "@/lib/editor/types/legend-category";
 
 /** How marker content is presented when a hotspot is opened in preview. */
@@ -7,6 +8,21 @@ export type MarkerDialogPresentation = "modal" | "drawer" | "infobox";
 export type MarkerDialogSize = "medium" | "large" | "fullscreen";
 
 export type { LegendCategory };
+
+/** User-defined Preview bottom-bar button, wired in the Actions editor. */
+export type CustomMenuButton = {
+  id: string;
+  /** Synthetic action-graph owner id (≤ MENU_BUTTON_OWNER_BASE). */
+  ownerId: number;
+  /** Lucide icon name from CATEGORY_ICONS. */
+  icon: string;
+  tooltip: string;
+  /** When true, the button latches on click and exposes a second action chain. */
+  toggleEnabled: boolean;
+  /** Icon shown while the button is in its toggled (on) state. */
+  toggledIcon: string;
+  actions: HotspotActionGraph;
+};
 
 /** User-defined camera pose used by Reset view (Home). */
 export type CameraResetPosition = {
@@ -73,6 +89,8 @@ export type EditorSettings = {
   logoUrl: string;
   /** Display scale for the viewport logo overlay. */
   logoScale: number;
+  /** Custom Preview bottom-menu buttons for this scene. */
+  customMenuButtons: CustomMenuButton[];
 };
 
 export type EnvironmentSettings = {

@@ -40,6 +40,7 @@ function pickSettings(state: SettingsState): EditorSettings {
     legendCategories: state.legendCategories,
     logoUrl: state.logoUrl,
     logoScale: state.logoScale,
+    customMenuButtons: state.customMenuButtons,
   });
 }
 

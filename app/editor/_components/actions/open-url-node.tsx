@@ -4,9 +4,8 @@ import type { Node, NodeProps } from "@xyflow/react";
 import { ExternalLink } from "lucide-react";
 import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-card";
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
-import { getActionGraph } from "@/lib/editor/actions/create-action-graph";
 import type { ActionFlowNodeData } from "@/lib/editor/actions/flow-adapter";
-import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useOwnedActionNode } from "@/lib/editor/actions/use-owned-action-node";
 import { normalizeExternalUrl } from "@/lib/editor/utils/open-external-url";
 
 export type OpenUrlFlowNode = Node<ActionFlowNodeData, "openUrl">;
@@ -14,16 +13,8 @@ export type OpenUrlFlowNode = Node<ActionFlowNodeData, "openUrl">;
 export function OpenUrlNode({ data, selected }: NodeProps<OpenUrlFlowNode>) {
   const { deleteNode, updateNodeData } = useActionsEditor();
   const actionNodeId = data.actionNode?.id;
-
-  // Read live from the store so typing updates don't depend on remounting
-  // React Flow nodes (which would steal input focus).
-  const url = useEditorStore((s) => {
-    if (!actionNodeId) return "";
-    const hotspot = s.hotspots.find((h) => h.id === data.hotspotId);
-    if (!hotspot) return "";
-    const node = getActionGraph(hotspot).nodes.find((n) => n.id === actionNodeId);
-    return node?.type === "openUrl" ? node.data.url : "";
-  });
+  const node = useOwnedActionNode(data.hotspotId, actionNodeId);
+  const url = node?.type === "openUrl" ? node.data.url : "";
 
   if (!actionNodeId) return null;
 

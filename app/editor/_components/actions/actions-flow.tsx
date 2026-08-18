@@ -15,7 +15,7 @@ import {
   type OnNodesChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ACTION_FLOW_NODE_TYPES } from "@/app/editor/_components/actions/action-node-registry";
 import {
   ActionsContextMenu,
@@ -28,10 +28,12 @@ import {
 import {
   APP_START_OWNER_ID,
   HOTSPOT_GRAPH_ALLOWED_NODE_TYPES,
+  MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES,
   SCENE_START_OWNER_ID,
   START_GRAPH_ALLOWED_NODE_TYPES,
   canConnectActionOwners,
   getOwnedActionGraph,
+  isHotspotOwnerId,
   setOwnedActionGraph,
 } from "@/lib/editor/actions/action-owners";
 import {
@@ -56,6 +58,7 @@ import {
 } from "@/lib/editor/actions/graph-ops";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useActiveScene, useScenesStore } from "@/lib/editor/state/scenes-store";
+import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import type {
   ActionNodeType,
   ActionNodeXY,
@@ -88,6 +91,7 @@ function structureKeyFor(
   includeStartGraphs: boolean,
   appStartActions: HotspotActionGraph,
   sceneStartActions: HotspotActionGraph,
+  menuButtonsKey: string,
 ): string {
   const hotspotKey = hotspots
     .map((h) => {
@@ -101,6 +105,7 @@ function structureKeyFor(
   return [
     `app[${graphFingerprint(appStartActions)}]`,
     `scene[${graphFingerprint(sceneStartActions)}]`,
+    `menu[${menuButtonsKey}]`,
     hotspotKey,
   ].join("||");
 }
@@ -112,6 +117,7 @@ function ActionsFlowCanvas({
   const updateHotspot = useEditorStore((s) => s.updateHotspot);
   const activeScene = useActiveScene();
   const appStartActions = useScenesStore((s) => s.appStartActions);
+  const customMenuButtons = useSettingsStore((s) => s.customMenuButtons);
   const { screenToFlowPosition } = useReactFlow();
   const flowRootRef = useRef<HTMLDivElement>(null);
   const [rawMenu, setRawMenu] = useState<ActionsContextMenuState | null>(null);
@@ -149,6 +155,19 @@ function ActionsFlowCanvas({
         triggerKind: "sceneStart",
         allowedNodeTypes: START_GRAPH_ALLOWED_NODE_TYPES,
       });
+      for (const button of customMenuButtons) {
+        list.push({
+          ownerId: button.ownerId,
+          title: button.tooltip.trim() || "Custom button",
+          graph: button.actions ?? createEmptyActionGraph(),
+          laneIndex: laneIndex++,
+          triggerKind: "menuButton",
+          triggerIcon: button.icon,
+          toggledIcon: button.toggledIcon,
+          toggleEnabled: button.toggleEnabled,
+          allowedNodeTypes: MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES,
+        });
+      }
     }
 
     for (const hotspot of hotspots) {
@@ -167,6 +186,7 @@ function ActionsFlowCanvas({
     activeScene.name,
     activeScene.startActions,
     appStartActions,
+    customMenuButtons,
     hotspots,
     includeStartGraphs,
   ]);
@@ -200,13 +220,41 @@ function ActionsFlowCanvas({
   const [nodes, setNodes] =
     useState<Node<ActionFlowNodeData>[]>(initialNodes);
 
+  useEffect(() => {
+    setNodes((current) =>
+      current.map((node) => {
+        if (!node.data.isTrigger) return node;
+        const entry = entries.find((item) => item.ownerId === node.data.hotspotId);
+        if (!entry) return node;
+        if (
+          node.data.hotspotTitle === entry.title &&
+          node.data.triggerIcon === entry.triggerIcon &&
+          node.data.toggledIcon === entry.toggledIcon &&
+          node.data.toggleEnabled === entry.toggleEnabled
+        ) {
+          return node;
+        }
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            hotspotTitle: entry.title,
+            triggerIcon: entry.triggerIcon,
+            toggledIcon: entry.toggledIcon,
+            toggleEnabled: entry.toggleEnabled,
+          },
+        };
+      }),
+    );
+  }, [entries]);
+
   const writeGraph = useCallback(
     (ownerId: number, graph: HotspotActionGraph) => {
-      if (ownerId === APP_START_OWNER_ID || ownerId === SCENE_START_OWNER_ID) {
-        setOwnedActionGraph(ownerId, graph);
+      if (isHotspotOwnerId(ownerId)) {
+        updateHotspot(ownerId, { actions: graph });
         return;
       }
-      updateHotspot(ownerId, { actions: graph });
+      setOwnedActionGraph(ownerId, graph);
     },
     [updateHotspot],
   );
@@ -465,13 +513,21 @@ export function ActionsFlow({
 }: ActionsFlowProps) {
   const appStartActions = useScenesStore((s) => s.appStartActions);
   const activeScene = useActiveScene();
+  const customMenuButtons = useSettingsStore((s) => s.customMenuButtons);
   const sceneStartActions =
     activeScene.startActions ?? createEmptyActionGraph();
+  const menuButtonsKey = customMenuButtons
+    .map(
+      (button) =>
+        `${button.ownerId}:t${button.toggleEnabled ? 1 : 0}[${graphFingerprint(button.actions)}]`,
+    )
+    .join(",");
   const structureKey = structureKeyFor(
     hotspots,
     includeStartGraphs,
     appStartActions,
     sceneStartActions,
+    menuButtonsKey,
   );
 
   if (!includeStartGraphs && hotspots.length === 0) {

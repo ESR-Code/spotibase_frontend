@@ -10,6 +10,7 @@ import {
   MapPin,
   Moon,
   Palette,
+  PanelBottom,
   PanelRight,
   Sparkles,
   Square,
@@ -20,6 +21,7 @@ import { toast } from "sonner";
 import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-image-field";
 import { GeoDetailsSection } from "@/app/editor/_components/drawers/geo-details-section";
 import { MapStyleSection } from "@/app/editor/_components/drawers/map-style-section";
+import { CustomMenuSection } from "@/app/editor/_components/drawers/custom-menu-section";
 import { CameraPoseCaptureField } from "@/app/editor/_components/ui/camera-pose-capture-field";
 import { CheckboxField } from "@/app/editor/_components/ui/checkbox-field";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
@@ -488,6 +490,13 @@ export function SettingsDrawer() {
             checked={values.legendEnabled}
             onChange={(checked) => form.setValue("legendEnabled", checked)}
           />
+        </SettingsSection>
+
+        <SettingsSection
+          title="Custom menu"
+          icon={<PanelBottom className="h-3.5 w-3.5" />}
+        >
+          <CustomMenuSection />
         </SettingsSection>
 
         {sections.effects ? (

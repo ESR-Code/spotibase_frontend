@@ -983,6 +983,71 @@
   border-color: color-mix(in srgb, var(--preview-bottom-menu-icon) 30%, transparent);
 }
 
+.editor-root .editor-custom-menu-preview-wrap {
+  border-radius: 12px;
+  border: 1px dashed var(--editor-line-soft);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.editor-root .editor-custom-menu-preview.editor-glass {
+  pointer-events: none;
+  background: color-mix(
+    in srgb,
+    var(--preview-bottom-menu-bg) var(--preview-bottom-menu-opacity),
+    transparent
+  );
+  border-color: var(--preview-bottom-menu-stroke);
+  backdrop-filter: blur(var(--preview-bottom-menu-blur));
+  -webkit-backdrop-filter: blur(var(--preview-bottom-menu-blur));
+}
+
+.editor-root .editor-custom-menu-preview .editor-tool-btn {
+  color: var(--preview-bottom-menu-icon);
+}
+
+.editor-root .editor-custom-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-root .editor-custom-menu-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--editor-line-soft);
+  background: rgba(11, 20, 36, 0.28);
+}
+
+.editor-root .editor-custom-menu-row-toggled {
+  padding-top: 2px;
+}
+
+.editor-root .editor-custom-menu-icon-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid var(--editor-line);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+}
+
+.editor-root .editor-custom-menu-icon-trigger:hover,
+.editor-root .editor-custom-menu-icon-trigger.open {
+  border-color: rgba(230, 57, 70, 0.45);
+  background: rgba(230, 57, 70, 0.12);
+}
+
+.editor-root .editor-custom-menu-icon-trigger .editor-category-option-icon {
+  margin: 0;
+}
+
 
 /* Block editor — rich text */
 .editor-root .editor-rich-text {

@@ -2,6 +2,7 @@ import {
   APP_START_OWNER_ID,
   SCENE_START_OWNER_ID,
 } from "@/lib/editor/actions/action-owners";
+import { listCustomMenuButtonGraphs } from "@/lib/editor/actions/custom-menu-buttons";
 import {
   createEmptyActionGraph,
   getActionGraph,
@@ -131,6 +132,10 @@ export function listAllFieldSources(excludeNodeId?: string): HttpFieldSource[] {
 
   for (const hotspot of useEditorStore.getState().hotspots) {
     collectFromGraph(getActionGraph(hotspot), hotspot.id, hotspot.title || "Hotspot", sources);
+  }
+
+  for (const entry of listCustomMenuButtonGraphs()) {
+    collectFromGraph(entry.graph, entry.ownerId, entry.label, sources);
   }
 
   return excludeNodeId
