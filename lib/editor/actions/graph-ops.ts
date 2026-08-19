@@ -1,4 +1,5 @@
 import {
+  cloneActionNodeAt,
   createActionNode,
   newActionId,
   TRIGGER_NODE_ID,
@@ -232,6 +233,49 @@ export function removeNode(
     ...graph,
     nodes: graph.nodes.filter((n) => n.id !== id),
     edges,
+  };
+}
+
+export function removeEdge(
+  graph: HotspotActionGraph,
+  edgeId: string,
+): HotspotActionGraph {
+  if (!graph.edges.some((edge) => edge.id === edgeId)) return graph;
+  return {
+    ...graph,
+    edges: graph.edges.filter((edge) => edge.id !== edgeId),
+  };
+}
+
+const PASTE_OFFSET = 48;
+
+export function insertClonedNode(
+  graph: HotspotActionGraph,
+  source: ActionNode,
+  position: ActionNodeXY,
+): HotspotActionGraph {
+  return {
+    ...graph,
+    nodes: [...graph.nodes, cloneActionNodeAt(source, position)],
+  };
+}
+
+export function pastePositionNear(
+  graph: HotspotActionGraph,
+  nearNodeId?: string,
+): ActionNodeXY {
+  if (nearNodeId && nearNodeId !== TRIGGER_NODE_ID) {
+    const near = graph.nodes.find((node) => node.id === nearNodeId);
+    if (near) {
+      return {
+        x: near.position.x + PASTE_OFFSET,
+        y: near.position.y + PASTE_OFFSET,
+      };
+    }
+  }
+  return {
+    x: graph.trigger.position.x + 280,
+    y: graph.trigger.position.y,
   };
 }
 

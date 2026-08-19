@@ -9,18 +9,23 @@ import {
   ReactFlowProvider,
   useReactFlow,
   type Connection,
+  type Edge,
   type Node,
   type NodeChange,
   type OnConnect,
+  type OnEdgesChange,
   type OnNodesChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { ACTION_FLOW_NODE_TYPES } from "@/app/editor/_components/actions/action-node-registry";
+import { ActionsCanvasSearch } from "@/app/editor/_components/actions/actions-canvas-search";
 import {
   ActionsContextMenu,
   type ActionsContextMenuState,
 } from "@/app/editor/_components/actions/actions-context-menu";
+import { ActionsEdge, ACTIONS_EDGE_TYPE } from "@/app/editor/_components/actions/actions-edge";
 import {
   ActionsEditorProvider,
   type ActionsEditorApi,
@@ -52,7 +57,10 @@ import {
 import {
   addNode,
   connect,
+  insertClonedNode,
   moveNode,
+  pastePositionNear,
+  removeEdge,
   removeNode,
   updateNodeData,
 } from "@/lib/editor/actions/graph-ops";
@@ -60,6 +68,7 @@ import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useActiveScene, useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import type {
+  ActionNode,
   ActionNodeType,
   ActionNodeXY,
   HotspotActionGraph,
@@ -72,6 +81,13 @@ type ActionsFlowProps = {
   /** Prepend App Start + Scene Start lanes (scene-wide Actions modal). */
   includeStartGraphs?: boolean;
 };
+
+type ActionsFlowCanvasProps = ActionsFlowProps & {
+  clipboard: ActionNode | null;
+  onClipboardChange: (node: ActionNode | null) => void;
+};
+
+const ACTION_EDGE_TYPES = { [ACTIONS_EDGE_TYPE]: ActionsEdge };
 
 function graphFingerprint(graph: HotspotActionGraph): string {
   const nodes = graph.nodes.map((n) => `${n.id}:${n.type}`).join(",");
@@ -113,7 +129,9 @@ function structureKeyFor(
 function ActionsFlowCanvas({
   hotspots,
   includeStartGraphs = false,
-}: ActionsFlowProps) {
+  clipboard,
+  onClipboardChange,
+}: ActionsFlowCanvasProps) {
   const updateHotspot = useEditorStore((s) => s.updateHotspot);
   const activeScene = useActiveScene();
   const appStartActions = useScenesStore((s) => s.appStartActions);
@@ -213,12 +231,15 @@ function ActionsFlowCanvas({
   const menu =
     rawMenu && ownerIds.has(rawMenu.hotspotId) ? rawMenu : null;
 
-  const { nodes: initialNodes, edges } = useMemo(
+  const { nodes: initialNodes, edges: storeEdges } = useMemo(
     () => toFlowGraph(entries),
     [entries],
   );
   const [nodes, setNodes] =
     useState<Node<ActionFlowNodeData>[]>(initialNodes);
+  const [selectedEdgeIds, setSelectedEdgeIds] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   useEffect(() => {
     setNodes((current) =>
@@ -247,6 +268,15 @@ function ActionsFlowCanvas({
       }),
     );
   }, [entries]);
+
+  const edges = useMemo(
+    () =>
+      storeEdges.map((edge) => ({
+        ...edge,
+        selected: selectedEdgeIds.has(edge.id),
+      })),
+    [selectedEdgeIds, storeEdges],
+  );
 
   const writeGraph = useCallback(
     (ownerId: number, graph: HotspotActionGraph) => {
@@ -277,6 +307,9 @@ function ActionsFlowCanvas({
       deleteNode: (ownerId, nodeId) => {
         updateGraph(ownerId, (graph) => removeNode(graph, nodeId));
       },
+      deleteEdge: (ownerId, edgeId) => {
+        updateGraph(ownerId, (graph) => removeEdge(graph, edgeId));
+      },
       updateNodeData: (ownerId, nodeId, patch) => {
         updateGraph(ownerId, (graph) => updateNodeData(graph, nodeId, patch));
       },
@@ -289,8 +322,30 @@ function ActionsFlowCanvas({
           return next;
         });
       },
+      clipboard,
+      copyNode: (ownerId, nodeId) => {
+        const graph = getOwnedActionGraph(ownerId);
+        const node = graph?.nodes.find((item) => item.id === nodeId);
+        if (!node) return;
+        onClipboardChange(structuredClone(node));
+      },
+      pasteNode: (ownerId, target) => {
+        if (!clipboard) return false;
+        const allowed =
+          allowedByOwnerId.get(ownerId) ?? HOTSPOT_GRAPH_ALLOWED_NODE_TYPES;
+        if (!allowed.includes(clipboard.type)) {
+          toast.error("That node type isn’t allowed in this lane");
+          return false;
+        }
+        const graph = getOwnedActionGraph(ownerId);
+        if (!graph) return false;
+        const position =
+          target?.position ?? pastePositionNear(graph, target?.nearNodeId);
+        writeGraph(ownerId, insertClonedNode(graph, clipboard, position));
+        return true;
+      },
     }),
-    [allowedByOwnerId, updateGraph],
+    [allowedByOwnerId, clipboard, onClipboardChange, updateGraph, writeGraph],
   );
 
   const onNodesChange: OnNodesChange<Node<ActionFlowNodeData>> = useCallback(
@@ -298,6 +353,14 @@ function ActionsFlowCanvas({
       setNodes((current) => applyNodeChanges(changes, current));
 
       for (const change of changes) {
+        if (change.type === "remove") {
+          const parsed = parseFlowNodeId(change.id);
+          if (!parsed || parsed.nodeId === TRIGGER_NODE_ID) continue;
+          updateGraph(parsed.hotspotId, (graph) =>
+            removeNode(graph, parsed.nodeId),
+          );
+          continue;
+        }
         if (
           change.type === "position" &&
           change.position &&
@@ -318,6 +381,32 @@ function ActionsFlowCanvas({
       }
     },
     [laneByOwnerId, updateGraph],
+  );
+
+  const onEdgesChange: OnEdgesChange = useCallback((changes) => {
+    setSelectedEdgeIds((current) => {
+      let next: Set<string> | null = null;
+      for (const change of changes) {
+        if (change.type !== "select") continue;
+        if (!next) next = new Set(current);
+        if (change.selected) next.add(change.id);
+        else next.delete(change.id);
+      }
+      return next ?? current;
+    });
+  }, []);
+
+  const onEdgesDelete = useCallback(
+    (deleted: Edge[]) => {
+      for (const edge of deleted) {
+        const parsed = parseFlowNodeId(edge.id);
+        if (!parsed) continue;
+        updateGraph(parsed.hotspotId, (graph) =>
+          removeEdge(graph, parsed.nodeId),
+        );
+      }
+    },
+    [updateGraph],
   );
 
   const onConnect: OnConnect = useCallback(
@@ -452,6 +541,16 @@ function ActionsFlowCanvas({
     [api],
   );
 
+  const focusFlowNode = useCallback((flowId: string) => {
+    setNodes((current) =>
+      current.map((node) => ({
+        ...node,
+        selected: node.id === flowId,
+      })),
+    );
+    setSelectedEdgeIds(new Set());
+  }, []);
+
   return (
     <ActionsEditorProvider value={api}>
       <div ref={flowRootRef} className="editor-actions-flow relative h-full w-full">
@@ -459,18 +558,22 @@ function ActionsFlowCanvas({
           nodes={nodes}
           edges={edges}
           nodeTypes={ACTION_FLOW_NODE_TYPES}
+          edgeTypes={ACTION_EDGE_TYPES}
           onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onEdgesDelete={onEdgesDelete}
           onConnect={onConnect}
           onPaneContextMenu={onPaneContextMenu}
           onNodeContextMenu={onNodeContextMenu}
           onPaneClick={() => setRawMenu(null)}
+          onEdgeClick={() => setRawMenu(null)}
           fitView
           fitViewOptions={{ padding: 0.2 }}
-          deleteKeyCode={null}
-          multiSelectionKeyCode={null}
+          deleteKeyCode={["Backspace", "Delete"]}
+          multiSelectionKeyCode="Shift"
           proOptions={{ hideAttribution: true }}
           defaultEdgeOptions={{
-            type: "smoothstep",
+            type: ACTIONS_EDGE_TYPE,
             animated: true,
           }}
           isValidConnection={(connection) => {
@@ -496,6 +599,8 @@ function ActionsFlowCanvas({
           />
         </ReactFlow>
 
+        <ActionsCanvasSearch entries={entries} onFocused={focusFlowNode} />
+
         <ActionsContextMenu
           menu={menu}
           onClose={() => setRawMenu(null)}
@@ -511,6 +616,7 @@ export function ActionsFlow({
   hotspots,
   includeStartGraphs = false,
 }: ActionsFlowProps) {
+  const [clipboard, setClipboard] = useState<ActionNode | null>(null);
   const appStartActions = useScenesStore((s) => s.appStartActions);
   const activeScene = useActiveScene();
   const customMenuButtons = useSettingsStore((s) => s.customMenuButtons);
@@ -546,6 +652,8 @@ export function ActionsFlow({
       <ActionsFlowCanvas
         hotspots={hotspots}
         includeStartGraphs={includeStartGraphs}
+        clipboard={clipboard}
+        onClipboardChange={setClipboard}
       />
     </ReactFlowProvider>
   );

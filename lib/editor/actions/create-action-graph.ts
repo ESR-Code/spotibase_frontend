@@ -411,6 +411,23 @@ export function cloneActionGraph(
   };
 }
 
+/** Deep-clone a node with a new id at `position` (no edges). */
+export function cloneActionNodeAt(
+  node: ActionNode,
+  position: ActionNodeXY,
+): ActionNode {
+  const cloned = cloneActionGraph({
+    trigger: { position: { x: 0, y: 0 } },
+    nodes: [node],
+    edges: [],
+  }).nodes[0]!;
+  return {
+    ...cloned,
+    id: newActionId(),
+    position: { ...position },
+  };
+}
+
 /**
  * Normalize hotspot.actions: `undefined` → default graph;
  * an explicit empty `nodes: []` means "do nothing on click".

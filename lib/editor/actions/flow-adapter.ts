@@ -115,6 +115,7 @@ export function toFlowGraph(entries: ActionFlowEntry[]): {
     for (const edge of graph.edges) {
       edges.push({
         id: flowNodeId(ownerId, edge.id),
+        type: "actionsEdge",
         source: flowNodeId(ownerId, edge.source),
         target: flowNodeId(ownerId, edge.target),
         ...(edge.sourceHandle

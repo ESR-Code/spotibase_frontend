@@ -1,9 +1,11 @@
 "use client";
 
-import { Search, Trash2 } from "lucide-react";
+import { ClipboardPaste, Copy, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ACTION_UI_MENU_ITEMS } from "@/app/editor/_components/actions/action-node-registry";
+import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
 import type { ActionNodeType } from "@/lib/editor/types/hotspot-action";
+import { TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
 
 export type ActionsContextMenuState =
   | {
@@ -40,6 +42,7 @@ export function ActionsContextMenu({
   onAdd,
   onDelete,
 }: ActionsContextMenuProps) {
+  const { clipboard, copyNode, pasteNode } = useActionsEditor();
   const rootRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
@@ -95,6 +98,20 @@ export function ActionsContextMenu({
     >
       {menu.kind === "pane" ? (
         <>
+          {clipboard ? (
+            <button
+              type="button"
+              role="menuitem"
+              className="editor-actions-context-menu-item"
+              onClick={() => {
+                pasteNode(menu.hotspotId, { position: menu.flowPosition });
+                onClose();
+              }}
+            >
+              <ClipboardPaste className="h-3.5 w-3.5" />
+              Paste node
+            </button>
+          ) : null}
           <div className="editor-actions-context-menu-label">Add node</div>
           <div className="editor-actions-context-menu-search">
             <Search
@@ -156,27 +173,62 @@ export function ActionsContextMenu({
             )}
           </div>
         </>
-      ) : menu.deletable ? (
-        <button
-          type="button"
-          role="menuitem"
-          className="editor-actions-context-menu-item"
-          style={{ color: "#ff8a95" }}
-          onClick={() => {
-            onDelete(menu.hotspotId, menu.nodeId);
-            onClose();
-          }}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-          Delete node
-        </button>
       ) : (
-        <div
-          className="px-3 py-2 text-[11px]"
-          style={{ color: "var(--editor-muted)" }}
-        >
-          Trigger node cannot be deleted
-        </div>
+        <>
+          {menu.nodeId !== TRIGGER_NODE_ID && menu.deletable ? (
+            <button
+              type="button"
+              role="menuitem"
+              className="editor-actions-context-menu-item"
+              onClick={() => {
+                copyNode(menu.hotspotId, menu.nodeId);
+                onClose();
+              }}
+            >
+              <Copy className="h-3.5 w-3.5" />
+              Copy node
+            </button>
+          ) : null}
+          {clipboard ? (
+            <button
+              type="button"
+              role="menuitem"
+              className="editor-actions-context-menu-item"
+              onClick={() => {
+                pasteNode(menu.hotspotId, {
+                  nearNodeId:
+                    menu.nodeId === TRIGGER_NODE_ID ? undefined : menu.nodeId,
+                });
+                onClose();
+              }}
+            >
+              <ClipboardPaste className="h-3.5 w-3.5" />
+              Paste node
+            </button>
+          ) : null}
+          {menu.deletable ? (
+            <button
+              type="button"
+              role="menuitem"
+              className="editor-actions-context-menu-item"
+              style={{ color: "#ff8a95" }}
+              onClick={() => {
+                onDelete(menu.hotspotId, menu.nodeId);
+                onClose();
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete node
+            </button>
+          ) : !clipboard ? (
+            <div
+              className="px-3 py-2 text-[11px]"
+              style={{ color: "var(--editor-muted)" }}
+            >
+              Trigger node cannot be deleted
+            </div>
+          ) : null}
+        </>
       )}
     </div>
   );

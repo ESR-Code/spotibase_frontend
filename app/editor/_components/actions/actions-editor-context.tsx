@@ -2,6 +2,7 @@
 
 import { createContext, useContext } from "react";
 import type {
+  ActionNode,
   ActionNodeType,
   ActionNodeXY,
   HotspotActionGraph,
@@ -13,6 +14,7 @@ export type ActionsEditorApi = {
     updater: (graph: HotspotActionGraph) => HotspotActionGraph,
   ) => void;
   deleteNode: (hotspotId: number, nodeId: string) => void;
+  deleteEdge: (hotspotId: number, edgeId: string) => void;
   updateNodeData: (
     hotspotId: number,
     nodeId: string,
@@ -23,6 +25,12 @@ export type ActionsEditorApi = {
     type: ActionNodeType,
     position: ActionNodeXY,
   ) => void;
+  clipboard: ActionNode | null;
+  copyNode: (hotspotId: number, nodeId: string) => void;
+  pasteNode: (
+    hotspotId: number,
+    target?: { nearNodeId?: string; position?: ActionNodeXY },
+  ) => boolean;
 };
 
 const ActionsEditorContext = createContext<ActionsEditorApi | null>(null);
