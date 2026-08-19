@@ -24,10 +24,12 @@ import { HttpRequestNode } from "@/app/editor/_components/actions/http-request-n
 import { OpenModalNode } from "@/app/editor/_components/actions/open-modal-node";
 import { OpenUrlNode } from "@/app/editor/_components/actions/open-url-node";
 import { SendPostMessageNode } from "@/app/editor/_components/actions/send-post-message-node";
+import { ActionFenceNode } from "@/app/editor/_components/actions/action-fence-node";
 import {
   ACTION_NODE_META,
   type ActionNodeMeta,
 } from "@/lib/editor/actions/registry";
+import { ACTION_FENCE_TYPE } from "@/lib/editor/types/action-fence";
 import { TRIGGER_FLOW_TYPE } from "@/lib/editor/actions/flow-adapter";
 import type { ActionNodeType } from "@/lib/editor/types/hotspot-action";
 
@@ -119,4 +121,5 @@ export const ACTION_FLOW_NODE_TYPES = {
   enableDisable: EnableDisableNode,
   changeHotspotColor: ChangeHotspotColorNode,
   changeHotspotIcon: ChangeHotspotIconNode,
+  [ACTION_FENCE_TYPE]: ActionFenceNode,
 };

@@ -43,6 +43,7 @@ import {
   readEditorSettingsSnapshot,
   useSettingsStore,
 } from "@/lib/editor/state/settings-store";
+import { cloneActionFences } from "@/lib/editor/types/action-fence";
 import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 import { cloneLayers } from "@/lib/editor/types/scene-layer";
 import type { Scene } from "@/lib/editor/types/scene";
@@ -67,6 +68,7 @@ function snapshotCurrentIntoScene(scene: Scene): Scene {
     startActions: cloneActionGraph(
       scene.startActions ?? createEmptyActionGraph(),
     ),
+    actionFences: cloneActionFences(scene.actionFences),
     nextHotspotId: editor.nextId,
     model: {
       name: model.modelName,
@@ -135,6 +137,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
       startActions: cloneActionGraph(
         SEED_SCENE.startActions ?? createEmptyActionGraph(),
       ),
+      actionFences: cloneActionFences(SEED_SCENE.actionFences),
       model: { ...SEED_SCENE.model, rotation: { ...SEED_SCENE.model.rotation } },
       settings: cloneEditorSettings(SEED_SCENE.settings),
       environment: cloneEnvironmentSettings(SEED_SCENE.environment),

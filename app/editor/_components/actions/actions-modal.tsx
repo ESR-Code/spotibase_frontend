@@ -1,11 +1,12 @@
 "use client";
 
-import { Workflow, X } from "lucide-react";
+import { Frame, Workflow, X } from "lucide-react";
 import { ActionsFlow } from "@/app/editor/_components/actions/actions-flow";
 import { EditorChip } from "@/app/editor/_components/ui/editor-chip";
 import { EditorDialog } from "@/app/editor/_components/ui/editor-dialog";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useActionFencesStore } from "@/lib/editor/state/action-fences-store";
 import { useActiveScene } from "@/lib/editor/state/scenes-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
@@ -58,6 +59,17 @@ export function ActionsModal() {
     >
       <EditorDialog.Header title={title} description={description}>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="editor-actions-fence-btn"
+            title="Add a fence. Selected nodes are grouped inside it."
+            onClick={() =>
+              useActionFencesStore.getState().requestCreateFence()
+            }
+          >
+            <Frame />
+            Fence
+          </button>
           <span
             className="hidden items-center gap-1.5 text-[11px] font-semibold sm:inline-flex"
             style={{ color: "var(--editor-muted)" }}

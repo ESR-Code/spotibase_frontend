@@ -30,8 +30,10 @@ import type {
 import type { GeoSettings } from "@/lib/editor/types/geo-settings";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
-import type { Scene, SceneModelState } from "@/lib/editor/types/scene";
+import type { ActionFence } from "@/lib/editor/types/action-fence";
+import { cloneActionFences } from "@/lib/editor/types/action-fence";
 import { cloneLayers, type SceneLayer } from "@/lib/editor/types/scene-layer";
+import type { Scene, SceneModelState } from "@/lib/editor/types/scene";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 
 export const INITIAL_SCENE_ID = "scene-1";
@@ -65,6 +67,7 @@ export function createScene(partial: {
   hotspots?: Hotspot[];
   nextHotspotId?: number;
   startActions?: HotspotActionGraph;
+  actionFences?: ActionFence[];
   model?: SceneModelState;
   settings?: EditorSettings;
   environment?: EnvironmentSettings;
@@ -84,6 +87,7 @@ export function createScene(partial: {
     startActions: cloneActionGraph(
       partial.startActions ?? createEmptyActionGraph(),
     ),
+    actionFences: cloneActionFences(partial.actionFences),
     model: partial.model ?? createEmptyModelState(partial.type),
     settings: cloneEditorSettings(partial.settings ?? DEFAULT_EDITOR_SETTINGS),
     environment: cloneEnvironmentSettings(

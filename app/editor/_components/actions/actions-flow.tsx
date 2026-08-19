@@ -14,11 +14,24 @@ import {
   type NodeChange,
   type OnConnect,
   type OnEdgesChange,
+  type OnNodeDrag,
   type OnNodesChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+  attachNodesToFences,
+  fenceNodeStyle,
+  isFenceNode,
+  nodeAbsolutePosition,
+  nodeCenter,
+  nodesByIdMap,
+  pointInFence,
+  smallestContainingFence,
+  toFenceFlowNode,
+  type ActionsCanvasNode,
+} from "@/lib/editor/actions/action-fences";
 import { ACTION_FLOW_NODE_TYPES } from "@/app/editor/_components/actions/action-node-registry";
 import { ActionsCanvasSearch } from "@/app/editor/_components/actions/actions-canvas-search";
 import {
@@ -65,6 +78,10 @@ import {
   updateNodeData,
 } from "@/lib/editor/actions/graph-ops";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import {
+  createActionFence,
+  useActionFencesStore,
+} from "@/lib/editor/state/action-fences-store";
 import { useActiveScene, useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import type {
@@ -73,6 +90,10 @@ import type {
   ActionNodeXY,
   HotspotActionGraph,
 } from "@/lib/editor/types/hotspot-action";
+import {
+  actionFencesScopeKey,
+  isActionFenceId,
+} from "@/lib/editor/types/action-fence";
 import { TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 
@@ -136,9 +157,40 @@ function ActionsFlowCanvas({
   const activeScene = useActiveScene();
   const appStartActions = useScenesStore((s) => s.appStartActions);
   const customMenuButtons = useSettingsStore((s) => s.customMenuButtons);
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, getViewport } = useReactFlow();
   const flowRootRef = useRef<HTMLDivElement>(null);
   const [rawMenu, setRawMenu] = useState<ActionsContextMenuState | null>(null);
+  const scopeKey = actionFencesScopeKey(
+    includeStartGraphs,
+    activeScene.id,
+    hotspots[0]?.id,
+  );
+  const storeFences = useActionFencesStore((s) => s.byScope[scopeKey]);
+  const fences =
+    storeFences ??
+    (includeStartGraphs ? (activeScene.actionFences ?? []) : []);
+  const pendingCreate = useActionFencesStore((s) => s.pendingCreate);
+  const consumeCreateFence = useActionFencesStore((s) => s.consumeCreateFence);
+  const addFence = useActionFencesStore((s) => s.addFence);
+  const updateFence = useActionFencesStore((s) => s.updateFence);
+  const removeFence = useActionFencesStore((s) => s.removeFence);
+  const applyMemberships = useActionFencesStore((s) => s.applyMemberships);
+  const hydrateScope = useActionFencesStore((s) => s.hydrateScope);
+
+  useLayoutEffect(() => {
+    if (useActionFencesStore.getState().byScope[scopeKey] !== undefined) {
+      return;
+    }
+    hydrateScope(
+      scopeKey,
+      includeStartGraphs ? (activeScene.actionFences ?? []) : [],
+    );
+  }, [
+    activeScene.actionFences,
+    hydrateScope,
+    includeStartGraphs,
+    scopeKey,
+  ]);
 
   const menuPositionFromEvent = useCallback(
     (event: { clientX: number; clientY: number }) => {
@@ -235,30 +287,35 @@ function ActionsFlowCanvas({
     () => toFlowGraph(entries),
     [entries],
   );
-  const [nodes, setNodes] =
-    useState<Node<ActionFlowNodeData>[]>(initialNodes);
+  const [nodes, setNodes] = useState<ActionsCanvasNode[]>(() =>
+    attachNodesToFences(initialNodes, fences, scopeKey),
+  );
   const [selectedEdgeIds, setSelectedEdgeIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const nodesRef = useRef(nodes);
+  nodesRef.current = nodes;
 
   useEffect(() => {
     setNodes((current) =>
       current.map((node) => {
-        if (!node.data.isTrigger) return node;
-        const entry = entries.find((item) => item.ownerId === node.data.hotspotId);
+        if (isFenceNode(node)) return node;
+        const data = node.data as ActionFlowNodeData;
+        if (!data.isTrigger) return node;
+        const entry = entries.find((item) => item.ownerId === data.hotspotId);
         if (!entry) return node;
         if (
-          node.data.hotspotTitle === entry.title &&
-          node.data.triggerIcon === entry.triggerIcon &&
-          node.data.toggledIcon === entry.toggledIcon &&
-          node.data.toggleEnabled === entry.toggleEnabled
+          data.hotspotTitle === entry.title &&
+          data.triggerIcon === entry.triggerIcon &&
+          data.toggledIcon === entry.toggledIcon &&
+          data.toggleEnabled === entry.toggleEnabled
         ) {
           return node;
         }
         return {
           ...node,
           data: {
-            ...node.data,
+            ...data,
             hotspotTitle: entry.title,
             triggerIcon: entry.triggerIcon,
             toggledIcon: entry.toggledIcon,
@@ -348,17 +405,111 @@ function ActionsFlowCanvas({
     [allowedByOwnerId, clipboard, onClipboardChange, updateGraph, writeGraph],
   );
 
-  const onNodesChange: OnNodesChange<Node<ActionFlowNodeData>> = useCallback(
-    (changes: NodeChange<Node<ActionFlowNodeData>>[]) => {
-      setNodes((current) => applyNodeChanges(changes, current));
+  const persistActionPosition = useCallback(
+    (node: ActionsCanvasNode, byId: Map<string, Node>) => {
+      if (isFenceNode(node)) return;
+      const parsed = parseFlowNodeId(node.id);
+      if (!parsed) return;
+      const abs = nodeAbsolutePosition(node, byId);
+      const laneIndex = laneByOwnerId.get(parsed.hotspotId) ?? 0;
+      updateGraph(parsed.hotspotId, (graph) =>
+        moveNode(graph, parsed.nodeId, toGraphPosition(abs.x, abs.y, laneIndex)),
+      );
+    },
+    [laneByOwnerId, updateGraph],
+  );
 
+  const onNodesChange: OnNodesChange<ActionsCanvasNode> = useCallback(
+    (changes: NodeChange<ActionsCanvasNode>[]) => {
+      const removingFenceIds = new Set<string>();
       for (const change of changes) {
+        if (change.type === "remove" && isActionFenceId(change.id)) {
+          removingFenceIds.add(change.id);
+        }
+      }
+
+      const safeChanges =
+        removingFenceIds.size === 0
+          ? changes
+          : changes.filter((change) => {
+              if (change.type !== "remove") return true;
+              if (removingFenceIds.has(change.id)) return true;
+              const current = nodesRef.current.find((node) => node.id === change.id);
+              return !(current?.parentId && removingFenceIds.has(current.parentId));
+            });
+
+      let next = nodesRef.current;
+      setNodes((current) => {
+        let mapped = applyNodeChanges(safeChanges, current);
+        if (removingFenceIds.size > 0) {
+          const before = nodesByIdMap(current);
+          mapped = mapped.map((node) => {
+            if (!node.parentId || !removingFenceIds.has(node.parentId)) {
+              return node;
+            }
+            return {
+              ...node,
+              parentId: undefined,
+              position: nodeAbsolutePosition(node, before),
+            };
+          });
+        }
+        next = mapped;
+        nodesRef.current = mapped;
+        return mapped;
+      });
+
+      const byId = nodesByIdMap(next);
+
+      for (const id of removingFenceIds) {
+        removeFence(scopeKey, id);
+      }
+
+      for (const change of safeChanges) {
         if (change.type === "remove") {
+          if (isActionFenceId(change.id)) continue;
           const parsed = parseFlowNodeId(change.id);
           if (!parsed || parsed.nodeId === TRIGGER_NODE_ID) continue;
           updateGraph(parsed.hotspotId, (graph) =>
             removeNode(graph, parsed.nodeId),
           );
+          applyMemberships(scopeKey, [{ nodeId: change.id, fenceId: null }]);
+          continue;
+        }
+        if (
+          change.type === "dimensions" &&
+          isActionFenceId(change.id) &&
+          change.dimensions
+        ) {
+          updateFence(scopeKey, change.id, {
+            width: change.dimensions.width,
+            height: change.dimensions.height,
+          });
+          if (change.resizing === false) {
+            const fenceNode = next.find((item) => item.id === change.id);
+            if (fenceNode) {
+              const map = nodesByIdMap(next);
+              const memberships: Array<{ nodeId: string; fenceId: string | null }> =
+                [];
+              const ungrouped = new Map<string, { x: number; y: number }>();
+              for (const child of next) {
+                if (child.parentId !== fenceNode.id) continue;
+                if (pointInFence(nodeCenter(child, map), fenceNode)) continue;
+                ungrouped.set(child.id, nodeAbsolutePosition(child, map));
+                memberships.push({ nodeId: child.id, fenceId: null });
+              }
+              if (ungrouped.size > 0) {
+                setNodes((current) =>
+                  current.map((item) => {
+                    const abs = ungrouped.get(item.id);
+                    if (!abs) return item;
+                    return { ...item, parentId: undefined, position: abs };
+                  }),
+                );
+                applyMemberships(scopeKey, memberships);
+              }
+            }
+          }
           continue;
         }
         if (
@@ -366,21 +517,30 @@ function ActionsFlowCanvas({
           change.position &&
           change.dragging === false
         ) {
-          const parsed = parseFlowNodeId(change.id);
-          if (!parsed) continue;
-          const laneIndex = laneByOwnerId.get(parsed.hotspotId) ?? 0;
-          const position = toGraphPosition(
-            change.position.x,
-            change.position.y,
-            laneIndex,
-          );
-          updateGraph(parsed.hotspotId, (graph) =>
-            moveNode(graph, parsed.nodeId, position),
-          );
+          const node = next.find((item) => item.id === change.id);
+          if (!node) continue;
+          if (isFenceNode(node)) {
+            updateFence(scopeKey, node.id, {
+              x: node.position.x,
+              y: node.position.y,
+            });
+            for (const child of next) {
+              if (child.parentId === node.id) persistActionPosition(child, byId);
+            }
+            continue;
+          }
+          persistActionPosition(node, byId);
         }
       }
     },
-    [laneByOwnerId, updateGraph],
+    [
+      applyMemberships,
+      persistActionPosition,
+      removeFence,
+      scopeKey,
+      updateFence,
+      updateGraph,
+    ],
   );
 
   const onEdgesChange: OnEdgesChange = useCallback((changes) => {
@@ -517,6 +677,7 @@ function ActionsFlowCanvas({
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
       event.preventDefault();
+      if (isFenceNode(node)) return;
       const parsed = parseFlowNodeId(node.id);
       if (!parsed) return;
       const menuPos = menuPositionFromEvent(event);
@@ -532,6 +693,79 @@ function ActionsFlowCanvas({
       });
     },
     [menuPositionFromEvent],
+  );
+
+  const commitFenceMembership = useCallback(
+    (moved: ActionsCanvasNode[]) => {
+      const targets = moved.filter((item) => !isFenceNode(item));
+      if (targets.length === 0) return;
+
+      const latest = new Map<string, ActionsCanvasNode>();
+      for (const item of nodesRef.current) latest.set(item.id, item);
+      for (const item of targets) {
+        const current = latest.get(item.id);
+        latest.set(item.id, current ? { ...current, ...item } : item);
+      }
+      const all = [...latest.values()];
+      const byId = nodesByIdMap(all);
+      const fenceNodes = all.filter(isFenceNode);
+      if (fenceNodes.length === 0) return;
+
+      const memberships: Array<{ nodeId: string; fenceId: string | null }> = [];
+      const nextParent = new Map<
+        string,
+        { parentId: string | undefined; position: { x: number; y: number } }
+      >();
+
+      for (const item of targets) {
+        const current = latest.get(item.id) ?? item;
+        const center = nodeCenter(current, byId);
+        const containing = smallestContainingFence(center, fenceNodes);
+        const currentParent = current.parentId;
+        if (containing?.id === currentParent) continue;
+        const abs = nodeAbsolutePosition(current, byId);
+        if (containing) {
+          nextParent.set(current.id, {
+            parentId: containing.id,
+            position: {
+              x: abs.x - containing.position.x,
+              y: abs.y - containing.position.y,
+            },
+          });
+          memberships.push({ nodeId: current.id, fenceId: containing.id });
+        } else if (currentParent) {
+          nextParent.set(current.id, { parentId: undefined, position: abs });
+          memberships.push({ nodeId: current.id, fenceId: null });
+        }
+      }
+
+      if (nextParent.size === 0) return;
+      setNodes((current) => {
+        const next = current.map((item) => {
+          const patch = nextParent.get(item.id);
+          if (!patch) return item;
+          return {
+            ...item,
+            parentId: patch.parentId,
+            position: patch.position,
+            expandParent: false,
+            zIndex: patch.parentId ? 1 : undefined,
+          };
+        });
+        const fenceNodesFirst = next.filter(isFenceNode);
+        const actionNodes = next.filter((item) => !isFenceNode(item));
+        return [...fenceNodesFirst, ...actionNodes];
+      });
+      applyMemberships(scopeKey, memberships);
+    },
+    [applyMemberships, scopeKey],
+  );
+
+  const onNodeDragStop: OnNodeDrag<ActionsCanvasNode> = useCallback(
+    (_event, node, dragged) => {
+      commitFenceMembership(dragged.length > 0 ? dragged : [node]);
+    },
+    [commitFenceMembership],
   );
 
   const handleAdd = useCallback(
@@ -551,10 +785,142 @@ function ActionsFlowCanvas({
     setSelectedEdgeIds(new Set());
   }, []);
 
+  useEffect(() => {
+    setNodes((current) => {
+      const fenceIds = new Set(fences.map((fence) => fence.id));
+      const fenceById = new Map(fences.map((fence) => [fence.id, fence]));
+      const before = nodesByIdMap(current);
+      let changed = false;
+      let next = current.filter((node) => {
+        if (isFenceNode(node) && !fenceIds.has(node.id)) {
+          changed = true;
+          return false;
+        }
+        return true;
+      });
+      next = next.map((node) => {
+        if (isFenceNode(node)) {
+          const fence = fenceById.get(node.id);
+          if (!fence) return node;
+          const style = fenceNodeStyle(fence);
+          if (
+            node.width === fence.width &&
+            node.height === fence.height &&
+            node.style?.width === style.width &&
+            node.style?.height === style.height &&
+            node.style?.background === style.background &&
+            node.style?.border === style.border
+          ) {
+            return node;
+          }
+          changed = true;
+          return {
+            ...node,
+            width: fence.width,
+            height: fence.height,
+            style,
+          };
+        }
+        if (!node.parentId || fenceIds.has(node.parentId)) return node;
+        changed = true;
+        return {
+          ...node,
+          parentId: undefined,
+          position: nodeAbsolutePosition(node, before),
+        };
+      });
+      for (const fence of fences) {
+        if (next.some((node) => node.id === fence.id)) continue;
+        changed = true;
+        next = [toFenceFlowNode(fence, scopeKey), ...next];
+      }
+      return changed ? next : current;
+    });
+  }, [fences, scopeKey]);
+
+  useEffect(() => {
+    if (pendingCreate <= 0) return;
+    consumeCreateFence();
+
+    const selected = nodesRef.current.filter(
+      (node) => node.selected && !isFenceNode(node),
+    );
+    const byId = nodesByIdMap(nodesRef.current);
+    let fence = createActionFence(scopeKey);
+
+    if (selected.length > 0) {
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      for (const node of selected) {
+        const abs = nodeAbsolutePosition(node, byId);
+        const width = node.measured?.width ?? 240;
+        const height = node.measured?.height ?? 80;
+        minX = Math.min(minX, abs.x);
+        minY = Math.min(minY, abs.y);
+        maxX = Math.max(maxX, abs.x + width);
+        maxY = Math.max(maxY, abs.y + height);
+      }
+      const pad = 40;
+      const header = 34;
+      fence = createActionFence(scopeKey, {
+        x: minX - pad,
+        y: minY - pad - header,
+        width: Math.max(280, maxX - minX + pad * 2),
+        height: Math.max(180, maxY - minY + pad * 2 + header),
+        memberIds: selected.map((node) => node.id),
+      });
+    } else {
+      const rect = flowRootRef.current?.getBoundingClientRect();
+      if (rect) {
+        const center = screenToFlowPosition({
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2,
+        });
+        fence = createActionFence(scopeKey, {
+          x: center.x - fence.width / 2,
+          y: center.y - fence.height / 2,
+        });
+      } else {
+        const viewport = getViewport();
+        fence = createActionFence(scopeKey, {
+          x: -viewport.x / viewport.zoom + 80,
+          y: -viewport.y / viewport.zoom + 80,
+        });
+      }
+    }
+
+    addFence(scopeKey, fence);
+    const created = fence;
+    setNodes((current) => {
+      const map = nodesByIdMap(current);
+      const next = current.map((node) => {
+        if (!created.memberIds.includes(node.id)) return node;
+        const abs = nodeAbsolutePosition(node, map);
+        return {
+          ...node,
+          parentId: created.id,
+          position: { x: abs.x - created.x, y: abs.y - created.y },
+          expandParent: false,
+          zIndex: 1,
+        };
+      });
+      return [toFenceFlowNode(created, scopeKey), ...next];
+    });
+  }, [
+    addFence,
+    consumeCreateFence,
+    getViewport,
+    pendingCreate,
+    scopeKey,
+    screenToFlowPosition,
+  ]);
+
   return (
     <ActionsEditorProvider value={api}>
       <div ref={flowRootRef} className="editor-actions-flow relative h-full w-full">
-        <ReactFlow
+        <ReactFlow<ActionsCanvasNode>
           nodes={nodes}
           edges={edges}
           nodeTypes={ACTION_FLOW_NODE_TYPES}
@@ -565,6 +931,10 @@ function ActionsFlowCanvas({
           onConnect={onConnect}
           onPaneContextMenu={onPaneContextMenu}
           onNodeContextMenu={onNodeContextMenu}
+          onNodeDragStop={onNodeDragStop}
+          onSelectionDragStop={(_event, dragged) =>
+            commitFenceMembership(dragged)
+          }
           onPaneClick={() => setRawMenu(null)}
           onEdgeClick={() => setRawMenu(null)}
           fitView
