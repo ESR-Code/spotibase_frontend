@@ -8,6 +8,7 @@ import { chainFromTrigger } from "@/lib/editor/actions/graph-ops";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
+import { normalizeReceiveEvents } from "@/lib/editor/types/hotspot-action";
 
 type HotspotActionsTabProps = {
   selected: Hotspot;
@@ -91,9 +92,22 @@ export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
                         ? `→ ${node.data.url.trim()}`
                         : "→ (no url)"
                       : node.type === "sendPostMessage"
-                        ? node.data.eventName.trim()
-                          ? `→ ${(node.data.mode ?? "send") === "receive" ? "recv" : "send"} ${node.data.eventName.trim()}`
-                          : `→ ${(node.data.mode ?? "send") === "receive" ? "recv" : "send"} (no event)`
+                        ? (() => {
+                            const receive =
+                              (node.data.mode ?? "send") === "receive";
+                            if (!receive) {
+                              return node.data.eventName.trim()
+                                ? `→ send ${node.data.eventName.trim()}`
+                                : "→ send (no event)";
+                            }
+                            const events = normalizeReceiveEvents(node.data);
+                            const names = events
+                              .map((event) => event.eventName.trim())
+                              .filter(Boolean);
+                            if (names.length === 0) return "→ recv (no event)";
+                            if (names.length === 1) return `→ recv ${names[0]}`;
+                            return `→ recv ${names.length} events`;
+                          })()
                         : node.type === "httpRequest"
                           ? node.data.url.trim()
                             ? `→ ${node.data.method} ${node.data.url.trim()}`

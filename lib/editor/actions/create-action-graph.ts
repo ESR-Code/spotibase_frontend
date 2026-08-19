@@ -18,7 +18,11 @@ import type {
 } from "@/lib/editor/types/hotspot-action";
 import { HTTP_METHODS, TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
 import type { GoToHotspotOffset } from "@/lib/editor/types/hotspot-action";
-import { OPEN_MODAL_HANDLE_ON_OPEN } from "@/lib/editor/types/hotspot-action";
+import {
+  firstPostMessageReceiveHandleId,
+  normalizeReceiveEvents,
+  OPEN_MODAL_HANDLE_ON_OPEN,
+} from "@/lib/editor/types/hotspot-action";
 import { markerColorSwatches } from "@/lib/editor/theme/tokens";
 
 export function newActionId(): string {
@@ -175,6 +179,7 @@ export function createActionNode(
           target: "parent",
           payloadFields: [],
           lastPayloadJson: "",
+          receiveEvents: [],
         },
       };
     case "httpRequest":
@@ -252,9 +257,7 @@ export function createEmptyActionGraph(): HotspotActionGraph {
 export function cloneActionGraph(
   graph: HotspotActionGraph,
 ): HotspotActionGraph {
-  return {
-    trigger: { position: { ...graph.trigger.position } },
-    nodes: graph.nodes.map((node): ActionNode => {
+  const nodes = graph.nodes.map((node): ActionNode => {
       if (node.type === "goToScene") {
         return {
           id: node.id,
@@ -284,22 +287,42 @@ export function cloneActionGraph(
         };
       }
       if (node.type === "sendPostMessage") {
+        const mode = asPostMessageMode(node.data.mode);
+        const payloadFields = Array.isArray(node.data.payloadFields)
+          ? node.data.payloadFields.filter(
+              (field): field is string => typeof field === "string",
+            )
+          : [];
+        const receiveEvents = normalizeReceiveEvents({
+          mode,
+          eventName: node.data.eventName,
+          payloadFields,
+          lastPayloadJson: node.data.lastPayloadJson ?? "",
+          receiveEvents: node.data.receiveEvents,
+        });
+        const first = receiveEvents[0];
         return {
           id: node.id,
           type: "sendPostMessage",
           position: { ...node.position },
           data: {
-            mode: asPostMessageMode(node.data.mode),
-            eventName: node.data.eventName,
+            mode,
+            eventName:
+              mode === "receive" && first
+                ? first.eventName
+                : node.data.eventName,
             payloadJson: node.data.payloadJson,
             targetOrigin: node.data.targetOrigin,
             target: asPostMessageTarget(node.data.target),
-            payloadFields: Array.isArray(node.data.payloadFields)
-              ? node.data.payloadFields.filter(
-                  (field): field is string => typeof field === "string",
-                )
-              : [],
-            lastPayloadJson: node.data.lastPayloadJson ?? "",
+            payloadFields:
+              mode === "receive" && first
+                ? first.payloadFields
+                : payloadFields,
+            lastPayloadJson:
+              (mode === "receive" && first?.lastPayloadJson) ||
+              node.data.lastPayloadJson ||
+              "",
+            receiveEvents,
           },
         };
       }
@@ -357,19 +380,32 @@ export function cloneActionGraph(
         position: { ...node.position },
         data: {},
       };
-    }),
+    });
+  return {
+    trigger: { position: { ...graph.trigger.position } },
+    nodes,
     edges: graph.edges.map((edge) => {
-      const sourceNode = graph.nodes.find((node) => node.id === edge.source);
+      const sourceNode = nodes.find((node) => node.id === edge.source);
+      const unlabeled =
+        edge.sourceHandle == null || edge.sourceHandle === "";
       const legacyOpenModal =
-        sourceNode?.type === "openModal" &&
-        (edge.sourceHandle == null || edge.sourceHandle === "");
+        sourceNode?.type === "openModal" && unlabeled;
+      const legacyReceive =
+        sourceNode?.type === "sendPostMessage" &&
+        (sourceNode.data.mode ?? "send") === "receive" &&
+        unlabeled;
+      const receiveHandle = legacyReceive
+        ? firstPostMessageReceiveHandleId(sourceNode.data)
+        : null;
       return {
         id: edge.id,
         source: edge.source,
         target: edge.target,
         sourceHandle: legacyOpenModal
           ? OPEN_MODAL_HANDLE_ON_OPEN
-          : (edge.sourceHandle ?? null),
+          : receiveHandle
+            ? receiveHandle
+            : (edge.sourceHandle ?? null),
       };
     }),
   };

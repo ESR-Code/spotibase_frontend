@@ -1,6 +1,12 @@
 "use client";
 
-import type { Node, NodeProps } from "@xyflow/react";
+import {
+  Handle,
+  Position,
+  useUpdateNodeInternals,
+  type Node,
+  type NodeProps,
+} from "@xyflow/react";
 import { ChevronDown, MessagesSquare, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-card";
@@ -8,7 +14,6 @@ import { useActionsEditor } from "@/app/editor/_components/actions/actions-edito
 import { VariableInsertButton } from "@/app/editor/_components/actions/variable-insert-button";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import {
-  findOwnedActionNode,
   isStartOwnerId,
 } from "@/lib/editor/actions/action-owners";
 import type { ActionFlowNodeData } from "@/lib/editor/actions/flow-adapter";
@@ -20,9 +25,13 @@ import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import {
+  createEmptyPostMessageReceiveEvent,
+  normalizeReceiveEvents,
   POST_MESSAGE_MODES,
   POST_MESSAGE_TARGETS,
+  postMessageReceiveHandleId,
   type PostMessageMode,
+  type PostMessageReceiveEvent,
   type PostMessageTarget,
   type SendPostMessageActionNode,
 } from "@/lib/editor/types/hotspot-action";
@@ -42,6 +51,7 @@ const EMPTY_DATA: SendPostMessageActionNode["data"] = {
   target: "parent",
   payloadFields: [],
   lastPayloadJson: "",
+  receiveEvents: [],
 };
 
 function newFieldRowId(): string {
@@ -55,28 +65,46 @@ function createEmptyFieldRow(): FieldRow {
   return { id: newFieldRowId(), path: "" };
 }
 
-function fieldsToRows(fields: string[]): FieldRow[] {
-  if (fields.length === 0) return [createEmptyFieldRow()];
-  return fields.map((path) => ({ id: newFieldRowId(), path }));
+function placeholderRows(event: PostMessageReceiveEvent): FieldRow[] {
+  if (event.payloadFields.length === 0) {
+    return [{ id: `${event.id}::empty`, path: "" }];
+  }
+  return event.payloadFields.map((path, index) => ({
+    id: `${event.id}::${index}`,
+    path,
+  }));
 }
 
 function rowsToFields(rows: FieldRow[]): string[] {
   return rows.map((row) => row.path.trim()).filter(Boolean);
 }
 
+function eventTitle(
+  event: PostMessageReceiveEvent,
+  index: number,
+): string {
+  const name = event.eventName.trim();
+  return name || `Event ${index + 1}`;
+}
+
 export function SendPostMessageNode({
+  id,
   data,
   selected,
 }: NodeProps<SendPostMessageFlowNode>) {
   const { deleteNode, updateNodeData } = useActionsEditor();
+  const updateNodeInternals = useUpdateNodeInternals();
   const actionNodeId = data.actionNode?.id;
   const ownerId = data.hotspotId;
   const allowReceive = isStartOwnerId(ownerId);
-  const [fieldRows, setFieldRows] = useState<FieldRow[]>([createEmptyFieldRow()]);
+  const [fieldRowsByEvent, setFieldRowsByEvent] = useState<
+    Record<string, FieldRow[]>
+  >({});
+  const [openByEvent, setOpenByEvent] = useState<Record<string, boolean>>({});
   const [payloadOpen, setPayloadOpen] = useState(false);
+  const [targetOpen, setTargetOpen] = useState(false);
   const eventNameRef = useRef<HTMLInputElement>(null);
   const payloadRef = useRef<HTMLTextAreaElement>(null);
-  const originRef = useRef<HTMLInputElement>(null);
 
   const ownedNode = useOwnedActionNode(ownerId, actionNodeId);
   const live =
@@ -89,6 +117,7 @@ export function SendPostMessageNode({
           target: ownedNode.data.target,
           payloadFields: ownedNode.data.payloadFields ?? [],
           lastPayloadJson: ownedNode.data.lastPayloadJson ?? "",
+          receiveEvents: ownedNode.data.receiveEvents ?? [],
         }
       : EMPTY_DATA;
   const hotspots = useEditorStore((s) => s.hotspots);
@@ -105,56 +134,120 @@ export function SendPostMessageNode({
   );
   const mode: PostMessageMode =
     allowReceive && live.mode === "receive" ? "receive" : "send";
+  const receiveEvents =
+    mode === "receive"
+      ? normalizeReceiveEvents({ ...live, mode: "receive" })
+      : [];
+  const receiveLayoutKey = receiveEvents
+    .map((event) => {
+      const open = openByEvent[event.id] ?? receiveEvents.length === 1;
+      const rowCount = (
+        fieldRowsByEvent[event.id] ?? event.payloadFields
+      ).length;
+      return `${event.id}:${event.eventName}:${rowCount}:${open ? "1" : "0"}`;
+    })
+    .join("|");
+
+  const receiveEventIdsKey = receiveEvents.map((event) => event.id).join("|");
 
   useEffect(() => {
-    if (!actionNodeId) return;
-    const graphLive = findOwnedActionNode(ownerId, actionNodeId);
-    const fields =
-      graphLive?.type === "sendPostMessage"
-        ? (graphLive.data.payloadFields ?? [])
-        : [];
-    setFieldRows(fieldsToRows(fields));
-  }, [actionNodeId, ownerId]);
+    updateNodeInternals(id);
+  }, [
+    id,
+    mode,
+    payloadOpen,
+    targetOpen,
+    receiveLayoutKey,
+    receiveEventIdsKey,
+    updateNodeInternals,
+  ]);
 
   if (!actionNodeId) return null;
 
   const payloadCheck = parsePayloadJson(
     substituteTokensForValidation(live.payloadJson, "null"),
   );
-  const declaredFieldCount = rowsToFields(fieldRows).length;
+  const declaredFieldCount = receiveEvents.reduce((sum, event) => {
+    const rows = fieldRowsByEvent[event.id] ?? placeholderRows(event);
+    return sum + rowsToFields(rows).length;
+  }, 0);
+  const namedEventCount = receiveEvents.filter((event) =>
+    event.eventName.trim(),
+  ).length;
   const warning =
-    !live.eventName.trim()
-      ? "Enter an event name"
-      : mode === "send" && !payloadCheck.ok
-        ? payloadCheck.error
-        : mode === "send" && !live.targetOrigin.trim()
-          ? "Enter a target origin"
-          : !allowReceive && live.mode === "receive"
-            ? "Receive is only available on App Start / Scene Start"
+    mode === "receive"
+      ? namedEventCount === 0
+        ? "Enter an event name"
+        : !allowReceive && live.mode === "receive"
+          ? "Receive is only available on App Start / Scene Start"
+          : null
+      : !live.eventName.trim()
+        ? "Enter an event name"
+        : !payloadCheck.ok
+          ? payloadCheck.error
+          : !live.targetOrigin.trim()
+            ? "Enter a target origin"
             : null;
 
   const patch = (partial: Partial<SendPostMessageActionNode["data"]>) => {
     updateNodeData(ownerId, actionNodeId, partial);
   };
 
-  const commitFieldRows = (rows: FieldRow[]) => {
-    setFieldRows(rows);
-    patch({ payloadFields: rowsToFields(rows) });
+  const commitReceiveEvents = (events: PostMessageReceiveEvent[]) => {
+    patch({ receiveEvents: events });
   };
 
-  const updateFieldRow = (id: string, path: string) => {
-    commitFieldRows(
-      fieldRows.map((row) => (row.id === id ? { ...row, path } : row)),
+  const updateReceiveEvent = (
+    eventId: string,
+    partial: Partial<PostMessageReceiveEvent>,
+  ) => {
+    commitReceiveEvents(
+      receiveEvents.map((event) =>
+        event.id === eventId ? { ...event, ...partial } : event,
+      ),
     );
   };
 
-  const addFieldRow = () => {
-    commitFieldRows([...fieldRows, createEmptyFieldRow()]);
+  const commitEventFieldRows = (eventId: string, rows: FieldRow[]) => {
+    setFieldRowsByEvent((prev) => ({ ...prev, [eventId]: rows }));
+    updateReceiveEvent(eventId, { payloadFields: rowsToFields(rows) });
   };
 
-  const removeFieldRow = (id: string) => {
-    const next = fieldRows.filter((row) => row.id !== id);
-    commitFieldRows(next.length > 0 ? next : [createEmptyFieldRow()]);
+  const addReceiveEvent = () => {
+    const created = createEmptyPostMessageReceiveEvent();
+    commitReceiveEvents([...receiveEvents, created]);
+    setFieldRowsByEvent((prev) => ({
+      ...prev,
+      [created.id]: [createEmptyFieldRow()],
+    }));
+    setOpenByEvent(() => {
+      const next: Record<string, boolean> = {};
+      for (const event of receiveEvents) next[event.id] = false;
+      next[created.id] = true;
+      return next;
+    });
+  };
+
+  const removeReceiveEvent = (eventId: string) => {
+    if (receiveEvents.length <= 1) return;
+    commitReceiveEvents(receiveEvents.filter((event) => event.id !== eventId));
+    setFieldRowsByEvent((prev) => {
+      const next = { ...prev };
+      delete next[eventId];
+      return next;
+    });
+    setOpenByEvent((prev) => {
+      const next = { ...prev };
+      delete next[eventId];
+      return next;
+    });
+  };
+
+  const toggleEventOpen = (eventId: string) => {
+    setOpenByEvent((prev) => {
+      const current = prev[eventId] ?? receiveEvents.length === 1;
+      return { ...prev, [eventId]: !current };
+    });
   };
 
   const stop = {
@@ -187,6 +280,7 @@ export function SendPostMessageNode({
       accent="#7aa2ff"
       selected={selected}
       wide
+      showSource={mode !== "receive"}
       onDelete={() => deleteNode(ownerId, actionNodeId)}
       footer={
         warning ? (
@@ -245,43 +339,39 @@ export function SendPostMessageNode({
           </select>
         </label>
 
-        <label className="block">
-          <span
-            className="mb-1 block text-[10px] font-semibold uppercase tracking-wider"
-            style={{ color: "var(--editor-muted-2)" }}
-          >
-            Event name
-          </span>
-          <div className="editor-var-field">
-            <input
-              ref={eventNameRef}
-              className={fieldClass}
-              placeholder={
-                mode === "receive" ? "e.g. app:ready" : "e.g. hotspot:clicked"
-              }
-              value={live.eventName}
-              onChange={(e) => patch({ eventName: e.target.value })}
-              {...stop}
-            />
-            {mode === "send" ? (
-              <VariableInsertButton
-                sources={fieldSources}
-                onInsert={(token) =>
-                  patch({
-                    eventName: insertInto(
-                      live.eventName,
-                      token,
-                      eventNameRef.current,
-                    ),
-                  })
-                }
-              />
-            ) : null}
-          </div>
-        </label>
-
         {mode === "send" ? (
           <>
+            <label className="block">
+              <span
+                className="mb-1 block text-[10px] font-semibold uppercase tracking-wider"
+                style={{ color: "var(--editor-muted-2)" }}
+              >
+                Event name
+              </span>
+              <div className="editor-var-field">
+                <input
+                  ref={eventNameRef}
+                  className={fieldClass}
+                  placeholder="e.g. hotspot:clicked"
+                  value={live.eventName}
+                  onChange={(e) => patch({ eventName: e.target.value })}
+                  {...stop}
+                />
+                <VariableInsertButton
+                  sources={fieldSources}
+                  onInsert={(token) =>
+                    patch({
+                      eventName: insertInto(
+                        live.eventName,
+                        token,
+                        eventNameRef.current,
+                      ),
+                    })
+                  }
+                />
+              </div>
+            </label>
+
             <div className="editor-http-headers">
               <button
                 type="button"
@@ -343,87 +433,231 @@ export function SendPostMessageNode({
               ) : null}
             </div>
 
-            <label className="block">
-              <span
-                className="mb-1 block text-[10px] font-semibold uppercase tracking-wider"
-                style={{ color: "var(--editor-muted-2)" }}
+            <div className="editor-http-headers">
+              <button
+                type="button"
+                className="editor-http-headers-toggle"
+                aria-expanded={targetOpen}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTargetOpen((v) => !v);
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
               >
-                Target window
-              </span>
-              <select
-                className={selectClass}
-                value={live.target}
-                onChange={(e) =>
-                  patch({ target: e.target.value as PostMessageTarget })
-                }
-                {...stop}
-              >
-                {POST_MESSAGE_TARGETS.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <span>
+                  Target
+                  {!targetOpen ? (
+                    <span
+                      className="ml-1.5 normal-case tracking-normal"
+                      style={{ color: "var(--editor-muted)" }}
+                    >
+                      (
+                      {POST_MESSAGE_TARGETS.find(
+                        (item) => item.value === live.target,
+                      )?.label ?? live.target}
+                      {", "}
+                      {live.targetOrigin.trim() || "*"}
+                      )
+                    </span>
+                  ) : null}
+                </span>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform ${targetOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {targetOpen ? (
+                <div className="mt-1.5 space-y-2.5">
+                  <label className="block">
+                    <span
+                      className="mb-1 block text-[10px] font-semibold uppercase tracking-wider"
+                      style={{ color: "var(--editor-muted-2)" }}
+                    >
+                      Target window
+                    </span>
+                    <select
+                      className={selectClass}
+                      value={live.target}
+                      onChange={(e) =>
+                        patch({ target: e.target.value as PostMessageTarget })
+                      }
+                      {...stop}
+                    >
+                      {POST_MESSAGE_TARGETS.map((item) => (
+                        <option key={item.value} value={item.value}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-            <label className="block">
-              <span
-                className="mb-1 block text-[10px] font-semibold uppercase tracking-wider"
-                style={{ color: "var(--editor-muted-2)" }}
-              >
-                Target origin
-              </span>
-              <input
-                ref={originRef}
-                className={fieldClass}
-                placeholder="* or https://example.com"
-                value={live.targetOrigin}
-                onChange={(e) => patch({ targetOrigin: e.target.value })}
-                {...stop}
-              />
-            </label>
+                  <label className="block">
+                    <span
+                      className="mb-1 block text-[10px] font-semibold uppercase tracking-wider"
+                      style={{ color: "var(--editor-muted-2)" }}
+                    >
+                      Target origin
+                    </span>
+                    <input
+                      className={fieldClass}
+                      placeholder="* or https://example.com"
+                      value={live.targetOrigin}
+                      onChange={(e) => patch({ targetOrigin: e.target.value })}
+                      {...stop}
+                    />
+                  </label>
+                </div>
+              ) : null}
+            </div>
           </>
         ) : (
-          <div className="space-y-1.5">
-            <span
-              className="block text-[10px] font-semibold uppercase tracking-wider"
-              style={{ color: "var(--editor-muted-2)" }}
-            >
-              Payload fields
-            </span>
-            {fieldRows.map((row) => (
-              <div key={row.id} className="editor-pm-field-row">
-                <input
-                  className={fieldClass}
-                  placeholder="Field key (e.g. user.name)"
-                  value={row.path}
-                  onChange={(e) => updateFieldRow(row.id, e.target.value)}
-                  {...stop}
-                />
-                <IconButton
-                  title="Remove field"
-                  style={{ width: 28, height: 28 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeFieldRow(row.id);
-                  }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </IconButton>
-              </div>
-            ))}
+          <div className="space-y-2">
+            <div className="editor-action-event-handles editor-pm-events">
+              {receiveEvents.map((event, index) => {
+                const open =
+                  openByEvent[event.id] ?? receiveEvents.length === 1;
+                const rows =
+                  fieldRowsByEvent[event.id] ??
+                  placeholderRows(event);
+                return (
+                  <div key={event.id} className="editor-pm-event">
+                    <div className="editor-pm-event-header editor-action-event-handle-row">
+                      <button
+                        type="button"
+                        className="editor-http-headers-toggle editor-pm-event-toggle"
+                        aria-expanded={open}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleEventOpen(event.id);
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
+                        <span className="editor-pm-event-title">
+                          {eventTitle(event, index)}
+                        </span>
+                        <ChevronDown
+                          className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+                        />
+                      </button>
+                      {receiveEvents.length > 1 ? (
+                        <IconButton
+                          title="Remove event"
+                          style={{ width: 24, height: 24 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeReceiveEvent(event.id);
+                          }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </IconButton>
+                      ) : null}
+                      <Handle
+                        id={postMessageReceiveHandleId(event.id)}
+                        type="source"
+                        position={Position.Right}
+                        className="editor-action-handle editor-action-handle-event"
+                      />
+                    </div>
+                    {open ? (
+                      <div className="editor-pm-event-body space-y-2">
+                        <label className="block">
+                          <span
+                            className="mb-1 block text-[10px] font-semibold uppercase tracking-wider"
+                            style={{ color: "var(--editor-muted-2)" }}
+                          >
+                            Event name
+                          </span>
+                          <input
+                            className={fieldClass}
+                            placeholder="e.g. app:ready"
+                            value={event.eventName}
+                            onChange={(e) =>
+                              updateReceiveEvent(event.id, {
+                                eventName: e.target.value,
+                              })
+                            }
+                            {...stop}
+                          />
+                        </label>
+                        <div className="space-y-1.5">
+                          <span
+                            className="block text-[10px] font-semibold uppercase tracking-wider"
+                            style={{ color: "var(--editor-muted-2)" }}
+                          >
+                            Payload fields
+                          </span>
+                          {rows.map((row) => (
+                            <div key={row.id} className="editor-pm-field-row">
+                              <input
+                                className={fieldClass}
+                                placeholder="Field key (e.g. user.name)"
+                                value={row.path}
+                                onChange={(e) =>
+                                  commitEventFieldRows(
+                                    event.id,
+                                    rows.map((item) =>
+                                      item.id === row.id
+                                        ? { ...item, path: e.target.value }
+                                        : item,
+                                    ),
+                                  )
+                                }
+                                {...stop}
+                              />
+                              <IconButton
+                                title="Remove field"
+                                style={{ width: 28, height: 28 }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const next = rows.filter(
+                                    (item) => item.id !== row.id,
+                                  );
+                                  commitEventFieldRows(
+                                    event.id,
+                                    next.length > 0
+                                      ? next
+                                      : [createEmptyFieldRow()],
+                                  );
+                                }}
+                                onPointerDown={(e) => e.stopPropagation()}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </IconButton>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            className="editor-http-headers-add"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              commitEventFieldRows(event.id, [
+                                ...rows,
+                                createEmptyFieldRow(),
+                              ]);
+                            }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            Add field
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
             <button
               type="button"
               className="editor-http-headers-add"
               onClick={(e) => {
                 e.stopPropagation();
-                addFieldRow();
+                addReceiveEvent();
               }}
               onPointerDown={(e) => e.stopPropagation()}
             >
               <Plus className="h-3.5 w-3.5" />
-              Add field
+              Add event
             </button>
             <div
               className="text-[10px] leading-relaxed"

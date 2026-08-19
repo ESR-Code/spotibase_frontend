@@ -41,7 +41,7 @@ import type {
   ActionNodeType,
   ActionNodeXY,
 } from "@/lib/editor/types/hotspot-action";
-import { OPEN_MODAL_HANDLE_ON_OPEN } from "@/lib/editor/types/hotspot-action";
+import { OPEN_MODAL_HANDLE_ON_OPEN, normalizeReceiveEvents } from "@/lib/editor/types/hotspot-action";
 import {
   normalizeExternalUrl,
   openExternalUrl,
@@ -176,10 +176,15 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     createDefault: (position) => createActionNode("sendPostMessage", position),
     validate: (node) => {
       if (node.type !== "sendPostMessage") return null;
+      const mode = node.data.mode ?? "send";
+      if (mode === "receive") {
+        const hasName = normalizeReceiveEvents(node.data).some((event) =>
+          event.eventName.trim(),
+        );
+        return hasName ? null : "Enter an event name";
+      }
       const interpolated = interpolatePostMessageFields(node.data);
       if (!interpolated.eventName.trim()) return "Enter an event name";
-      const mode = node.data.mode ?? "send";
-      if (mode === "receive") return null;
       const parsed = parsePayloadJson(interpolated.payloadJson);
       if (!parsed.ok) return parsed.error;
       if (!interpolated.targetOrigin.trim()) return "Enter a target origin";

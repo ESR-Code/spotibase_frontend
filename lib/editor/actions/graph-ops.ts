@@ -9,12 +9,20 @@ import type {
   ActionNodeType,
   ActionNodeXY,
   HotspotActionGraph,
+  SendPostMessageActionNode,
 } from "@/lib/editor/types/hotspot-action";
 import {
+  createEmptyPostMessageReceiveEvent,
+  firstPostMessageReceiveHandleId,
+  isPostMessageReceiveHandle,
   MENU_BUTTON_HANDLE_NORMAL,
   MENU_BUTTON_HANDLE_TOGGLED,
+  mirrorReceiveEventLegacyFields,
+  normalizeReceiveEvents,
   OPEN_MODAL_HANDLE_ON_CLOSE,
   OPEN_MODAL_HANDLE_ON_OPEN,
+  parsePostMessageReceiveEvents,
+  postMessageReceiveHandleId,
 } from "@/lib/editor/types/hotspot-action";
 
 export function normalizeSourceHandle(
@@ -24,13 +32,25 @@ export function normalizeSourceHandle(
   return handle;
 }
 
+function firstReceiveHandleForSource(
+  graph: HotspotActionGraph,
+  sourceId: string,
+): string | null {
+  const node = graph.nodes.find((item) => item.id === sourceId);
+  if (node?.type !== "sendPostMessage") return null;
+  if ((node.data.mode ?? "send") !== "receive") return null;
+  return firstPostMessageReceiveHandleId(node.data);
+}
+
 /**
  * Whether an edge should be treated as coming from `handle`.
  * Legacy Open Modal edges (no handle) count as `onOpen`.
+ * Legacy Post Message receive edges (no handle) count as the first event.
  */
 export function edgeMatchesHandle(
   edge: ActionEdge,
   handle: string | null,
+  graph?: HotspotActionGraph,
 ): boolean {
   const edgeHandle = normalizeSourceHandle(edge.sourceHandle);
   if (handle === OPEN_MODAL_HANDLE_ON_OPEN) {
@@ -42,6 +62,12 @@ export function edgeMatchesHandle(
     return (
       edgeHandle === MENU_BUTTON_HANDLE_NORMAL || edgeHandle === null
     );
+  }
+  if (graph && isPostMessageReceiveHandle(handle)) {
+    const first = firstReceiveHandleForSource(graph, edge.source);
+    if (handle === first) {
+      return edgeHandle === handle || edgeHandle === null;
+    }
   }
   if (handle === null) {
     return edgeHandle === null;
@@ -55,7 +81,8 @@ function nextAlongHandle(
   handle: string | null,
 ): string | undefined {
   return graph.edges.find(
-    (edge) => edge.source === sourceId && edgeMatchesHandle(edge, handle),
+    (edge) =>
+      edge.source === sourceId && edgeMatchesHandle(edge, handle, graph),
   )?.target;
 }
 
@@ -96,6 +123,12 @@ export function chainFromTrigger(graph: HotspotActionGraph): ActionNode[] {
     const node = byId.get(currentId);
     if (!node) break;
     chain.push(node);
+    if (
+      node.type === "sendPostMessage" &&
+      (node.data.mode ?? "send") === "receive"
+    ) {
+      break;
+    }
     const nextHandle =
       node.type === "openModal" ? OPEN_MODAL_HANDLE_ON_OPEN : null;
     currentId = nextAlongHandle(graph, currentId, nextHandle);
@@ -120,10 +153,11 @@ export function connect(
   if (!graph.nodes.some((n) => n.id === target)) return graph;
 
   const handle = normalizeSourceHandle(sourceHandle);
+  const firstReceiveHandle = firstReceiveHandleForSource(graph, source);
   const edges = graph.edges.filter((edge) => {
     if (edge.source !== source) return true;
     if (handle === OPEN_MODAL_HANDLE_ON_OPEN) {
-      return !edgeMatchesHandle(edge, OPEN_MODAL_HANDLE_ON_OPEN);
+      return !edgeMatchesHandle(edge, OPEN_MODAL_HANDLE_ON_OPEN, graph);
     }
     if (handle === OPEN_MODAL_HANDLE_ON_CLOSE) {
       return (
@@ -131,14 +165,20 @@ export function connect(
       );
     }
     if (handle === MENU_BUTTON_HANDLE_NORMAL) {
-      return !edgeMatchesHandle(edge, MENU_BUTTON_HANDLE_NORMAL);
+      return !edgeMatchesHandle(edge, MENU_BUTTON_HANDLE_NORMAL, graph);
     }
     if (handle === MENU_BUTTON_HANDLE_TOGGLED) {
       return (
         normalizeSourceHandle(edge.sourceHandle) !== MENU_BUTTON_HANDLE_TOGGLED
       );
     }
-    return normalizeSourceHandle(edge.sourceHandle) !== null;
+    if (firstReceiveHandle && handle === firstReceiveHandle) {
+      return !edgeMatchesHandle(edge, firstReceiveHandle, graph);
+    }
+    if (handle === null) {
+      return normalizeSourceHandle(edge.sourceHandle) !== null;
+    }
+    return normalizeSourceHandle(edge.sourceHandle) !== handle;
   });
 
   const nextEdge: ActionEdge = {
@@ -210,15 +250,116 @@ export function addNode(
   };
 }
 
+function patchSendPostMessageData(
+  data: SendPostMessageActionNode["data"],
+  patch: Record<string, unknown>,
+): SendPostMessageActionNode["data"] {
+  const target =
+    patch.target === "parent" ||
+    patch.target === "opener" ||
+    patch.target === "top" ||
+    patch.target === "self"
+      ? patch.target
+      : data.target;
+  const mode =
+    patch.mode === "send" || patch.mode === "receive"
+      ? patch.mode
+      : (data.mode ?? "send");
+
+  let receiveEvents = Object.prototype.hasOwnProperty.call(
+    patch,
+    "receiveEvents",
+  )
+    ? parsePostMessageReceiveEvents(patch.receiveEvents)
+    : normalizeReceiveEvents({ ...data, mode });
+
+  if (mode === "receive" && receiveEvents.length === 0) {
+    receiveEvents = normalizeReceiveEvents({ ...data, mode: "receive" });
+    if (receiveEvents.length === 0) {
+      receiveEvents = [createEmptyPostMessageReceiveEvent()];
+    }
+  }
+
+  const next: SendPostMessageActionNode["data"] = {
+    mode,
+    eventName:
+      typeof patch.eventName === "string" ? patch.eventName : data.eventName,
+    payloadJson:
+      typeof patch.payloadJson === "string"
+        ? patch.payloadJson
+        : data.payloadJson,
+    targetOrigin:
+      typeof patch.targetOrigin === "string"
+        ? patch.targetOrigin
+        : data.targetOrigin,
+    target,
+    payloadFields: Array.isArray(patch.payloadFields)
+      ? patch.payloadFields.filter(
+          (field): field is string => typeof field === "string",
+        )
+      : (data.payloadFields ?? []),
+    lastPayloadJson:
+      typeof patch.lastPayloadJson === "string"
+        ? patch.lastPayloadJson
+        : (data.lastPayloadJson ?? ""),
+    receiveEvents,
+  };
+
+  if (mode === "receive") {
+    const mirrored = mirrorReceiveEventLegacyFields(next);
+    return { ...next, ...mirrored };
+  }
+  return next;
+}
+
+function syncPostMessageReceiveEdges(
+  edges: ActionEdge[],
+  nodeId: string,
+  prev: SendPostMessageActionNode["data"],
+  next: SendPostMessageActionNode["data"],
+): ActionEdge[] {
+  const nextMode = next.mode ?? "send";
+  const nextHandles = new Set(
+    normalizeReceiveEvents(next).map((event) =>
+      postMessageReceiveHandleId(event.id),
+    ),
+  );
+  const firstNext = firstPostMessageReceiveHandleId(next);
+  const firstPrev = firstPostMessageReceiveHandleId(prev);
+
+  return edges.flatMap((edge) => {
+    if (edge.source !== nodeId) return [edge];
+    const handle = normalizeSourceHandle(edge.sourceHandle);
+
+    if (nextMode === "send") {
+      if (isPostMessageReceiveHandle(handle)) {
+        if (handle === firstPrev || handle === firstNext) {
+          return [{ id: edge.id, source: edge.source, target: edge.target }];
+        }
+        return [];
+      }
+      return [edge];
+    }
+
+    if (handle === null) {
+      if (!firstNext) return [edge];
+      return [{ ...edge, sourceHandle: firstNext }];
+    }
+    if (isPostMessageReceiveHandle(handle) && !nextHandles.has(handle)) {
+      return [];
+    }
+    return [edge];
+  });
+}
+
 export function updateNodeData(
   graph: HotspotActionGraph,
   id: string,
   patch: Record<string, unknown>,
 ): HotspotActionGraph {
-  return {
-    ...graph,
-    nodes: graph.nodes.map((node) => {
-      if (node.id !== id) return node;
+  const prevNode = graph.nodes.find((node) => node.id === id);
+  const nodes = graph.nodes.map((node) => {
+    if (node.id !== id) return node;
       if (node.type === "goToScene") {
         return {
           ...node,
@@ -261,45 +402,7 @@ export function updateNodeData(
         };
       }
       if (node.type === "sendPostMessage") {
-        const target =
-          patch.target === "parent" ||
-          patch.target === "opener" ||
-          patch.target === "top" ||
-          patch.target === "self"
-            ? patch.target
-            : node.data.target;
-        const mode =
-          patch.mode === "send" || patch.mode === "receive"
-            ? patch.mode
-            : (node.data.mode ?? "send");
-        return {
-          ...node,
-          data: {
-            mode,
-            eventName:
-              typeof patch.eventName === "string"
-                ? patch.eventName
-                : node.data.eventName,
-            payloadJson:
-              typeof patch.payloadJson === "string"
-                ? patch.payloadJson
-                : node.data.payloadJson,
-            targetOrigin:
-              typeof patch.targetOrigin === "string"
-                ? patch.targetOrigin
-                : node.data.targetOrigin,
-            target,
-            payloadFields: Array.isArray(patch.payloadFields)
-              ? patch.payloadFields.filter(
-                  (field): field is string => typeof field === "string",
-                )
-              : (node.data.payloadFields ?? []),
-            lastPayloadJson:
-              typeof patch.lastPayloadJson === "string"
-                ? patch.lastPayloadJson
-                : (node.data.lastPayloadJson ?? ""),
-          },
-        };
+        return { ...node, data: patchSendPostMessageData(node.data, patch) };
       }
       if (node.type === "httpRequest") {
         const method =
@@ -381,7 +484,23 @@ export function updateNodeData(
         };
       }
       return node;
-    }),
+    });
+
+  const nextNode = nodes.find((node) => node.id === id);
+  const edges =
+    prevNode?.type === "sendPostMessage" && nextNode?.type === "sendPostMessage"
+      ? syncPostMessageReceiveEdges(
+          graph.edges,
+          id,
+          prevNode.data,
+          nextNode.data,
+        )
+      : graph.edges;
+
+  return {
+    ...graph,
+    nodes,
+    edges,
   };
 }
 

@@ -17,6 +17,7 @@ import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
+import { normalizeReceiveEvents } from "@/lib/editor/types/hotspot-action";
 
 export type FieldSourceKind = "http" | "postMessage";
 
@@ -75,30 +76,35 @@ function collectFromGraph(
       node.type === "sendPostMessage" &&
       (node.data.mode ?? "send") === "receive"
     ) {
-      const fields = (node.data.payloadFields ?? [])
-        .map((field) => field.trim())
-        .filter(Boolean);
-      if (fields.length === 0) return;
+      const events = normalizeReceiveEvents(node.data);
+      for (const event of events) {
+        const fields = event.payloadFields
+          .map((field) => field.trim())
+          .filter(Boolean);
+        if (fields.length === 0) continue;
 
-      postMessageIndex += 1;
-      const event = node.data.eventName.trim();
-      const label = event
-        ? `${nodeLabelPrefix} · ${KIND_LABEL.postMessage} ${postMessageIndex} · ${event}`
-        : `${nodeLabelPrefix} · ${KIND_LABEL.postMessage} ${postMessageIndex}`;
-      const parsed = tryParseJson(node.data.lastPayloadJson ?? "");
+        postMessageIndex += 1;
+        const eventName = event.eventName.trim();
+        const label = eventName
+          ? `${nodeLabelPrefix} · ${KIND_LABEL.postMessage} ${postMessageIndex} · ${eventName}`
+          : `${nodeLabelPrefix} · ${KIND_LABEL.postMessage} ${postMessageIndex}`;
+        const parsed = tryParseJson(
+          event.lastPayloadJson || node.data.lastPayloadJson || "",
+        );
 
-      for (const path of fields) {
-        const live =
-          parsed === undefined ? undefined : getValueByPath(parsed, path);
-        sources.push({
-          kind: "postMessage",
-          nodeId: node.id,
-          nodeLabel: label,
-          path,
-          sample:
-            live === undefined ? path : formatResolvedFieldValue(live),
-          ownerId,
-        });
+        for (const path of fields) {
+          const live =
+            parsed === undefined ? undefined : getValueByPath(parsed, path);
+          sources.push({
+            kind: "postMessage",
+            nodeId: node.id,
+            nodeLabel: label,
+            path,
+            sample:
+              live === undefined ? path : formatResolvedFieldValue(live),
+            ownerId,
+          });
+        }
       }
     }
   });

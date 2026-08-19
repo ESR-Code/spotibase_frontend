@@ -2426,6 +2426,44 @@
   padding: 6px 8px;
 }
 
+.editor-root .editor-pm-events {
+  margin-top: 0;
+}
+
+.editor-root .editor-pm-event {
+  border: 1px solid var(--editor-line-soft);
+  border-radius: 8px;
+  background: rgba(11, 20, 36, 0.35);
+  padding: 4px 8px;
+}
+
+.editor-root .editor-pm-event-header {
+  justify-content: flex-start;
+  gap: 4px;
+  min-height: 22px;
+  padding-right: 10px;
+}
+
+.editor-root .editor-pm-event-toggle {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+}
+
+.editor-root .editor-pm-event-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.editor-root .editor-pm-event-body {
+  padding: 6px 2px 8px;
+}
+
 .editor-root .editor-http-header-row .editor-input {
   min-width: 0;
   font-size: 11px;

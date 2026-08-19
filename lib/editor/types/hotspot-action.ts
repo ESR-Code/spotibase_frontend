@@ -18,6 +18,14 @@ export type PostMessageTarget = "parent" | "opener" | "top" | "self";
 
 export type PostMessageMode = "send" | "receive";
 
+/** One named incoming event on a receive-mode Post Message node. */
+export type PostMessageReceiveEvent = {
+  id: string;
+  eventName: string;
+  payloadFields: string[];
+  lastPayloadJson: string;
+};
+
 export type HttpMethod =
   | "GET"
   | "POST"
@@ -68,7 +76,7 @@ export type SendPostMessageActionNode = ActionNodeBase<
   {
     /** Send an event, or listen for an incoming event. */
     mode: PostMessageMode;
-    /** Name/type of the message event. */
+    /** Name/type of the message event (send mode; first receive event is mirrored). */
     eventName: string;
     /** JSON object string included as the message payload (send mode). */
     payloadJson: string;
@@ -78,7 +86,7 @@ export type SendPostMessageActionNode = ActionNodeBase<
     target: PostMessageTarget;
     /**
      * Declared payload field paths for receive mode (e.g. `user.name`).
-     * Offered in text blocks as insertable chips.
+     * Mirrored from the first receive event for backward compatibility.
      */
     payloadFields: string[];
     /**
@@ -86,6 +94,11 @@ export type SendPostMessageActionNode = ActionNodeBase<
      * Used at Preview time to resolve declared field chips.
      */
     lastPayloadJson: string;
+    /**
+     * Incoming events for receive mode. Each event gets its own source handle.
+     * Empty / omitted is treated as a single legacy event from `eventName`.
+     */
+    receiveEvents: PostMessageReceiveEvent[];
   }
 >;
 export type HttpRequestActionNode = ActionNodeBase<
@@ -167,6 +180,7 @@ export type ActionEdge = {
    * Optional source handle id for multi-output nodes.
    * Open Modal uses `"onOpen"` / `"onClose"`.
    * Toggle custom-menu triggers use `"normal"` / `"toggled"`.
+   * Post Message receive events use `"pm:<eventId>"`.
    * Omitted = default output.
    */
   sourceHandle?: string | null;
@@ -175,6 +189,123 @@ export type ActionEdge = {
 /** Source handle ids on the Open Modal action node. */
 export const OPEN_MODAL_HANDLE_ON_OPEN = "onOpen";
 export const OPEN_MODAL_HANDLE_ON_CLOSE = "onClose";
+
+/** Stable id used when migrating a legacy single-event receive node. */
+export const POST_MESSAGE_LEGACY_EVENT_ID = "default";
+
+/** Source handle prefix for Post Message receive events (`pm:<eventId>`). */
+export const POST_MESSAGE_RECEIVE_HANDLE_PREFIX = "pm:";
+
+export function postMessageReceiveHandleId(eventId: string): string {
+  return `${POST_MESSAGE_RECEIVE_HANDLE_PREFIX}${eventId}`;
+}
+
+export function isPostMessageReceiveHandle(
+  handle: string | null | undefined,
+): boolean {
+  return (
+    typeof handle === "string" &&
+    handle.startsWith(POST_MESSAGE_RECEIVE_HANDLE_PREFIX)
+  );
+}
+
+export function newPostMessageReceiveEventId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `pm-evt-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+export function createEmptyPostMessageReceiveEvent(): PostMessageReceiveEvent {
+  return {
+    id: newPostMessageReceiveEventId(),
+    eventName: "",
+    payloadFields: [],
+    lastPayloadJson: "",
+  };
+}
+
+function asReceiveEventFields(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((field): field is string => typeof field === "string");
+}
+
+export function parsePostMessageReceiveEvents(
+  value: unknown,
+): PostMessageReceiveEvent[] {
+  if (!Array.isArray(value)) return [];
+  const events: PostMessageReceiveEvent[] = [];
+  for (const item of value) {
+    if (item == null || typeof item !== "object") continue;
+    const rec = item as Record<string, unknown>;
+    const id = typeof rec.id === "string" ? rec.id.trim() : "";
+    if (!id) continue;
+    events.push({
+      id,
+      eventName: typeof rec.eventName === "string" ? rec.eventName : "",
+      payloadFields: asReceiveEventFields(rec.payloadFields),
+      lastPayloadJson:
+        typeof rec.lastPayloadJson === "string" ? rec.lastPayloadJson : "",
+    });
+  }
+  return events;
+}
+
+/** Receive events, migrating legacy `eventName` + `payloadFields` when needed. */
+export function normalizeReceiveEvents(data: {
+  mode?: PostMessageMode | null;
+  eventName?: string;
+  payloadFields?: string[];
+  lastPayloadJson?: string;
+  receiveEvents?: PostMessageReceiveEvent[] | unknown;
+}): PostMessageReceiveEvent[] {
+  const parsed = parsePostMessageReceiveEvents(data.receiveEvents);
+  if (parsed.length > 0) return parsed;
+  if ((data.mode ?? "send") !== "receive") return [];
+  return [
+    {
+      id: POST_MESSAGE_LEGACY_EVENT_ID,
+      eventName: typeof data.eventName === "string" ? data.eventName : "",
+      payloadFields: asReceiveEventFields(data.payloadFields),
+      lastPayloadJson:
+        typeof data.lastPayloadJson === "string" ? data.lastPayloadJson : "",
+    },
+  ];
+}
+
+export function firstPostMessageReceiveHandleId(data: {
+  mode?: PostMessageMode | null;
+  eventName?: string;
+  payloadFields?: string[];
+  lastPayloadJson?: string;
+  receiveEvents?: PostMessageReceiveEvent[] | unknown;
+}): string | null {
+  const first = normalizeReceiveEvents(data)[0];
+  return first ? postMessageReceiveHandleId(first.id) : null;
+}
+
+/** Keep top-level eventName / payloadFields in sync with the first receive event. */
+export function mirrorReceiveEventLegacyFields(
+  data: SendPostMessageActionNode["data"],
+): Pick<
+  SendPostMessageActionNode["data"],
+  "eventName" | "payloadFields" | "lastPayloadJson"
+> {
+  const events = normalizeReceiveEvents(data);
+  const first = events[0];
+  if (!first) {
+    return {
+      eventName: data.eventName,
+      payloadFields: data.payloadFields ?? [],
+      lastPayloadJson: data.lastPayloadJson ?? "",
+    };
+  }
+  return {
+    eventName: first.eventName,
+    payloadFields: first.payloadFields,
+    lastPayloadJson: first.lastPayloadJson || data.lastPayloadJson || "",
+  };
+}
 
 /** Source handle ids on a toggle-enabled custom menu-button trigger. */
 export const MENU_BUTTON_HANDLE_NORMAL = "normal";

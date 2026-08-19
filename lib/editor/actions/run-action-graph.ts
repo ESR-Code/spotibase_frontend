@@ -1,5 +1,6 @@
 import {
   APP_START_OWNER_ID,
+  getOwnedActionGraph,
   isStartOwnerId,
   ownerKeyFor,
   patchOwnedActionNodeData,
@@ -30,6 +31,8 @@ import { useUIStore } from "@/lib/editor/state/ui-store";
 import {
   MENU_BUTTON_HANDLE_NORMAL,
   MENU_BUTTON_HANDLE_TOGGLED,
+  normalizeReceiveEvents,
+  postMessageReceiveHandleId,
   TRIGGER_NODE_ID,
   type ActionNode,
   type HotspotActionGraph,
@@ -68,27 +71,62 @@ export async function runActionNodeList(
         break;
       }
 
-      const listenerKey = httpRequestCacheKey(ctx.ownerKey, node.id);
-      const rest = nodes.slice(index + 1);
-      const registerError = registerPostMessageReceive({
-        listenerKey,
-        eventName: node.data.eventName,
-        onPayload: (payload) => {
-          markHttpRequestCached(listenerKey, payload);
-          try {
-            patchOwnedActionNodeData(ctx.ownerId, node.id, {
-              lastPayloadJson: JSON.stringify(payload),
-            });
-          } catch {
-            // Ignore persistence failures; runtime store still has the value.
-          }
-          void runActionNodeList(rest, ctx);
-        },
-      });
-      if (registerError) {
-        toast.error(`Post Message: ${registerError}`);
+      const events = normalizeReceiveEvents(node.data);
+      const namedEvents = events.filter((event) => event.eventName.trim());
+      if (namedEvents.length === 0) {
+        toast.error("Post Message: Enter an event name");
+        break;
       }
-      // Wait for the event before running later nodes.
+
+      const nodePrefix = `${httpRequestCacheKey(ctx.ownerKey, node.id)}:pm:`;
+      clearPostMessageListeners(nodePrefix);
+
+      for (const event of namedEvents) {
+        const handleId = postMessageReceiveHandleId(event.id);
+        const listenerKey = `${nodePrefix}${event.id}`;
+        const registerError = registerPostMessageReceive({
+          listenerKey,
+          eventName: event.eventName,
+          onPayload: (payload) => {
+            const payloadJson = JSON.stringify(payload);
+            markHttpRequestCached(
+              httpRequestCacheKey(ctx.ownerKey, node.id),
+              payload,
+            );
+            markHttpRequestCached(listenerKey, payload);
+            try {
+              const latestGraph = getOwnedActionGraph(ctx.ownerId);
+              const latestNode = latestGraph?.nodes.find(
+                (item) => item.id === node.id,
+              );
+              const latestEvents =
+                latestNode?.type === "sendPostMessage"
+                  ? normalizeReceiveEvents(latestNode.data)
+                  : events;
+              const nextEvents = latestEvents.map((item) =>
+                item.id === event.id
+                  ? { ...item, lastPayloadJson: payloadJson }
+                  : item,
+              );
+              patchOwnedActionNodeData(ctx.ownerId, node.id, {
+                lastPayloadJson: payloadJson,
+                receiveEvents: nextEvents,
+              });
+            } catch {
+              // Ignore persistence failures; runtime store still has the value.
+            }
+
+            const latestGraph = getOwnedActionGraph(ctx.ownerId);
+            if (!latestGraph) return;
+            const chain = chainFrom(latestGraph, node.id, handleId);
+            void runActionNodeList(chain, ctx);
+          },
+        });
+        if (registerError) {
+          toast.error(`Post Message: ${registerError}`);
+        }
+      }
+      // Wait for an event before running that event's outgoing chain.
       break;
     }
 
