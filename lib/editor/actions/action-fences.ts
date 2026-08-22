@@ -127,17 +127,34 @@ export function smallestContainingFence(
   return best;
 }
 
+/**
+ * Which fences to draw on a canvas.
+ * Scene canvas: all fences.
+ * Hotspot canvas: fences that group this hotspot's nodes, or empty fences whose
+ * bounds sit on this hotspot's lane (so a new empty fence stays visible).
+ */
 export function fencesVisibleOnCanvas(
   fences: ActionFence[],
   visibleNodeIds: Set<string>,
-  includeAll: boolean,
+  options:
+    | { includeAll: true }
+    | {
+        includeAll: false;
+        laneIndex: number;
+        laneHeight: number;
+      },
 ): ActionFence[] {
-  if (includeAll) return fences;
-  return fences.filter(
-    (fence) =>
-      fence.memberIds.length === 0 ||
-      fence.memberIds.some((id) => visibleNodeIds.has(id)),
-  );
+  if (options.includeAll) return fences;
+
+  const laneTop = options.laneIndex * options.laneHeight;
+  const laneBottom = laneTop + options.laneHeight;
+
+  return fences.filter((fence) => {
+    if (fence.memberIds.some((id) => visibleNodeIds.has(id))) return true;
+    if (fence.memberIds.length > 0) return false;
+    const fenceBottom = fence.y + fence.height;
+    return fenceBottom > laneTop && fence.y < laneBottom;
+  });
 }
 
 export function attachNodesToFences(

@@ -120,32 +120,26 @@ function graphFingerprint(graph: HotspotActionGraph): string {
 }
 
 /**
- * Structural fingerprint — remount only when nodes/edges are added/removed/
- * reconnected. Editable fields (url, sceneId) must NOT be included or inputs
- * remount and lose focus on every keystroke.
+ * Lane identity for remounting the React Flow provider.
+ * Graph node add/remove must NOT remount — that resets the camera.
  */
-function structureKeyFor(
+function canvasSessionKeyFor(
+  sceneId: string,
   hotspots: Hotspot[],
   includeStartGraphs: boolean,
-  appStartActions: HotspotActionGraph,
-  sceneStartActions: HotspotActionGraph,
-  menuButtonsKey: string,
+  menuButtonOwnerIds: number[],
 ): string {
-  const hotspotKey = hotspots
-    .map((h) => {
-      const g = getActionGraph(h);
-      return `${h.id}[${graphFingerprint(g)}]`;
-    })
+  const owners = includeStartGraphs
+    ? ["app", "scene", ...menuButtonOwnerIds.map((id) => `m${id}`)]
+    : [];
+  for (const hotspot of hotspots) owners.push(`h${hotspot.id}`);
+  return `${sceneId}:${owners.join(",")}`;
+}
+
+function graphStructureKeyFor(entries: ActionFlowEntry[]): string {
+  return entries
+    .map((entry) => `${entry.ownerId}[${graphFingerprint(entry.graph)}]`)
     .join("||");
-
-  if (!includeStartGraphs) return hotspotKey;
-
-  return [
-    `app[${graphFingerprint(appStartActions)}]`,
-    `scene[${graphFingerprint(sceneStartActions)}]`,
-    `menu[${menuButtonsKey}]`,
-    hotspotKey,
-  ].join("||");
 }
 
 function ActionsFlowCanvas({
@@ -236,14 +230,30 @@ function ActionsFlowCanvas({
           allowedNodeTypes: MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES,
         });
       }
+      for (const hotspot of hotspots) {
+        list.push({
+          ownerId: hotspot.id,
+          title: hotspot.title,
+          graph: getActionGraph(hotspot),
+          laneIndex: laneIndex++,
+          triggerKind: "hotspot",
+          allowedNodeTypes: HOTSPOT_GRAPH_ALLOWED_NODE_TYPES,
+        });
+      }
+      return list;
     }
 
+    // Hotspot-only canvas uses the same lane Y as Scene Actions so fences
+    // (stored in scene flow coords) line up with these nodes.
+    const sceneLaneBase = 2 + customMenuButtons.length;
+    const sceneHotspots = activeScene.hotspots;
     for (const hotspot of hotspots) {
+      const sceneIndex = sceneHotspots.findIndex((item) => item.id === hotspot.id);
       list.push({
         ownerId: hotspot.id,
         title: hotspot.title,
         graph: getActionGraph(hotspot),
-        laneIndex: laneIndex++,
+        laneIndex: sceneLaneBase + (sceneIndex >= 0 ? sceneIndex : 0),
         triggerKind: "hotspot",
         allowedNodeTypes: HOTSPOT_GRAPH_ALLOWED_NODE_TYPES,
       });
@@ -251,6 +261,7 @@ function ActionsFlowCanvas({
 
     return list;
   }, [
+    activeScene.hotspots,
     activeScene.name,
     activeScene.startActions,
     appStartActions,
@@ -287,8 +298,16 @@ function ActionsFlowCanvas({
   );
   const canvasFences = useMemo(() => {
     const visibleIds = new Set(initialNodes.map((node) => node.id));
-    return fencesVisibleOnCanvas(fences, visibleIds, includeStartGraphs);
-  }, [fences, includeStartGraphs, initialNodes]);
+    if (includeStartGraphs) {
+      return fencesVisibleOnCanvas(fences, visibleIds, { includeAll: true });
+    }
+    const laneIndex = entries[0]?.laneIndex ?? 0;
+    return fencesVisibleOnCanvas(fences, visibleIds, {
+      includeAll: false,
+      laneIndex,
+      laneHeight: LANE_HEIGHT,
+    });
+  }, [entries, fences, includeStartGraphs, initialNodes]);
   const [nodes, setNodes] = useState<ActionsCanvasNode[]>(() =>
     attachNodesToFences(initialNodes, canvasFences, scopeKey),
   );
@@ -297,6 +316,45 @@ function ActionsFlowCanvas({
   );
   const nodesRef = useRef(nodes);
   nodesRef.current = nodes;
+  const graphStructureKey = useMemo(
+    () => graphStructureKeyFor(entries),
+    [entries],
+  );
+  const lastGraphStructureKey = useRef(graphStructureKey);
+
+  useEffect(() => {
+    if (lastGraphStructureKey.current === graphStructureKey) return;
+    lastGraphStructureKey.current = graphStructureKey;
+    setNodes((current) => {
+      const rebuilt = attachNodesToFences(
+        initialNodes,
+        canvasFences,
+        scopeKey,
+      );
+      const prevById = nodesByIdMap(current);
+      return rebuilt.map((node) => {
+        const prev = prevById.get(node.id);
+        if (!prev) return node;
+        if (isFenceNode(node)) {
+          return {
+            ...node,
+            selected: prev.selected,
+            position: prev.position,
+            measured: prev.measured,
+          };
+        }
+        return {
+          ...node,
+          selected: prev.selected,
+          measured: prev.measured,
+          width: prev.width,
+          height: prev.height,
+          position:
+            prev.parentId === node.parentId ? prev.position : node.position,
+        };
+      });
+    });
+  }, [canvasFences, graphStructureKey, initialNodes, scopeKey]);
 
   useEffect(() => {
     setNodes((current) =>
@@ -939,8 +997,9 @@ function ActionsFlowCanvas({
           }
           onPaneClick={() => setRawMenu(null)}
           onEdgeClick={() => setRawMenu(null)}
-          fitView
-          fitViewOptions={{ padding: 0.2 }}
+          onInit={(instance) => {
+            void instance.fitView({ padding: 0.2 });
+          }}
           deleteKeyCode={["Backspace", "Delete"]}
           multiSelectionKeyCode="Shift"
           proOptions={{ hideAttribution: true }}
@@ -989,23 +1048,13 @@ export function ActionsFlow({
   includeStartGraphs = false,
 }: ActionsFlowProps) {
   const [clipboard, setClipboard] = useState<ActionNode | null>(null);
-  const appStartActions = useScenesStore((s) => s.appStartActions);
   const activeScene = useActiveScene();
   const customMenuButtons = useSettingsStore((s) => s.customMenuButtons);
-  const sceneStartActions =
-    activeScene.startActions ?? createEmptyActionGraph();
-  const menuButtonsKey = customMenuButtons
-    .map(
-      (button) =>
-        `${button.ownerId}:t${button.toggleEnabled ? 1 : 0}[${graphFingerprint(button.actions)}]`,
-    )
-    .join(",");
-  const structureKey = structureKeyFor(
+  const canvasSessionKey = canvasSessionKeyFor(
+    activeScene.id,
     hotspots,
     includeStartGraphs,
-    appStartActions,
-    sceneStartActions,
-    menuButtonsKey,
+    customMenuButtons.map((button) => button.ownerId),
   );
 
   if (!includeStartGraphs && hotspots.length === 0) {
@@ -1020,7 +1069,7 @@ export function ActionsFlow({
   }
 
   return (
-    <ReactFlowProvider key={structureKey}>
+    <ReactFlowProvider key={canvasSessionKey}>
       <ActionsFlowCanvas
         hotspots={hotspots}
         includeStartGraphs={includeStartGraphs}

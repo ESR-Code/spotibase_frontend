@@ -1,13 +1,20 @@
 "use client";
 
 import { useReactFlow } from "@xyflow/react";
-import { Search } from "lucide-react";
+import {
+  MousePointerClick,
+  Play,
+  Rocket,
+  Search,
+  type LucideIcon,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   flowNodeId,
   TRIGGER_FLOW_TYPE,
   type ActionFlowEntry,
 } from "@/lib/editor/actions/flow-adapter";
+import { getCategoryLucideIcon } from "@/lib/editor/theme/category-icons";
 import { TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
 
 type ActionsCanvasSearchProps = {
@@ -21,6 +28,10 @@ type SearchHit = {
   subtitle: string;
   chip: string;
   haystack: string;
+  Icon: LucideIcon;
+  color: string;
+  bg: string;
+  border: string;
 };
 
 function hitsFromEntries(entries: ActionFlowEntry[]): SearchHit[] {
@@ -33,6 +44,10 @@ function hitsFromEntries(entries: ActionFlowEntry[]): SearchHit[] {
         subtitle: "Runs once when Preview begins",
         chip: "APP",
         haystack: "app start all scenes preview",
+        Icon: Rocket,
+        color: "#c4a5ff",
+        bg: "rgba(196,165,255,0.15)",
+        border: "rgba(196,165,255,0.4)",
       };
     }
     if (entry.triggerKind === "sceneStart") {
@@ -42,6 +57,10 @@ function hitsFromEntries(entries: ActionFlowEntry[]): SearchHit[] {
         subtitle: entry.title,
         chip: "SCENE",
         haystack: `scene start ${entry.title}`,
+        Icon: Play,
+        color: "var(--editor-amber)",
+        bg: "rgba(242, 169, 59, 0.15)",
+        border: "rgba(242, 169, 59, 0.4)",
       };
     }
     if (entry.triggerKind === "menuButton") {
@@ -53,6 +72,10 @@ function hitsFromEntries(entries: ActionFlowEntry[]): SearchHit[] {
           : "Bottom menu",
         chip: "MENU",
         haystack: `menu button custom ${entry.title}`,
+        Icon: getCategoryLucideIcon(entry.triggerIcon ?? "Star"),
+        color: "var(--editor-teal)",
+        bg: "rgba(63,184,175,0.15)",
+        border: "rgba(63,184,175,0.4)",
       };
     }
     const chip = `HSP-${String(entry.ownerId).padStart(3, "0")}`;
@@ -62,6 +85,10 @@ function hitsFromEntries(entries: ActionFlowEntry[]): SearchHit[] {
       subtitle: "Hotspot clicked",
       chip,
       haystack: `hotspot ${entry.title} ${chip}`,
+      Icon: MousePointerClick,
+      color: "var(--editor-teal)",
+      bg: "rgba(63,184,175,0.15)",
+      border: "rgba(63,184,175,0.4)",
     };
   });
 }
@@ -152,28 +179,41 @@ export function ActionsCanvasSearch({
               No matching nodes
             </div>
           ) : (
-            filtered.map((hit) => (
-              <button
-                key={hit.flowId}
-                type="button"
-                role="option"
-                className="editor-actions-search-item"
-                onClick={() => goTo(hit)}
-              >
-                <span className="min-w-0 flex-1 text-left">
-                  <span className="block truncate text-[12px] font-medium">
-                    {hit.title}
-                  </span>
+            filtered.map((hit) => {
+              const Icon = hit.Icon;
+              return (
+                <button
+                  key={hit.flowId}
+                  type="button"
+                  role="option"
+                  className="editor-actions-search-item"
+                  onClick={() => goTo(hit)}
+                >
                   <span
-                    className="block truncate text-[10px]"
-                    style={{ color: "var(--editor-muted)" }}
+                    className="editor-action-node-icon editor-actions-search-icon"
+                    style={{
+                      color: hit.color,
+                      background: hit.bg,
+                      borderColor: hit.border,
+                    }}
                   >
-                    {hit.subtitle}
+                    <Icon className="h-3.5 w-3.5" />
                   </span>
-                </span>
-                <span className="editor-chip">{hit.chip}</span>
-              </button>
-            ))
+                  <span className="min-w-0 flex-1 text-left">
+                    <span className="block truncate text-[12px] font-medium">
+                      {hit.title}
+                    </span>
+                    <span
+                      className="block truncate text-[10px]"
+                      style={{ color: "var(--editor-muted)" }}
+                    >
+                      {hit.subtitle}
+                    </span>
+                  </span>
+                  <span className="editor-chip">{hit.chip}</span>
+                </button>
+              );
+            })
           )}
         </div>
       ) : null}

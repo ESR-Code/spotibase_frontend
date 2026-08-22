@@ -2334,6 +2334,12 @@
   background: rgba(230, 57, 70, 0.12);
 }
 
+.editor-root .editor-actions-search-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
 .editor-root .editor-actions-fence-btn {
   display: inline-flex;
   align-items: center;
