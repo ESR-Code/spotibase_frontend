@@ -7,6 +7,7 @@ import { captureViewportPreview } from "@/lib/editor/engine/capture-viewport-pre
 import { createPlayCanvasAppAsync } from "@/lib/editor/engine/create-playcanvas-app";
 import { createEffectsManager } from "@/lib/editor/engine/effects-manager";
 import { createHotspotManager } from "@/lib/editor/engine/hotspot-manager";
+import { createMeshHighlightManager } from "@/lib/editor/engine/mesh-highlight-manager";
 import { createModelManager } from "@/lib/editor/engine/model-manager";
 import { createPickingController } from "@/lib/editor/engine/picking-controller";
 import { createScene } from "@/lib/editor/engine/scene-manager";
@@ -23,6 +24,7 @@ import {
   useModelStore,
 } from "@/lib/editor/state/model-store";
 import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
+import { usePreviewMeshHighlightStore } from "@/lib/editor/state/preview-mesh-highlight-store";
 import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import { sceneSubjectCache } from "@/lib/editor/state/scene-subject-cache";
 import {
@@ -77,6 +79,12 @@ export function usePlayCanvasEditor() {
           hotspotMgr,
           cameraCtrl,
         );
+        const meshHighlight = createMeshHighlightManager(
+          app,
+          pc,
+          scene.camera,
+          () => models.getMeshes(),
+        );
 
         const applyScenePresentation = (type: SceneTypeId) => {
           cameraCtrl.setMode(getCameraModeForSceneType(type));
@@ -102,6 +110,7 @@ export function usePlayCanvasEditor() {
         const onUpdate = (dt: number) => {
           cameraCtrl.update(dt);
           hotspotMgr.update(dt);
+          meshHighlight.frameUpdate();
           if (getActiveSceneType() === "model") {
             scene.fitKeyLightShadows(cameraCtrl.getOrbitPose().distance);
           }
@@ -148,6 +157,12 @@ export function usePlayCanvasEditor() {
           (state, prev) => {
             if (state.disabledMeshIds === prev.disabledMeshIds) return;
             models.applyMeshVisibility(state.disabledMeshIds);
+            meshHighlight.sync(usePreviewMeshHighlightStore.getState().highlight);
+          },
+        );
+        const unsubMeshHighlight = usePreviewMeshHighlightStore.subscribe(
+          (state) => {
+            meshHighlight.sync(state.highlight);
           },
         );
         const unsubWire = useModelStore.subscribe((state, prev) => {
@@ -164,6 +179,14 @@ export function usePlayCanvasEditor() {
           }
           if (state.modelReflection !== prev.modelReflection) {
             models.applyReflection(state.modelReflection);
+            meshHighlight.sync(
+              usePreviewMeshHighlightStore.getState().highlight,
+            );
+          }
+          if (state.meshes !== prev.meshes) {
+            meshHighlight.sync(
+              usePreviewMeshHighlightStore.getState().highlight,
+            );
           }
         });
 
@@ -348,11 +371,13 @@ export function usePlayCanvasEditor() {
           unsubEditor();
           unsubAppearance();
           unsubMeshVisibility();
+          unsubMeshHighlight();
           unsubWire();
           app.off("update", onUpdate);
           unbindResize();
           picking.dispose();
           hotspotMgr.dispose();
+          meshHighlight.destroy();
           effectsMgr.destroy();
           cameraCtrl.dispose();
           destroy();

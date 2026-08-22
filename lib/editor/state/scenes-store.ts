@@ -20,6 +20,7 @@ import {
 } from "@/lib/editor/constants/seed-scene";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
+import { usePreviewMeshHighlightStore } from "@/lib/editor/state/preview-mesh-highlight-store";
 import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import {
   readEffectsSnapshot,
@@ -275,6 +276,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
       if (useEditorStore.getState().isPreview) {
         usePreviewVisibilityStore.getState().reset();
         usePreviewAppearanceStore.getState().reset();
+        usePreviewMeshHighlightStore.getState().reset();
         void import("@/lib/editor/actions/run-action-graph").then(
           ({ runSceneStartActions }) => {
             void runSceneStartActions(id);

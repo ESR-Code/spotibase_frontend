@@ -85,6 +85,16 @@ function actionNodeDetail(
       const count = node.data.disabledMeshIds?.length ?? 0;
       return count > 0 ? `→ ${count} hidden` : "→ all meshes shown";
     }
+    case "highlightMesh": {
+      const count = node.data.meshIds?.length ?? 0;
+      if (count === 0) return "→ (no meshes)";
+      const tint = node.data.tintEnabled !== false;
+      const stroke = Boolean(node.data.strokeEnabled);
+      if (tint && stroke) return `→ ${count} tint + stroke`;
+      if (tint) return `→ ${count} tint`;
+      if (stroke) return `→ ${count} stroke`;
+      return `→ ${count} (off)`;
+    }
     case "changeHotspotColor":
       return (node.data.hotspotIds?.length ?? 0) > 0
         ? node.data.color.trim()

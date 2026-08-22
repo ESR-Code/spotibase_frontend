@@ -331,6 +331,13 @@ function pulseRingMat(
   return mat;
 }
 
+function onHotspotLayer(entity: Entity, pcModule: typeof pc) {
+  // UI draws after World and Immediate, so markers stay above mesh strokes.
+  if (entity.render) {
+    entity.render.layers = [pcModule.LAYERID_UI];
+  }
+}
+
 function makeSphere(
   pcModule: typeof pc,
   name: string,
@@ -344,7 +351,9 @@ function makeSphere(
     castShadows: opts.castShadows,
     receiveShadows: opts.receiveShadows,
     material,
+    layers: [pcModule.LAYERID_UI],
   });
+  onHotspotLayer(e, pcModule);
   e.setLocalScale(diameter, diameter, diameter);
   return e;
 }
@@ -360,7 +369,9 @@ function makeCylinder(
     castShadows: false,
     receiveShadows: false,
     material,
+    layers: [pcModule.LAYERID_UI],
   });
+  onHotspotLayer(e, pcModule);
   return e;
 }
 
@@ -375,7 +386,9 @@ function makePlane(
     castShadows: false,
     receiveShadows: false,
     material,
+    layers: [pcModule.LAYERID_UI],
   });
+  onHotspotLayer(e, pcModule);
   // Default plane faces +Y; hotspot-manager billboards by copying camera
   // rotation then rotateLocal(-90,0,0) so the face looks at the camera.
   return e;

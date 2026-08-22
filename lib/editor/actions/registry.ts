@@ -15,6 +15,10 @@ import {
   validateEnableDisableMeshData,
 } from "@/lib/editor/actions/enable-disable-mesh";
 import {
+  applyHighlightMesh,
+  validateHighlightMeshData,
+} from "@/lib/editor/actions/highlight-mesh";
+import {
   applyGoToHotspot,
   validateGoToHotspotData,
 } from "@/lib/editor/actions/go-to-hotspot";
@@ -317,6 +321,21 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     run: (node) => {
       if (node.type !== "enableDisableMesh") return;
       applyEnableDisableMesh(node.data);
+    },
+  },
+  highlightMesh: {
+    type: "highlightMesh",
+    label: "Highlight Mesh",
+    description: "Tint selected 3D meshes and optionally outline them.",
+    sceneTypes: ["model"],
+    createDefault: (position) => createActionNode("highlightMesh", position),
+    validate: (node) => {
+      if (node.type !== "highlightMesh") return null;
+      return validateHighlightMeshData(node.data);
+    },
+    run: (node) => {
+      if (node.type !== "highlightMesh") return;
+      applyHighlightMesh(node.data);
     },
   },
   changeHotspotColor: {

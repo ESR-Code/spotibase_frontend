@@ -42,6 +42,7 @@ export type ModelManager = {
   applyTransform: (scale: number, rotation: ModelRotation) => void;
   applyReflection: (amount: number) => void;
   applyMeshVisibility: (disabledMeshIds: string[]) => void;
+  getMeshes: () => CollectedModelMesh[];
   getModelRoot: () => Entity;
 };
 
@@ -76,10 +77,10 @@ export function createModelManager(
     }
     const collected = collectModelMeshes(modelRoot);
     meshEntities = collected.entities;
-    useModelStore.getState().setMeshes(collected.entries);
     applyMeshVisibility(
       usePreviewVisibilityStore.getState().disabledMeshIds,
     );
+    useModelStore.getState().setMeshes(collected.entries);
   };
 
   const destroyOwnedTexture = () => {
@@ -395,6 +396,7 @@ export function createModelManager(
     applyTransform,
     applyReflection,
     applyMeshVisibility,
+    getMeshes: () => meshEntities,
     getModelRoot: () => modelRoot,
   };
 }

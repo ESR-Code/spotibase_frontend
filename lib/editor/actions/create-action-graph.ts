@@ -7,6 +7,7 @@ import type {
   ChangeHotspotIconActionNode,
   EnableDisableActionNode,
   EnableDisableMeshActionNode,
+  HighlightMeshActionNode,
   GoToHotspotActionNode,
   HotspotActionGraph,
   HttpMethod,
@@ -18,6 +19,12 @@ import type {
   SendPostMessageActionNode,
 } from "@/lib/editor/types/hotspot-action";
 import { HTTP_METHODS, TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
+import {
+  DEFAULT_MESH_STROKE_COLOR,
+  DEFAULT_MESH_STROKE_WIDTH,
+  DEFAULT_MESH_TINT_COLOR,
+  DEFAULT_MESH_TINT_OPACITY,
+} from "@/lib/editor/actions/highlight-mesh";
 import type { GoToHotspotOffset } from "@/lib/editor/types/hotspot-action";
 import {
   firstPostMessageReceiveHandleId,
@@ -80,6 +87,21 @@ function asHotspotRef(data: {
   return "";
 }
 
+function asHexColor(value: unknown, fallback: string): string {
+  return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value)
+    ? value
+    : fallback;
+}
+
+function asUnit(value: unknown, fallback: number): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  return Math.min(1, Math.max(0, value));
+}
+
+function asBoolean(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
 function asNumberIds(value: unknown): number[] {
   if (!Array.isArray(value)) return [];
   return value.filter(
@@ -126,6 +148,10 @@ export function createActionNode(
   type: "enableDisableMesh",
   position: ActionNodeXY,
 ): EnableDisableMeshActionNode;
+export function createActionNode(
+  type: "highlightMesh",
+  position: ActionNodeXY,
+): HighlightMeshActionNode;
 export function createActionNode(
   type: "changeHotspotColor",
   position: ActionNodeXY,
@@ -218,6 +244,21 @@ export function createActionNode(
         position: { ...position },
         data: {
           disabledMeshIds: [],
+        },
+      };
+    case "highlightMesh":
+      return {
+        id: newActionId(),
+        type: "highlightMesh",
+        position: { ...position },
+        data: {
+          meshIds: [],
+          tintEnabled: true,
+          tintColor: DEFAULT_MESH_TINT_COLOR,
+          tintOpacity: DEFAULT_MESH_TINT_OPACITY,
+          strokeEnabled: true,
+          strokeColor: DEFAULT_MESH_STROKE_COLOR,
+          strokeWidth: DEFAULT_MESH_STROKE_WIDTH,
         },
       };
     case "changeHotspotColor":
@@ -373,6 +414,33 @@ export function cloneActionGraph(
           position: { ...node.position },
           data: {
             disabledMeshIds: asStringIds(node.data.disabledMeshIds),
+          },
+        };
+      }
+      if (node.type === "highlightMesh") {
+        return {
+          id: node.id,
+          type: "highlightMesh",
+          position: { ...node.position },
+          data: {
+            meshIds: asStringIds(node.data.meshIds),
+            tintEnabled: asBoolean(node.data.tintEnabled, true),
+            tintColor: asHexColor(node.data.tintColor, DEFAULT_MESH_TINT_COLOR),
+            tintOpacity: asUnit(node.data.tintOpacity, DEFAULT_MESH_TINT_OPACITY),
+            strokeEnabled: asBoolean(node.data.strokeEnabled, true),
+            strokeColor: asHexColor(
+              node.data.strokeColor,
+              DEFAULT_MESH_STROKE_COLOR,
+            ),
+            strokeWidth: Math.min(
+              4,
+              Math.max(
+                1,
+                typeof node.data.strokeWidth === "number"
+                  ? node.data.strokeWidth
+                  : DEFAULT_MESH_STROKE_WIDTH,
+              ),
+            ),
           },
         };
       }

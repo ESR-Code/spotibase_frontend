@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Globe, ImageIcon, RefreshCw, RotateCcw, Upload } from "lucide-react";
-import { useRef } from "react";
+import { useRef, type PointerEvent as ReactPointerEvent } from "react";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { importSubjectFile } from "@/lib/editor/io/import-subject";
@@ -287,6 +287,18 @@ function SliderField({
   step: number;
   onChange: (value: number) => void;
 }) {
+  const updateFromPointer = (event: ReactPointerEvent<HTMLInputElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const ratio = Math.min(
+      1,
+      Math.max(0, (event.clientX - rect.left) / rect.width),
+    );
+    const raw = min + ratio * (max - min);
+    const stepped = Math.round((raw - min) / step) * step + min;
+    onChange(Math.min(max, Math.max(min, Number(stepped.toFixed(6)))));
+  };
+
   return (
     <div>
       <FieldLabel className="flex justify-between">
@@ -300,6 +312,20 @@ function SliderField({
         step={step}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
+        onPointerDown={(event) => {
+          event.currentTarget.setPointerCapture(event.pointerId);
+          updateFromPointer(event);
+        }}
+        onPointerMove={(event) => {
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            updateFromPointer(event);
+          }
+        }}
+        onPointerUp={(event) => {
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+          }
+        }}
       />
     </div>
   );

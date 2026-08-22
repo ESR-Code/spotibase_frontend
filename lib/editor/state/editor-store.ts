@@ -12,6 +12,7 @@ import {
   getSeedNextHotspotId,
 } from "@/lib/editor/constants/seed-scene";
 import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
+import { usePreviewMeshHighlightStore } from "@/lib/editor/state/preview-mesh-highlight-store";
 import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import { useCustomMenuToggleStore } from "@/lib/editor/state/custom-menu-toggle-store";
 import { hotspotTypeColors, PROJECT_NAME } from "@/lib/editor/theme/tokens";
@@ -96,6 +97,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       clearPostMessageListeners();
       usePreviewVisibilityStore.getState().reset();
       usePreviewAppearanceStore.getState().reset();
+      usePreviewMeshHighlightStore.getState().reset();
       useCustomMenuToggleStore.getState().reset();
       if (!isPreview) {
         void Promise.all([
@@ -130,6 +132,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       clearPostMessageListeners();
       usePreviewVisibilityStore.getState().reset();
       usePreviewAppearanceStore.getState().reset();
+      usePreviewMeshHighlightStore.getState().reset();
       useCustomMenuToggleStore.getState().reset();
       void Promise.all([
         import("@/lib/editor/state/ui-store"),

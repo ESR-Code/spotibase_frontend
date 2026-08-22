@@ -510,6 +510,44 @@ export function updateNodeData(
           },
         };
       }
+      if (node.type === "highlightMesh") {
+        return {
+          ...node,
+          data: {
+            meshIds: Array.isArray(patch.meshIds)
+              ? patch.meshIds.filter(
+                  (id): id is string => typeof id === "string" && id.length > 0,
+                )
+              : node.data.meshIds,
+            tintEnabled:
+              typeof patch.tintEnabled === "boolean"
+                ? patch.tintEnabled
+                : node.data.tintEnabled,
+            tintColor:
+              typeof patch.tintColor === "string"
+                ? patch.tintColor
+                : node.data.tintColor,
+            tintOpacity:
+              typeof patch.tintOpacity === "number" &&
+              Number.isFinite(patch.tintOpacity)
+                ? Math.min(1, Math.max(0, patch.tintOpacity))
+                : node.data.tintOpacity,
+            strokeEnabled:
+              typeof patch.strokeEnabled === "boolean"
+                ? patch.strokeEnabled
+                : node.data.strokeEnabled,
+            strokeColor:
+              typeof patch.strokeColor === "string"
+                ? patch.strokeColor
+                : node.data.strokeColor,
+            strokeWidth:
+              typeof patch.strokeWidth === "number" &&
+              Number.isFinite(patch.strokeWidth)
+                ? Math.min(4, Math.max(1, patch.strokeWidth))
+                : node.data.strokeWidth,
+          },
+        };
+      }
       if (node.type === "changeHotspotColor") {
         return {
           ...node,

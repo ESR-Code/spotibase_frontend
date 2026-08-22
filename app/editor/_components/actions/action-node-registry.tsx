@@ -7,6 +7,7 @@ import {
   ExternalLink,
   Eye,
   Globe,
+  Highlighter,
   MapPinned,
   MessagesSquare,
   Palette,
@@ -19,6 +20,7 @@ import { ChangeHotspotColorNode } from "@/app/editor/_components/actions/change-
 import { ChangeHotspotIconNode } from "@/app/editor/_components/actions/change-hotspot-icon-node";
 import { EnableDisableNode } from "@/app/editor/_components/actions/enable-disable-node";
 import { EnableDisableMeshNode } from "@/app/editor/_components/actions/enable-disable-mesh-node";
+import { HighlightMeshNode } from "@/app/editor/_components/actions/highlight-mesh-node";
 import { GoToHotspotNode } from "@/app/editor/_components/actions/go-to-hotspot-node";
 import { GoToSceneNode } from "@/app/editor/_components/actions/go-to-scene-node";
 import { HotspotTriggerNode } from "@/app/editor/_components/actions/hotspot-trigger-node";
@@ -101,6 +103,13 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     accent: "#8eb5d4",
     Node: EnableDisableMeshNode,
   },
+  highlightMesh: {
+    type: "highlightMesh",
+    meta: ACTION_NODE_META.highlightMesh,
+    icon: Highlighter,
+    accent: "#ffd166",
+    Node: HighlightMeshNode,
+  },
   changeHotspotColor: {
     type: "changeHotspotColor",
     meta: ACTION_NODE_META.changeHotspotColor,
@@ -129,6 +138,7 @@ export const ACTION_FLOW_NODE_TYPES = {
   httpRequest: HttpRequestNode,
   enableDisable: EnableDisableNode,
   enableDisableMesh: EnableDisableMeshNode,
+  highlightMesh: HighlightMeshNode,
   changeHotspotColor: ChangeHotspotColorNode,
   changeHotspotIcon: ChangeHotspotIconNode,
   [ACTION_FENCE_TYPE]: ActionFenceNode,

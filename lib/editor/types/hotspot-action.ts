@@ -7,6 +7,7 @@ export type ActionNodeType =
   | "httpRequest"
   | "enableDisable"
   | "enableDisableMesh"
+  | "highlightMesh"
   | "changeHotspotColor"
   | "changeHotspotIcon";
 
@@ -148,6 +149,25 @@ export type EnableDisableMeshActionNode = ActionNodeBase<
     disabledMeshIds: string[];
   }
 >;
+export type HighlightMeshActionNode = ActionNodeBase<
+  "highlightMesh",
+  {
+    /** Checked mesh ids that receive the highlight when this node runs. */
+    meshIds: string[];
+    /** When true, blend tintColor over the selected meshes. */
+    tintEnabled: boolean;
+    /** Hex tint color. Mixed with the original albedo by tintOpacity. */
+    tintColor: string;
+    /** 0–1 blend of original albedo → tintColor. */
+    tintOpacity: number;
+    /** When true, draw a PlayCanvas OutlineRenderer stroke around them. */
+    strokeEnabled: boolean;
+    /** Hex color for the outline stroke. Default white. */
+    strokeColor: string;
+    /** Relative outline thickness. 1 = native width, 4 = widest. */
+    strokeWidth: number;
+  }
+>;
 export type ChangeHotspotColorActionNode = ActionNodeBase<
   "changeHotspotColor",
   {
@@ -181,6 +201,7 @@ export type ActionNode =
   | HttpRequestActionNode
   | EnableDisableActionNode
   | EnableDisableMeshActionNode
+  | HighlightMeshActionNode
   | ChangeHotspotColorActionNode
   | ChangeHotspotIconActionNode;
 
