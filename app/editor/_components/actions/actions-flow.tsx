@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import {
   attachNodesToFences,
   fenceNodeStyle,
+  fencesVisibleOnCanvas,
   isFenceNode,
   nodeAbsolutePosition,
   nodeCenter,
@@ -160,15 +161,9 @@ function ActionsFlowCanvas({
   const { screenToFlowPosition, getViewport } = useReactFlow();
   const flowRootRef = useRef<HTMLDivElement>(null);
   const [rawMenu, setRawMenu] = useState<ActionsContextMenuState | null>(null);
-  const scopeKey = actionFencesScopeKey(
-    includeStartGraphs,
-    activeScene.id,
-    hotspots[0]?.id,
-  );
+  const scopeKey = actionFencesScopeKey(activeScene.id);
   const storeFences = useActionFencesStore((s) => s.byScope[scopeKey]);
-  const fences =
-    storeFences ??
-    (includeStartGraphs ? (activeScene.actionFences ?? []) : []);
+  const fences = storeFences ?? activeScene.actionFences ?? [];
   const pendingCreate = useActionFencesStore((s) => s.pendingCreate);
   const consumeCreateFence = useActionFencesStore((s) => s.consumeCreateFence);
   const addFence = useActionFencesStore((s) => s.addFence);
@@ -176,21 +171,24 @@ function ActionsFlowCanvas({
   const removeFence = useActionFencesStore((s) => s.removeFence);
   const applyMemberships = useActionFencesStore((s) => s.applyMemberships);
   const hydrateScope = useActionFencesStore((s) => s.hydrateScope);
+  const setFences = useActionFencesStore((s) => s.setFences);
 
   useLayoutEffect(() => {
-    if (useActionFencesStore.getState().byScope[scopeKey] !== undefined) {
+    const leftover = useActionFencesStore.getState().takeHotspotFences();
+    const existing = useActionFencesStore.getState().byScope[scopeKey];
+    const base = existing ?? activeScene.actionFences ?? [];
+    if (leftover.length > 0) {
+      const seen = new Set(base.map((fence) => fence.id));
+      setFences(scopeKey, [
+        ...base,
+        ...leftover.filter((fence) => !seen.has(fence.id)),
+      ]);
       return;
     }
-    hydrateScope(
-      scopeKey,
-      includeStartGraphs ? (activeScene.actionFences ?? []) : [],
-    );
-  }, [
-    activeScene.actionFences,
-    hydrateScope,
-    includeStartGraphs,
-    scopeKey,
-  ]);
+    if (existing === undefined) {
+      hydrateScope(scopeKey, activeScene.actionFences ?? []);
+    }
+  }, [activeScene.actionFences, hydrateScope, scopeKey, setFences]);
 
   const menuPositionFromEvent = useCallback(
     (event: { clientX: number; clientY: number }) => {
@@ -287,8 +285,12 @@ function ActionsFlowCanvas({
     () => toFlowGraph(entries),
     [entries],
   );
+  const canvasFences = useMemo(() => {
+    const visibleIds = new Set(initialNodes.map((node) => node.id));
+    return fencesVisibleOnCanvas(fences, visibleIds, includeStartGraphs);
+  }, [fences, includeStartGraphs, initialNodes]);
   const [nodes, setNodes] = useState<ActionsCanvasNode[]>(() =>
-    attachNodesToFences(initialNodes, fences, scopeKey),
+    attachNodesToFences(initialNodes, canvasFences, scopeKey),
   );
   const [selectedEdgeIds, setSelectedEdgeIds] = useState<Set<string>>(
     () => new Set(),
@@ -787,8 +789,8 @@ function ActionsFlowCanvas({
 
   useEffect(() => {
     setNodes((current) => {
-      const fenceIds = new Set(fences.map((fence) => fence.id));
-      const fenceById = new Map(fences.map((fence) => [fence.id, fence]));
+      const fenceIds = new Set(canvasFences.map((fence) => fence.id));
+      const fenceById = new Map(canvasFences.map((fence) => [fence.id, fence]));
       const before = nodesByIdMap(current);
       let changed = false;
       let next = current.filter((node) => {
@@ -829,14 +831,14 @@ function ActionsFlowCanvas({
           position: nodeAbsolutePosition(node, before),
         };
       });
-      for (const fence of fences) {
+      for (const fence of canvasFences) {
         if (next.some((node) => node.id === fence.id)) continue;
         changed = true;
         next = [toFenceFlowNode(fence, scopeKey), ...next];
       }
       return changed ? next : current;
     });
-  }, [fences, scopeKey]);
+  }, [canvasFences, scopeKey]);
 
   useEffect(() => {
     if (pendingCreate <= 0) return;

@@ -53,11 +53,7 @@ export function isActionFenceId(id: string): boolean {
   return id.startsWith("fence-");
 }
 
-export function actionFencesScopeKey(
-  includeStartGraphs: boolean,
-  sceneId: string,
-  hotspotId?: number,
-): string {
-  if (includeStartGraphs) return `scene:${sceneId}`;
-  return `hotspot:${hotspotId ?? 0}`;
+/** Fences are always scene-wide so hotspot and scene canvases share them. */
+export function actionFencesScopeKey(sceneId: string): string {
+  return `scene:${sceneId}`;
 }

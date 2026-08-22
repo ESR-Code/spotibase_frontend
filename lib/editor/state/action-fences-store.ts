@@ -23,6 +23,7 @@ type ActionFencesState = {
     changes: Array<{ nodeId: string; fenceId: string | null }>,
   ) => void;
   hydrateScope: (scopeKey: string, fences: ActionFence[]) => void;
+  takeHotspotFences: () => ActionFence[];
 };
 
 function persistSceneScope(scopeKey: string, fences: ActionFence[]): void {
@@ -147,5 +148,19 @@ export const useActionFencesStore = create<ActionFencesState>((set, get) => ({
         [scopeKey]: cloneActionFences(fences),
       },
     }));
+  },
+
+  takeHotspotFences: () => {
+    const leftover: ActionFence[] = [];
+    const byScope = { ...get().byScope };
+    let changed = false;
+    for (const key of Object.keys(byScope)) {
+      if (!key.startsWith("hotspot:")) continue;
+      leftover.push(...(byScope[key] ?? []));
+      delete byScope[key];
+      changed = true;
+    }
+    if (changed) set({ byScope });
+    return leftover.map(cloneActionFence);
   },
 }));

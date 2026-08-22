@@ -127,6 +127,19 @@ export function smallestContainingFence(
   return best;
 }
 
+export function fencesVisibleOnCanvas(
+  fences: ActionFence[],
+  visibleNodeIds: Set<string>,
+  includeAll: boolean,
+): ActionFence[] {
+  if (includeAll) return fences;
+  return fences.filter(
+    (fence) =>
+      fence.memberIds.length === 0 ||
+      fence.memberIds.some((id) => visibleNodeIds.has(id)),
+  );
+}
+
 export function attachNodesToFences(
   actionNodes: Node<ActionFlowNodeData>[],
   fences: ActionFence[],

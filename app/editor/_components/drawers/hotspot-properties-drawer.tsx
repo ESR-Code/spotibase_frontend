@@ -30,7 +30,6 @@ const TABS: {
 export function HotspotPropertiesDrawer() {
   const open = useUIStore((s) => s.propertiesDrawerOpen);
   const setOpen = useUIStore((s) => s.setPropertiesDrawerOpen);
-  const openActionsModal = useUIStore((s) => s.openActionsModal);
   const selectedId = useEditorStore((s) => s.selectedId);
   const removeHotspot = useEditorStore((s) => s.removeHotspot);
   const duplicateHotspot = useEditorStore((s) => s.duplicateHotspot);
@@ -108,15 +107,7 @@ export function HotspotPropertiesDrawer() {
               role="tab"
               aria-selected={active}
               className={`editor-panel-tab ${active ? "active" : ""}`}
-              onClick={() => {
-                setActiveTab(tab.id);
-                if (tab.id === "actions") {
-                  openActionsModal({
-                    kind: "hotspot",
-                    hotspotId: selected.id,
-                  });
-                }
-              }}
+              onClick={() => setActiveTab(tab.id)}
             >
               <Icon className="h-3 w-3" />
               {tab.label}
