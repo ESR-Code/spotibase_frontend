@@ -2,7 +2,7 @@
 
 import type { Node, NodeProps } from "@xyflow/react";
 import { ChevronDown, Highlighter } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-card";
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
 import { ColorSwatch } from "@/app/editor/_components/ui/color-swatch";
@@ -31,6 +31,9 @@ const EMPTY_DATA: HighlightMeshActionNode["data"] = {
   strokeEnabled: true,
   strokeColor: DEFAULT_MESH_STROKE_COLOR,
   strokeWidth: DEFAULT_MESH_STROKE_WIDTH,
+  tintSectionOpen: true,
+  strokeSectionOpen: true,
+  meshesSectionOpen: false,
 };
 
 function toggleId(selected: string[], id: string, checked: boolean): string[] {
@@ -43,15 +46,16 @@ function toggleId(selected: string[], id: string, checked: boolean): string[] {
 function NodeSection({
   title,
   badge,
-  defaultOpen = true,
+  open,
+  onOpenChange,
   children,
 }: {
   title: string;
   badge?: string;
-  defaultOpen?: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="editor-enable-disable-panel nodrag nopan nowheel">
       <button
@@ -61,7 +65,7 @@ function NodeSection({
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.stopPropagation();
-          setOpen((value) => !value);
+          onOpenChange(!open);
         }}
       >
         <span>{title}</span>
@@ -147,7 +151,6 @@ export function HighlightMeshNode({
   const activeScene = useActiveScene();
   const isModelScene = activeScene.type === "model";
   const meshes = useModelStore((s) => s.meshes);
-  const [targetsOpen, setTargetsOpen] = useState(false);
   const ownedNode = useOwnedActionNode(ownerId, actionNodeId);
   const live =
     ownedNode?.type === "highlightMesh"
@@ -165,6 +168,9 @@ export function HighlightMeshNode({
             typeof ownedNode.data.strokeWidth === "number"
               ? ownedNode.data.strokeWidth
               : DEFAULT_MESH_STROKE_WIDTH,
+          tintSectionOpen: ownedNode.data.tintSectionOpen !== false,
+          strokeSectionOpen: ownedNode.data.strokeSectionOpen !== false,
+          meshesSectionOpen: Boolean(ownedNode.data.meshesSectionOpen),
         }
       : EMPTY_DATA;
 
@@ -221,11 +227,11 @@ export function HighlightMeshNode({
         <button
           type="button"
           className="editor-enable-disable-toggle"
-          aria-expanded={targetsOpen}
+          aria-expanded={live.meshesSectionOpen}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
-            setTargetsOpen((open) => !open);
+            patch({ meshesSectionOpen: !live.meshesSectionOpen });
           }}
         >
           <span>Meshes</span>
@@ -237,12 +243,12 @@ export function HighlightMeshNode({
               {selectedCount}/{meshOptions.length} selected
             </span>
             <ChevronDown
-              className={`h-3.5 w-3.5 transition-transform ${targetsOpen ? "rotate-180" : ""}`}
+              className={`h-3.5 w-3.5 transition-transform ${live.meshesSectionOpen ? "rotate-180" : ""}`}
             />
           </span>
         </button>
 
-        {targetsOpen ? (
+        {live.meshesSectionOpen ? (
           <div className="editor-enable-disable-targets">
             <div className="editor-enable-disable-group">
               <div className="editor-enable-disable-group-header">
@@ -315,7 +321,12 @@ export function HighlightMeshNode({
       </div>
 
       <div className="mt-2 space-y-2">
-        <NodeSection title="Tint" badge={live.tintEnabled ? "On" : "Off"}>
+        <NodeSection
+          title="Tint"
+          badge={live.tintEnabled ? "On" : "Off"}
+          open={live.tintSectionOpen !== false}
+          onOpenChange={(tintSectionOpen) => patch({ tintSectionOpen })}
+        >
           <div
             className="nodrag nopan"
             onPointerDown={(e) => e.stopPropagation()}
@@ -360,7 +371,12 @@ export function HighlightMeshNode({
           ) : null}
         </NodeSection>
 
-        <NodeSection title="Stroke" badge={live.strokeEnabled ? "On" : "Off"}>
+        <NodeSection
+          title="Stroke"
+          badge={live.strokeEnabled ? "On" : "Off"}
+          open={live.strokeSectionOpen !== false}
+          onOpenChange={(strokeSectionOpen) => patch({ strokeSectionOpen })}
+        >
           <div
             className="nodrag nopan"
             onPointerDown={(e) => e.stopPropagation()}

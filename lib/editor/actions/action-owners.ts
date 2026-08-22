@@ -82,13 +82,21 @@ export function isStartOwnerId(ownerId: number): boolean {
   return ownerId === APP_START_OWNER_ID || ownerId === SCENE_START_OWNER_ID;
 }
 
-/** Same lane, or App Start ↔ Scene Start (nodes can be reassigned). */
+/** App Start, Scene Start, or a custom bottom-menu button. */
+export function isStartOrMenuOwnerId(ownerId: number): boolean {
+  return isStartOwnerId(ownerId) || isMenuButtonOwnerId(ownerId);
+}
+
+/**
+ * Same lane, or pull a node into App Start / Scene Start / a menu button.
+ * Hotspot lanes stay isolated from each other.
+ */
 export function canConnectActionOwners(
   sourceOwnerId: number,
   targetOwnerId: number,
 ): boolean {
   if (sourceOwnerId === targetOwnerId) return true;
-  return isStartOwnerId(sourceOwnerId) && isStartOwnerId(targetOwnerId);
+  return isStartOrMenuOwnerId(sourceOwnerId);
 }
 
 export function triggerKindForOwner(ownerId: number): ActionTriggerKind {

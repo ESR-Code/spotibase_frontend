@@ -170,6 +170,12 @@ export type HighlightMeshActionNode = ActionNodeBase<
     strokeColor: string;
     /** Relative outline thickness. 1 = native width, 4 = widest. */
     strokeWidth: number;
+    /** Tint section expanded in the Actions canvas. Default true. */
+    tintSectionOpen?: boolean;
+    /** Stroke section expanded in the Actions canvas. Default true. */
+    strokeSectionOpen?: boolean;
+    /** Mesh checklist expanded in the Actions canvas. Default false. */
+    meshesSectionOpen?: boolean;
   }
 >;
 export type ChangeHotspotColorActionNode = ActionNodeBase<

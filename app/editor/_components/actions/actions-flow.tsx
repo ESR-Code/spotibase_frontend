@@ -663,15 +663,16 @@ function ActionsFlowCanvas({
         return;
       }
 
-      // App Start ↔ Scene Start: move the target node into the source graph.
+      // App Start / Scene Start / menu button: move the target into that graph.
       const fromOwner = targetParsed.hotspotId;
       const toOwner = sourceParsed.hotspotId;
+      const allowed = allowedByOwnerId.get(toOwner);
       const fromGraph = getOwnedActionGraph(fromOwner);
       const toGraph = getOwnedActionGraph(toOwner);
       if (!fromGraph || !toGraph) return;
 
       const moving = fromGraph.nodes.find((n) => n.id === targetParsed.nodeId);
-      if (!moving) return;
+      if (!moving || !allowed?.includes(moving.type)) return;
 
       const fromLane = laneByOwnerId.get(fromOwner) ?? 0;
       const toLane = laneByOwnerId.get(toOwner) ?? 0;
@@ -700,7 +701,7 @@ function ActionsFlowCanvas({
       writeGraph(fromOwner, nextFrom);
       writeGraph(toOwner, nextTo);
     },
-    [laneByOwnerId, updateGraph, writeGraph],
+    [allowedByOwnerId, laneByOwnerId, updateGraph, writeGraph],
   );
 
   const onPaneContextMenu = useCallback(
@@ -1018,10 +1019,23 @@ function ActionsFlowCanvas({
             if (!sourceParsed || !targetParsed) return false;
             if (sourceParsed.nodeId === targetParsed.nodeId) return false;
             if (targetParsed.nodeId === TRIGGER_NODE_ID) return false;
-            return canConnectActionOwners(
-              sourceParsed.hotspotId,
-              targetParsed.hotspotId,
+            if (
+              !canConnectActionOwners(
+                sourceParsed.hotspotId,
+                targetParsed.hotspotId,
+              )
+            ) {
+              return false;
+            }
+            if (sourceParsed.hotspotId === targetParsed.hotspotId) return true;
+            const allowed = allowedByOwnerId.get(sourceParsed.hotspotId);
+            const targetNode = nodesRef.current.find(
+              (node) => node.id === connection.target,
             );
+            if (!targetNode || isFenceNode(targetNode)) return false;
+            const targetType = targetNode.type;
+            if (!targetType || targetType === TRIGGER_FLOW_TYPE) return false;
+            return Boolean(allowed?.includes(targetType as ActionNodeType));
           }}
         >
           <Background gap={18} size={1} color="rgba(120, 160, 230, 0.18)" />

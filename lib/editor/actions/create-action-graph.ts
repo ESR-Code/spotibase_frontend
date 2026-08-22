@@ -441,6 +441,9 @@ export function cloneActionGraph(
                   : DEFAULT_MESH_STROKE_WIDTH,
               ),
             ),
+            tintSectionOpen: asBoolean(node.data.tintSectionOpen, true),
+            strokeSectionOpen: asBoolean(node.data.strokeSectionOpen, true),
+            meshesSectionOpen: asBoolean(node.data.meshesSectionOpen, false),
           },
         };
       }

@@ -545,6 +545,18 @@ export function updateNodeData(
               Number.isFinite(patch.strokeWidth)
                 ? Math.min(4, Math.max(1, patch.strokeWidth))
                 : node.data.strokeWidth,
+            tintSectionOpen:
+              typeof patch.tintSectionOpen === "boolean"
+                ? patch.tintSectionOpen
+                : node.data.tintSectionOpen,
+            strokeSectionOpen:
+              typeof patch.strokeSectionOpen === "boolean"
+                ? patch.strokeSectionOpen
+                : node.data.strokeSectionOpen,
+            meshesSectionOpen:
+              typeof patch.meshesSectionOpen === "boolean"
+                ? patch.meshesSectionOpen
+                : node.data.meshesSectionOpen,
           },
         };
       }
