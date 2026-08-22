@@ -152,7 +152,10 @@ export type EnableDisableMeshActionNode = ActionNodeBase<
 export type HighlightMeshActionNode = ActionNodeBase<
   "highlightMesh",
   {
-    /** Checked mesh ids that receive the highlight when this node runs. */
+    /**
+     * Checked mesh ids this node targets. With tint/stroke on they are
+     * highlighted; with both off they are restored to original materials.
+     */
     meshIds: string[];
     /** When true, blend tintColor over the selected meshes. */
     tintEnabled: boolean;

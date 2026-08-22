@@ -326,7 +326,8 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
   highlightMesh: {
     type: "highlightMesh",
     label: "Highlight Mesh",
-    description: "Tint selected 3D meshes and optionally outline them.",
+    description:
+      "Tint or outline selected meshes, or turn both off to restore originals.",
     sceneTypes: ["model"],
     createDefault: (position) => createActionNode("highlightMesh", position),
     validate: (node) => {

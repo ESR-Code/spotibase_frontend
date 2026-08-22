@@ -16,9 +16,6 @@ export function validateHighlightMeshData(
   if (!data.meshIds.length) return "Select at least one mesh";
   const tintEnabled = data.tintEnabled !== false;
   const strokeEnabled = Boolean(data.strokeEnabled);
-  if (!tintEnabled && !strokeEnabled) {
-    return "Enable tint or stroke";
-  }
   if (tintEnabled && !isHexColor(data.tintColor.trim())) {
     return "Pick a valid tint color";
   }
@@ -31,20 +28,42 @@ export function validateHighlightMeshData(
 /**
  * Apply mesh tint / outline for the current Preview session only.
  * Editor materials are left unchanged.
+ *
+ * Tint/stroke on → selected meshes receive the highlight.
+ * Both off → selected meshes are restored to their original materials
+ * (select all to clear every highlight).
  */
 export function applyHighlightMesh(
   data: HighlightMeshActionNode["data"],
 ): void {
+  const meshIds = data.meshIds ?? [];
+  const tintEnabled = data.tintEnabled !== false;
+  const strokeEnabled = Boolean(data.strokeEnabled);
+  const store = usePreviewMeshHighlightStore.getState();
+
+  if (!tintEnabled && !strokeEnabled) {
+    const current = store.highlight;
+    if (!current) return;
+    const remove = new Set(meshIds);
+    const remaining = current.meshIds.filter((id) => !remove.has(id));
+    if (remaining.length === 0) {
+      store.reset();
+      return;
+    }
+    store.apply({ ...current, meshIds: remaining });
+    return;
+  }
+
   const opacity =
     typeof data.tintOpacity === "number" && Number.isFinite(data.tintOpacity)
       ? Math.min(1, Math.max(0, data.tintOpacity))
       : DEFAULT_MESH_TINT_OPACITY;
-  usePreviewMeshHighlightStore.getState().apply({
-    meshIds: data.meshIds ?? [],
-    tintEnabled: data.tintEnabled !== false,
+  store.apply({
+    meshIds,
+    tintEnabled,
     tintColor: data.tintColor.trim() || DEFAULT_MESH_TINT_COLOR,
     tintOpacity: opacity,
-    strokeEnabled: Boolean(data.strokeEnabled),
+    strokeEnabled,
     strokeColor: data.strokeColor.trim() || DEFAULT_MESH_STROKE_COLOR,
     strokeWidth:
       typeof data.strokeWidth === "number" && Number.isFinite(data.strokeWidth)

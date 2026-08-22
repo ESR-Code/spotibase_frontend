@@ -177,6 +177,7 @@ export function HighlightMeshNode({
   ).length;
   const allSelected =
     meshIds.length > 0 && meshIds.every((id) => live.meshIds.includes(id));
+  const restoreOriginals = !live.tintEnabled && !live.strokeEnabled;
 
   const patch = (partial: Partial<HighlightMeshActionNode["data"]>) => {
     updateNodeData(ownerId, actionNodeId, partial);
@@ -199,7 +200,11 @@ export function HighlightMeshNode({
             ? "3D model scenes only"
             : selectedCount === 0
               ? "No meshes selected"
-              : `${selectedCount} mesh${selectedCount === 1 ? "" : "es"} highlighted`}
+              : restoreOriginals
+                ? allSelected
+                  ? "All meshes stay original"
+                  : `${selectedCount} mesh${selectedCount === 1 ? "" : "es"} restored to original`
+                : `${selectedCount} mesh${selectedCount === 1 ? "" : "es"} highlighted`}
         </div>
       }
     >
@@ -207,7 +212,8 @@ export function HighlightMeshNode({
         className="mb-2 text-[10px] leading-snug"
         style={{ color: "var(--editor-muted)" }}
       >
-        Check meshes, then enable tint and/or stroke in Preview
+        Check meshes to tint and/or outline. Turn both off to restore those
+        meshes to their original materials.
       </p>
 
       <div className="editor-enable-disable-panel nodrag nopan nowheel">
