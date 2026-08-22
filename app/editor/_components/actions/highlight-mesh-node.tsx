@@ -212,8 +212,9 @@ export function HighlightMeshNode({
         className="mb-2 text-[10px] leading-snug"
         style={{ color: "var(--editor-muted)" }}
       >
-        Check meshes to tint and/or outline. Turn both off to restore those
-        meshes to their original materials.
+        Check meshes to tint and/or outline. Wire more Highlight Mesh
+        nodes after this one to color other meshes. Turn both off to
+        restore those meshes to their original materials.
       </p>
 
       <div className="editor-enable-disable-panel nodrag nopan nowheel">

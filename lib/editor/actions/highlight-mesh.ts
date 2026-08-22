@@ -29,9 +29,9 @@ export function validateHighlightMeshData(
  * Apply mesh tint / outline for the current Preview session only.
  * Editor materials are left unchanged.
  *
- * Tint/stroke on → selected meshes receive the highlight.
- * Both off → selected meshes are restored to their original materials
- * (select all to clear every highlight).
+ * Tint/stroke on → selected meshes receive this node's highlight (merged
+ * with any earlier Highlight Mesh nodes in the chain).
+ * Both off → selected meshes are restored to their original materials.
  */
 export function applyHighlightMesh(
   data: HighlightMeshActionNode["data"],
@@ -42,15 +42,7 @@ export function applyHighlightMesh(
   const store = usePreviewMeshHighlightStore.getState();
 
   if (!tintEnabled && !strokeEnabled) {
-    const current = store.highlight;
-    if (!current) return;
-    const remove = new Set(meshIds);
-    const remaining = current.meshIds.filter((id) => !remove.has(id));
-    if (remaining.length === 0) {
-      store.reset();
-      return;
-    }
-    store.apply({ ...current, meshIds: remaining });
+    store.restore(meshIds);
     return;
   }
 
@@ -58,8 +50,7 @@ export function applyHighlightMesh(
     typeof data.tintOpacity === "number" && Number.isFinite(data.tintOpacity)
       ? Math.min(1, Math.max(0, data.tintOpacity))
       : DEFAULT_MESH_TINT_OPACITY;
-  store.apply({
-    meshIds,
+  store.paint(meshIds, {
     tintEnabled,
     tintColor: data.tintColor.trim() || DEFAULT_MESH_TINT_COLOR,
     tintOpacity: opacity,

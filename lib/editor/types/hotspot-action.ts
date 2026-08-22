@@ -154,7 +154,8 @@ export type HighlightMeshActionNode = ActionNodeBase<
   {
     /**
      * Checked mesh ids this node targets. With tint/stroke on they are
-     * highlighted; with both off they are restored to original materials.
+     * highlighted (later Highlight Mesh nodes in the chain overlay earlier
+     * ones). With both off they are restored to original materials.
      */
     meshIds: string[];
     /** When true, blend tintColor over the selected meshes. */

@@ -157,12 +157,12 @@ export function usePlayCanvasEditor() {
           (state, prev) => {
             if (state.disabledMeshIds === prev.disabledMeshIds) return;
             models.applyMeshVisibility(state.disabledMeshIds);
-            meshHighlight.sync(usePreviewMeshHighlightStore.getState().highlight);
+            meshHighlight.sync(usePreviewMeshHighlightStore.getState().byMeshId);
           },
         );
         const unsubMeshHighlight = usePreviewMeshHighlightStore.subscribe(
           (state) => {
-            meshHighlight.sync(state.highlight);
+            meshHighlight.sync(state.byMeshId);
           },
         );
         const unsubWire = useModelStore.subscribe((state, prev) => {
@@ -180,12 +180,12 @@ export function usePlayCanvasEditor() {
           if (state.modelReflection !== prev.modelReflection) {
             models.applyReflection(state.modelReflection);
             meshHighlight.sync(
-              usePreviewMeshHighlightStore.getState().highlight,
+              usePreviewMeshHighlightStore.getState().byMeshId,
             );
           }
           if (state.meshes !== prev.meshes) {
             meshHighlight.sync(
-              usePreviewMeshHighlightStore.getState().highlight,
+              usePreviewMeshHighlightStore.getState().byMeshId,
             );
           }
         });

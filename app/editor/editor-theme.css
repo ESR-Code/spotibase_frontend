@@ -2790,6 +2790,7 @@
 .editor-root .editor-action-handle {
   width: 10px !important;
   height: 10px !important;
+  z-index: 12 !important;
   border: 2px solid rgba(11, 20, 36, 0.95) !important;
   background: var(--editor-crimson-2) !important;
 }

@@ -8,7 +8,7 @@ import type {
 } from "playcanvas";
 import type * as pc from "playcanvas";
 import type { CollectedModelMesh } from "@/lib/editor/engine/model-meshes";
-import type { PreviewMeshHighlight } from "@/lib/editor/state/preview-mesh-highlight-store";
+import type { MeshHighlightById } from "@/lib/editor/state/preview-mesh-highlight-store";
 
 const OUTLINE_CAPTURE_LAYER = "MeshOutlineCapture";
 
@@ -34,7 +34,7 @@ type AdjustableOutlineRenderer = InstanceType<
 };
 
 export type MeshHighlightManager = {
-  sync: (highlight: PreviewMeshHighlight | null) => void;
+  sync: (byMeshId: MeshHighlightById) => void;
   frameUpdate: () => void;
   destroy: () => void;
 };
@@ -197,41 +197,44 @@ export function createMeshHighlightManager(
     }
   };
 
-  const sync = (highlight: PreviewMeshHighlight | null) => {
+  const sync = (byMeshId: MeshHighlightById) => {
     clearStroke();
     clearTint();
 
-    if (!highlight || highlight.meshIds.length === 0) {
-      destroyOutlineRenderer();
-      return;
-    }
-
-    const selected = new Set(highlight.meshIds);
-    const tint = hexToColor(highlight.tintColor);
-    const stroke = hexToColor(highlight.strokeColor);
-    strokeWidth = Math.min(4, Math.max(1, highlight.strokeWidth));
-    const targets: Entity[] = [];
+    const strokeTargets: {
+      entity: Entity;
+      color: ReturnType<typeof hexToColor>;
+    }[] = [];
+    let maxStrokeWidth = 1;
 
     for (const item of getMeshes()) {
-      if (!selected.has(item.id)) continue;
+      const style = byMeshId[item.id];
+      if (!style) continue;
       const entity = item.entity;
       if (!entity.enabled || !entity.render?.enabled) continue;
-      targets.push(entity);
-      if (highlight.tintEnabled) {
-        applyTint(entity, tint, highlight.tintOpacity);
+      if (style.tintEnabled) {
+        applyTint(entity, hexToColor(style.tintColor), style.tintOpacity);
+      }
+      if (style.strokeEnabled) {
+        strokeTargets.push({
+          entity,
+          color: hexToColor(style.strokeColor),
+        });
+        maxStrokeWidth = Math.max(maxStrokeWidth, style.strokeWidth);
       }
     }
 
-    if (!highlight.strokeEnabled || targets.length === 0) {
+    if (strokeTargets.length === 0) {
       destroyOutlineRenderer();
       return;
     }
 
+    strokeWidth = Math.min(4, Math.max(1, maxStrokeWidth));
     const renderer = ensureOutlineRenderer();
-    for (const entity of targets) {
-      renderer.addEntity(entity, stroke, false);
+    for (const target of strokeTargets) {
+      renderer.addEntity(target.entity, target.color, false);
     }
-    outlined = targets;
+    outlined = strokeTargets.map((target) => target.entity);
     strokeActive = true;
   };
 
