@@ -3,12 +3,17 @@ import type * as pc from "playcanvas";
 import { toast } from "sonner";
 import { buildDefaultBox } from "@/lib/editor/engine/default-scene-builder";
 import { createImageTexture } from "@/lib/editor/engine/hotspot-text-texture";
+import {
+  collectModelMeshes,
+  type CollectedModelMesh,
+} from "@/lib/editor/engine/model-meshes";
 import { getSceneType } from "@/lib/editor/scene-types/registry";
 import {
   DEFAULT_MODEL_REFLECTION,
   type ModelRotation,
   useModelStore,
 } from "@/lib/editor/state/model-store";
+import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import { sceneSubjectCache } from "@/lib/editor/state/scene-subject-cache";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
@@ -36,6 +41,7 @@ export type ModelManager = {
   setWireframe: (enabled: boolean) => void;
   applyTransform: (scale: number, rotation: ModelRotation) => void;
   applyReflection: (amount: number) => void;
+  applyMeshVisibility: (disabledMeshIds: string[]) => void;
   getModelRoot: () => Entity;
 };
 
@@ -46,10 +52,34 @@ export function createModelManager(
 ): ModelManager {
   let materialBaselines: MaterialBaseline[] = [];
   let ownedTexture: Texture | null = null;
+  let meshEntities: CollectedModelMesh[] = [];
 
   const applyTransform = (scale: number, rotation: ModelRotation) => {
     modelRoot.setLocalScale(scale, scale, scale);
     modelRoot.setLocalEulerAngles(rotation.x, rotation.y, rotation.z);
+  };
+
+  const applyMeshVisibility = (disabledMeshIds: string[]) => {
+    const disabled = new Set(disabledMeshIds);
+    for (const item of meshEntities) {
+      const render = item.entity.render;
+      if (!render) continue;
+      render.enabled = !disabled.has(item.id);
+    }
+  };
+
+  const syncMeshCatalog = () => {
+    if (activeSceneType() !== "model") {
+      meshEntities = [];
+      useModelStore.getState().setMeshes([]);
+      return;
+    }
+    const collected = collectModelMeshes(modelRoot);
+    meshEntities = collected.entities;
+    useModelStore.getState().setMeshes(collected.entries);
+    applyMeshVisibility(
+      usePreviewVisibilityStore.getState().disabledMeshIds,
+    );
   };
 
   const destroyOwnedTexture = () => {
@@ -130,6 +160,7 @@ export function createModelManager(
       .getState()
       .setModelMeta(descriptor.emptySubjectName, descriptor.emptySubjectInfo, false);
     useModelStore.getState().setStats(useModelStore.getState().fps, 2);
+    syncMeshCatalog();
     return plane;
   };
 
@@ -141,6 +172,7 @@ export function createModelManager(
       useModelStore
         .getState()
         .setModelMeta(descriptor.emptySubjectName, descriptor.emptySubjectInfo, false);
+      syncMeshCatalog();
       return modelRoot;
     }
     if (sceneType === "image") {
@@ -152,6 +184,7 @@ export function createModelManager(
     const { modelScale, modelRotation } = useModelStore.getState();
     applyTransform(modelScale, modelRotation);
     syncAppearanceFromStore();
+    syncMeshCatalog();
     return entity;
   };
 
@@ -216,6 +249,7 @@ export function createModelManager(
         toast.success(`Imported ${fileName}`);
       }
 
+      syncMeshCatalog();
       return entity;
     } finally {
       URL.revokeObjectURL(url);
@@ -263,6 +297,7 @@ export function createModelManager(
         toast.success(`Imported ${fileName}`);
       }
 
+      syncMeshCatalog();
       return plane;
     } finally {
       URL.revokeObjectURL(url);
@@ -347,6 +382,7 @@ export function createModelManager(
     modelRoot.setLocalScale(1, 1, 1);
     modelRoot.setLocalEulerAngles(0, 0, 0);
     useModelStore.getState().unload();
+    syncMeshCatalog();
   };
 
   return {
@@ -358,6 +394,7 @@ export function createModelManager(
     setWireframe,
     applyTransform,
     applyReflection,
+    applyMeshVisibility,
     getModelRoot: () => modelRoot,
   };
 }

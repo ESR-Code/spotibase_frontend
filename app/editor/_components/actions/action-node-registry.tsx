@@ -2,6 +2,7 @@
 
 import type { NodeProps } from "@xyflow/react";
 import {
+  Boxes,
   Crosshair,
   ExternalLink,
   Eye,
@@ -17,6 +18,7 @@ import type { ComponentType } from "react";
 import { ChangeHotspotColorNode } from "@/app/editor/_components/actions/change-hotspot-color-node";
 import { ChangeHotspotIconNode } from "@/app/editor/_components/actions/change-hotspot-icon-node";
 import { EnableDisableNode } from "@/app/editor/_components/actions/enable-disable-node";
+import { EnableDisableMeshNode } from "@/app/editor/_components/actions/enable-disable-mesh-node";
 import { GoToHotspotNode } from "@/app/editor/_components/actions/go-to-hotspot-node";
 import { GoToSceneNode } from "@/app/editor/_components/actions/go-to-scene-node";
 import { HotspotTriggerNode } from "@/app/editor/_components/actions/hotspot-trigger-node";
@@ -92,6 +94,13 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     accent: "#c4a35a",
     Node: EnableDisableNode,
   },
+  enableDisableMesh: {
+    type: "enableDisableMesh",
+    meta: ACTION_NODE_META.enableDisableMesh,
+    icon: Boxes,
+    accent: "#8eb5d4",
+    Node: EnableDisableMeshNode,
+  },
   changeHotspotColor: {
     type: "changeHotspotColor",
     meta: ACTION_NODE_META.changeHotspotColor,
@@ -119,6 +128,7 @@ export const ACTION_FLOW_NODE_TYPES = {
   sendPostMessage: SendPostMessageNode,
   httpRequest: HttpRequestNode,
   enableDisable: EnableDisableNode,
+  enableDisableMesh: EnableDisableMeshNode,
   changeHotspotColor: ChangeHotspotColorNode,
   changeHotspotIcon: ChangeHotspotIconNode,
   [ACTION_FENCE_TYPE]: ActionFenceNode,

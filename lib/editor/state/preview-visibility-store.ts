@@ -3,7 +3,9 @@ import { create } from "zustand";
 type PreviewVisibilityState = {
   disabledHotspotIds: number[];
   disabledLayerIds: string[];
+  disabledMeshIds: string[];
   apply: (hotspotIds: number[], layerIds: string[]) => void;
+  applyMeshes: (meshIds: string[]) => void;
   reset: () => void;
 };
 
@@ -12,9 +14,12 @@ export const usePreviewVisibilityStore = create<PreviewVisibilityState>(
   (set) => ({
     disabledHotspotIds: [],
     disabledLayerIds: [],
+    disabledMeshIds: [],
     apply: (disabledHotspotIds, disabledLayerIds) =>
       set({ disabledHotspotIds, disabledLayerIds }),
-    reset: () => set({ disabledHotspotIds: [], disabledLayerIds: [] }),
+    applyMeshes: (disabledMeshIds) => set({ disabledMeshIds }),
+    reset: () =>
+      set({ disabledHotspotIds: [], disabledLayerIds: [], disabledMeshIds: [] }),
   }),
 );
 

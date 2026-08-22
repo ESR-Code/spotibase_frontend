@@ -78,6 +78,7 @@ import {
   removeNode,
   updateNodeData,
 } from "@/lib/editor/actions/graph-ops";
+import { filterActionNodeTypesForScene } from "@/lib/editor/actions/registry";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import {
   createActionFence,
@@ -199,6 +200,8 @@ function ActionsFlowCanvas({
   const entries: ActionFlowEntry[] = useMemo(() => {
     const list: ActionFlowEntry[] = [];
     let laneIndex = 0;
+    const forScene = (types: ActionNodeType[]) =>
+      filterActionNodeTypesForScene(types, activeScene.type);
 
     if (includeStartGraphs) {
       list.push({
@@ -207,7 +210,7 @@ function ActionsFlowCanvas({
         graph: appStartActions ?? createEmptyActionGraph(),
         laneIndex: laneIndex++,
         triggerKind: "appStart",
-        allowedNodeTypes: START_GRAPH_ALLOWED_NODE_TYPES,
+        allowedNodeTypes: forScene(START_GRAPH_ALLOWED_NODE_TYPES),
       });
       list.push({
         ownerId: SCENE_START_OWNER_ID,
@@ -215,7 +218,7 @@ function ActionsFlowCanvas({
         graph: activeScene.startActions ?? createEmptyActionGraph(),
         laneIndex: laneIndex++,
         triggerKind: "sceneStart",
-        allowedNodeTypes: START_GRAPH_ALLOWED_NODE_TYPES,
+        allowedNodeTypes: forScene(START_GRAPH_ALLOWED_NODE_TYPES),
       });
       for (const button of customMenuButtons) {
         list.push({
@@ -227,7 +230,7 @@ function ActionsFlowCanvas({
           triggerIcon: button.icon,
           toggledIcon: button.toggledIcon,
           toggleEnabled: button.toggleEnabled,
-          allowedNodeTypes: MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES,
+          allowedNodeTypes: forScene(MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES),
         });
       }
       for (const hotspot of hotspots) {
@@ -237,7 +240,7 @@ function ActionsFlowCanvas({
           graph: getActionGraph(hotspot),
           laneIndex: laneIndex++,
           triggerKind: "hotspot",
-          allowedNodeTypes: HOTSPOT_GRAPH_ALLOWED_NODE_TYPES,
+          allowedNodeTypes: forScene(HOTSPOT_GRAPH_ALLOWED_NODE_TYPES),
         });
       }
       return list;
@@ -255,7 +258,7 @@ function ActionsFlowCanvas({
         graph: getActionGraph(hotspot),
         laneIndex: sceneLaneBase + (sceneIndex >= 0 ? sceneIndex : 0),
         triggerKind: "hotspot",
-        allowedNodeTypes: HOTSPOT_GRAPH_ALLOWED_NODE_TYPES,
+        allowedNodeTypes: forScene(HOTSPOT_GRAPH_ALLOWED_NODE_TYPES),
       });
     }
 
@@ -264,6 +267,7 @@ function ActionsFlowCanvas({
     activeScene.hotspots,
     activeScene.name,
     activeScene.startActions,
+    activeScene.type,
     appStartActions,
     customMenuButtons,
     hotspots,

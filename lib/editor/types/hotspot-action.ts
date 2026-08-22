@@ -6,6 +6,7 @@ export type ActionNodeType =
   | "sendPostMessage"
   | "httpRequest"
   | "enableDisable"
+  | "enableDisableMesh"
   | "changeHotspotColor"
   | "changeHotspotIcon";
 
@@ -137,6 +138,16 @@ export type EnableDisableActionNode = ActionNodeBase<
     disabledLayerIds: string[];
   }
 >;
+export type EnableDisableMeshActionNode = ActionNodeBase<
+  "enableDisableMesh",
+  {
+    /**
+     * Unchecked mesh ids from the 3D subject — hidden when this node runs.
+     * All other model meshes stay visible. Empty = everything enabled.
+     */
+    disabledMeshIds: string[];
+  }
+>;
 export type ChangeHotspotColorActionNode = ActionNodeBase<
   "changeHotspotColor",
   {
@@ -169,6 +180,7 @@ export type ActionNode =
   | SendPostMessageActionNode
   | HttpRequestActionNode
   | EnableDisableActionNode
+  | EnableDisableMeshActionNode
   | ChangeHotspotColorActionNode
   | ChangeHotspotIconActionNode;
 

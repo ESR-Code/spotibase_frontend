@@ -498,6 +498,18 @@ export function updateNodeData(
           },
         };
       }
+      if (node.type === "enableDisableMesh") {
+        return {
+          ...node,
+          data: {
+            disabledMeshIds: Array.isArray(patch.disabledMeshIds)
+              ? patch.disabledMeshIds.filter(
+                  (id): id is string => typeof id === "string" && id.length > 0,
+                )
+              : node.data.disabledMeshIds,
+          },
+        };
+      }
       if (node.type === "changeHotspotColor") {
         return {
           ...node,

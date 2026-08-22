@@ -15,6 +15,13 @@ export const DEFAULT_MODEL_META = {
   hasUserModel: false,
 } as const;
 
+export type ModelMeshEntry = {
+  /** Stable path within the loaded subject, e.g. `Body/Wheel_FL`. */
+  id: string;
+  /** Display name from the GLB node. */
+  name: string;
+};
+
 type ModelState = {
   modelName: string;
   modelInfo: string;
@@ -27,6 +34,7 @@ type ModelState = {
   triangleCount: number;
   engineReady: boolean;
   engineError: string | null;
+  meshes: ModelMeshEntry[];
   setModelMeta: (name: string, info: string, hasUserModel?: boolean) => void;
   setModelScale: (scale: number) => void;
   setModelRotation: (axis: keyof ModelRotation, value: number) => void;
@@ -36,6 +44,7 @@ type ModelState = {
   setStats: (fps: number, triangleCount: number) => void;
   setEngineReady: (ready: boolean) => void;
   setEngineError: (error: string | null) => void;
+  setMeshes: (meshes: ModelMeshEntry[]) => void;
   unload: () => void;
   hydrateFromScene: (model: SceneModelState) => void;
 };
@@ -52,6 +61,7 @@ export const useModelStore = create<ModelState>((set) => ({
   triangleCount: 0,
   engineReady: false,
   engineError: null,
+  meshes: [],
   setModelMeta: (name, info, hasUserModel) =>
     set((state) => ({
       modelName: name,
@@ -77,6 +87,7 @@ export const useModelStore = create<ModelState>((set) => ({
   setStats: (fps, triangleCount) => set({ fps, triangleCount }),
   setEngineReady: (engineReady) => set({ engineReady }),
   setEngineError: (engineError) => set({ engineError }),
+  setMeshes: (meshes) => set({ meshes }),
   unload: () =>
     set({
       modelName: DEFAULT_MODEL_META.name,
@@ -86,6 +97,7 @@ export const useModelStore = create<ModelState>((set) => ({
       modelRotation: { ...DEFAULT_MODEL_ROTATION },
       modelReflection: DEFAULT_MODEL_REFLECTION,
       triangleCount: 0,
+      meshes: [],
     }),
   hydrateFromScene: (model) =>
     set({

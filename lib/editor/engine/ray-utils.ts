@@ -51,8 +51,9 @@ export function raycastMeshes(
   root.forEach((node) => {
     const entity = node as Entity;
     const render = entity.render;
-    if (!render?.meshInstances?.length) return;
+    if (!render?.enabled || !render.meshInstances?.length) return;
     for (const mi of render.meshInstances) {
+      if (mi.visible === false) continue;
       if (mi.aabb.intersectsRay(ray, hitPoint)) {
         const distance = hitPoint.distance(ray.origin);
         if (!best || distance < best.distance) {

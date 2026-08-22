@@ -6,6 +6,7 @@ import type {
   ChangeHotspotColorActionNode,
   ChangeHotspotIconActionNode,
   EnableDisableActionNode,
+  EnableDisableMeshActionNode,
   GoToHotspotActionNode,
   HotspotActionGraph,
   HttpMethod,
@@ -122,6 +123,10 @@ export function createActionNode(
   position: ActionNodeXY,
 ): EnableDisableActionNode;
 export function createActionNode(
+  type: "enableDisableMesh",
+  position: ActionNodeXY,
+): EnableDisableMeshActionNode;
+export function createActionNode(
   type: "changeHotspotColor",
   position: ActionNodeXY,
 ): ChangeHotspotColorActionNode;
@@ -204,6 +209,15 @@ export function createActionNode(
         data: {
           disabledHotspotIds: [],
           disabledLayerIds: [],
+        },
+      };
+    case "enableDisableMesh":
+      return {
+        id: newActionId(),
+        type: "enableDisableMesh",
+        position: { ...position },
+        data: {
+          disabledMeshIds: [],
         },
       };
     case "changeHotspotColor":
@@ -349,6 +363,16 @@ export function cloneActionGraph(
           data: {
             disabledHotspotIds: asNumberIds(node.data.disabledHotspotIds),
             disabledLayerIds: asStringIds(node.data.disabledLayerIds),
+          },
+        };
+      }
+      if (node.type === "enableDisableMesh") {
+        return {
+          id: node.id,
+          type: "enableDisableMesh",
+          position: { ...node.position },
+          data: {
+            disabledMeshIds: asStringIds(node.data.disabledMeshIds),
           },
         };
       }

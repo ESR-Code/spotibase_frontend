@@ -81,6 +81,10 @@ function actionNodeDetail(
         (node.data.disabledLayerIds?.length ?? 0);
       return count > 0 ? `→ ${count} disabled` : "→ all enabled";
     }
+    case "enableDisableMesh": {
+      const count = node.data.disabledMeshIds?.length ?? 0;
+      return count > 0 ? `→ ${count} hidden` : "→ all meshes shown";
+    }
     case "changeHotspotColor":
       return (node.data.hotspotIds?.length ?? 0) > 0
         ? node.data.color.trim()

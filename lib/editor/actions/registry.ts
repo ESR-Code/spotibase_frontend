@@ -11,6 +11,10 @@ import {
   validateEnableDisableData,
 } from "@/lib/editor/actions/enable-disable";
 import {
+  applyEnableDisableMesh,
+  validateEnableDisableMeshData,
+} from "@/lib/editor/actions/enable-disable-mesh";
+import {
   applyGoToHotspot,
   validateGoToHotspotData,
 } from "@/lib/editor/actions/go-to-hotspot";
@@ -41,6 +45,7 @@ import type {
   ActionNodeType,
   ActionNodeXY,
 } from "@/lib/editor/types/hotspot-action";
+import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 import { OPEN_MODAL_HANDLE_ON_OPEN, normalizeReceiveEvents } from "@/lib/editor/types/hotspot-action";
 import {
   normalizeExternalUrl,
@@ -70,7 +75,24 @@ export type ActionNodeMeta<T extends ActionNodeType = ActionNodeType> = {
     node: ActionNode,
     ctx: ActionRunContext,
   ) => ActionRunResult | Promise<ActionRunResult>;
+  /** If set, the add-node menu only offers this type on these scene types. */
+  sceneTypes?: SceneTypeId[];
 };
+
+export function isActionNodeAvailableOnScene(
+  type: ActionNodeType,
+  sceneType: SceneTypeId,
+): boolean {
+  const allowed = ACTION_NODE_META[type].sceneTypes;
+  return !allowed || allowed.includes(sceneType);
+}
+
+export function filterActionNodeTypesForScene(
+  types: ActionNodeType[],
+  sceneType: SceneTypeId,
+): ActionNodeType[] {
+  return types.filter((type) => isActionNodeAvailableOnScene(type, sceneType));
+}
 
 export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
   openModal: {
@@ -279,6 +301,22 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     run: (node) => {
       if (node.type !== "enableDisable") return;
       applyEnableDisable(node.data);
+    },
+  },
+  enableDisableMesh: {
+    type: "enableDisableMesh",
+    label: "Enable / Disable Mesh",
+    description: "Show or hide meshes in the uploaded 3D model.",
+    sceneTypes: ["model"],
+    createDefault: (position) =>
+      createActionNode("enableDisableMesh", position),
+    validate: (node) => {
+      if (node.type !== "enableDisableMesh") return null;
+      return validateEnableDisableMeshData(node.data);
+    },
+    run: (node) => {
+      if (node.type !== "enableDisableMesh") return;
+      applyEnableDisableMesh(node.data);
     },
   },
   changeHotspotColor: {

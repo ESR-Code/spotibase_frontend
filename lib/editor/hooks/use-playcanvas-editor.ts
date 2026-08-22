@@ -23,6 +23,7 @@ import {
   useModelStore,
 } from "@/lib/editor/state/model-store";
 import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
+import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import { sceneSubjectCache } from "@/lib/editor/state/scene-subject-cache";
 import {
   syncActiveSceneSettings,
@@ -143,6 +144,12 @@ export function usePlayCanvasEditor() {
         const unsubAppearance = usePreviewAppearanceStore.subscribe(() => {
           hotspotMgr.syncFromStore();
         });
+        const unsubMeshVisibility = usePreviewVisibilityStore.subscribe(
+          (state, prev) => {
+            if (state.disabledMeshIds === prev.disabledMeshIds) return;
+            models.applyMeshVisibility(state.disabledMeshIds);
+          },
+        );
         const unsubWire = useModelStore.subscribe((state, prev) => {
           if (state.wireframe !== prev.wireframe) {
             models.setWireframe(state.wireframe);
@@ -340,6 +347,7 @@ export function usePlayCanvasEditor() {
           unsubSettings();
           unsubEditor();
           unsubAppearance();
+          unsubMeshVisibility();
           unsubWire();
           app.off("update", onUpdate);
           unbindResize();
@@ -366,6 +374,7 @@ export function usePlayCanvasEditor() {
       destroyed = true;
       cleanup?.();
       useModelStore.getState().setEngineReady(false);
+      useModelStore.getState().setMeshes([]);
     };
   }, []);
 
