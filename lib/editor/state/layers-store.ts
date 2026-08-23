@@ -1,5 +1,10 @@
 import { create } from "zustand";
 import {
+  rotateRingAround,
+  scaleRingAround,
+  translateRing,
+} from "@/lib/editor/geo/shape-overlay";
+import {
   cloneLayer,
   cloneLayers,
   nextLayerId,
@@ -20,6 +25,8 @@ type UpdateLayerPatch = Partial<
 type LayersState = {
   layers: SceneLayer[];
   selectedId: string | null;
+  /** Bumps whenever selection is set so UI can re-expand the card. */
+  selectionTick: number;
   setSelectedId: (id: string | null) => void;
   addLayer: (layer: AddLayerInput) => SceneLayer;
   updateLayer: (id: string, patch: UpdateLayerPatch) => void;
@@ -36,8 +43,14 @@ type LayersState = {
 export const useLayersStore = create<LayersState>((set, get) => ({
   layers: [],
   selectedId: null,
+  selectionTick: 0,
 
-  setSelectedId: (selectedId) => set({ selectedId }),
+  setSelectedId: (selectedId) =>
+    set((state) => ({
+      selectedId,
+      selectionTick:
+        selectedId != null ? state.selectionTick + 1 : state.selectionTick,
+    })),
 
   addLayer: (input) => {
     const id = input.id ?? nextLayerId(get().layers);
@@ -45,6 +58,7 @@ export const useLayersStore = create<LayersState>((set, get) => ({
     set((state) => ({
       layers: [...state.layers, layer],
       selectedId: id,
+      selectionTick: state.selectionTick + 1,
     }));
     return layer;
   },
@@ -82,6 +96,7 @@ export const useLayersStore = create<LayersState>((set, get) => ({
           fillColor: patch.fillColor ?? layer.fillColor,
           strokeColor: patch.strokeColor ?? layer.strokeColor,
           strokeWidth: patch.strokeWidth ?? layer.strokeWidth,
+          ring: patch.ring !== undefined ? patch.ring : layer.ring,
           pose:
             patch.pose && patch.pose.space === "geo"
               ? patch.pose
@@ -104,9 +119,48 @@ export const useLayersStore = create<LayersState>((set, get) => ({
             pose: { ...layer.pose, ...patch },
           });
         }
+
+        const nextPose = { ...layer.pose, ...patch };
+        if (
+          layer.shape === "free" &&
+          layer.ring &&
+          layer.ring.length >= 3
+        ) {
+          let ring = layer.ring;
+          const dLng = nextPose.lng - layer.pose.lng;
+          const dLat = nextPose.lat - layer.pose.lat;
+          if (dLng !== 0 || dLat !== 0) {
+            ring = translateRing(ring, dLng, dLat);
+          }
+          if (
+            patch.widthMeters != null &&
+            layer.pose.widthMeters > 0 &&
+            patch.widthMeters !== layer.pose.widthMeters
+          ) {
+            const scale = nextPose.widthMeters / layer.pose.widthMeters;
+            ring = scaleRingAround(ring, nextPose.lng, nextPose.lat, scale);
+          }
+          if (
+            patch.bearing != null &&
+            patch.bearing !== layer.pose.bearing
+          ) {
+            ring = rotateRingAround(
+              ring,
+              nextPose.lng,
+              nextPose.lat,
+              nextPose.bearing - layer.pose.bearing,
+            );
+          }
+          return cloneLayer({
+            ...layer,
+            pose: nextPose,
+            ring,
+          });
+        }
+
         return cloneLayer({
           ...layer,
-          pose: { ...layer.pose, ...patch },
+          pose: nextPose,
         });
       }),
     }));

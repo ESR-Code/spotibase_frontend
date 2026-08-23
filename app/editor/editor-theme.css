@@ -3298,6 +3298,127 @@
   color: var(--editor-fg);
 }
 
+.editor-layer-section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 1px solid var(--editor-line-soft);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--editor-muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.editor-layer-draw-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(63, 184, 175, 0.35);
+  background: rgba(63, 184, 175, 0.1);
+  color: var(--editor-fg);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.editor-layer-card {
+  border: 1px solid var(--editor-line-soft);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+}
+
+.editor-layer-card.selected {
+  border-color: rgba(230, 57, 70, 0.45);
+  background: rgba(230, 57, 70, 0.06);
+}
+
+.editor-layer-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 6px;
+  cursor: pointer;
+}
+
+.editor-layer-card-head:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.editor-layer-card-chevron {
+  flex-shrink: 0;
+  color: var(--editor-muted);
+  transition: transform 0.15s;
+  transform: rotate(-90deg);
+}
+
+.editor-layer-card-chevron.open {
+  transform: rotate(0deg);
+}
+
+.editor-layer-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 10px 10px;
+  border-top: 1px solid var(--editor-line-soft);
+  padding-top: 10px;
+}
+
+.editor-layer-subfields {
+  border: 1px solid var(--editor-line-soft);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.editor-layer-subfields-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  border: none;
+  background: transparent;
+  color: var(--editor-fg);
+  font-family: var(--font-sora), sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.editor-layer-subfields-head:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.editor-layer-subfields-chevron {
+  color: var(--editor-muted);
+  transition: transform 0.15s;
+  transform: rotate(-90deg);
+}
+
+.editor-layer-subfields.open .editor-layer-subfields-chevron {
+  transform: rotate(0deg);
+}
+
+.editor-layer-subfields-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 9px 9px;
+  border-top: 1px solid var(--editor-line-soft);
+  padding-top: 9px;
+}
+
 .editor-layer-shape-menu {
   position: absolute;
   top: calc(100% + 4px);

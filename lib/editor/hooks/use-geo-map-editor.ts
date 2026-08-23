@@ -11,6 +11,7 @@ import {
   type GeoMapViewport,
 } from "@/lib/editor/geo/resolve-home-viewport";
 import { isMapViewportPose } from "@/lib/editor/constants/default-settings";
+import { poseFromRing } from "@/lib/editor/geo/shape-overlay";
 import { overlayHitLayerId, layerIdFromHitLayer } from "@/lib/editor/layers/overlay-ids";
 import {
   clearEditorSelection,
@@ -21,7 +22,9 @@ import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useGeoStore } from "@/lib/editor/state/geo-store";
 import { useLayersStore } from "@/lib/editor/state/layers-store";
 import { useMapViewportStore } from "@/lib/editor/state/map-viewport-store";
+import { useShapeDrawStore } from "@/lib/editor/state/shape-draw-store";
 import {
+  syncActiveSceneLayers,
   syncActiveSceneSettings,
   useScenesStore,
 } from "@/lib/editor/state/scenes-store";
@@ -33,7 +36,59 @@ import {
 } from "@/lib/editor/state/preview-visibility-store";
 import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
 import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
-import { isGeoOverlay } from "@/lib/editor/types/scene-layer";
+import {
+  DEFAULT_SHAPE_FILL,
+  DEFAULT_SHAPE_STROKE,
+  DEFAULT_SHAPE_STROKE_WIDTH,
+  isGeoOverlay,
+  isShapeOverlayLayer,
+  shapeOverlayLabel,
+} from "@/lib/editor/types/scene-layer";
+
+function openLayersDrawer() {
+  const ui = useUIStore.getState();
+  ui.setOutlinerCollapsed(false);
+  ui.setOutlinerTab("layers");
+  ui.setPropertiesDrawerOpen(false);
+}
+
+function finishFreeShapeDraw(ring: [number, number][]) {
+  if (ring.length < 3) {
+    toast.error("Add at least 3 points, then close the shape");
+    return;
+  }
+  const count =
+    useLayersStore.getState().layers.filter(isShapeOverlayLayer).length + 1;
+  const layer = useLayersStore.getState().addLayer({
+    kind: "shape-overlay",
+    name: `${shapeOverlayLabel("free")} ${count}`,
+    visible: true,
+    locked: false,
+    opacity: 1,
+    shape: "free",
+    fillColor: DEFAULT_SHAPE_FILL,
+    strokeColor: DEFAULT_SHAPE_STROKE,
+    strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH,
+    ring,
+    pose: poseFromRing(ring),
+  });
+  syncActiveSceneLayers();
+  useShapeDrawStore.getState().cancel();
+  selectLayerExclusive(layer.id);
+  openLayersDrawer();
+  toast.success("Free shape added");
+}
+
+function pointNearScreen(
+  map: MapLibreMap,
+  a: { x: number; y: number },
+  lng: number,
+  lat: number,
+  thresholdPx = 14,
+) {
+  const projected = map.project({ lng, lat });
+  return Math.hypot(projected.x - a.x, projected.y - a.y) <= thresholdPx;
+}
 
 function currentViewport(map: MapLibreMap): GeoMapViewport {
   const center = map.getCenter();
@@ -174,6 +229,20 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
       const editor = useEditorStore.getState();
       if (editor.isPreview) return;
 
+      const draw = useShapeDrawStore.getState();
+      if (draw.drawing) {
+        const { lng, lat } = event.lngLat;
+        if (
+          draw.points.length >= 3 &&
+          pointNearScreen(map, event.point, draw.points[0]![0], draw.points[0]![1])
+        ) {
+          finishFreeShapeDraw(draw.points);
+          return;
+        }
+        draw.addPoint(lng, lat);
+        return;
+      }
+
       if (editor.mode === "add") {
         const created = editor.addHotspot({
           x: event.lngLat.lng,
@@ -201,13 +270,31 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
           const hitId = hits[0] ? layerIdFromHitLayer(hits[0].layer.id) : null;
           if (hitId) {
             selectLayerExclusive(hitId);
-            useUIStore.getState().setOutlinerTab("layers");
-            useUIStore.getState().setPropertiesDrawerOpen(false);
+            openLayersDrawer();
             return;
           }
         }
         clearEditorSelection();
         useUIStore.getState().setPropertiesDrawerOpen(false);
+      }
+    };
+
+    const onMouseMove = (event: MapMouseEvent) => {
+      const draw = useShapeDrawStore.getState();
+      if (!draw.drawing) return;
+      draw.setCursor(event.lngLat.lng, event.lngLat.lat);
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const draw = useShapeDrawStore.getState();
+      if (!draw.drawing) return;
+      if (event.key === "Escape") {
+        draw.cancel();
+        toast.message("Free shape drawing cancelled");
+        return;
+      }
+      if (event.key === "Enter") {
+        finishFreeShapeDraw(draw.points);
       }
     };
 
@@ -217,6 +304,8 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
     };
 
     map.on("click", onClick);
+    map.on("mousemove", onMouseMove);
+    window.addEventListener("keydown", onKeyDown);
     map.on("move", onMove);
     onMove();
 
@@ -343,7 +432,9 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
 
     return () => {
       map.off("click", onClick);
+      map.off("mousemove", onMouseMove);
       map.off("move", onMove);
+      window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("editor:reset-camera", onResetCamera);
       window.removeEventListener("editor:zoom", onZoom);
       window.removeEventListener(

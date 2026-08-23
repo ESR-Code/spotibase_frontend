@@ -9,6 +9,7 @@ import {
   overlayQuadPolygon,
 } from "@/lib/editor/geo/overlay-quad";
 import {
+  freeRingBoundsQuad,
   shapeOverlayBoundsQuad,
   shapeOverlayPolygon,
 } from "@/lib/editor/geo/shape-overlay";
@@ -27,6 +28,7 @@ import {
 } from "@/lib/editor/layers/overlay-ids";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useLayersStore } from "@/lib/editor/state/layers-store";
+import { useShapeDrawStore } from "@/lib/editor/state/shape-draw-store";
 import {
   isPreviewLayerVisible,
   usePreviewVisibilityStore,
@@ -83,7 +85,7 @@ function syncShapeLayer(map: MapLibreMap, layer: ShapeOverlayLayer) {
   const lineId = shapeLineLayerId(layer.id);
   const hitSrc = overlayHitSourceId(layer.id);
   const hitId = overlayHitLayerId(layer.id);
-  const polygon = shapeOverlayPolygon(layer.pose, layer.shape);
+  const polygon = shapeOverlayPolygon(layer.pose, layer.shape, layer.ring);
   const fillOpacity = layer.opacity * 0.55;
   const lineOpacity = layer.opacity;
 
@@ -310,7 +312,12 @@ export function GeoOverlayLayers() {
     };
   }, [map]);
 
-  return <GeoOverlayGizmo />;
+  return (
+    <>
+      <FreeShapeDrawOverlay />
+      <GeoOverlayGizmo />
+    </>
+  );
 }
 
 type DragState =
@@ -323,6 +330,136 @@ type DragState =
     }
   | { kind: "scale"; startDist: number; startWidth: number }
   | { kind: "rotate" };
+
+const DRAW_SRC = "editor-shape-draw-src";
+const DRAW_FILL = "editor-shape-draw-fill";
+const DRAW_LINE = "editor-shape-draw-line";
+const DRAW_POINTS = "editor-shape-draw-points";
+
+function FreeShapeDrawOverlay() {
+  const { map, isLoaded } = useMap();
+  const drawing = useShapeDrawStore((s) => s.drawing);
+  const points = useShapeDrawStore((s) => s.points);
+  const cursor = useShapeDrawStore((s) => s.cursor);
+
+  useEffect(() => {
+    if (!map || !isLoaded) return;
+
+    const remove = () => {
+      if (map.getLayer(DRAW_POINTS)) map.removeLayer(DRAW_POINTS);
+      if (map.getLayer(DRAW_LINE)) map.removeLayer(DRAW_LINE);
+      if (map.getLayer(DRAW_FILL)) map.removeLayer(DRAW_FILL);
+      if (map.getSource(DRAW_SRC)) map.removeSource(DRAW_SRC);
+    };
+
+    if (!drawing) {
+      remove();
+      return;
+    }
+
+    const preview =
+      cursor && points.length > 0 ? [...points, cursor] : points;
+    const lineCoords =
+      preview.length > 0
+        ? preview.map(([lng, lat]) => [lng, lat])
+        : [];
+    const canFill = preview.length >= 3;
+    const data: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: [
+        ...(lineCoords.length > 0
+          ? [
+              {
+                type: "Feature" as const,
+                properties: { kind: "line" },
+                geometry: {
+                  type: "LineString" as const,
+                  coordinates: lineCoords,
+                },
+              },
+            ]
+          : []),
+        ...(canFill
+          ? [
+              {
+                type: "Feature" as const,
+                properties: { kind: "fill" },
+                geometry: {
+                  type: "Polygon" as const,
+                  coordinates: [[...lineCoords, lineCoords[0]!]],
+                },
+              },
+            ]
+          : []),
+        ...points.map(([lng, lat], index) => ({
+          type: "Feature" as const,
+          properties: { kind: "point", index },
+          geometry: {
+            type: "Point" as const,
+            coordinates: [lng, lat],
+          },
+        })),
+      ],
+    };
+
+    const source = map.getSource(DRAW_SRC) as GeoJSONSource | undefined;
+    if (source) {
+      source.setData(data);
+    } else {
+      map.addSource(DRAW_SRC, { type: "geojson", data });
+      map.addLayer({
+        id: DRAW_FILL,
+        type: "fill",
+        source: DRAW_SRC,
+        filter: ["==", ["get", "kind"], "fill"],
+        paint: {
+          "fill-color": "#3fb8af",
+          "fill-opacity": 0.2,
+        },
+      });
+      map.addLayer({
+        id: DRAW_LINE,
+        type: "line",
+        source: DRAW_SRC,
+        filter: ["==", ["get", "kind"], "line"],
+        paint: {
+          "line-color": "#3fb8af",
+          "line-width": 2,
+          "line-dasharray": [2, 1],
+        },
+      });
+      map.addLayer({
+        id: DRAW_POINTS,
+        type: "circle",
+        source: DRAW_SRC,
+        filter: ["==", ["get", "kind"], "point"],
+        paint: {
+          "circle-radius": 5,
+          "circle-color": "#3fb8af",
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#ecfeff",
+        },
+      });
+    }
+
+    return () => {
+      if (!drawing) remove();
+    };
+  }, [map, isLoaded, drawing, points, cursor]);
+
+  useEffect(() => {
+    if (!map) return;
+    return () => {
+      if (!map.getStyle()) return;
+      if (map.getLayer(DRAW_POINTS)) map.removeLayer(DRAW_POINTS);
+      if (map.getLayer(DRAW_LINE)) map.removeLayer(DRAW_LINE);
+      if (map.getLayer(DRAW_FILL)) map.removeLayer(DRAW_FILL);
+      if (map.getSource(DRAW_SRC)) map.removeSource(DRAW_SRC);
+    };
+  }, [map]);
+
+  return null;
+}
 
 function pointerOnMap(
   map: MapLibreMap,
@@ -358,9 +495,14 @@ function GeoOverlayGizmo() {
 
   const pose = layer.pose;
   const quad =
-    layer.kind === "image-overlay"
-      ? geoOverlayQuad(pose, layer.naturalWidth, layer.naturalHeight)
-      : shapeOverlayBoundsQuad(pose);
+    layer.kind === "shape-overlay" &&
+    layer.shape === "free" &&
+    layer.ring &&
+    layer.ring.length >= 3
+      ? freeRingBoundsQuad(layer.ring)
+      : layer.kind === "image-overlay"
+        ? geoOverlayQuad(pose, layer.naturalWidth, layer.naturalHeight)
+        : shapeOverlayBoundsQuad(pose);
   const points = quad.map(([lng, lat]) => map.project({ lng, lat }));
   const polygon = points.map((point) => `${point.x},${point.y}`).join(" ");
   const center = map.project({ lng: pose.lng, lat: pose.lat });

@@ -8,6 +8,7 @@ import {
   EyeOff,
   ImageIcon,
   Lock,
+  PenLine,
   Plus,
   Square,
   Trash2,
@@ -30,6 +31,8 @@ import { selectLayerExclusive } from "@/lib/editor/state/exclusive-selection";
 import { useLayersStore } from "@/lib/editor/state/layers-store";
 import { useMapViewportStore } from "@/lib/editor/state/map-viewport-store";
 import { syncActiveSceneLayers } from "@/lib/editor/state/scenes-store";
+import { useShapeDrawStore } from "@/lib/editor/state/shape-draw-store";
+import { useUIStore } from "@/lib/editor/state/ui-store";
 import { markerColorSwatches } from "@/lib/editor/theme/tokens";
 import {
   DEFAULT_SHAPE_FILL,
@@ -41,6 +44,7 @@ import {
   isShapeOverlayLayer,
   shapeOverlayLabel,
   SHAPE_OVERLAY_KINDS,
+  SHAPE_PRIMITIVE_KINDS,
   type SceneLayer,
   type ShapeOverlayKind,
   type ShapeOverlayLayer,
@@ -70,11 +74,14 @@ function defaultGeoPose() {
 export function LayersPanel() {
   const layers = useLayersStore((s) => s.layers);
   const selectedId = useLayersStore((s) => s.selectedId);
+  const selectionTick = useLayersStore((s) => s.selectionTick);
   const inputRef = useRef<HTMLInputElement>(null);
   const [imagesOpen, setImagesOpen] = useState(true);
   const [shapesOpen, setShapesOpen] = useState(true);
   const [shapeMenuOpen, setShapeMenuOpen] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
   const shapeMenuRef = useRef<HTMLDivElement>(null);
+  const drawing = useShapeDrawStore((s) => s.drawing);
 
   useEffect(() => {
     if (!shapeMenuOpen) return;
@@ -87,16 +94,37 @@ export function LayersPanel() {
     return () => window.removeEventListener("pointerdown", onPointerDown);
   }, [shapeMenuOpen]);
 
+  useEffect(() => {
+    if (!selectedId) return;
+    setExpandedIds((prev) => ({ ...prev, [selectedId]: true }));
+    const layer = useLayersStore
+      .getState()
+      .layers.find((item) => item.id === selectedId);
+    if (layer?.kind === "image-overlay") setImagesOpen(true);
+    if (layer?.kind === "shape-overlay") setShapesOpen(true);
+  }, [selectedId, selectionTick]);
+
   const imageLayers = layers.filter(isImageOverlayLayer);
   const shapeLayers = layers.filter(isShapeOverlayLayer);
   const imageListed = [...imageLayers].reverse();
   const shapeListed = [...shapeLayers].reverse();
 
+  const toggleExpanded = (id: string) => {
+    const alreadySelected = useLayersStore.getState().selectedId === id;
+    const currentlyExpanded = !!expandedIds[id];
+    if (alreadySelected && currentlyExpanded) {
+      setExpandedIds((prev) => ({ ...prev, [id]: false }));
+      return;
+    }
+    selectLayerExclusive(id);
+    // New / re-selection expands via selectionTick effect.
+  };
+
   const addFromFile = async (file: File | undefined) => {
     if (!file) return;
     try {
       const image = await readOverlayImageFile(file);
-      useLayersStore.getState().addLayer({
+      const layer = useLayersStore.getState().addLayer({
         kind: "image-overlay",
         name: image.name,
         visible: true,
@@ -110,6 +138,7 @@ export function LayersPanel() {
       });
       persistLayers();
       setImagesOpen(true);
+      setExpandedIds((prev) => ({ ...prev, [layer.id]: true }));
       toast.success("Overlay added — drag it on the map to position");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not add overlay");
@@ -117,9 +146,19 @@ export function LayersPanel() {
   };
 
   const addShape = (shape: ShapeOverlayKind) => {
+    setShapeMenuOpen(false);
+    if (shape === "free") {
+      useShapeDrawStore.getState().begin();
+      useUIStore.getState().setOutlinerCollapsed(false);
+      useUIStore.getState().setOutlinerTab("layers");
+      toast.message("Click the map to place points", {
+        description: "Click the first point or press Enter to close. Esc cancels.",
+      });
+      return;
+    }
     const count =
       useLayersStore.getState().layers.filter(isShapeOverlayLayer).length + 1;
-    useLayersStore.getState().addLayer({
+    const layer = useLayersStore.getState().addLayer({
       kind: "shape-overlay",
       name: `${shapeOverlayLabel(shape)} ${count}`,
       visible: true,
@@ -129,18 +168,36 @@ export function LayersPanel() {
       fillColor: DEFAULT_SHAPE_FILL,
       strokeColor: DEFAULT_SHAPE_STROKE,
       strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH,
+      ring: null,
       pose: defaultGeoPose(),
     });
     persistLayers();
     setShapesOpen(true);
-    setShapeMenuOpen(false);
+    setExpandedIds((prev) => ({ ...prev, [layer.id]: true }));
     toast.success("Shape added — drag it on the map to position");
   };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      {drawing ? (
+        <div className="editor-layer-draw-banner">
+          <span>Drawing free shape…</span>
+          <button
+            type="button"
+            className="editor-btn-ghost text-[11px] font-semibold"
+            onClick={() => {
+              useShapeDrawStore.getState().cancel();
+              toast.message("Free shape drawing cancelled");
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      ) : null}
+
       <LayerSection
         title="Image overlays"
+        count={imageLayers.length}
         open={imagesOpen}
         onToggle={() => setImagesOpen((value) => !value)}
         action={
@@ -181,10 +238,12 @@ export function LayersPanel() {
           </div>
         ) : (
           imageListed.map((layer, visualIndex) => (
-            <LayerListItem
+            <LayerAccordionItem
               key={layer.id}
               layer={layer}
               selected={layer.id === selectedId}
+              expanded={!!expandedIds[layer.id]}
+              onToggleExpand={() => toggleExpanded(layer.id)}
               zIndex={imageLayers.length - visualIndex}
               canRaise={visualIndex > 0}
               canLower={visualIndex < imageListed.length - 1}
@@ -201,6 +260,7 @@ export function LayersPanel() {
 
       <LayerSection
         title="Shape overlays"
+        count={shapeLayers.length}
         open={shapesOpen}
         onToggle={() => setShapesOpen((value) => !value)}
         action={
@@ -239,16 +299,17 @@ export function LayersPanel() {
               Add a simple shape
             </div>
             <div className="text-[11px]">
-              Place a square, triangle, or circle on the map, then edit fill and
-              stroke in the layer settings.
+              Place a square, triangle, circle, or freehand shape on the map.
             </div>
           </div>
         ) : (
           shapeListed.map((layer, visualIndex) => (
-            <LayerListItem
+            <LayerAccordionItem
               key={layer.id}
               layer={layer}
               selected={layer.id === selectedId}
+              expanded={!!expandedIds[layer.id]}
+              onToggleExpand={() => toggleExpanded(layer.id)}
               zIndex={shapeLayers.length - visualIndex}
               canRaise={visualIndex > 0}
               canLower={visualIndex < shapeListed.length - 1}
@@ -274,12 +335,14 @@ export function LayersPanel() {
 
 function LayerSection({
   title,
+  count,
   open,
   onToggle,
   action,
   children,
 }: {
   title: string;
+  count: number;
   open: boolean;
   onToggle: () => void;
   action: ReactNode;
@@ -306,6 +369,7 @@ function LayerSection({
           <span className="text-[11px] font-semibold uppercase tracking-wider">
             {title}
           </span>
+          <span className="editor-layer-section-count">{count}</span>
         </button>
         {action}
       </div>
@@ -316,9 +380,11 @@ function LayerSection({
   );
 }
 
-function LayerListItem({
+function LayerAccordionItem({
   layer,
   selected,
+  expanded,
+  onToggleExpand,
   zIndex,
   canRaise,
   canLower,
@@ -327,6 +393,8 @@ function LayerListItem({
 }: {
   layer: SceneLayer;
   selected: boolean;
+  expanded: boolean;
+  onToggleExpand: () => void;
   zIndex: number;
   canRaise: boolean;
   canLower: boolean;
@@ -334,16 +402,25 @@ function LayerListItem({
   thumb: ReactNode;
 }) {
   return (
-    <div>
+    <div
+      className={`editor-layer-card ${selected ? "selected" : ""} ${expanded ? "expanded" : ""}`}
+    >
       <div
-        className={`editor-hot-item ${selected ? "selected" : ""}`}
-        onClick={() => selectLayerExclusive(layer.id)}
+        className="editor-layer-card-head"
+        onClick={onToggleExpand}
         onKeyDown={(event) => {
-          if (event.key === "Enter") selectLayerExclusive(layer.id);
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onToggleExpand();
+          }
         }}
         role="button"
         tabIndex={0}
+        aria-expanded={expanded}
       >
+        <ChevronDown
+          className={`editor-layer-card-chevron h-3.5 w-3.5 ${expanded ? "open" : ""}`}
+        />
         {thumb}
         <div className="min-w-0 flex-1">
           <div className="truncate text-[12.5px] font-semibold">{layer.name}</div>
@@ -405,19 +482,24 @@ function LayerListItem({
           <Trash2 className="h-3 w-3" />
         </button>
       </div>
-      {selected && isGeoImageOverlay(layer) ? (
-        <ImageLayerFields
-          layerId={layer.id}
-          canRaise={canRaise}
-          canLower={canLower}
-        />
-      ) : null}
-      {selected && isGeoShapeOverlay(layer) ? (
-        <ShapeLayerFields
-          layerId={layer.id}
-          canRaise={canRaise}
-          canLower={canLower}
-        />
+
+      {expanded ? (
+        <div className="editor-layer-card-body">
+          {isGeoImageOverlay(layer) ? (
+            <ImageLayerFields
+              layerId={layer.id}
+              canRaise={canRaise}
+              canLower={canLower}
+            />
+          ) : null}
+          {isGeoShapeOverlay(layer) ? (
+            <ShapeLayerFields
+              layerId={layer.id}
+              canRaise={canRaise}
+              canLower={canLower}
+            />
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
@@ -433,70 +515,57 @@ function ImageLayerFields({
   canLower: boolean;
 }) {
   const layer = useLayersStore((s) => s.layers.find((item) => item.id === layerId));
-  const [open, setOpen] = useState(true);
   if (!layer || !isGeoImageOverlay(layer)) return null;
   const pose = layer.pose;
   const blend = layer.blend ?? 0;
 
   return (
-    <div className={`editor-layer-fields ${open ? "open" : ""}`}>
-      <button
-        type="button"
-        className="editor-layer-fields-head"
-        onClick={() => setOpen((value) => !value)}
-      >
-        Overlay settings
-        <ChevronDown className="editor-layer-fields-chevron h-3 w-3" />
-      </button>
-      {open ? (
-        <div className="editor-layer-fields-body">
-          <OrderButtons
-            canRaise={canRaise}
-            canLower={canLower}
-            layerId={layer.id}
-          />
-          <NameField layerId={layer.id} value={layer.name} />
-          <OpacityField layerId={layer.id} value={layer.opacity} />
-          <div>
-            <FieldLabel className="flex items-center justify-between gap-2">
-              <span>Blend</span>
-              <span className="flex items-center gap-2">
-                <span
-                  className="editor-layer-blend-preview"
-                  style={
-                    {
-                      "--blend-inner": `${Math.max(0, (1 - blend) * 70)}%`,
-                    } as CSSProperties
-                  }
-                  title="Opacity map: white center, transparent sides"
-                />
-                <span>{Math.round(blend * 100)}%</span>
-              </span>
-            </FieldLabel>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.05}
-              value={blend}
-              onChange={(event) => {
-                useLayersStore.getState().updateLayer(layer.id, {
-                  blend: parseFloat(event.target.value),
-                });
-                persistLayers();
-              }}
+    <>
+      <OrderButtons
+        canRaise={canRaise}
+        canLower={canLower}
+        layerId={layer.id}
+      />
+      <NameField layerId={layer.id} value={layer.name} />
+      <OpacityField layerId={layer.id} value={layer.opacity} />
+      <div>
+        <FieldLabel className="flex items-center justify-between gap-2">
+          <span>Blend</span>
+          <span className="flex items-center gap-2">
+            <span
+              className="editor-layer-blend-preview"
+              style={
+                {
+                  "--blend-inner": `${Math.max(0, (1 - blend) * 70)}%`,
+                } as CSSProperties
+              }
+              title="Opacity map: white center, transparent sides"
             />
-            <p
-              className="mt-1 text-[10px] leading-snug"
-              style={{ color: "var(--editor-muted-2)" }}
-            >
-              Feathers the sides of the image into the map.
-            </p>
-          </div>
-          <GeoPoseFields layerId={layer.id} locked={layer.locked} pose={pose} />
-        </div>
-      ) : null}
-    </div>
+            <span>{Math.round(blend * 100)}%</span>
+          </span>
+        </FieldLabel>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.05}
+          value={blend}
+          onChange={(event) => {
+            useLayersStore.getState().updateLayer(layer.id, {
+              blend: parseFloat(event.target.value),
+            });
+            persistLayers();
+          }}
+        />
+        <p
+          className="mt-1 text-[10px] leading-snug"
+          style={{ color: "var(--editor-muted-2)" }}
+        >
+          Feathers the sides of the image into the map.
+        </p>
+      </div>
+      <GeoPoseFields layerId={layer.id} locked={layer.locked} pose={pose} />
+    </>
   );
 }
 
@@ -512,7 +581,6 @@ function ShapeLayerFields({
   const layer = useLayersStore((s) =>
     s.layers.find((item) => item.id === layerId),
   ) as ShapeOverlayLayer | undefined;
-  const [open, setOpen] = useState(true);
   if (!layer || !isGeoShapeOverlay(layer)) return null;
   const pose = layer.pose;
   const isCustomFill = !markerColorSwatches.includes(
@@ -521,88 +589,89 @@ function ShapeLayerFields({
   const isCustomStroke = !markerColorSwatches.includes(
     layer.strokeColor as (typeof markerColorSwatches)[number],
   );
+  const isFree = layer.shape === "free";
 
   return (
-    <div className={`editor-layer-fields ${open ? "open" : ""}`}>
-      <button
-        type="button"
-        className="editor-layer-fields-head"
-        onClick={() => setOpen((value) => !value)}
-      >
-        Shape settings
-        <ChevronDown className="editor-layer-fields-chevron h-3 w-3" />
-      </button>
-      {open ? (
-        <div className="editor-layer-fields-body">
-          <OrderButtons
-            canRaise={canRaise}
-            canLower={canLower}
-            layerId={layer.id}
-          />
-          <NameField layerId={layer.id} value={layer.name} />
-          <div>
-            <FieldLabel>Shape</FieldLabel>
-            <div className="editor-pill-row">
-              {SHAPE_OVERLAY_KINDS.map((shape) => (
-                <TypePill
-                  key={shape}
-                  active={layer.shape === shape}
-                  onClick={() => {
-                    useLayersStore.getState().updateLayer(layer.id, { shape });
-                    persistLayers();
-                  }}
-                >
-                  {shape}
-                </TypePill>
-              ))}
-            </div>
+    <>
+      <OrderButtons
+        canRaise={canRaise}
+        canLower={canLower}
+        layerId={layer.id}
+      />
+      <NameField layerId={layer.id} value={layer.name} />
+      {isFree ? (
+        <p
+          className="text-[11px] leading-snug"
+          style={{ color: "var(--editor-muted-2)" }}
+        >
+          Freehand polygon. Move, scale, and rotate with the on-map handles.
+        </p>
+      ) : (
+        <div>
+          <FieldLabel>Shape</FieldLabel>
+          <div className="editor-pill-row">
+            {SHAPE_PRIMITIVE_KINDS.map((shape) => (
+              <TypePill
+                key={shape}
+                active={layer.shape === shape}
+                onClick={() => {
+                  useLayersStore.getState().updateLayer(layer.id, {
+                    shape,
+                    ring: null,
+                  });
+                  persistLayers();
+                }}
+              >
+                {shape}
+              </TypePill>
+            ))}
           </div>
-          <div>
-            <FieldLabel>Fill</FieldLabel>
-            <LayerColorRow
-              value={layer.fillColor}
-              isCustom={isCustomFill}
-              onChange={(fillColor) => {
-                useLayersStore.getState().updateLayer(layer.id, { fillColor });
-                persistLayers();
-              }}
-            />
-          </div>
-          <div>
-            <FieldLabel>Stroke</FieldLabel>
-            <LayerColorRow
-              value={layer.strokeColor}
-              isCustom={isCustomStroke}
-              onChange={(strokeColor) => {
-                useLayersStore.getState().updateLayer(layer.id, { strokeColor });
-                persistLayers();
-              }}
-            />
-          </div>
-          <div>
-            <FieldLabel className="flex justify-between">
-              <span>Stroke width</span>
-              <span>{layer.strokeWidth}px</span>
-            </FieldLabel>
-            <input
-              type="range"
-              min={0}
-              max={12}
-              step={1}
-              value={layer.strokeWidth}
-              onChange={(event) => {
-                useLayersStore.getState().updateLayer(layer.id, {
-                  strokeWidth: Number(event.target.value),
-                });
-                persistLayers();
-              }}
-            />
-          </div>
-          <OpacityField layerId={layer.id} value={layer.opacity} />
-          <GeoPoseFields layerId={layer.id} locked={layer.locked} pose={pose} />
         </div>
-      ) : null}
-    </div>
+      )}
+      <div>
+        <FieldLabel>Fill</FieldLabel>
+        <LayerColorRow
+          value={layer.fillColor}
+          isCustom={isCustomFill}
+          onChange={(fillColor) => {
+            useLayersStore.getState().updateLayer(layer.id, { fillColor });
+            persistLayers();
+          }}
+        />
+      </div>
+      <div>
+        <FieldLabel>Stroke</FieldLabel>
+        <LayerColorRow
+          value={layer.strokeColor}
+          isCustom={isCustomStroke}
+          onChange={(strokeColor) => {
+            useLayersStore.getState().updateLayer(layer.id, { strokeColor });
+            persistLayers();
+          }}
+        />
+      </div>
+      <div>
+        <FieldLabel className="flex justify-between">
+          <span>Stroke width</span>
+          <span>{layer.strokeWidth}px</span>
+        </FieldLabel>
+        <input
+          type="range"
+          min={0}
+          max={12}
+          step={1}
+          value={layer.strokeWidth}
+          onChange={(event) => {
+            useLayersStore.getState().updateLayer(layer.id, {
+              strokeWidth: Number(event.target.value),
+            });
+            persistLayers();
+          }}
+        />
+      </div>
+      <OpacityField layerId={layer.id} value={layer.opacity} />
+      <GeoPoseFields layerId={layer.id} locked={layer.locked} pose={pose} />
+    </>
   );
 }
 
@@ -727,77 +796,94 @@ function GeoPoseFields({
   locked: boolean;
   pose: { lng: number; lat: number; widthMeters: number; bearing: number };
 }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <>
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <FieldLabel>Longitude</FieldLabel>
-          <input
-            className="editor-input"
-            type="number"
-            step="0.0001"
-            value={Number(pose.lng.toFixed(5))}
-            disabled={locked}
-            onChange={(event) => {
-              useLayersStore.getState().updateGeoPose(layerId, {
-                lng: Number(event.target.value),
-              });
-              persistLayers();
-            }}
-          />
+    <div className={`editor-layer-subfields ${open ? "open" : ""}`}>
+      <button
+        type="button"
+        className="editor-layer-subfields-head"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+      >
+        <span>Position</span>
+        <ChevronDown className="editor-layer-subfields-chevron h-3 w-3" />
+      </button>
+      {open ? (
+        <div className="editor-layer-subfields-body">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <FieldLabel>Longitude</FieldLabel>
+              <input
+                className="editor-input"
+                type="number"
+                step="0.0001"
+                value={Number(pose.lng.toFixed(5))}
+                disabled={locked}
+                onChange={(event) => {
+                  useLayersStore.getState().updateGeoPose(layerId, {
+                    lng: Number(event.target.value),
+                  });
+                  persistLayers();
+                }}
+              />
+            </div>
+            <div>
+              <FieldLabel>Latitude</FieldLabel>
+              <input
+                className="editor-input"
+                type="number"
+                step="0.0001"
+                value={Number(pose.lat.toFixed(5))}
+                disabled={locked}
+                onChange={(event) => {
+                  useLayersStore.getState().updateGeoPose(layerId, {
+                    lat: Number(event.target.value),
+                  });
+                  persistLayers();
+                }}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <FieldLabel>Width (m)</FieldLabel>
+              <input
+                className="editor-input"
+                type="number"
+                min={10}
+                step="1"
+                value={Math.round(pose.widthMeters)}
+                disabled={locked}
+                onChange={(event) => {
+                  const widthMeters = Math.max(10, Number(event.target.value));
+                  useLayersStore.getState().updateGeoPose(layerId, {
+                    widthMeters,
+                  });
+                  persistLayers();
+                }}
+              />
+            </div>
+            <div>
+              <FieldLabel>Rotation</FieldLabel>
+              <input
+                className="editor-input"
+                type="number"
+                step="1"
+                value={Math.round(pose.bearing)}
+                disabled={locked}
+                onChange={(event) => {
+                  useLayersStore.getState().updateGeoPose(layerId, {
+                    bearing: Number(event.target.value),
+                  });
+                  persistLayers();
+                }}
+              />
+            </div>
+          </div>
         </div>
-        <div>
-          <FieldLabel>Latitude</FieldLabel>
-          <input
-            className="editor-input"
-            type="number"
-            step="0.0001"
-            value={Number(pose.lat.toFixed(5))}
-            disabled={locked}
-            onChange={(event) => {
-              useLayersStore.getState().updateGeoPose(layerId, {
-                lat: Number(event.target.value),
-              });
-              persistLayers();
-            }}
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <FieldLabel>Width (m)</FieldLabel>
-          <input
-            className="editor-input"
-            type="number"
-            min={10}
-            step="1"
-            value={Math.round(pose.widthMeters)}
-            disabled={locked}
-            onChange={(event) => {
-              const widthMeters = Math.max(10, Number(event.target.value));
-              useLayersStore.getState().updateGeoPose(layerId, { widthMeters });
-              persistLayers();
-            }}
-          />
-        </div>
-        <div>
-          <FieldLabel>Rotation</FieldLabel>
-          <input
-            className="editor-input"
-            type="number"
-            step="1"
-            value={Math.round(pose.bearing)}
-            disabled={locked}
-            onChange={(event) => {
-              useLayersStore.getState().updateGeoPose(layerId, {
-                bearing: Number(event.target.value),
-              });
-              persistLayers();
-            }}
-          />
-        </div>
-      </div>
-    </>
+      ) : null}
+    </div>
   );
 }
 
@@ -810,6 +896,7 @@ function ShapeKindIcon({
 }) {
   if (shape === "triangle") return <Triangle className={className} />;
   if (shape === "circle") return <Circle className={className} />;
+  if (shape === "free") return <PenLine className={className} />;
   return <Square className={className} />;
 }
 

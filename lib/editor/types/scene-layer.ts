@@ -38,13 +38,18 @@ export type ImageOverlayLayer = {
   pose: ImageOverlayPose;
 };
 
-export type ShapeOverlayKind = "square" | "triangle" | "circle";
+export type ShapeOverlayKind = "square" | "triangle" | "circle" | "free";
 
 export const SHAPE_OVERLAY_KINDS: readonly ShapeOverlayKind[] = [
   "square",
   "triangle",
   "circle",
+  "free",
 ] as const;
+
+/** Primitive shapes that use pose-driven geometry (not a freehand ring). */
+export const SHAPE_PRIMITIVE_KINDS: readonly Exclude<ShapeOverlayKind, "free">[] =
+  ["square", "triangle", "circle"] as const;
 
 export const DEFAULT_SHAPE_FILL = "#3fb8af";
 export const DEFAULT_SHAPE_STROKE = "#ecfeff";
@@ -62,6 +67,11 @@ export type ShapeOverlayLayer = {
   strokeColor: string;
   /** Stroke width in screen pixels. */
   strokeWidth: number;
+  /**
+   * Closed freehand ring (lng/lat). Used when `shape === "free"`.
+   * First point is not duplicated; rendering closes the ring.
+   */
+  ring: [number, number][] | null;
   pose: OverlayGeoPose;
 };
 
@@ -151,6 +161,10 @@ export function cloneLayer(layer: SceneLayer): SceneLayer {
         ? layer.strokeWidth
         : DEFAULT_SHAPE_STROKE_WIDTH,
     ),
+    ring:
+      layer.shape === "free" && Array.isArray(layer.ring)
+        ? layer.ring.map(([lng, lat]) => [lng, lat] as [number, number])
+        : null,
     pose: cloneOverlayGeoPose(layer.pose),
   };
 }
