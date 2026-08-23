@@ -13,6 +13,7 @@ export const hotspotFormSchema = z.object({
   markerImage: z.string(),
   color: z.string(),
   pulse: z.boolean(),
+  wick: z.boolean(),
   category: z.string(),
   legendName: z.string(),
 });

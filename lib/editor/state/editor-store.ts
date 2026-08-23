@@ -72,6 +72,7 @@ function createHotspotData(
     icon: data.icon ?? "Info",
     markerImage: data.markerImage ?? "",
     pulse: data.pulse ?? false,
+    wick: data.wick ?? false,
     enabled: data.enabled ?? true,
     category: data.category ?? "",
     legendName: data.legendName ?? title,
@@ -225,6 +226,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       hotspots: hotspots.map((h) => ({
         ...h,
         shape: normalizeHotspotShape(h.shape),
+        wick: h.wick ?? false,
         position: { ...h.position },
         blocks: [...h.blocks],
         enabled: h.enabled ?? true,

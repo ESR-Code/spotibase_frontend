@@ -40,6 +40,7 @@ export function visualStyleKey(h: Hotspot): string {
     h.icon,
     h.markerImage ? h.markerImage.slice(0, 64) : "",
     h.pulse ? "1" : "0",
+    h.wick ? "1" : "0",
   ].join("|");
 }
 
@@ -79,6 +80,7 @@ export function createHotspotVisual(
   const stick = makeCylinder(pcModule, "Stick", stickMat);
   stick.setLocalScale(0.024, 0.2, 0.024);
   stick.setLocalPosition(0, -0.325, 0);
+  stick.enabled = !!hotspot.wick;
   root.addChild(stick);
 
   const haloMat = unlitMat(pcModule, color, 0);
@@ -138,7 +140,7 @@ export async function rebuildCore(
   replacePulseRingTexture(visual, pcModule, app, shape);
 
   const isImage = hotspot.style === "image";
-  visual.stick.enabled = !isImage;
+  visual.stick.enabled = !!hotspot.wick && !isImage;
 
   const requestKey = visualStyleKey(hotspot);
   visual.styleKey = requestKey;

@@ -213,6 +213,12 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
           checked={values.pulse}
           onChange={(checked) => form.setValue("pulse", checked)}
         />
+        <SwitchField
+          label="Wick"
+          description="Show a short pin under the marker"
+          checked={values.wick}
+          onChange={(checked) => form.setValue("wick", checked)}
+        />
       </SettingsSection>
 
       <SettingsSection

@@ -31,6 +31,7 @@ export function useHotspotForm() {
       markerImage: "",
       color: "#e63946",
       pulse: false,
+      wick: false,
       category: "",
       legendName: "",
     },
@@ -53,6 +54,7 @@ export function useHotspotForm() {
       markerImage: selected.markerImage,
       color: selected.color,
       pulse: selected.pulse,
+      wick: selected.wick ?? false,
       category: selected.category,
       legendName: selected.legendName,
     });
@@ -77,6 +79,7 @@ export function useHotspotForm() {
         markerImage: values.markerImage,
         color: values.color,
         pulse: values.pulse,
+        wick: values.wick,
         category: values.category,
         legendName: values.legendName,
       };

@@ -66,6 +66,8 @@ export function createHotspotManager(
         void rebuildCore(app, pcModule, existing, resolved);
       } else {
         existing.ring.enabled = !!resolved.pulse;
+        existing.stick.enabled =
+          !!resolved.wick && resolved.style !== "image";
       }
     }
   };

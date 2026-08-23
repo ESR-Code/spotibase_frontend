@@ -83,6 +83,7 @@ export function GeoHotspotMarker({
           className={cn(
             "editor-geo-marker",
             hotspotShapeClass(resolved.shape),
+            resolved.wick && "editor-geo-marker-has-wick",
             resolved.pulse && !hidden && "editor-geo-marker-pulse",
             selected && "editor-geo-marker-selected",
           )}
@@ -93,7 +94,12 @@ export function GeoHotspotMarker({
             } as React.CSSProperties
           }
         >
-          <span className="editor-geo-marker-stick" />
+          <span
+            className={cn(
+              "editor-geo-marker-stick",
+              !resolved.wick && "editor-geo-marker-stick-hidden",
+            )}
+          />
           <span className="editor-geo-marker-core">
             {resolved.style === "number" ? (
               <span className="editor-geo-marker-label editor-marker-shape-content">

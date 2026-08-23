@@ -44,6 +44,8 @@ export type Hotspot = {
   icon: string;
   markerImage: string;
   pulse: boolean;
+  /** Vertical pin/stick under the marker disc. Off by default. */
+  wick: boolean;
   /**
    * When false, the hotspot is hidden on the map/model and cannot be
    * interacted with. Toggled by Enable/Disable action nodes.
