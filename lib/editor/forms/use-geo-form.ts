@@ -17,6 +17,7 @@ function toFormValues(geo: GeoSettings): GeoFormValues {
     startLng: geo.start?.lng ?? null,
     startLat: geo.start?.lat ?? null,
     startZoom: geo.startZoom,
+    flatProjection: geo.flatProjection ?? false,
   };
 }
 
@@ -27,6 +28,7 @@ function toGeoSettings(values: GeoFormValues): Partial<GeoSettings> {
       ? { lng: values.startLng as number, lat: values.startLat as number }
       : null,
     startZoom: values.startZoom,
+    flatProjection: values.flatProjection,
   };
 }
 

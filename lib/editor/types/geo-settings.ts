@@ -10,4 +10,6 @@ export type GeoSettings = {
   startZoom: number;
   /** Basemap color template id from `GEO_MAP_STYLES`. */
   mapStyleId: string;
+  /** When true, use a flat mercator map instead of a 3D globe. */
+  flatProjection: boolean;
 };

@@ -15,6 +15,7 @@ import {
   handleGeoMarkerLeave,
   useGeoMapEditor,
 } from "@/lib/editor/hooks/use-geo-map-editor";
+import { geoMapProjection } from "@/lib/editor/geo/map-projection";
 import { geoMapStyleUrls } from "@/lib/editor/geo/map-styles";
 import { resolveGeoHomeViewport } from "@/lib/editor/geo/resolve-home-viewport";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -63,7 +64,7 @@ export function GeoMapViewport() {
       <Map
         theme="dark"
         styles={mapStyles}
-        projection={{ type: "globe" }}
+        projection={geoMapProjection(geo.flatProjection)}
         canvasContextAttributes={{ preserveDrawingBuffer: true }}
         minZoom={minZoom}
         maxZoom={maxZoom}

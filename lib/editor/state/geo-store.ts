@@ -16,6 +16,7 @@ function pickGeo(state: GeoState): GeoSettings {
     start: state.start,
     startZoom: state.startZoom,
     mapStyleId: state.mapStyleId,
+    flatProjection: state.flatProjection,
   });
 }
 

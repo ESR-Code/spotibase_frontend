@@ -5,10 +5,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Map, MapMarker, MarkerContent, useMap } from "@/components/ui/map";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
+import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import {
   DEFAULT_GEO_GLOBE_ZOOM,
   DEFAULT_GEO_PIN_ZOOM,
 } from "@/lib/editor/constants/default-settings";
+import { geoMapProjection } from "@/lib/editor/geo/map-projection";
 import { geoMapStyleUrls } from "@/lib/editor/geo/map-styles";
 import { searchNominatimPlaces, type NominatimHit } from "@/lib/editor/geo/nominatim";
 import { resolveGeoHomeViewport } from "@/lib/editor/geo/resolve-home-viewport";
@@ -154,9 +156,20 @@ export function GeoDetailsSection() {
   return (
     <div className="space-y-2.5">
       <p className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
-        Default view is a globe. Set a start pin to open this scene on those
-        coordinates.
+        Default view is a globe. Enable flat projection for a 2D map, or set a
+        start pin to open this scene on those coordinates.
       </p>
+
+      <SwitchField
+        label="Flat projection"
+        description="Use a flat map instead of a 3D globe"
+        checked={values.flatProjection}
+        onChange={(checked) => {
+          form.setValue("flatProjection", checked);
+          useGeoStore.getState().setGeo({ flatProjection: checked });
+          syncActiveSceneGeo();
+        }}
+      />
 
       <div>
         <FieldLabel>Place search</FieldLabel>
@@ -200,7 +213,7 @@ export function GeoDetailsSection() {
         <Map
           theme="dark"
           styles={mapStyles}
-          projection={{ type: "globe" }}
+          projection={geoMapProjection(values.flatProjection)}
           viewport={pickerViewport}
           attributionControl={false}
         >
