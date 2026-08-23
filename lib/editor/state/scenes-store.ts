@@ -57,6 +57,7 @@ function snapshotCurrentIntoScene(scene: Scene): Scene {
     ...scene,
     hotspots: editor.hotspots.map((h) => ({
       ...h,
+      shape: h.shape ?? "circle",
       position: { ...h.position },
       blocks: [...h.blocks],
       enabled: h.enabled ?? true,

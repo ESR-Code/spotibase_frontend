@@ -16,7 +16,13 @@ import { usePreviewMeshHighlightStore } from "@/lib/editor/state/preview-mesh-hi
 import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import { useCustomMenuToggleStore } from "@/lib/editor/state/custom-menu-toggle-store";
 import { hotspotTypeColors, PROJECT_NAME } from "@/lib/editor/theme/tokens";
-import type { EditorMode, Hotspot, Vec3 } from "@/lib/editor/types/hotspot";
+import {
+  DEFAULT_HOTSPOT_SHAPE,
+  normalizeHotspotShape,
+  type EditorMode,
+  type Hotspot,
+  type Vec3,
+} from "@/lib/editor/types/hotspot";
 
 type EditorState = {
   projectName: string;
@@ -61,6 +67,7 @@ function createHotspotData(
     type,
     color: data.color ?? hotspotTypeColors[type],
     style: data.style ?? "dot",
+    shape: normalizeHotspotShape(data.shape ?? DEFAULT_HOTSPOT_SHAPE),
     number: data.number !== undefined ? data.number : id,
     icon: data.icon ?? "Info",
     markerImage: data.markerImage ?? "",
@@ -217,6 +224,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({
       hotspots: hotspots.map((h) => ({
         ...h,
+        shape: normalizeHotspotShape(h.shape),
         position: { ...h.position },
         blocks: [...h.blocks],
         enabled: h.enabled ?? true,

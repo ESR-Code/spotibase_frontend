@@ -9,6 +9,22 @@ export function hotspotTypeLabel(type: HotspotType): string {
   return type === "none" ? "default" : type;
 }
 export type HotspotStyle = "dot" | "number" | "icon" | "image";
+/** Marker silhouette for dot / number / icon styles. */
+export type HotspotShape = "circle" | "square" | "rounded" | "diamond";
+export const HOTSPOT_SHAPES: readonly HotspotShape[] = [
+  "circle",
+  "square",
+  "rounded",
+  "diamond",
+] as const;
+export const DEFAULT_HOTSPOT_SHAPE: HotspotShape = "circle";
+
+export function normalizeHotspotShape(value: unknown): HotspotShape {
+  return HOTSPOT_SHAPES.includes(value as HotspotShape)
+    ? (value as HotspotShape)
+    : DEFAULT_HOTSPOT_SHAPE;
+}
+
 export type EditorMode = "select" | "add" | "preview";
 
 export type Vec3 = { x: number; y: number; z: number };
@@ -22,6 +38,8 @@ export type Hotspot = {
   type: HotspotType;
   color: string;
   style: HotspotStyle;
+  /** Silhouette of the marker disc (ignored for custom image style). */
+  shape: HotspotShape;
   number: number | string;
   icon: string;
   markerImage: string;

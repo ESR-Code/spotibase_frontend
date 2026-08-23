@@ -8,6 +8,7 @@ import {
   usePreviewAppearanceStore,
 } from "@/lib/editor/state/preview-appearance-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
+import { hotspotShapeClass } from "@/lib/editor/theme/hotspot-shape";
 import { hotspotTypeColors } from "@/lib/editor/theme/tokens";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 import { cn } from "@/lib/utils";
@@ -81,6 +82,7 @@ export function GeoHotspotMarker({
         <div
           className={cn(
             "editor-geo-marker",
+            hotspotShapeClass(resolved.shape),
             resolved.pulse && !hidden && "editor-geo-marker-pulse",
             selected && "editor-geo-marker-selected",
           )}
@@ -94,9 +96,11 @@ export function GeoHotspotMarker({
           <span className="editor-geo-marker-stick" />
           <span className="editor-geo-marker-core">
             {resolved.style === "number" ? (
-              <span className="editor-geo-marker-label">{resolved.number}</span>
+              <span className="editor-geo-marker-label editor-marker-shape-content">
+                {resolved.number}
+              </span>
             ) : resolved.style === "icon" ? (
-              <span className="editor-geo-marker-label">
+              <span className="editor-geo-marker-label editor-marker-shape-content">
                 <HotspotMarkerIcon
                   icon={resolved.icon}
                   className="h-3.5 w-3.5"

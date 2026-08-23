@@ -8,7 +8,11 @@ import {
   createTextTexture,
 } from "@/lib/editor/engine/hotspot-text-texture";
 import { hotspotTypeColors } from "@/lib/editor/theme/tokens";
-import type { Hotspot } from "@/lib/editor/types/hotspot";
+import {
+  DEFAULT_HOTSPOT_SHAPE,
+  normalizeHotspotShape,
+  type Hotspot,
+} from "@/lib/editor/types/hotspot";
 
 export type HotspotVisual = {
   root: Entity;
@@ -29,6 +33,7 @@ export type HotspotVisual = {
 export function visualStyleKey(h: Hotspot): string {
   return [
     h.style,
+    normalizeHotspotShape(h.shape),
     h.color,
     h.type,
     h.number,
@@ -59,7 +64,11 @@ export function createHotspotVisual(
   root.addChild(hitProxy);
 
   // Soft billboard ring that expands + fades (radar-style pulse)
-  const ringTexture = createPulseRingTexture(pcModule, app.graphicsDevice);
+  const ringTexture = createPulseRingTexture(
+    pcModule,
+    app.graphicsDevice,
+    normalizeHotspotShape(hotspot.shape ?? DEFAULT_HOTSPOT_SHAPE),
+  );
   const ringMat = pulseRingMat(pcModule, color, ringTexture);
   const ring = makePlane(pcModule, "PulseRing", ringMat);
   ring.setLocalScale(0.4, 1, 0.4);
@@ -125,6 +134,9 @@ export async function rebuildCore(
     visual.ringMat.update();
   }
 
+  const shape = normalizeHotspotShape(hotspot.shape ?? DEFAULT_HOTSPOT_SHAPE);
+  replacePulseRingTexture(visual, pcModule, app, shape);
+
   const isImage = hotspot.style === "image";
   visual.stick.enabled = !isImage;
 
@@ -180,6 +192,7 @@ export async function rebuildCore(
         String(hotspot.number),
         colorHex,
         false,
+        shape,
       ),
       pcModule,
     );
@@ -190,6 +203,7 @@ export async function rebuildCore(
         app.graphicsDevice,
         hotspot.icon,
         colorHex,
+        shape,
       );
       if (visual.styleKey !== requestKey) {
         texture.destroy();
@@ -200,7 +214,14 @@ export async function rebuildCore(
     } catch {
       attachSpriteCore(
         visual,
-        createTextTexture(pcModule, app.graphicsDevice, "", colorHex, false),
+        createTextTexture(
+          pcModule,
+          app.graphicsDevice,
+          "",
+          colorHex,
+          false,
+          shape,
+        ),
         pcModule,
       );
     }
@@ -215,6 +236,7 @@ export async function rebuildCore(
         "",
         colorHex,
         false,
+        shape,
       ),
       pcModule,
       isImage ? 0.85 : 1,
@@ -246,6 +268,22 @@ function destroyCore(visual: HotspotVisual) {
     visual.coreTexture.destroy();
     visual.coreTexture = null;
   }
+}
+
+function replacePulseRingTexture(
+  visual: HotspotVisual,
+  pcModule: typeof pc,
+  app: Application,
+  shape: ReturnType<typeof normalizeHotspotShape>,
+) {
+  const next = createPulseRingTexture(pcModule, app.graphicsDevice, shape);
+  const prev = visual.ringTexture;
+  visual.ringTexture = next;
+  visual.ringMat.diffuseMap = next;
+  visual.ringMat.emissiveMap = next;
+  visual.ringMat.opacityMap = next;
+  visual.ringMat.update();
+  if (prev !== next) prev.destroy();
 }
 
 function unlitMat(

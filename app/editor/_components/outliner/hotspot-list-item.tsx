@@ -2,6 +2,7 @@
 
 import { Focus, Trash2 } from "lucide-react";
 import { HotspotMarkerIcon } from "@/app/editor/_components/ui/hotspot-marker-icon";
+import { hotspotShapeClass } from "@/lib/editor/theme/hotspot-shape";
 import {
   hotspotTypeLabel,
   type Hotspot,
@@ -78,10 +79,12 @@ export function HotspotListItem({
 }
 
 function MarkerVisual({ hotspot }: { hotspot: Hotspot }) {
+  const shapeClass = hotspotShapeClass(hotspot.shape);
+
   if (hotspot.style === "image" && hotspot.markerImage) {
     return (
       <span
-        className="editor-hot-dot overflow-hidden border"
+        className={`editor-hot-dot overflow-hidden border ${shapeClass}`}
         style={{ borderColor: "var(--editor-line)", background: "transparent" }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -96,21 +99,32 @@ function MarkerVisual({ hotspot }: { hotspot: Hotspot }) {
 
   if (hotspot.style === "number" && hotspot.number !== "") {
     return (
-      <span className="editor-hot-dot" style={{ background: hotspot.color }}>
-        {hotspot.number}
+      <span
+        className={`editor-hot-dot ${shapeClass}`}
+        style={{ background: hotspot.color }}
+      >
+        <span className="editor-marker-shape-content">{hotspot.number}</span>
       </span>
     );
   }
 
   if (hotspot.style === "icon" && hotspot.icon) {
     return (
-      <span className="editor-hot-dot" style={{ background: hotspot.color }}>
-        <HotspotMarkerIcon icon={hotspot.icon} className="h-3 w-3" />
+      <span
+        className={`editor-hot-dot ${shapeClass}`}
+        style={{ background: hotspot.color }}
+      >
+        <span className="editor-marker-shape-content">
+          <HotspotMarkerIcon icon={hotspot.icon} className="h-3 w-3" />
+        </span>
       </span>
     );
   }
 
   return (
-    <span className="editor-hot-dot" style={{ background: hotspot.color }} />
+    <span
+      className={`editor-hot-dot ${shapeClass}`}
+      style={{ background: hotspot.color }}
+    />
   );
 }

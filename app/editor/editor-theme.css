@@ -300,6 +300,30 @@
   line-height: 1;
 }
 
+.editor-root .editor-hot-dot.editor-marker-shape-square {
+  border-radius: 2px;
+}
+
+.editor-root .editor-hot-dot.editor-marker-shape-rounded {
+  border-radius: 22%;
+}
+
+.editor-root .editor-hot-dot.editor-marker-shape-diamond {
+  border-radius: 2px;
+  transform: rotate(45deg) scale(0.72);
+}
+
+.editor-root .editor-marker-shape-diamond .editor-marker-shape-content,
+.editor-root
+  .editor-marker-shape-diamond
+  .editor-geo-marker-label.editor-marker-shape-content,
+.editor-geo-marker.editor-marker-shape-diamond .editor-marker-shape-content {
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .editor-root .editor-hot-dot-lg {
   width: 28px;
   height: 28px;
@@ -3039,6 +3063,19 @@
   line-height: 1;
 }
 
+.editor-geo-marker.editor-marker-shape-square .editor-geo-marker-core {
+  border-radius: 2px;
+}
+
+.editor-geo-marker.editor-marker-shape-rounded .editor-geo-marker-core {
+  border-radius: 22%;
+}
+
+.editor-geo-marker.editor-marker-shape-diamond .editor-geo-marker-core {
+  border-radius: 2px;
+  transform: rotate(45deg) scale(0.72);
+}
+
 .editor-geo-marker-core img {
   height: 100%;
   width: 100%;
@@ -3066,6 +3103,19 @@
   animation: editor-geo-marker-pulse 1.8s ease-out infinite;
 }
 
+.editor-geo-marker.editor-marker-shape-square.editor-geo-marker-pulse::after {
+  border-radius: 2px;
+}
+
+.editor-geo-marker.editor-marker-shape-rounded.editor-geo-marker-pulse::after {
+  border-radius: 22%;
+}
+
+.editor-geo-marker.editor-marker-shape-diamond.editor-geo-marker-pulse::after {
+  border-radius: 2px;
+  animation-name: editor-geo-marker-pulse-diamond;
+}
+
 @keyframes editor-geo-marker-pulse {
   0% {
     opacity: 0.7;
@@ -3074,6 +3124,17 @@
   100% {
     opacity: 0;
     transform: translateX(-50%) scale(2.4);
+  }
+}
+
+@keyframes editor-geo-marker-pulse-diamond {
+  0% {
+    opacity: 0.7;
+    transform: translateX(-50%) rotate(45deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) rotate(45deg) scale(2.4);
   }
 }
 

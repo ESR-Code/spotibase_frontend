@@ -24,6 +24,7 @@ export function exportHotspots() {
       type: h.type,
       color: h.color,
       style: h.style,
+      shape: h.shape ?? "circle",
       number: h.number,
       icon: h.icon,
       markerImage: h.markerImage || "",

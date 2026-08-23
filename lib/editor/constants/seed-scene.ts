@@ -113,6 +113,7 @@ export const SEED_SCENE: Scene = createScene({
 export function getSeedHotspots(): Hotspot[] {
   return SEED_SCENE.hotspots.map((h) => ({
     ...h,
+    shape: h.shape ?? "circle",
     position: { ...h.position },
     blocks: [...h.blocks],
     enabled: h.enabled ?? true,

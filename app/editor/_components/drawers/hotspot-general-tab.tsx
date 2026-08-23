@@ -26,7 +26,10 @@ import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useActiveScene } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { markerColorSwatches } from "@/lib/editor/theme/tokens";
-import type { Hotspot } from "@/lib/editor/types/hotspot";
+import {
+  HOTSPOT_SHAPES,
+  type Hotspot,
+} from "@/lib/editor/types/hotspot";
 
 type HotspotGeneralTabProps = {
   form: UseFormReturn<HotspotFormValues>;
@@ -155,6 +158,23 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
               }}
             />
           )}
+        </div>
+
+        <div>
+          <FieldLabel>Shape</FieldLabel>
+          <div className="editor-pill-row">
+            {(["circle", "square", "rounded", "diamond"] as const).map(
+              (shape) => (
+                <TypePill
+                  key={shape}
+                  active={(values.shape ?? "circle") === shape}
+                  onClick={() => form.setValue("shape", shape)}
+                >
+                  {shape}
+                </TypePill>
+              ),
+            )}
+          </div>
         </div>
 
         <div>

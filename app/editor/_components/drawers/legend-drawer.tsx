@@ -17,6 +17,7 @@ import {
 import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
+import { hotspotShapeClass } from "@/lib/editor/theme/hotspot-shape";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 import {
   LEGEND_CATEGORY_ALL,
@@ -210,11 +211,12 @@ function LegendMarkerVisual({ hotspot }: { hotspot: Hotspot }) {
   );
   void appearanceOverride;
   const resolved = resolveHotspotAppearance(hotspot, isPreview);
+  const shapeClass = hotspotShapeClass(resolved.shape);
 
   if (resolved.style === "image" && resolved.markerImage) {
     return (
       <span
-        className="editor-hot-dot editor-hot-dot-lg overflow-hidden border"
+        className={`editor-hot-dot editor-hot-dot-lg overflow-hidden border ${shapeClass}`}
         style={{ borderColor: "var(--editor-line)", background: "transparent" }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -230,10 +232,10 @@ function LegendMarkerVisual({ hotspot }: { hotspot: Hotspot }) {
   if (resolved.style === "number" && resolved.number !== "") {
     return (
       <span
-        className="editor-hot-dot editor-hot-dot-lg"
+        className={`editor-hot-dot editor-hot-dot-lg ${shapeClass}`}
         style={{ background: resolved.color }}
       >
-        {resolved.number}
+        <span className="editor-marker-shape-content">{resolved.number}</span>
       </span>
     );
   }
@@ -241,17 +243,19 @@ function LegendMarkerVisual({ hotspot }: { hotspot: Hotspot }) {
   if (resolved.style === "icon" && resolved.icon) {
     return (
       <span
-        className="editor-hot-dot editor-hot-dot-lg"
+        className={`editor-hot-dot editor-hot-dot-lg ${shapeClass}`}
         style={{ background: resolved.color }}
       >
-        <HotspotMarkerIcon icon={resolved.icon} className="h-3.5 w-3.5" />
+        <span className="editor-marker-shape-content">
+          <HotspotMarkerIcon icon={resolved.icon} className="h-3.5 w-3.5" />
+        </span>
       </span>
     );
   }
 
   return (
     <span
-      className="editor-hot-dot editor-hot-dot-lg"
+      className={`editor-hot-dot editor-hot-dot-lg ${shapeClass}`}
       style={{ background: resolved.color }}
     />
   );
