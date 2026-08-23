@@ -9,6 +9,10 @@ import {
   overlayQuadPolygon,
 } from "@/lib/editor/geo/overlay-quad";
 import {
+  shapeOverlayBoundsQuad,
+  shapeOverlayPolygon,
+} from "@/lib/editor/geo/shape-overlay";
+import {
   overlayContentKey,
   overlaySourceImage,
 } from "@/lib/editor/layers/blend-overlay-image";
@@ -17,6 +21,9 @@ import {
   overlayHitSourceId,
   overlayRasterLayerId,
   overlayRasterSourceId,
+  shapeFillLayerId,
+  shapeLineLayerId,
+  shapeSourceId,
 } from "@/lib/editor/layers/overlay-ids";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useLayersStore } from "@/lib/editor/state/layers-store";
@@ -27,10 +34,12 @@ import {
 import { syncActiveSceneLayers } from "@/lib/editor/state/scenes-store";
 import {
   isGeoImageOverlay,
-  type ImageOverlayLayer,
+  isGeoOverlay,
+  isGeoShapeOverlay,
+  type ShapeOverlayLayer,
 } from "@/lib/editor/types/scene-layer";
 
-function removeOverlay(map: MapLibreMap, layerId: string) {
+function removeImageOverlay(map: MapLibreMap, layerId: string) {
   const rasterId = overlayRasterLayerId(layerId);
   const hitId = overlayHitLayerId(layerId);
   const rasterSrc = overlayRasterSourceId(layerId);
@@ -41,9 +50,24 @@ function removeOverlay(map: MapLibreMap, layerId: string) {
   if (map.getSource(rasterSrc)) map.removeSource(rasterSrc);
 }
 
-function visibleGeoOverlays(layers: ReturnType<typeof useLayersStore.getState>["layers"]) {
+function removeShapeOverlay(map: MapLibreMap, layerId: string) {
+  const fillId = shapeFillLayerId(layerId);
+  const lineId = shapeLineLayerId(layerId);
+  const hitId = overlayHitLayerId(layerId);
+  const shapeSrc = shapeSourceId(layerId);
+  const hitSrc = overlayHitSourceId(layerId);
+  if (map.getLayer(hitId)) map.removeLayer(hitId);
+  if (map.getLayer(lineId)) map.removeLayer(lineId);
+  if (map.getLayer(fillId)) map.removeLayer(fillId);
+  if (map.getSource(hitSrc)) map.removeSource(hitSrc);
+  if (map.getSource(shapeSrc)) map.removeSource(shapeSrc);
+}
+
+function visibleGeoLayers(
+  layers: ReturnType<typeof useLayersStore.getState>["layers"],
+) {
   return layers
-    .filter(isGeoImageOverlay)
+    .filter(isGeoOverlay)
     .filter((layer) =>
       isPreviewLayerVisible(
         useEditorStore.getState().isPreview,
@@ -51,6 +75,64 @@ function visibleGeoOverlays(layers: ReturnType<typeof useLayersStore.getState>["
         layer.visible,
       ),
     );
+}
+
+function syncShapeLayer(map: MapLibreMap, layer: ShapeOverlayLayer) {
+  const shapeSrc = shapeSourceId(layer.id);
+  const fillId = shapeFillLayerId(layer.id);
+  const lineId = shapeLineLayerId(layer.id);
+  const hitSrc = overlayHitSourceId(layer.id);
+  const hitId = overlayHitLayerId(layer.id);
+  const polygon = shapeOverlayPolygon(layer.pose, layer.shape);
+  const fillOpacity = layer.opacity * 0.55;
+  const lineOpacity = layer.opacity;
+
+  const source = map.getSource(shapeSrc) as GeoJSONSource | undefined;
+  if (source) {
+    source.setData(polygon);
+    if (map.getLayer(fillId)) {
+      map.setPaintProperty(fillId, "fill-color", layer.fillColor);
+      map.setPaintProperty(fillId, "fill-opacity", fillOpacity);
+    }
+    if (map.getLayer(lineId)) {
+      map.setPaintProperty(lineId, "line-color", layer.strokeColor);
+      map.setPaintProperty(lineId, "line-width", layer.strokeWidth);
+      map.setPaintProperty(lineId, "line-opacity", lineOpacity);
+    }
+    (map.getSource(hitSrc) as GeoJSONSource | undefined)?.setData(polygon);
+    return;
+  }
+
+  map.addSource(shapeSrc, { type: "geojson", data: polygon });
+  map.addLayer({
+    id: fillId,
+    type: "fill",
+    source: shapeSrc,
+    paint: {
+      "fill-color": layer.fillColor,
+      "fill-opacity": fillOpacity,
+    },
+  });
+  map.addLayer({
+    id: lineId,
+    type: "line",
+    source: shapeSrc,
+    paint: {
+      "line-color": layer.strokeColor,
+      "line-width": layer.strokeWidth,
+      "line-opacity": lineOpacity,
+    },
+  });
+  map.addSource(hitSrc, { type: "geojson", data: polygon });
+  map.addLayer({
+    id: hitId,
+    type: "fill",
+    source: hitSrc,
+    paint: {
+      "fill-color": "#000000",
+      "fill-opacity": 0.01,
+    },
+  });
 }
 
 export function GeoOverlayLayers() {
@@ -65,22 +147,47 @@ export function GeoOverlayLayers() {
     let cancelled = false;
 
     const sync = async () => {
-      const wanted = visibleGeoOverlays(layers);
+      const wanted = visibleGeoLayers(layers);
       const wantedIds = new Set(wanted.map((layer) => layer.id));
       const style = map.getStyle();
       if (!style) return;
-      const existing = Object.keys(style.sources ?? {}).filter((id) =>
+
+      const existingImage = Object.keys(style.sources ?? {}).filter((id) =>
         id.startsWith("editor-overlay-src-"),
       );
-      for (const sourceId of existing) {
+      for (const sourceId of existingImage) {
         const layerId = sourceId.slice("editor-overlay-src-".length);
         if (!wantedIds.has(layerId)) {
-          removeOverlay(map, layerId);
+          removeImageOverlay(map, layerId);
           contentKeysRef.current.delete(layerId);
         }
       }
 
+      const existingShape = Object.keys(style.sources ?? {}).filter((id) =>
+        id.startsWith("editor-shape-src-"),
+      );
+      for (const sourceId of existingShape) {
+        const layerId = sourceId.slice("editor-shape-src-".length);
+        if (!wantedIds.has(layerId)) {
+          removeShapeOverlay(map, layerId);
+        }
+      }
+
       for (const layer of wanted) {
+        if (isGeoShapeOverlay(layer)) {
+          // Drop any leftover image sources if kind changed (shouldn't happen).
+          if (map.getSource(overlayRasterSourceId(layer.id))) {
+            removeImageOverlay(map, layer.id);
+          }
+          syncShapeLayer(map, layer);
+          continue;
+        }
+
+        if (!isGeoImageOverlay(layer)) continue;
+        if (map.getSource(shapeSourceId(layer.id))) {
+          removeShapeOverlay(map, layer.id);
+        }
+
         const rasterSrc = overlayRasterSourceId(layer.id);
         const rasterId = overlayRasterLayerId(layer.id);
         const hitSrc = overlayHitSourceId(layer.id);
@@ -90,7 +197,7 @@ export function GeoOverlayLayers() {
           layer.naturalWidth,
           layer.naturalHeight,
         );
-        const polygon = overlayQuadPolygon(quad);
+        const hitPolygon = overlayQuadPolygon(quad);
         const contentKey = overlayContentKey(
           layer.imageDataUrl,
           layer.blend ?? 0,
@@ -101,7 +208,9 @@ export function GeoOverlayLayers() {
           if (map.getLayer(rasterId)) {
             map.setPaintProperty(rasterId, "raster-opacity", layer.opacity);
           }
-          (map.getSource(hitSrc) as GeoJSONSource | undefined)?.setData(polygon);
+          (map.getSource(hitSrc) as GeoJSONSource | undefined)?.setData(
+            hitPolygon,
+          );
           continue;
         }
 
@@ -115,7 +224,9 @@ export function GeoOverlayLayers() {
           if (map.getLayer(rasterId)) {
             map.setPaintProperty(rasterId, "raster-opacity", layer.opacity);
           }
-          (map.getSource(hitSrc) as GeoJSONSource | undefined)?.setData(polygon);
+          (map.getSource(hitSrc) as GeoJSONSource | undefined)?.setData(
+            hitPolygon,
+          );
           if (contentKeysRef.current.get(layer.id) !== contentKey) {
             if (typeof image === "string") {
               source.updateImage({ url: image, coordinates: quad });
@@ -144,7 +255,7 @@ export function GeoOverlayLayers() {
               "raster-fade-duration": 0,
             },
           });
-          map.addSource(hitSrc, { type: "geojson", data: polygon });
+          map.addSource(hitSrc, { type: "geojson", data: hitPolygon });
           map.addLayer({
             id: hitId,
             type: "fill",
@@ -158,9 +269,18 @@ export function GeoOverlayLayers() {
       }
 
       if (cancelled) return;
+
+      // Preserve authored stack order (later layers draw above earlier ones).
       for (const layer of wanted) {
-        const rasterId = overlayRasterLayerId(layer.id);
-        if (map.getLayer(rasterId)) map.moveLayer(rasterId);
+        if (isGeoImageOverlay(layer)) {
+          const rasterId = overlayRasterLayerId(layer.id);
+          if (map.getLayer(rasterId)) map.moveLayer(rasterId);
+        } else {
+          const fillId = shapeFillLayerId(layer.id);
+          const lineId = shapeLineLayerId(layer.id);
+          if (map.getLayer(fillId)) map.moveLayer(fillId);
+          if (map.getLayer(lineId)) map.moveLayer(lineId);
+        }
       }
       for (const layer of wanted) {
         const hitId = overlayHitLayerId(layer.id);
@@ -181,7 +301,10 @@ export function GeoOverlayLayers() {
       const sources = Object.keys(map.getStyle().sources ?? {});
       for (const sourceId of sources) {
         if (sourceId.startsWith("editor-overlay-src-")) {
-          removeOverlay(map, sourceId.slice("editor-overlay-src-".length));
+          removeImageOverlay(map, sourceId.slice("editor-overlay-src-".length));
+        }
+        if (sourceId.startsWith("editor-shape-src-")) {
+          removeShapeOverlay(map, sourceId.slice("editor-shape-src-".length));
         }
       }
     };
@@ -228,20 +351,19 @@ function GeoOverlayGizmo() {
     };
   }, [map, isLoaded]);
 
-  if (!map || !isLoaded || isPreview || !layer || !isGeoImageOverlay(layer)) {
+  if (!map || !isLoaded || isPreview || !layer || !isGeoOverlay(layer)) {
     return null;
   }
   if (!layer.visible) return null;
 
-  const overlay = layer as ImageOverlayLayer & { pose: typeof layer.pose };
-  const quad = geoOverlayQuad(
-    overlay.pose,
-    overlay.naturalWidth,
-    overlay.naturalHeight,
-  );
+  const pose = layer.pose;
+  const quad =
+    layer.kind === "image-overlay"
+      ? geoOverlayQuad(pose, layer.naturalWidth, layer.naturalHeight)
+      : shapeOverlayBoundsQuad(pose);
   const points = quad.map(([lng, lat]) => map.project({ lng, lat }));
   const polygon = points.map((point) => `${point.x},${point.y}`).join(" ");
-  const center = map.project({ lng: overlay.pose.lng, lat: overlay.pose.lat });
+  const center = map.project({ lng: pose.lng, lat: pose.lat });
   const topMid = {
     x: (points[0].x + points[1].x) / 2,
     y: (points[0].y + points[1].y) / 2,
@@ -253,7 +375,8 @@ function GeoOverlayGizmo() {
     x: topMid.x + (dx / len) * 28,
     y: topMid.y + (dy / len) * 28,
   };
-  const locked = overlay.locked;
+  const locked = layer.locked;
+  const layerId = layer.id;
 
   const beginDrag = (event: React.PointerEvent, next: DragState) => {
     if (locked) return;
@@ -270,7 +393,7 @@ function GeoOverlayGizmo() {
     const point = pointerOnMap(map, event);
     if (drag.kind === "move") {
       const lngLat = map.unproject([point.x, point.y]);
-      useLayersStore.getState().updateGeoPose(overlay.id, {
+      useLayersStore.getState().updateGeoPose(layerId, {
         lng: drag.poseLng + (lngLat.lng - drag.startLng),
         lat: drag.poseLat + (lngLat.lat - drag.startLat),
       });
@@ -279,19 +402,14 @@ function GeoOverlayGizmo() {
     if (drag.kind === "scale") {
       const dist = Math.hypot(point.x - center.x, point.y - center.y);
       const ratio = dist / Math.max(8, drag.startDist);
-      useLayersStore.getState().updateGeoPose(overlay.id, {
+      useLayersStore.getState().updateGeoPose(layerId, {
         widthMeters: Math.max(10, drag.startWidth * ratio),
       });
       return;
     }
     const lngLat = map.unproject([point.x, point.y]);
-    useLayersStore.getState().updateGeoPose(overlay.id, {
-      bearing: geographicBearing(
-        overlay.pose.lng,
-        overlay.pose.lat,
-        lngLat.lng,
-        lngLat.lat,
-      ),
+    useLayersStore.getState().updateGeoPose(layerId, {
+      bearing: geographicBearing(pose.lng, pose.lat, lngLat.lng, lngLat.lat),
     });
   };
 
@@ -323,8 +441,8 @@ function GeoOverlayGizmo() {
               kind: "move",
               startLng: lngLat.lng,
               startLat: lngLat.lat,
-              poseLng: overlay.pose.lng,
-              poseLat: overlay.pose.lat,
+              poseLng: pose.lng,
+              poseLat: pose.lat,
             });
           }}
           onPointerMove={onPointerMove}
@@ -355,7 +473,7 @@ function GeoOverlayGizmo() {
                   beginDrag(event, {
                     kind: "scale",
                     startDist: Math.hypot(start.x - center.x, start.y - center.y),
-                    startWidth: overlay.pose.widthMeters,
+                    startWidth: pose.widthMeters,
                   });
                 }}
                 onPointerMove={onPointerMove}

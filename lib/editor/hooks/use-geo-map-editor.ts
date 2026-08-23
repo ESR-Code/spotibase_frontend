@@ -33,7 +33,7 @@ import {
 } from "@/lib/editor/state/preview-visibility-store";
 import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
 import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
-import { isGeoImageOverlay } from "@/lib/editor/types/scene-layer";
+import { isGeoOverlay } from "@/lib/editor/types/scene-layer";
 
 function currentViewport(map: MapLibreMap): GeoMapViewport {
   const center = map.getCenter();
@@ -190,7 +190,7 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
       if (editor.mode === "select") {
         const hitLayerIds = useLayersStore
           .getState()
-          .layers.filter(isGeoImageOverlay)
+          .layers.filter(isGeoOverlay)
           .filter((layer) => layer.visible)
           .map((layer) => overlayHitLayerId(layer.id))
           .filter((id) => map.getLayer(id));

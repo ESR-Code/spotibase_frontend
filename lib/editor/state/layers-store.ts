@@ -6,15 +6,27 @@ import {
   type ImageOverlayGeoPose,
   type ImageOverlayLayer,
   type SceneLayer,
+  type ShapeOverlayLayer,
 } from "@/lib/editor/types/scene-layer";
+
+type AddLayerInput =
+  | (Omit<ImageOverlayLayer, "id"> & { id?: string })
+  | (Omit<ShapeOverlayLayer, "id"> & { id?: string });
+
+type UpdateLayerPatch = Partial<
+  Omit<ImageOverlayLayer, "id" | "kind"> & Omit<ShapeOverlayLayer, "id" | "kind">
+>;
 
 type LayersState = {
   layers: SceneLayer[];
   selectedId: string | null;
   setSelectedId: (id: string | null) => void;
-  addLayer: (layer: Omit<ImageOverlayLayer, "id"> & { id?: string }) => ImageOverlayLayer;
-  updateLayer: (id: string, patch: Partial<Omit<ImageOverlayLayer, "id" | "kind">>) => void;
-  updateGeoPose: (id: string, patch: Partial<Omit<ImageOverlayGeoPose, "space">>) => void;
+  addLayer: (layer: AddLayerInput) => SceneLayer;
+  updateLayer: (id: string, patch: UpdateLayerPatch) => void;
+  updateGeoPose: (
+    id: string,
+    patch: Partial<Omit<ImageOverlayGeoPose, "space">>,
+  ) => void;
   removeLayer: (id: string) => void;
   moveLayer: (id: string, direction: "forward" | "backward") => void;
   hydrateLayers: (layers: SceneLayer[]) => void;
@@ -29,14 +41,9 @@ export const useLayersStore = create<LayersState>((set, get) => ({
 
   addLayer: (input) => {
     const id = input.id ?? nextLayerId(get().layers);
-    const layer: ImageOverlayLayer = {
-      ...input,
-      id,
-      kind: "image-overlay",
-      blend: input.blend ?? 0,
-    };
+    const layer = cloneLayer({ ...input, id } as SceneLayer);
     set((state) => ({
-      layers: [...state.layers, cloneLayer(layer)],
+      layers: [...state.layers, layer],
       selectedId: id,
     }));
     return layer;
@@ -45,15 +52,43 @@ export const useLayersStore = create<LayersState>((set, get) => ({
   updateLayer: (id, patch) => {
     set((state) => ({
       layers: state.layers.map((layer) => {
-        if (layer.id !== id || layer.kind !== "image-overlay") return layer;
-        const next: ImageOverlayLayer = {
+        if (layer.id !== id) return layer;
+        if (layer.kind === "image-overlay") {
+          return cloneLayer({
+            ...layer,
+            name: patch.name ?? layer.name,
+            visible: patch.visible ?? layer.visible,
+            locked: patch.locked ?? layer.locked,
+            opacity: patch.opacity ?? layer.opacity,
+            blend: patch.blend ?? layer.blend,
+            imageDataUrl: patch.imageDataUrl ?? layer.imageDataUrl,
+            naturalWidth: patch.naturalWidth ?? layer.naturalWidth,
+            naturalHeight: patch.naturalHeight ?? layer.naturalHeight,
+            pose:
+              patch.pose && "space" in patch.pose
+                ? patch.pose
+                : layer.pose,
+            id: layer.id,
+            kind: "image-overlay",
+          });
+        }
+        return cloneLayer({
           ...layer,
-          ...patch,
+          name: patch.name ?? layer.name,
+          visible: patch.visible ?? layer.visible,
+          locked: patch.locked ?? layer.locked,
+          opacity: patch.opacity ?? layer.opacity,
+          shape: patch.shape ?? layer.shape,
+          fillColor: patch.fillColor ?? layer.fillColor,
+          strokeColor: patch.strokeColor ?? layer.strokeColor,
+          strokeWidth: patch.strokeWidth ?? layer.strokeWidth,
+          pose:
+            patch.pose && patch.pose.space === "geo"
+              ? patch.pose
+              : layer.pose,
           id: layer.id,
-          kind: "image-overlay",
-          pose: patch.pose ?? layer.pose,
-        };
-        return cloneLayer(next);
+          kind: "shape-overlay",
+        });
       }),
     }));
   },
@@ -61,8 +96,14 @@ export const useLayersStore = create<LayersState>((set, get) => ({
   updateGeoPose: (id, patch) => {
     set((state) => ({
       layers: state.layers.map((layer) => {
-        if (layer.id !== id || layer.kind !== "image-overlay") return layer;
-        if (layer.pose.space !== "geo") return layer;
+        if (layer.id !== id) return layer;
+        if (layer.kind === "image-overlay") {
+          if (layer.pose.space !== "geo") return layer;
+          return cloneLayer({
+            ...layer,
+            pose: { ...layer.pose, ...patch },
+          });
+        }
         return cloneLayer({
           ...layer,
           pose: { ...layer.pose, ...patch },
@@ -82,12 +123,28 @@ export const useLayersStore = create<LayersState>((set, get) => ({
     set((state) => {
       const index = state.layers.findIndex((layer) => layer.id === id);
       if (index < 0) return state;
-      const swap = direction === "forward" ? index + 1 : index - 1;
-      if (swap < 0 || swap >= state.layers.length) return state;
+      const kind = state.layers[index]!.kind;
+      let target = -1;
+      if (direction === "forward") {
+        for (let i = index + 1; i < state.layers.length; i++) {
+          if (state.layers[i]!.kind === kind) {
+            target = i;
+            break;
+          }
+        }
+      } else {
+        for (let i = index - 1; i >= 0; i--) {
+          if (state.layers[i]!.kind === kind) {
+            target = i;
+            break;
+          }
+        }
+      }
+      if (target < 0) return state;
       const layers = [...state.layers];
       const current = layers[index]!;
-      layers[index] = layers[swap]!;
-      layers[swap] = current;
+      layers[index] = layers[target]!;
+      layers[target] = current;
       return { layers };
     });
   },
