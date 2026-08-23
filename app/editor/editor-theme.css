@@ -981,7 +981,8 @@
 }
 
 /* Viewport bottom controls — Preview Bottom menu style */
-.editor-root[data-preview="true"] .editor-viewport-controls.editor-glass {
+.editor-root[data-preview="true"] .editor-viewport-controls.editor-glass,
+.editor-root .editor-custom-menu-preview-wrap .editor-viewport-controls.editor-glass {
   background: color-mix(
     in srgb,
     var(--preview-bottom-menu-bg) var(--preview-bottom-menu-opacity),
@@ -992,45 +993,39 @@
   -webkit-backdrop-filter: blur(var(--preview-bottom-menu-blur));
 }
 
-.editor-root[data-preview="true"] .editor-viewport-controls .editor-tool-btn {
+.editor-root[data-preview="true"] .editor-viewport-controls .editor-tool-btn,
+.editor-root .editor-custom-menu-preview-wrap .editor-viewport-controls .editor-tool-btn {
   color: var(--preview-bottom-menu-icon);
 }
 
 .editor-root[data-preview="true"] .editor-viewport-controls .editor-tool-btn:hover,
-.editor-root[data-preview="true"] .editor-viewport-controls .editor-tool-btn.active {
+.editor-root[data-preview="true"] .editor-viewport-controls .editor-tool-btn.active,
+.editor-root .editor-custom-menu-preview-wrap .editor-viewport-controls .editor-tool-btn:hover,
+.editor-root .editor-custom-menu-preview-wrap .editor-viewport-controls .editor-tool-btn.active {
   color: color-mix(in srgb, var(--preview-bottom-menu-icon) 55%, #fff);
   background: color-mix(in srgb, var(--preview-bottom-menu-icon) 14%, transparent);
   border-color: color-mix(in srgb, var(--preview-bottom-menu-icon) 30%, transparent);
 }
 
-.editor-root[data-preview="true"] .editor-viewport-controls .editor-vsep {
+.editor-root[data-preview="true"] .editor-viewport-controls .editor-vsep,
+.editor-root .editor-custom-menu-preview-wrap .editor-viewport-controls .editor-vsep {
   background: var(--preview-bottom-menu-stroke);
 }
 
 .editor-root .editor-custom-menu-preview-wrap {
   border-radius: 12px;
-  border: 1px dashed var(--editor-line-soft);
-  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--editor-line-soft);
+  /* Neutral “viewport” backdrop so glass + blur read like Preview over the map */
+  background:
+    radial-gradient(120% 80% at 20% 30%, rgba(63, 184, 175, 0.16), transparent 55%),
+    radial-gradient(100% 70% at 80% 70%, rgba(230, 57, 70, 0.1), transparent 50%),
+    linear-gradient(160deg, #1a2a45 0%, #0c1730 45%, #152038 100%);
+  overflow: hidden;
 }
 
-.editor-root .editor-custom-menu-preview.editor-glass {
+.editor-root .editor-custom-menu-preview-wrap .editor-viewport-controls {
   pointer-events: none;
-  background: color-mix(
-    in srgb,
-    var(--preview-bottom-menu-bg) var(--preview-bottom-menu-opacity),
-    transparent
-  );
-  border-color: var(--preview-bottom-menu-stroke);
-  backdrop-filter: blur(var(--preview-bottom-menu-blur));
-  -webkit-backdrop-filter: blur(var(--preview-bottom-menu-blur));
-}
-
-.editor-root .editor-custom-menu-preview .editor-tool-btn {
-  color: var(--preview-bottom-menu-icon);
-}
-
-.editor-root .editor-custom-menu-preview .editor-vsep {
-  background: var(--preview-bottom-menu-stroke);
+  position: relative;
 }
 
 .editor-root .editor-custom-menu-row {

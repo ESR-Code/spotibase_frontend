@@ -159,10 +159,10 @@ function BottomMenuPreview({
 }) {
   return (
     <div
-      className="editor-custom-menu-preview-wrap flex justify-center py-3"
+      className="editor-custom-menu-preview-wrap flex justify-center py-5"
       style={styleVars}
     >
-      <div className="editor-custom-menu-preview editor-glass editor-panel-shadow flex flex-wrap items-center justify-center gap-1 rounded-xl px-2 py-2">
+      <div className="editor-viewport-controls editor-glass editor-panel-shadow flex flex-wrap items-center justify-center gap-1 rounded-xl px-2 py-2">
         <PreviewControl title="Reset view">
           <Home className="h-3.5 w-3.5" />
         </PreviewControl>
