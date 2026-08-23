@@ -5,6 +5,10 @@
 export type SurfaceColorTokens = {
   backgroundColor: string;
   textColor: string;
+  /** When false, the surface outer border is hidden. */
+  strokeEnabled: boolean;
+  /** Outer border / stroke color when stroke is enabled. */
+  strokeColor: string;
 };
 
 /**

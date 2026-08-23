@@ -858,7 +858,16 @@
     transparent
   );
   color: var(--preview-surface-hotspot-dialog-fg);
-  border-color: var(--preview-border);
+  border-color: var(--preview-surface-hotspot-dialog-stroke);
+}
+
+.editor-root[data-preview="true"] .editor-marker-dialog .editor-dialog-header {
+  border-bottom-color: var(--preview-surface-hotspot-dialog-stroke);
+}
+
+.editor-root[data-preview="true"] .editor-marker-dialog .editor-dialog-footer {
+  background: transparent;
+  border-top-color: var(--preview-surface-hotspot-dialog-stroke);
 }
 
 .editor-root[data-preview="true"] .editor-legend-drawer .editor-input,
@@ -886,14 +895,7 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--preview-accent) 18%, transparent);
 }
 
-.editor-root[data-preview="true"] .editor-marker-dialog .editor-dialog-footer {
-  background: transparent;
-  border-top-color: var(--preview-border);
-}
-
-.editor-root[data-preview="true"]
-  .editor-marker-dialog
-  .editor-dialog-footer
+.editor-root[data-preview="true"] .editor-marker-dialog .editor-dialog-footer
   .editor-btn.editor-btn-ghost,
 .editor-root[data-preview="true"]
   .editor-marker-dialog
@@ -917,8 +919,7 @@
   color: var(--preview-accent);
 }
 
-.editor-root[data-preview="true"][data-preview-borders="off"] .editor-legend-drawer.editor-glass,
-.editor-root[data-preview="true"][data-preview-borders="off"] .editor-marker-dialog.editor-dialog-surface {
+.editor-root[data-preview="true"][data-preview-borders="off"] .editor-legend-drawer.editor-glass {
   border-color: transparent;
 }
 
@@ -930,11 +931,6 @@
 .editor-root[data-preview="true"][data-preview-borders="off"] .editor-marker-dialog .editor-textarea,
 .editor-root[data-preview="true"][data-preview-borders="off"] .editor-marker-dialog .editor-select,
 .editor-root[data-preview="true"][data-preview-borders="off"] .editor-marker-dialog .editor-marker-dialog-close {
-  border-color: transparent;
-}
-
-.editor-root[data-preview="true"][data-preview-borders="off"] .editor-marker-dialog .editor-dialog-header,
-.editor-root[data-preview="true"][data-preview-borders="off"] .editor-marker-dialog .editor-dialog-footer {
   border-color: transparent;
 }
 
@@ -1007,6 +1003,10 @@
   border-color: color-mix(in srgb, var(--preview-bottom-menu-icon) 30%, transparent);
 }
 
+.editor-root[data-preview="true"] .editor-viewport-controls .editor-vsep {
+  background: var(--preview-bottom-menu-stroke);
+}
+
 .editor-root .editor-custom-menu-preview-wrap {
   border-radius: 12px;
   border: 1px dashed var(--editor-line-soft);
@@ -1027,6 +1027,10 @@
 
 .editor-root .editor-custom-menu-preview .editor-tool-btn {
   color: var(--preview-bottom-menu-icon);
+}
+
+.editor-root .editor-custom-menu-preview .editor-vsep {
+  background: var(--preview-bottom-menu-stroke);
 }
 
 .editor-root .editor-custom-menu-row {

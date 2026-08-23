@@ -183,6 +183,7 @@ export function GeneralSettingsDrawer() {
 
           {GENERAL_STYLE_SURFACES.map((surface) => {
             const Icon = SURFACE_ICONS[surface.id];
+            const tokens = style.surfaces[surface.id];
             return (
               <StyleGroup
                 key={surface.id}
@@ -193,7 +194,7 @@ export function GeneralSettingsDrawer() {
                 <div>
                   <FieldLabel>Background color</FieldLabel>
                   <ColorSwatch
-                    value={style.surfaces[surface.id].backgroundColor}
+                    value={tokens.backgroundColor}
                     onChange={(backgroundColor) =>
                       setSurfaceColors(surface.id, { backgroundColor })
                     }
@@ -205,13 +206,40 @@ export function GeneralSettingsDrawer() {
                 <div>
                   <FieldLabel>Text color</FieldLabel>
                   <ColorSwatch
-                    value={style.surfaces[surface.id].textColor}
+                    value={tokens.textColor}
                     onChange={(textColor) =>
                       setSurfaceColors(surface.id, { textColor })
                     }
                     fallback={DEFAULT_GENERAL_STYLE.surfaces[surface.id].textColor}
                   />
                 </div>
+                {surface.id === "hotspotDialog" ? (
+                  <>
+                    <SwitchField
+                      label="Use stroke"
+                      description="Show a border around the hotspot modal, drawer, or info box"
+                      checked={tokens.strokeEnabled}
+                      onChange={(strokeEnabled) =>
+                        setSurfaceColors(surface.id, { strokeEnabled })
+                      }
+                    />
+                    {tokens.strokeEnabled ? (
+                      <div>
+                        <FieldLabel>Stroke color</FieldLabel>
+                        <ColorSwatch
+                          value={tokens.strokeColor}
+                          onChange={(strokeColor) =>
+                            setSurfaceColors(surface.id, { strokeColor })
+                          }
+                          fallback={
+                            DEFAULT_GENERAL_STYLE.surfaces[surface.id]
+                              .strokeColor
+                          }
+                        />
+                      </div>
+                    ) : null}
+                  </>
+                ) : null}
               </StyleGroup>
             );
           })}

@@ -13,6 +13,8 @@ function defaultSurfaces(): GeneralStyleSettings["surfaces"] {
     surfaces[surface.id] = {
       backgroundColor: editorColors.panel,
       textColor: editorColors.fg,
+      strokeEnabled: true,
+      strokeColor: editorColors.line,
     };
   }
   return surfaces;
@@ -48,11 +50,14 @@ export function cloneGeneralStyle(
   const surfaces = {} as GeneralStyleSettings["surfaces"];
   for (const surface of GENERAL_STYLE_SURFACES) {
     const id = surface.id as GeneralStyleSurfaceId;
-    const tokens: SurfaceColorTokens = style.surfaces[id] ?? {
-      backgroundColor: editorColors.panel,
-      textColor: editorColors.fg,
+    const fallback = DEFAULT_GENERAL_STYLE.surfaces[id];
+    const tokens: SurfaceColorTokens = style.surfaces[id] ?? fallback;
+    surfaces[id] = {
+      backgroundColor: tokens.backgroundColor ?? fallback.backgroundColor,
+      textColor: tokens.textColor ?? fallback.textColor,
+      strokeEnabled: tokens.strokeEnabled ?? fallback.strokeEnabled,
+      strokeColor: tokens.strokeColor ?? fallback.strokeColor,
     };
-    surfaces[id] = { ...tokens };
   }
   const bottomMenu: BottomMenuStyleTokens = {
     ...DEFAULT_BOTTOM_MENU_STYLE,

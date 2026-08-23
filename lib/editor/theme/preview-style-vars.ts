@@ -13,11 +13,13 @@ function surfaceVarStem(id: GeneralStyleSurfaceId): string {
 export function surfaceCssVarNames(id: GeneralStyleSurfaceId): {
   bg: string;
   fg: string;
+  stroke: string;
 } {
   const stem = surfaceVarStem(id);
   return {
     bg: `--preview-surface-${stem}-bg`,
     fg: `--preview-surface-${stem}-fg`,
+    stroke: `--preview-surface-${stem}-stroke`,
   };
 }
 
@@ -56,6 +58,9 @@ export function generalStyleToCssVars(
     const keys = surfaceCssVarNames(surface.id);
     vars[keys.bg] = tokens.backgroundColor;
     vars[keys.fg] = tokens.textColor;
+    vars[keys.stroke] = tokens.strokeEnabled
+      ? tokens.strokeColor
+      : "transparent";
   }
 
   return vars as CSSProperties;
