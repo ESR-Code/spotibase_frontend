@@ -9,7 +9,8 @@ export type ActionNodeType =
   | "enableDisableMesh"
   | "highlightMesh"
   | "changeHotspotColor"
-  | "changeHotspotIcon";
+  | "changeHotspotIcon"
+  | "changeHotspotNumberTitle";
 
 /** Relative destination from the selected target hotspot. */
 export type GoToHotspotOffset = "self" | "next" | "prev";
@@ -202,6 +203,28 @@ export type ChangeHotspotIconActionNode = ActionNodeBase<
     icon: string;
   }
 >;
+export type ChangeHotspotNumberTitleItem = {
+  hotspotId: number;
+  /**
+   * Title template. May include `{{field}}` tokens from HTTP / Post Message.
+   * Empty string = restore the authored title when this node runs.
+   */
+  title: string;
+  /**
+   * Marker number template. May include `{{field}}` tokens.
+   * Empty string = restore the authored number when this node runs.
+   */
+  number: string;
+  /** Item body expanded in the Actions canvas. Default false (collapsed). */
+  open?: boolean;
+};
+export type ChangeHotspotNumberTitleActionNode = ActionNodeBase<
+  "changeHotspotNumberTitle",
+  {
+    /** Per-hotspot title and number overrides applied in Preview. */
+    items: ChangeHotspotNumberTitleItem[];
+  }
+>;
 export type ActionNode =
   | OpenModalActionNode
   | GoToSceneActionNode
@@ -213,7 +236,8 @@ export type ActionNode =
   | EnableDisableMeshActionNode
   | HighlightMeshActionNode
   | ChangeHotspotColorActionNode
-  | ChangeHotspotIconActionNode;
+  | ChangeHotspotIconActionNode
+  | ChangeHotspotNumberTitleActionNode;
 
 export type ActionEdge = {
   id: string;

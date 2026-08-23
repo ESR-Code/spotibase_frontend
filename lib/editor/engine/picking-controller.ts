@@ -12,6 +12,7 @@ import { PREVIEW_CLICK_PX } from "@/lib/editor/constants/default-settings";
 import { runHotspotActions } from "@/lib/editor/actions/run-hotspot-actions";
 import { selectHotspotExclusive } from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { resolveHotspotAppearance } from "@/lib/editor/state/preview-appearance-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
@@ -153,10 +154,13 @@ export function createPickingController(
 
       if (id != null && id !== activeId) {
         // Hovering a different hotspot — follow the cursor.
+        const hovered = editor.hotspots.find((h) => h.id === id);
         ui.setHoverTooltip({
           x: e.clientX - rect.left,
           y: e.clientY - rect.top,
-          title: editor.hotspots.find((h) => h.id === id)?.title ?? "",
+          title: hovered
+            ? resolveHotspotAppearance(hovered, true).title
+            : "",
           pinned: false,
         });
       } else if (id === activeId) {

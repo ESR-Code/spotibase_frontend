@@ -3,8 +3,10 @@ import { createActionNode, getActionGraph } from "@/lib/editor/actions/create-ac
 import {
   applyChangeHotspotColor,
   applyChangeHotspotIcon,
+  applyChangeHotspotNumberTitle,
   validateChangeHotspotColorData,
   validateChangeHotspotIconData,
+  validateChangeHotspotNumberTitleData,
 } from "@/lib/editor/actions/change-hotspot-appearance";
 import {
   applyEnableDisable,
@@ -367,6 +369,22 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     run: (node) => {
       if (node.type !== "changeHotspotIcon") return;
       applyChangeHotspotIcon(node.data);
+    },
+  },
+  changeHotspotNumberTitle: {
+    type: "changeHotspotNumberTitle",
+    label: "Change Number & Title",
+    description:
+      "Change selected hotspot titles and marker numbers in Preview.",
+    createDefault: (position) =>
+      createActionNode("changeHotspotNumberTitle", position),
+    validate: (node) => {
+      if (node.type !== "changeHotspotNumberTitle") return null;
+      return validateChangeHotspotNumberTitleData(node.data);
+    },
+    run: (node) => {
+      if (node.type !== "changeHotspotNumberTitle") return;
+      applyChangeHotspotNumberTitle(node.data);
     },
   },
 };

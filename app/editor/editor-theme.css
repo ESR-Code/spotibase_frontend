@@ -2677,6 +2677,20 @@
   padding: 6px 8px;
 }
 
+.editor-root .editor-hotspot-add-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
+}
+
+.editor-root .editor-hotspot-add-row > .editor-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+}
+
 .editor-root .editor-var-field {
   display: flex;
   align-items: center;

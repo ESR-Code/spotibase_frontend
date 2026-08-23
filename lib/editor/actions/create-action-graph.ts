@@ -5,6 +5,8 @@ import type {
   ActionNodeXY,
   ChangeHotspotColorActionNode,
   ChangeHotspotIconActionNode,
+  ChangeHotspotNumberTitleActionNode,
+  ChangeHotspotNumberTitleItem,
   EnableDisableActionNode,
   EnableDisableMeshActionNode,
   HighlightMeshActionNode,
@@ -116,6 +118,33 @@ function asStringIds(value: unknown): string[] {
   );
 }
 
+export function asNumberTitleItems(value: unknown): ChangeHotspotNumberTitleItem[] {
+  if (!Array.isArray(value)) return [];
+  const items: ChangeHotspotNumberTitleItem[] = [];
+  const seen = new Set<number>();
+  for (const raw of value) {
+    if (!raw || typeof raw !== "object") continue;
+    const record = raw as {
+      hotspotId?: unknown;
+      title?: unknown;
+      number?: unknown;
+      open?: unknown;
+    };
+    const hotspotId = Number(record.hotspotId);
+    if (!Number.isFinite(hotspotId) || hotspotId <= 0 || seen.has(hotspotId)) {
+      continue;
+    }
+    seen.add(hotspotId);
+    items.push({
+      hotspotId,
+      title: typeof record.title === "string" ? record.title : "",
+      number: typeof record.number === "string" ? record.number : "",
+      open: typeof record.open === "boolean" ? record.open : false,
+    });
+  }
+  return items;
+}
+
 export function createActionNode(
   type: "openModal",
   position: ActionNodeXY,
@@ -160,6 +189,10 @@ export function createActionNode(
   type: "changeHotspotIcon",
   position: ActionNodeXY,
 ): ChangeHotspotIconActionNode;
+export function createActionNode(
+  type: "changeHotspotNumberTitle",
+  position: ActionNodeXY,
+): ChangeHotspotNumberTitleActionNode;
 export function createActionNode(
   type: ActionNodeType,
   position: ActionNodeXY,
@@ -280,6 +313,13 @@ export function createActionNode(
           hotspotIds: [],
           icon: "Info",
         },
+      };
+    case "changeHotspotNumberTitle":
+      return {
+        id: newActionId(),
+        type: "changeHotspotNumberTitle",
+        position: { ...position },
+        data: { items: [] },
       };
   }
 }
@@ -467,6 +507,14 @@ export function cloneActionGraph(
             hotspotIds: asNumberIds(node.data.hotspotIds),
             icon: typeof node.data.icon === "string" ? node.data.icon : "",
           },
+        };
+      }
+      if (node.type === "changeHotspotNumberTitle") {
+        return {
+          id: node.id,
+          type: "changeHotspotNumberTitle",
+          position: { ...node.position },
+          data: { items: asNumberTitleItems(node.data.items) },
         };
       }
       return {

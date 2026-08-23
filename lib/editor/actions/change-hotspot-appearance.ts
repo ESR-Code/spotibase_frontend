@@ -1,7 +1,9 @@
+import { interpolatePlainText } from "@/lib/editor/actions/interpolate-fields";
 import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
 import type {
   ChangeHotspotColorActionNode,
   ChangeHotspotIconActionNode,
+  ChangeHotspotNumberTitleActionNode,
 } from "@/lib/editor/types/hotspot-action";
 import { normalizeCategoryIcon } from "@/lib/editor/theme/category-icons";
 
@@ -47,4 +49,35 @@ export function applyChangeHotspotIcon(
   usePreviewAppearanceStore
     .getState()
     .setIcon(data.hotspotIds, icon ? normalizeCategoryIcon(icon) : null);
+}
+
+export function validateChangeHotspotNumberTitleData(
+  data: ChangeHotspotNumberTitleActionNode["data"],
+): string | null {
+  if (!data.items.length) return "Add at least one hotspot";
+  return null;
+}
+
+/**
+ * Apply title/number overlays for the current Preview session only.
+ * Empty title or number restores that field's authored value.
+ */
+export function applyChangeHotspotNumberTitle(
+  data: ChangeHotspotNumberTitleActionNode["data"],
+): void {
+  const store = usePreviewAppearanceStore.getState();
+  for (const item of data.items) {
+    const titleTemplate = item.title;
+    const numberTemplate = item.number;
+    const title = titleTemplate.trim()
+      ? interpolatePlainText(titleTemplate).trim()
+      : null;
+    const number = numberTemplate.trim()
+      ? interpolatePlainText(numberTemplate).trim()
+      : null;
+    store.setLabel(item.hotspotId, {
+      title: titleTemplate.trim() ? title : null,
+      number: numberTemplate.trim() ? number : null,
+    });
+  }
 }

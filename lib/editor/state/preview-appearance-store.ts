@@ -5,12 +5,18 @@ export type HotspotAppearanceOverride = {
   color?: string;
   icon?: string;
   style?: HotspotStyle;
+  title?: string;
+  number?: string;
 };
 
 type PreviewAppearanceState = {
   overrides: Record<number, HotspotAppearanceOverride>;
   setColor: (hotspotIds: number[], color: string | null) => void;
   setIcon: (hotspotIds: number[], icon: string | null) => void;
+  setLabel: (
+    hotspotId: number,
+    patch: { title: string | null; number: string | null },
+  ) => void;
   reset: () => void;
 };
 
@@ -57,6 +63,30 @@ export const usePreviewAppearanceStore = create<PreviewAppearanceState>(
             overrides[id] = { ...prev, icon, style: "icon" };
           }
         }
+        return { overrides };
+      }),
+    setLabel: (hotspotId, patch) =>
+      set((state) => {
+        const overrides = { ...state.overrides };
+        const prev = overrides[hotspotId] ?? {};
+        const next: HotspotAppearanceOverride = { ...prev };
+        if (patch.title === null) {
+          delete next.title;
+        } else {
+          next.title = patch.title;
+        }
+        if (patch.number === null) {
+          delete next.number;
+          if (next.style === "number") {
+            if (next.icon) next.style = "icon";
+            else delete next.style;
+          }
+        } else {
+          next.number = patch.number;
+          next.style = "number";
+        }
+        if (Object.keys(next).length === 0) delete overrides[hotspotId];
+        else overrides[hotspotId] = next;
         return { overrides };
       }),
     reset: () => set({ overrides: {} }),

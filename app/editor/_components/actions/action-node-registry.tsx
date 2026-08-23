@@ -7,6 +7,7 @@ import {
   ExternalLink,
   Eye,
   Globe,
+  Hash,
   Highlighter,
   MapPinned,
   MessagesSquare,
@@ -18,6 +19,7 @@ import {
 import type { ComponentType } from "react";
 import { ChangeHotspotColorNode } from "@/app/editor/_components/actions/change-hotspot-color-node";
 import { ChangeHotspotIconNode } from "@/app/editor/_components/actions/change-hotspot-icon-node";
+import { ChangeHotspotNumberTitleNode } from "@/app/editor/_components/actions/change-hotspot-number-title-node";
 import { EnableDisableNode } from "@/app/editor/_components/actions/enable-disable-node";
 import { EnableDisableMeshNode } from "@/app/editor/_components/actions/enable-disable-mesh-node";
 import { HighlightMeshNode } from "@/app/editor/_components/actions/highlight-mesh-node";
@@ -124,6 +126,13 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     accent: "#6ec6ff",
     Node: ChangeHotspotIconNode,
   },
+  changeHotspotNumberTitle: {
+    type: "changeHotspotNumberTitle",
+    meta: ACTION_NODE_META.changeHotspotNumberTitle,
+    icon: Hash,
+    accent: "#a78bfa",
+    Node: ChangeHotspotNumberTitleNode,
+  },
 };
 
 export const ACTION_UI_MENU_ITEMS = Object.values(ACTION_UI_REGISTRY);
@@ -141,5 +150,6 @@ export const ACTION_FLOW_NODE_TYPES = {
   highlightMesh: HighlightMeshNode,
   changeHotspotColor: ChangeHotspotColorNode,
   changeHotspotIcon: ChangeHotspotIconNode,
+  changeHotspotNumberTitle: ChangeHotspotNumberTitleNode,
   [ACTION_FENCE_TYPE]: ActionFenceNode,
 };

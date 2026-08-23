@@ -44,6 +44,7 @@ export const START_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "highlightMesh",
   "changeHotspotColor",
   "changeHotspotIcon",
+  "changeHotspotNumberTitle",
 ];
 
 export const HOTSPOT_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
@@ -58,6 +59,7 @@ export const HOTSPOT_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "highlightMesh",
   "changeHotspotColor",
   "changeHotspotIcon",
+  "changeHotspotNumberTitle",
 ];
 
 /** Click triggers on the Preview bottom bar — no hotspot-owned Open Modal. */
@@ -72,6 +74,7 @@ export const MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "highlightMesh",
   "changeHotspotColor",
   "changeHotspotIcon",
+  "changeHotspotNumberTitle",
 ];
 
 export function isHotspotOwnerId(ownerId: number): boolean {

@@ -176,6 +176,13 @@ function LegendListItem({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const isPreview = useEditorStore((s) => s.isPreview);
+  const appearanceOverride = usePreviewAppearanceStore(
+    (s) => s.overrides[hotspot.id],
+  );
+  void appearanceOverride;
+  const resolved = resolveHotspotAppearance(hotspot, isPreview);
+
   return (
     <div
       className={`editor-hot-item ${selected ? "selected" : ""}`}
@@ -187,7 +194,7 @@ function LegendListItem({
       <LegendMarkerVisual hotspot={hotspot} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="truncate text-[12.5px] font-semibold leading-tight">
-          {hotspot.legendName || hotspot.title}
+          {hotspot.legendName || resolved.title}
         </div>
         {category ? (
           <CategoryOptionBadge category={category} />

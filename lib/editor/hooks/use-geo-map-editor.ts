@@ -34,7 +34,10 @@ import {
   isPreviewHotspotEnabled,
   usePreviewVisibilityStore,
 } from "@/lib/editor/state/preview-visibility-store";
-import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
+import {
+  resolveHotspotAppearance,
+  usePreviewAppearanceStore,
+} from "@/lib/editor/state/preview-appearance-store";
 import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
 import {
   DEFAULT_SHAPE_FILL,
@@ -160,7 +163,7 @@ function syncOverlayAnchors(map: MapLibreMap) {
         ui.setHoverTooltip({
           x: point.x,
           y: point.y,
-          title: active.title,
+          title: resolveHotspotAppearance(active, true).title,
           pinned: true,
         });
       }
@@ -481,7 +484,7 @@ export function handleGeoMarkerEnter(id: number, clientX: number, clientY: numbe
   ui.setHoverTooltip({
     x: clientX - rect.left,
     y: clientY - rect.top,
-    title: hotspot.title,
+    title: resolveHotspotAppearance(hotspot, true).title,
     pinned: false,
   });
 }

@@ -8,6 +8,10 @@ import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { EditorDialog } from "@/app/editor/_components/ui/editor-dialog";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import {
+  resolveHotspotAppearance,
+  usePreviewAppearanceStore,
+} from "@/lib/editor/state/preview-appearance-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import { cn } from "@/lib/utils";
@@ -20,6 +24,8 @@ export function PreviewModal() {
   const infoBoxAnchor = useUIStore((s) => s.infoBoxAnchor);
   const setInfoBoxAnchor = useUIStore((s) => s.setInfoBoxAnchor);
   const hotspots = useEditorStore((s) => s.hotspots);
+  const isPreview = useEditorStore((s) => s.isPreview);
+  usePreviewAppearanceStore((s) => s.overrides);
   const presentation = useSettingsStore((s) => s.markerDialogPresentation);
   const size = useSettingsStore((s) => s.markerDialogSize);
   const backdrop = useSettingsStore((s) => s.markerDialogBackdrop);
@@ -138,6 +144,7 @@ export function PreviewModal() {
 
   if (!hotspot) return null;
 
+  const displayHotspot = resolveHotspotAppearance(hotspot, isPreview);
   const headerImage = hotspot.image.trim();
   const hasHeaderImage = headerImage.length > 0;
 
@@ -202,7 +209,7 @@ export function PreviewModal() {
       ) : null}
 
       <EditorDialog.Header
-        title={hotspot.title}
+        title={displayHotspot.title}
         description={
           category ? <CategoryOptionBadge category={category} /> : undefined
         }

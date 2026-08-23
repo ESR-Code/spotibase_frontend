@@ -107,6 +107,15 @@ function actionNodeDetail(
           ? `→ ${node.data.hotspotIds.length} icon`
           : `→ ${node.data.hotspotIds.length} reset icon`
         : "→ (no hotspots)";
+    case "changeHotspotNumberTitle": {
+      const count = node.data.items?.length ?? 0;
+      if (count === 0) return "→ (no hotspots)";
+      const resets = node.data.items.filter(
+        (item) => !item.title.trim() && !item.number.trim(),
+      ).length;
+      if (resets === count) return `→ ${count} reset label`;
+      return `→ ${count} label`;
+    }
     default:
       return null;
   }

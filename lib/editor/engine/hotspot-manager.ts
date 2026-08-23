@@ -176,10 +176,11 @@ export function createHotspotManager(
         const toHotspot = new pcModule.Vec3().sub2(world, camPos);
         if (toHotspot.dot(camera.forward) > 0) {
           camera.camera.worldToScreen(world, screenPos);
+          const resolved = resolveHotspotAppearance(active, true);
           useUIStore.getState().setHoverTooltip({
             x: screenPos.x,
             y: screenPos.y,
-            title: active.title,
+            title: resolved.title,
             pinned: true,
           });
         }

@@ -1,4 +1,5 @@
 import {
+  asNumberTitleItems,
   cloneActionNodeAt,
   createActionNode,
   newActionId,
@@ -586,6 +587,16 @@ export function updateNodeData(
                 )
               : node.data.hotspotIds,
             icon: typeof patch.icon === "string" ? patch.icon : node.data.icon,
+          },
+        };
+      }
+      if (node.type === "changeHotspotNumberTitle") {
+        return {
+          ...node,
+          data: {
+            items: Array.isArray(patch.items)
+              ? asNumberTitleItems(patch.items)
+              : node.data.items,
           },
         };
       }
