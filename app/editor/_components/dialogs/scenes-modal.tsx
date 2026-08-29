@@ -12,6 +12,7 @@ import {
   createEmptyActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
 import { cloneCameraResetPosition } from "@/lib/editor/constants/default-settings";
+import { cloneGeoReference } from "@/lib/editor/types/geo-reference";
 import { getSceneType, listSceneTypes } from "@/lib/editor/scene-types/registry";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { readEffectsSnapshot } from "@/lib/editor/state/effects-store";
@@ -65,6 +66,7 @@ function syncActiveSceneSnapshot() {
             effects: readEffectsSnapshot(),
             geo: readGeoSnapshot(),
             layers: readLayersSnapshot(),
+            geoReference: cloneGeoReference(scene.geoReference),
           }
         : scene,
     ),

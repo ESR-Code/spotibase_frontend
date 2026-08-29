@@ -10,11 +10,15 @@ import {
 } from "@/lib/editor/engine/ray-utils";
 import { PREVIEW_CLICK_PX } from "@/lib/editor/constants/default-settings";
 import { runHotspotActions } from "@/lib/editor/actions/run-hotspot-actions";
+import { useAlignmentSessionStore } from "@/lib/editor/state/alignment-session-store";
+import { useCoordsInspectorStore } from "@/lib/editor/state/coords-inspector-store";
 import { selectHotspotExclusive } from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { resolveHotspotAppearance } from "@/lib/editor/state/preview-appearance-store";
+import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
+import { isAlignedGeoReference } from "@/lib/editor/types/geo-reference";
 
 export type PickingController = {
   dispose: () => void;
@@ -81,6 +85,29 @@ export function createPickingController(
       return;
     }
 
+    const session = useAlignmentSessionStore.getState();
+    if (session.open && session.phase === "align") {
+      if (session.waitingFor === "local") {
+        const ray = screenRayFromEvent(
+          pcModule,
+          camera,
+          canvas,
+          e.clientX,
+          e.clientY,
+        );
+        const hit = raycastMeshes(pcModule, modelRoot, ray);
+        if (hit) {
+          session.pickLocal({
+            x: hit.point.x,
+            y: hit.point.y,
+            z: hit.point.z,
+          });
+          e.stopImmediatePropagation();
+        }
+      }
+      return;
+    }
+
     const id = pickHotspotId(e.clientX, e.clientY);
     if (id != null) {
       if (editor.mode === "select") {
@@ -128,6 +155,32 @@ export function createPickingController(
         e.stopImmediatePropagation();
       }
     } else if (editor.mode === "select") {
+      const scenes = useScenesStore.getState();
+      const active =
+        scenes.scenes.find((s) => s.id === scenes.activeSceneId) ?? null;
+      if (
+        isAlignedGeoReference(active?.geoReference) &&
+        useCoordsInspectorStore.getState().clickInspectEnabled
+      ) {
+        const ray = screenRayFromEvent(
+          pcModule,
+          camera,
+          canvas,
+          e.clientX,
+          e.clientY,
+        );
+        const hit = raycastMeshes(pcModule, modelRoot, ray);
+        if (hit) {
+          useCoordsInspectorStore.getState().setLocal({
+            x: hit.point.x,
+            y: hit.point.y,
+            z: hit.point.z,
+          });
+          const ui = useUIStore.getState();
+          ui.setOutlinerCollapsed(false);
+          ui.setOutlinerTab("subject");
+        }
+      }
       selectAndOpen(null);
     }
   };

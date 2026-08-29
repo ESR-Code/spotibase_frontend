@@ -8,6 +8,7 @@ import {
   LayoutGrid,
   ListTree,
   MapPin,
+  MapPinned,
   Moon,
   Palette,
   PanelBottom,
@@ -20,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-image-field";
 import { GeoDetailsSection } from "@/app/editor/_components/drawers/geo-details-section";
+import { GeoreferenceSection } from "@/app/editor/_components/drawers/georeference-section";
 import { MapStyleSection } from "@/app/editor/_components/drawers/map-style-section";
 import { CustomMenuSection } from "@/app/editor/_components/drawers/custom-menu-section";
 import { CameraPoseCaptureField } from "@/app/editor/_components/ui/camera-pose-capture-field";
@@ -137,6 +139,16 @@ export function SettingsDrawer() {
             icon={<Palette className="h-3.5 w-3.5" />}
           >
             <MapStyleSection />
+          </SettingsSection>
+        ) : null}
+
+        {sections.georeference ? (
+          <SettingsSection
+            title="Georeference"
+            icon={<MapPinned className="h-3.5 w-3.5" />}
+            defaultOpen
+          >
+            <GeoreferenceSection />
           </SettingsSection>
         ) : null}
 

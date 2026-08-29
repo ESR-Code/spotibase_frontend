@@ -18,7 +18,7 @@ export type GeoMapStyleTemplate = {
   swatches: [string, string, string];
 };
 
-export const DEFAULT_GEO_MAP_STYLE_ID: GeoMapStyleId = "midnight";
+export const DEFAULT_GEO_MAP_STYLE_ID: GeoMapStyleId = "daylight";
 
 export const GEO_MAP_STYLES: readonly GeoMapStyleTemplate[] = [
   {

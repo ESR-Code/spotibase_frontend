@@ -17,7 +17,7 @@ function toFormValues(geo: GeoSettings): GeoFormValues {
     startLng: geo.start?.lng ?? null,
     startLat: geo.start?.lat ?? null,
     startZoom: geo.startZoom,
-    flatProjection: geo.flatProjection ?? false,
+    flatProjection: geo.flatProjection ?? DEFAULT_GEO_SETTINGS.flatProjection,
   };
 }
 

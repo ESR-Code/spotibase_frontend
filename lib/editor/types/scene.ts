@@ -6,6 +6,7 @@ import type {
   EffectsSettings,
   EnvironmentSettings,
 } from "@/lib/editor/types/editor-settings";
+import type { GeoReference } from "@/lib/editor/types/geo-reference";
 import type { GeoSettings } from "@/lib/editor/types/geo-settings";
 import type { SceneLayer } from "@/lib/editor/types/scene-layer";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
@@ -49,4 +50,9 @@ export type Scene = {
   geo: GeoSettings;
   /** Per-scene overlay layers (image overlays now; more kinds later). */
   layers: SceneLayer[];
+  /**
+   * Alignment of a 3D/2D scene to a Geo Map scene.
+   * Absent on geo scenes and on unaligned model/image scenes.
+   */
+  geoReference?: GeoReference;
 };

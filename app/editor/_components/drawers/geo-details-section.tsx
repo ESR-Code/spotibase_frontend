@@ -156,8 +156,8 @@ export function GeoDetailsSection() {
   return (
     <div className="space-y-2.5">
       <p className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
-        Default view is a globe. Enable flat projection for a 2D map, or set a
-        start pin to open this scene on those coordinates.
+        New map scenes open as a flat map. Turn off flat projection for a 3D
+        globe, or set a start pin to open this scene on those coordinates.
       </p>
 
       <SwitchField

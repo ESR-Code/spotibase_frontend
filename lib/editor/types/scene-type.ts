@@ -11,6 +11,7 @@ export type SceneSettingsSections = {
   camera: boolean;
   geoDetails: boolean;
   mapStyle: boolean;
+  georeference: boolean;
 };
 
 export type SceneTypeDescriptor = {

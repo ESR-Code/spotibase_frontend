@@ -106,6 +106,30 @@
   color: var(--editor-fg);
 }
 
+.editor-root .editor-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.editor-root .editor-btn:disabled:hover {
+  border-color: var(--editor-line);
+  background: var(--editor-panel-2);
+  transform: none;
+}
+
+.editor-root .editor-btn-primary:disabled:hover {
+  background: linear-gradient(135deg, var(--editor-crimson) 0%, #b51e2c 100%);
+  border-color: #8a1622;
+}
+
+.editor-root .editor-btn-ghost:disabled:hover {
+  background: transparent;
+  border-color: transparent;
+  color: var(--editor-muted);
+}
+
 .editor-root .editor-replace-model-btn {
   display: inline-flex;
   height: 32px;
@@ -3553,6 +3577,172 @@
 
 .editor-overlay-gizmo-rotate {
   cursor: grab;
+}
+
+.editor-align-overlay {
+  z-index: 20;
+}
+
+.editor-align-marker {
+  position: absolute;
+  display: flex;
+  height: 22px;
+  width: 22px;
+  transform: translate(-50%, -50%);
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 2px solid #ecfeff;
+  background: var(--editor-teal);
+  color: #042f2e;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.editor-align-marker-inspect {
+  background: #f4a259;
+  color: #1a1008;
+}
+
+.editor-align-marker-reverse {
+  background: #7dd3fc;
+  color: #082f49;
+}
+
+.editor-align-marker-map {
+  pointer-events: none;
+  position: relative;
+  transform: none;
+}
+
+.editor-align-banner {
+  max-width: min(420px, calc(100% - 2rem));
+}
+
+.editor-coords-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+
+.editor-coords-k {
+  margin-bottom: 2px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--editor-muted-2);
+}
+
+.editor-georef-coords {
+  padding-top: 8px;
+  border-top: 1px solid var(--editor-line-soft);
+}
+
+.editor-root .editor-georef-drawer {
+  width: min(420px, 100%);
+}
+
+.editor-georef-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-georef-map {
+  position: relative;
+  height: 260px;
+  overflow: hidden;
+  border: 1px solid var(--editor-line-soft);
+  border-radius: 10px;
+}
+
+.editor-georef-map.is-waiting {
+  box-shadow: inset 0 0 0 2px var(--editor-teal);
+}
+
+.editor-georef-map-empty {
+  display: flex;
+  height: 160px;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--editor-muted);
+  border: 1px dashed var(--editor-line-soft);
+  border-radius: 10px;
+}
+
+.editor-georef-scene-btn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--editor-line-soft);
+  background: rgba(0, 0, 0, 0.15);
+  padding: 10px 12px;
+  color: var(--editor-fg);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.editor-georef-scene-btn:hover {
+  border-color: rgba(63, 184, 175, 0.45);
+  background: rgba(63, 184, 175, 0.1);
+}
+
+.editor-georef-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.editor-georef-steps li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--editor-muted);
+}
+
+.editor-georef-steps li.is-current {
+  background: rgba(63, 184, 175, 0.12);
+  color: var(--editor-fg);
+}
+
+.editor-georef-step-n {
+  display: flex;
+  height: 18px;
+  width: 18px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--editor-teal);
+  color: #042f2e;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.editor-georef-preview,
+.editor-georef-status {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--editor-muted);
+  border: 1px solid var(--editor-line-soft);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.15);
 }
 
 

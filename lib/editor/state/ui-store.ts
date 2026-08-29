@@ -169,5 +169,10 @@ export const useUIStore = create<UIState>((set, get) => ({
         },
       );
     }
+    void import("@/lib/editor/state/alignment-session-store").then(
+      ({ useAlignmentSessionStore }) => {
+        useAlignmentSessionStore.getState().cancel();
+      },
+    );
   },
 }));

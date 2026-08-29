@@ -27,6 +27,10 @@ import type {
   EffectsSettings,
   EnvironmentSettings,
 } from "@/lib/editor/types/editor-settings";
+import {
+  cloneGeoReference,
+  type GeoReference,
+} from "@/lib/editor/types/geo-reference";
 import type { GeoSettings } from "@/lib/editor/types/geo-settings";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
@@ -74,6 +78,7 @@ export function createScene(partial: {
   effects?: EffectsSettings;
   geo?: GeoSettings;
   layers?: SceneLayer[];
+  geoReference?: GeoReference;
 }): Scene {
   const hotspots = partial.hotspots ?? [];
   return {
@@ -96,6 +101,7 @@ export function createScene(partial: {
     effects: cloneEffectsSettings(partial.effects ?? DEFAULT_EFFECTS_SETTINGS),
     geo: cloneGeoSettings(partial.geo ?? DEFAULT_GEO_SETTINGS),
     layers: cloneLayers(partial.layers),
+    geoReference: cloneGeoReference(partial.geoReference),
   };
 }
 

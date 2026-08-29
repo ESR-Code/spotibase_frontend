@@ -84,7 +84,7 @@ export const DEFAULT_GEO_SETTINGS: GeoSettings = {
   start: null,
   startZoom: DEFAULT_GEO_GLOBE_ZOOM,
   mapStyleId: DEFAULT_GEO_MAP_STYLE_ID,
-  flatProjection: false,
+  flatProjection: true,
 };
 
 export function cloneGeoSettings(geo: Partial<GeoSettings> = {}): GeoSettings {

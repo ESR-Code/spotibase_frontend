@@ -14,7 +14,13 @@ import { createScene } from "@/lib/editor/engine/scene-manager";
 import { bindViewportResize } from "@/lib/editor/engine/viewport-resize";
 import type { ImportSubjectDetail } from "@/lib/editor/io/import-subject";
 import { getCameraModeForSceneType, getSceneType } from "@/lib/editor/scene-types/registry";
+import { useAlignmentSessionStore } from "@/lib/editor/state/alignment-session-store";
+import { useCoordsInspectorStore } from "@/lib/editor/state/coords-inspector-store";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import {
+  useGeoPickOverlayStore,
+  type ProjectedMarker,
+} from "@/lib/editor/state/geo-pick-overlay-store";
 import { useEffectsStore } from "@/lib/editor/state/effects-store";
 import { useEnvironmentStore } from "@/lib/editor/state/environment-store";
 import {
@@ -107,10 +113,96 @@ export function usePlayCanvasEditor() {
 
         let frameCount = 0;
         let fpsAccum = 0;
+        const overlayScreen = new pc.Vec3();
+        const overlayWorld = new pc.Vec3();
+        const overlayTo = new pc.Vec3();
+
+        const projectOverlayMarkers = () => {
+          const cam = scene.camera.camera;
+          if (!cam) {
+            useGeoPickOverlayStore.getState().setMarkers([]);
+            return;
+          }
+          const session = useAlignmentSessionStore.getState();
+          const inspector = useCoordsInspectorStore.getState();
+          const aligning = session.open && session.phase === "align";
+          const inspectOn = inspector.clickInspectEnabled;
+          if (
+            !aligning &&
+            !(inspectOn && inspector.local) &&
+            !(inspectOn && inspector.reverseLocal)
+          ) {
+            if (useGeoPickOverlayStore.getState().markers.length > 0) {
+              useGeoPickOverlayStore.getState().setMarkers([]);
+            }
+            return;
+          }
+
+          const camPos = scene.camera.getPosition();
+          const markers: ProjectedMarker[] = [];
+          const push = (
+            id: string,
+            label: string,
+            x: number,
+            y: number,
+            z: number,
+            kind: ProjectedMarker["kind"],
+          ) => {
+            overlayWorld.set(x, y, z);
+            overlayTo.sub2(overlayWorld, camPos);
+            const inFront = overlayTo.dot(scene.camera.forward) > 0;
+            cam.worldToScreen(overlayWorld, overlayScreen);
+            markers.push({
+              id,
+              label,
+              x: overlayScreen.x,
+              y: overlayScreen.y,
+              visible: inFront,
+              kind,
+            });
+          };
+
+          if (aligning) {
+            session.points.forEach((pt, i) => {
+              if (!pt.local) return;
+              push(
+                pt.id,
+                String(i + 1),
+                pt.local.x,
+                pt.local.y,
+                pt.local.z,
+                "alignment",
+              );
+            });
+          }
+          if (inspectOn && inspector.local) {
+            push(
+              "inspect",
+              "P",
+              inspector.local.x,
+              inspector.local.y,
+              inspector.local.z,
+              "inspect",
+            );
+          }
+          if (inspectOn && inspector.reverseLocal) {
+            push(
+              "reverse",
+              "G",
+              inspector.reverseLocal.x,
+              inspector.reverseLocal.y,
+              inspector.reverseLocal.z,
+              "reverse",
+            );
+          }
+          useGeoPickOverlayStore.getState().setMarkers(markers);
+        };
+
         const onUpdate = (dt: number) => {
           cameraCtrl.update(dt);
           hotspotMgr.update(dt);
           meshHighlight.frameUpdate();
+          projectOverlayMarkers();
           if (getActiveSceneType() === "model") {
             scene.fitKeyLightShadows(cameraCtrl.getOrbitPose().distance);
           }

@@ -46,6 +46,10 @@ import {
 } from "@/lib/editor/state/settings-store";
 import { cloneActionFences } from "@/lib/editor/types/action-fence";
 import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
+import {
+  cloneGeoReference,
+  type GeoReference,
+} from "@/lib/editor/types/geo-reference";
 import { cloneLayers } from "@/lib/editor/types/scene-layer";
 import type { Scene } from "@/lib/editor/types/scene";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
@@ -86,6 +90,7 @@ function snapshotCurrentIntoScene(scene: Scene): Scene {
     effects: readEffectsSnapshot(),
     geo: readGeoSnapshot(),
     layers: readLayersSnapshot(),
+    geoReference: cloneGeoReference(scene.geoReference),
   };
 }
 
@@ -119,6 +124,7 @@ type ScenesState = {
   renameScene: (id: string, name: string) => void;
   setPrimaryScene: (id: string) => void;
   switchScene: (id: string) => void;
+  setSceneGeoReference: (sceneId: string, ref: GeoReference | null) => void;
 };
 
 export const useScenesStore = create<ScenesState>((set, get) => ({
@@ -147,6 +153,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
       effects: cloneEffectsSettings(SEED_SCENE.effects),
       geo: cloneGeoSettings(SEED_SCENE.geo),
       layers: cloneLayers(SEED_SCENE.layers),
+      geoReference: cloneGeoReference(SEED_SCENE.geoReference),
     },
   ],
   activeSceneId: INITIAL_SCENE_ID,
@@ -221,9 +228,23 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
       const activeId =
         current.activeSceneId === id ? nextActiveId : current.activeSceneId;
       return {
-        scenes: remaining.map((s) =>
-          needsPrimary && s.id === activeId ? { ...s, isPrimary: true } : s,
-        ),
+        scenes: remaining.map((s) => {
+          let next = s;
+          if (needsPrimary && s.id === activeId) {
+            next = { ...next, isPrimary: true };
+          }
+          if (next.geoReference?.geoSceneId === id) {
+            next = {
+              ...next,
+              geoReference: {
+                ...next.geoReference,
+                status: "invalid",
+                error: "Referenced Geo Map scene was deleted",
+              },
+            };
+          }
+          return next;
+        }),
         activeSceneId: activeId,
       };
     });
@@ -268,6 +289,18 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
     useGeoStore.getState().hydrateGeo(next.geo);
     useLayersStore.getState().hydrateLayers(next.layers);
 
+    void import("@/lib/editor/state/alignment-session-store").then(
+      ({ useAlignmentSessionStore }) => {
+        const session = useAlignmentSessionStore.getState();
+        if (session.open && session.sceneId !== id) session.cancel();
+      },
+    );
+    void import("@/lib/editor/state/coords-inspector-store").then(
+      ({ useCoordsInspectorStore }) => {
+        useCoordsInspectorStore.getState().reset();
+      },
+    );
+
     if (typeof window !== "undefined") {
       window.dispatchEvent(
         new CustomEvent("editor:scene-switched", {
@@ -286,6 +319,19 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
         );
       }
     }
+  },
+
+  setSceneGeoReference: (sceneId, ref) => {
+    set((state) => ({
+      scenes: state.scenes.map((scene) => {
+        if (scene.id !== sceneId) return scene;
+        if (scene.type === "geo") return scene;
+        return {
+          ...scene,
+          geoReference: ref ? cloneGeoReference(ref) : undefined,
+        };
+      }),
+    }));
   },
 }));
 

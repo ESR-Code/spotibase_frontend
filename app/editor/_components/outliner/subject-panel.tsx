@@ -1,9 +1,21 @@
 "use client";
 
-import { Box, Globe, ImageIcon, RefreshCw, RotateCcw, Upload } from "lucide-react";
+import {
+  Box,
+  Globe,
+  ImageIcon,
+  MapPinned,
+  RefreshCw,
+  RotateCcw,
+  SlidersHorizontal,
+  Upload,
+} from "lucide-react";
 import { useRef, type PointerEvent as ReactPointerEvent } from "react";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
+import { SettingsSection } from "@/app/editor/_components/ui/settings-section";
+import { CoordinateInspector } from "@/app/editor/_components/viewport/coordinate-inspector";
+import { openGeoreferenceWorkflow } from "@/app/editor/_components/drawers/georeference-section";
 import { importSubjectFile } from "@/lib/editor/io/import-subject";
 import { getSceneType } from "@/lib/editor/scene-types/registry";
 import {
@@ -12,9 +24,10 @@ import {
   DEFAULT_MODEL_SCALE,
   useModelStore,
 } from "@/lib/editor/state/model-store";
-import { useActiveScene } from "@/lib/editor/state/scenes-store";
+import { useActiveScene, useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useGeoStore } from "@/lib/editor/state/geo-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
+import { isAlignedGeoReference } from "@/lib/editor/types/geo-reference";
 
 export function SubjectPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -147,7 +160,7 @@ export function SubjectPanel() {
         ) : null}
       </div>
 
-      <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
+      <div className="flex-1 space-y-2.5 overflow-y-auto px-4 py-4">
         {!hasUserModel ? (
           <EditorButton
             type="button"
@@ -164,109 +177,147 @@ export function SubjectPanel() {
           </EditorButton>
         ) : null}
 
-        {controls.scale ? (
-          <section>
-            <div
-              className="mb-2.5 text-[10px] font-bold uppercase tracking-wider"
-              style={{ color: "var(--editor-muted-2)" }}
-            >
-              Size
-            </div>
-            <SliderField
-              label="Uniform Scale"
-              value={modelScale}
-              display={`${modelScale.toFixed(2)}×`}
-              min={0.1}
-              max={3}
-              step={0.05}
-              onChange={setModelScale}
-            />
-          </section>
-        ) : null}
-
-        {controls.rotation ? (
-          <section>
-            <div
-              className="mb-2.5 text-[10px] font-bold uppercase tracking-wider"
-              style={{ color: "var(--editor-muted-2)" }}
-            >
-              Rotation
-            </div>
-            <div className="space-y-3">
-              <SliderField
-                label="Rotate X"
-                value={modelRotation.x}
-                display={`${Math.round(modelRotation.x)}°`}
-                min={-180}
-                max={180}
-                step={1}
-                onChange={(v) => setModelRotation("x", v)}
-              />
-              <SliderField
-                label="Rotate Y"
-                value={modelRotation.y}
-                display={`${Math.round(modelRotation.y)}°`}
-                min={-180}
-                max={180}
-                step={1}
-                onChange={(v) => setModelRotation("y", v)}
-              />
-              <SliderField
-                label="Rotate Z"
-                value={modelRotation.z}
-                display={`${Math.round(modelRotation.z)}°`}
-                min={-180}
-                max={180}
-                step={1}
-                onChange={(v) => setModelRotation("z", v)}
-              />
-            </div>
-          </section>
-        ) : null}
-
-        {controls.reflection ? (
-          <section>
-            <div
-              className="mb-2.5 text-[10px] font-bold uppercase tracking-wider"
-              style={{ color: "var(--editor-muted-2)" }}
-            >
-              Appearance
-            </div>
-            <SliderField
-              label="Reflection"
-              value={modelReflection}
-              display={`${Math.round(modelReflection * 100)}%`}
-              min={0}
-              max={1}
-              step={0.05}
-              onChange={setModelReflection}
-            />
-            {modelReflection !== DEFAULT_MODEL_REFLECTION ? (
-              <p
-                className="mt-1.5 text-[10px] leading-snug"
-                style={{ color: "var(--editor-muted-2)" }}
-              >
-                Lower values reduce gloss so model shadows read more clearly.
-              </p>
-            ) : null}
-          </section>
-        ) : null}
-
-        {controls.scale || controls.rotation ? (
-          <EditorButton
-            type="button"
-            variant="ghost"
-            className="w-full justify-center text-[12px]"
-            disabled={isDefaultTransform}
-            title="Reset size and rotation"
-            onClick={resetModelTransform}
+        {controls.scale || controls.rotation || controls.reflection ? (
+          <SettingsSection
+            title="Subject properties"
+            icon={<SlidersHorizontal className="h-3.5 w-3.5" />}
+            defaultOpen
           >
-            <RotateCcw className="h-3.5 w-3.5" />
-            Reset Transform
-          </EditorButton>
+            {controls.scale ? (
+              <SliderField
+                label="Uniform Scale"
+                value={modelScale}
+                display={`${modelScale.toFixed(2)}×`}
+                min={0.1}
+                max={3}
+                step={0.05}
+                onChange={setModelScale}
+              />
+            ) : null}
+
+            {controls.rotation ? (
+              <div className="space-y-3">
+                <SliderField
+                  label="Rotate X"
+                  value={modelRotation.x}
+                  display={`${Math.round(modelRotation.x)}°`}
+                  min={-180}
+                  max={180}
+                  step={1}
+                  onChange={(v) => setModelRotation("x", v)}
+                />
+                <SliderField
+                  label="Rotate Y"
+                  value={modelRotation.y}
+                  display={`${Math.round(modelRotation.y)}°`}
+                  min={-180}
+                  max={180}
+                  step={1}
+                  onChange={(v) => setModelRotation("y", v)}
+                />
+                <SliderField
+                  label="Rotate Z"
+                  value={modelRotation.z}
+                  display={`${Math.round(modelRotation.z)}°`}
+                  min={-180}
+                  max={180}
+                  step={1}
+                  onChange={(v) => setModelRotation("z", v)}
+                />
+              </div>
+            ) : null}
+
+            {controls.reflection ? (
+              <div>
+                <SliderField
+                  label="Reflection"
+                  value={modelReflection}
+                  display={`${Math.round(modelReflection * 100)}%`}
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  onChange={setModelReflection}
+                />
+                {modelReflection !== DEFAULT_MODEL_REFLECTION ? (
+                  <p
+                    className="mt-1.5 text-[10px] leading-snug"
+                    style={{ color: "var(--editor-muted-2)" }}
+                  >
+                    Lower values reduce gloss so model shadows read more clearly.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {controls.scale || controls.rotation ? (
+              <EditorButton
+                type="button"
+                variant="ghost"
+                className="w-full justify-center text-[12px]"
+                disabled={isDefaultTransform}
+                title="Reset size and rotation"
+                onClick={resetModelTransform}
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Reset Transform
+              </EditorButton>
+            ) : null}
+          </SettingsSection>
         ) : null}
+
+        <GeoreferenceSubjectButton />
       </div>
     </div>
+  );
+}
+
+function GeoreferenceSubjectButton() {
+  const scene = useActiveScene();
+  const geoCount = useScenesStore(
+    (s) => s.scenes.filter((item) => item.type === "geo").length,
+  );
+  const aligned = isAlignedGeoReference(scene.geoReference);
+  const disabled = geoCount === 0;
+
+  return (
+    <>
+      <SettingsSection
+        title="Georeference"
+        icon={<MapPinned className="h-3.5 w-3.5" />}
+        defaultOpen
+      >
+        <EditorButton
+          type="button"
+          className="w-full justify-center text-[12.5px]"
+          disabled={disabled}
+          title={
+            disabled
+              ? "A Geo Map scene is required before this scene can be georeferenced"
+              : "Align this scene to a Geo Map"
+          }
+          onClick={() => openGeoreferenceWorkflow(scene.id)}
+        >
+          <MapPinned className="h-4 w-4" />
+          Georeference Scene
+        </EditorButton>
+        {disabled ? (
+          <p
+            className="text-[11px] leading-snug"
+            style={{ color: "var(--editor-muted)" }}
+          >
+            Add a Geo Map scene first.
+          </p>
+        ) : aligned ? (
+          <p
+            className="text-[11px] leading-snug"
+            style={{ color: "var(--editor-teal)" }}
+          >
+            Aligned to a Geo Map — click to edit control points.
+          </p>
+        ) : null}
+      </SettingsSection>
+      <CoordinateInspector />
+    </>
   );
 }
 

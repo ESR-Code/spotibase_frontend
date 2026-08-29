@@ -26,6 +26,7 @@ const MODEL_TYPE: SceneTypeDescriptor = {
     camera: true,
     geoDetails: false,
     mapStyle: false,
+    georeference: true,
   },
   outlinerTabs: {
     layers: false,
@@ -55,6 +56,7 @@ const IMAGE_TYPE: SceneTypeDescriptor = {
     camera: true,
     geoDetails: false,
     mapStyle: false,
+    georeference: true,
   },
   outlinerTabs: {
     layers: false,
@@ -84,6 +86,7 @@ const GEO_TYPE: SceneTypeDescriptor = {
     camera: true,
     geoDetails: true,
     mapStyle: true,
+    georeference: false,
   },
   outlinerTabs: {
     layers: true,
