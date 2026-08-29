@@ -5,6 +5,7 @@ import type { CameraController } from "@/lib/editor/engine/camera-controller";
 import type { HotspotManager } from "@/lib/editor/engine/hotspot-manager";
 import {
   raycastMeshes,
+  rayPlaneHit,
   raySphereHit,
   screenRayFromEvent,
 } from "@/lib/editor/engine/ray-utils";
@@ -37,6 +38,9 @@ export function createPickingController(
   const planeHit = new pcModule.Vec3();
   const grabPt = new pcModule.Vec3();
   const camForward = new pcModule.Vec3();
+  const groundPoint = new pcModule.Vec3();
+  const groundNormal = new pcModule.Vec3();
+  const groundHit = new pcModule.Vec3();
 
   const pickHotspotId = (clientX: number, clientY: number): number | null => {
     const ray = screenRayFromEvent(pcModule, camera, canvas, clientX, clientY);
@@ -70,6 +74,40 @@ export function createPickingController(
     useUIStore.getState().setPropertiesDrawerOpen(id != null);
   };
 
+  const pickAlignmentLocal = (
+    clientX: number,
+    clientY: number,
+  ): { x: number; y: number; z: number } | null => {
+    const ray = screenRayFromEvent(pcModule, camera, canvas, clientX, clientY);
+    const meshHit = raycastMeshes(pcModule, modelRoot, ray);
+    const scenes = useScenesStore.getState();
+    const type =
+      scenes.scenes.find((s) => s.id === scenes.activeSceneId)?.type ?? "model";
+
+    if (type === "image") {
+      groundPoint.set(0, 0, 0);
+      groundNormal.set(0, 0, 1);
+    } else {
+      groundPoint.set(0, 0, 0);
+      groundNormal.set(0, 1, 0);
+    }
+    const hitGround = rayPlaneHit(
+      ray,
+      groundPoint,
+      groundNormal,
+      pcModule,
+      groundHit,
+    );
+
+    if (meshHit) {
+      return { x: meshHit.point.x, y: meshHit.point.y, z: meshHit.point.z };
+    }
+    if (hitGround) {
+      return { x: groundHit.x, y: groundHit.y, z: groundHit.z };
+    }
+    return null;
+  };
+
   const onPointerDown = (e: PointerEvent) => {
     if (e.button !== 0) return;
     const editor = useEditorStore.getState();
@@ -88,20 +126,9 @@ export function createPickingController(
     const session = useAlignmentSessionStore.getState();
     if (session.open && session.phase === "align") {
       if (session.waitingFor === "local") {
-        const ray = screenRayFromEvent(
-          pcModule,
-          camera,
-          canvas,
-          e.clientX,
-          e.clientY,
-        );
-        const hit = raycastMeshes(pcModule, modelRoot, ray);
+        const hit = pickAlignmentLocal(e.clientX, e.clientY);
         if (hit) {
-          session.pickLocal({
-            x: hit.point.x,
-            y: hit.point.y,
-            z: hit.point.z,
-          });
+          session.pickLocal(hit);
           e.stopImmediatePropagation();
         }
       }

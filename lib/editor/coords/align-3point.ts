@@ -1,6 +1,7 @@
 import type { CoordVec3, SceneTransform } from "@/lib/editor/types/geo-reference";
 import {
   mat4FromLinearTranslation,
+  mat4FromYUpYawScaleTranslation,
   sceneTransformFromMatrix,
 } from "@/lib/editor/coords/mat4";
 import {
@@ -20,17 +21,69 @@ export type Align3PointResult =
   | { ok: false; error: string };
 
 /**
- * Umeyama/Kabsch similarity (uniform scale, rotation, translation) from 3+
- * corresponding points. Local PlayCanvas XYZ → canonical ENU meters.
+ * PlayCanvas Y-up ground (x, z) → ENU (east, north) with local y → up.
+ * Used when control points sit on the grid / factory floor (coplanar).
  */
-export function align3Point(
+export function alignPlanarYUp(
   local: readonly CoordVec3[],
   enu: readonly CoordVec3[],
 ): Align3PointResult {
-  if (local.length < 3 || enu.length < 3 || local.length !== enu.length) {
-    return { ok: false, error: "3-point alignment requires three corresponding points" };
+  if (local.length < 2 || local.length !== enu.length) {
+    return { ok: false, error: "Planar alignment needs at least two corresponding points" };
   }
 
+  const muL = vec3Centroid(local);
+  const muW = vec3Centroid(enu);
+  let varXz = 0;
+  let h00 = 0;
+  let h01 = 0;
+  let h10 = 0;
+  let h11 = 0;
+  for (let i = 0; i < local.length; i++) {
+    const lx = local[i]!.x - muL.x;
+    const lz = local[i]!.z - muL.z;
+    const we = enu[i]!.x - muW.x;
+    const wn = enu[i]!.y - muW.y;
+    varXz += lx * lx + lz * lz;
+    h00 += we * lx;
+    h01 += we * lz;
+    h10 += wn * lx;
+    h11 += wn * lz;
+  }
+  if (varXz < MIN_SCALE) {
+    return { ok: false, error: "Local points do not span the ground plane" };
+  }
+
+  const x = h00 + h11;
+  const y = h10 - h01;
+  const r = Math.hypot(x, y);
+  const c = r < MIN_SCALE ? 1 : x / r;
+  const s = r < MIN_SCALE ? 0 : y / r;
+  const scale = r / varXz;
+  if (!Number.isFinite(scale) || Math.abs(scale) < MIN_SCALE) {
+    return { ok: false, error: "Alignment scale is degenerate" };
+  }
+
+  const yaw = Math.atan2(s, c);
+  const rx = scale * (c * muL.x - s * muL.z);
+  const ry = scale * (s * muL.x + c * muL.z);
+  const translation = {
+    x: muW.x - rx,
+    y: muW.y - ry,
+    z: muW.z - scale * muL.y,
+  };
+  const matrix = mat4FromYUpYawScaleTranslation(yaw, scale, translation);
+  const transform = sceneTransformFromMatrix(matrix);
+  if (!transform) {
+    return { ok: false, error: "Failed to build an invertible 3-point transform" };
+  }
+  return { ok: true, transform };
+}
+
+function alignUmeyama(
+  local: readonly CoordVec3[],
+  enu: readonly CoordVec3[],
+): Align3PointResult {
   const muX = vec3Centroid(local);
   const muY = vec3Centroid(enu);
   const X = local.map((p) => vec3Sub(p, muX));
@@ -40,7 +93,6 @@ export function align3Point(
   const H: Mat3 = [0, 0, 0, 0, 0, 0, 0, 0, 0];
   for (let i = 0; i < X.length; i++) {
     varX += vec3Len2(X[i]!);
-    // H += Y * Xᵀ  (row r, col c)
     H[0] += Y[i]!.x * X[i]!.x;
     H[1] += Y[i]!.x * X[i]!.y;
     H[2] += Y[i]!.x * X[i]!.z;
@@ -85,4 +137,25 @@ export function align3Point(
     return { ok: false, error: "Failed to build an invertible 3-point transform" };
   }
   return { ok: true, transform };
+}
+
+/**
+ * Umeyama/Kabsch similarity (uniform scale, rotation, translation) from 3+
+ * corresponding points. Local PlayCanvas XYZ → canonical ENU meters.
+ *
+ * Ground-control picks on the grid or factory floor are coplanar (same height).
+ * Full 3D Umeyama is rank-deficient in that case, so we fall back to a Y-up
+ * planar similarity that stays invertible.
+ */
+export function align3Point(
+  local: readonly CoordVec3[],
+  enu: readonly CoordVec3[],
+): Align3PointResult {
+  if (local.length < 3 || enu.length < 3 || local.length !== enu.length) {
+    return { ok: false, error: "3-point alignment requires three corresponding points" };
+  }
+
+  const umeyama = alignUmeyama(local, enu);
+  if (umeyama.ok) return umeyama;
+  return alignPlanarYUp(local, enu);
 }

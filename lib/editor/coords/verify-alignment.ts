@@ -201,6 +201,43 @@ export function runAlignmentSelfCheck(): { ok: boolean; failures: string[] } {
     ),
   );
 
+  const gridFloor = buildGeoReference({
+    geoSceneId: "scene-geo",
+    alignmentMethod: "3-point",
+    controlPoints: [
+      {
+        id: "cp-1",
+        local: { x: -4.85, y: 0.25, z: -2.72 },
+        geo: { latitude: 38.9205, longitude: 32.85425, altitude: 0 },
+      },
+      {
+        id: "cp-2",
+        local: { x: 6.1, y: 0.25, z: -2.55 },
+        geo: { latitude: 38.92085, longitude: 32.85627, altitude: 0 },
+      },
+      {
+        id: "cp-3",
+        local: { x: 6.9, y: 0.25, z: 2.45 },
+        geo: { latitude: 38.91973, longitude: 32.85594, altitude: 0 },
+      },
+    ],
+  });
+  fail(
+    assert(
+      gridFloor.ok,
+      `coplanar grid 3-point should solve, got: ${"error" in gridFloor ? gridFloor.error : ""}`,
+    ),
+  );
+  if (gridFloor.ok) {
+    fail(
+      assert(
+        Number.isFinite(gridFloor.geoReference.transform.scale) &&
+          gridFloor.geoReference.transform.scale > 0,
+        "coplanar grid 3-point scale should be positive",
+      ),
+    );
+  }
+
   return { ok: failures.length === 0, failures };
 }
 

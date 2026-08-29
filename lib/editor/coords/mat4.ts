@@ -30,6 +30,27 @@ export function mat4FromRzScaleTranslation(
   ];
 }
 
+/**
+ * PlayCanvas Y-up ground (x, z) → ENU (east, north); local y → up.
+ * `yawRad` rotates in the XZ plane: (x, z) ↦ (c x − s z, s x + c z).
+ */
+export function mat4FromYUpYawScaleTranslation(
+  yawRad: number,
+  scale: number,
+  translation: CoordVec3,
+): Mat4 {
+  const c = Math.cos(yawRad);
+  const s = Math.sin(yawRad);
+  const sc = scale * c;
+  const ss = scale * s;
+  return [
+    sc, ss, 0, 0,
+    0, 0, scale, 0,
+    -ss, sc, 0, 0,
+    translation.x, translation.y, translation.z, 1,
+  ];
+}
+
 /** Column-major 4×4 from 3×3 linear map (row-major lin[r][c]) + translation. */
 export function mat4FromLinearTranslation(
   lin: number[][],

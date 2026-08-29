@@ -152,27 +152,15 @@ function cross(
 }
 
 function fillOrthonormal(U: Mat3): void {
-  const c0 = col(U, 0);
-  const c1 = col(U, 1);
-  const c2 = col(U, 2);
-  const n0 = Math.hypot(c0.x, c0.y, c0.z);
-  const n1 = Math.hypot(c1.x, c1.y, c1.z);
-  const n2 = Math.hypot(c2.x, c2.y, c2.z);
-  if (n0 >= n1 && n0 >= n2 && n0 > 1e-12) {
-    const a = normalizeOrZero(c0);
-    let b = n1 > 1e-12 ? normalizeOrZero(c1) : { x: 0, y: 1, z: 0 };
-    if (Math.abs(a.x * b.x + a.y * b.y + a.z * b.z) > 0.9) {
-      b = Math.abs(a.x) < 0.9 ? { x: 1, y: 0, z: 0 } : { x: 0, y: 1, z: 0 };
-    }
-    b = normalizeOrZero(cross(a, cross(b, a)));
-    const c = normalizeOrZero(cross(a, b));
-    setCol(U, 0, a);
-    setCol(U, 1, b);
-    setCol(U, 2, c);
-    return;
+  const cols = [col(U, 0), col(U, 1), col(U, 2)];
+  const norms = cols.map((v) => Math.hypot(v.x, v.y, v.z));
+  const eps = 1e-12;
+  const good: number[] = [];
+  for (let i = 0; i < 3; i++) {
+    if (norms[i]! > eps) good.push(i);
   }
-  // Fall back to identity if everything vanished.
-  if (n0 < 1e-12 && n1 < 1e-12 && n2 < 1e-12) {
+
+  const setIdentity = () => {
     U[0] = 1;
     U[1] = 0;
     U[2] = 0;
@@ -182,7 +170,46 @@ function fillOrthonormal(U: Mat3): void {
     U[6] = 0;
     U[7] = 0;
     U[8] = 1;
+  };
+
+  if (good.length === 0) {
+    setIdentity();
+    return;
   }
+
+  const orthoPair = (
+    aRaw: { x: number; y: number; z: number },
+    bRaw: { x: number; y: number; z: number },
+  ) => {
+    const a = normalizeOrZero(aRaw);
+    let b = normalizeOrZero(bRaw);
+    if (Math.abs(a.x * b.x + a.y * b.y + a.z * b.z) > 0.9 || Math.hypot(b.x, b.y, b.z) < eps) {
+      b = Math.abs(a.x) < 0.9 ? { x: 1, y: 0, z: 0 } : { x: 0, y: 1, z: 0 };
+    }
+    b = normalizeOrZero(cross(a, cross(b, a)));
+    const c = normalizeOrZero(cross(a, b));
+    return { a, b, c };
+  };
+
+  if (good.length >= 2) {
+    const i = good[0]!;
+    const j = good[1]!;
+    const { a, b, c } = orthoPair(cols[i]!, cols[j]!);
+    setCol(U, i, a);
+    setCol(U, j, b);
+    const k = 3 - i - j;
+    setCol(U, k, c);
+    return;
+  }
+
+  const i = good[0]!;
+  const tmp =
+    Math.abs(cols[i]!.x) < 0.9 ? { x: 1, y: 0, z: 0 } : { x: 0, y: 1, z: 0 };
+  const { a, b, c } = orthoPair(cols[i]!, tmp);
+  setCol(U, i, a);
+  const rest = [0, 1, 2].filter((k) => k !== i);
+  setCol(U, rest[0]!, b);
+  setCol(U, rest[1]!, c);
 }
 
 /**
