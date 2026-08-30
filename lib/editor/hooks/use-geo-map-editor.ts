@@ -129,7 +129,7 @@ function syncOverlayAnchors(map: MapLibreMap) {
     ui.previewModalOpen && settings.markerDialogPresentation === "infobox";
 
   if (editor.isPreview && infoBoxOpen && previewActiveId != null) {
-    const hotspot = editor.hotspots.find((h) => h.id === previewActiveId);
+    const hotspot = findHotspot(previewActiveId);
     if (hotspot && isPreviewHotspotEnabled(editor.isPreview, hotspot.id)) {
       const point = projectHotspot(map, hotspot.position.x, hotspot.position.y);
       if (point) {
@@ -158,7 +158,7 @@ function syncOverlayAnchors(map: MapLibreMap) {
     !hoveringOther &&
     !infoBoxOpen
   ) {
-    const active = editor.hotspots.find((h) => h.id === previewActiveId);
+    const active = findHotspot(previewActiveId);
     if (active && isPreviewHotspotEnabled(editor.isPreview, active.id)) {
       const point = projectHotspot(map, active.position.x, active.position.y);
       if (point) {
@@ -367,9 +367,7 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
     const onFocusHotspot = (event: Event) => {
       const id = (event as CustomEvent<{ id: number }>).detail?.id;
       if (id == null) return;
-      const hotspot = useEditorStore
-        .getState()
-        .hotspots.find((h) => h.id === id);
+      const hotspot = findHotspot(id);
       if (!hotspot) return;
 
       if (

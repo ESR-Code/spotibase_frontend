@@ -8,7 +8,7 @@ import {
   type HotspotVisual,
 } from "@/lib/editor/engine/hotspot-visuals";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
-import { listPreviewHotspots } from "@/lib/editor/state/preview-hotspots";
+import { findHotspot, listPreviewHotspots } from "@/lib/editor/state/preview-hotspots";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import {
@@ -171,7 +171,7 @@ export function createHotspotManager(
       !infoBoxOpen &&
       camera.camera
     ) {
-      const active = editor.hotspots.find((h) => h.id === previewActiveId);
+      const active = findHotspot(previewActiveId);
       const visual = visuals.get(previewActiveId);
       if (active && visual && isPreviewHotspotEnabled(editor.isPreview, active.id)) {
         const world = visual.root.getPosition();

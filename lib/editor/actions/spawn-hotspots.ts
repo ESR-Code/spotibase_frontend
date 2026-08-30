@@ -135,6 +135,7 @@ export function applySpawnHotspots(
     `Hotspot ${String(scope.index + 1).padStart(3, "0")}`;
   const numberText = interpolateOptional(template.number).trim();
   const id = store.allocateId();
+  const numberFallback = String(scope.index + 1);
   const hotspot = createHotspotData(id, position, {
     title,
     desc: interpolateOptional(template.desc),
@@ -143,7 +144,7 @@ export function applySpawnHotspots(
     color: interpolateOptional(template.color) || template.color,
     style: template.style,
     shape: template.shape,
-    number: numberText || id,
+    number: numberText || numberFallback,
     icon: interpolateOptional(template.icon) || template.icon,
     markerImage: interpolateOptional(template.markerImage),
     pulse: template.pulse,

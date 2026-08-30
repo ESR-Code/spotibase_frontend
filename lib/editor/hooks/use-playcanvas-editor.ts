@@ -29,6 +29,7 @@ import {
   DEFAULT_MODEL_SCALE,
   useModelStore,
 } from "@/lib/editor/state/model-store";
+import { findHotspot } from "@/lib/editor/state/preview-hotspots";
 import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
 import { usePreviewMeshHighlightStore } from "@/lib/editor/state/preview-mesh-highlight-store";
 import { usePreviewSpawnedHotspotsStore } from "@/lib/editor/state/preview-spawned-hotspots-store";
@@ -354,9 +355,7 @@ export function usePlayCanvasEditor() {
         const onFocusHotspot = (event: Event) => {
           const id = (event as CustomEvent<{ id: number }>).detail?.id;
           if (id == null) return;
-          const hotspot = useEditorStore
-            .getState()
-            .hotspots.find((h) => h.id === id);
+          const hotspot = findHotspot(id);
           if (!hotspot) return;
 
           if (hotspot.customCameraEnabled && hotspot.customCamera) {
