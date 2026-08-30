@@ -16,6 +16,7 @@ import { useCoordsInspectorStore } from "@/lib/editor/state/coords-inspector-sto
 import { selectHotspotExclusive } from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { resolveHotspotAppearance } from "@/lib/editor/state/preview-appearance-store";
+import { findHotspot } from "@/lib/editor/state/preview-hotspots";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
@@ -234,7 +235,7 @@ export function createPickingController(
 
       if (id != null && id !== activeId) {
         // Hovering a different hotspot — follow the cursor.
-        const hovered = editor.hotspots.find((h) => h.id === id);
+        const hovered = findHotspot(id);
         ui.setHoverTooltip({
           x: e.clientX - rect.left,
           y: e.clientY - rect.top,

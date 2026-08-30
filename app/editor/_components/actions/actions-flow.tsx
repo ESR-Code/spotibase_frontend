@@ -34,6 +34,7 @@ import {
   type ActionsCanvasNode,
 } from "@/lib/editor/actions/action-fences";
 import { ACTION_FLOW_NODE_TYPES } from "@/app/editor/_components/actions/action-node-registry";
+import { SpawnHotspotTemplateDrawer } from "@/app/editor/_components/actions/spawn-hotspot-template-drawer";
 import { ActionsCanvasSearch } from "@/app/editor/_components/actions/actions-canvas-search";
 import {
   ActionsContextMenu,
@@ -78,6 +79,7 @@ import {
   removeNode,
   updateNodeData,
 } from "@/lib/editor/actions/graph-ops";
+import { canConnectToForEach } from "@/lib/editor/actions/for-each";
 import { filterActionNodeTypesForScene } from "@/lib/editor/actions/registry";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import {
@@ -1027,7 +1029,20 @@ function ActionsFlowCanvas({
             ) {
               return false;
             }
-            if (sourceParsed.hotspotId === targetParsed.hotspotId) return true;
+            if (sourceParsed.hotspotId === targetParsed.hotspotId) {
+              if (targetParsed.nodeId !== TRIGGER_NODE_ID) {
+                const targetNode = nodesRef.current.find(
+                  (node) => node.id === connection.target,
+                );
+                if (targetNode?.type === "forEach") {
+                  const sourceNode = nodesRef.current.find(
+                    (node) => node.id === connection.source,
+                  );
+                  return canConnectToForEach(sourceNode?.type);
+                }
+              }
+              return true;
+            }
             const allowed = allowedByOwnerId.get(sourceParsed.hotspotId);
             const targetNode = nodesRef.current.find(
               (node) => node.id === connection.target,
@@ -1056,6 +1071,7 @@ function ActionsFlowCanvas({
           onAdd={handleAdd}
           onDelete={api.deleteNode}
         />
+        <SpawnHotspotTemplateDrawer />
       </div>
     </ActionsEditorProvider>
   );

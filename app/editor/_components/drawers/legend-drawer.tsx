@@ -10,6 +10,7 @@ import { HotspotMarkerIcon } from "@/app/editor/_components/ui/hotspot-marker-ic
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { runHotspotActions } from "@/lib/editor/actions/run-hotspot-actions";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { usePreviewHotspots } from "@/lib/editor/state/preview-hotspots";
 import {
   resolveHotspotAppearance,
   usePreviewAppearanceStore,
@@ -56,7 +57,7 @@ export function LegendDrawer() {
   const isPreview = useEditorStore((s) => s.isPreview);
   const legendEnabled = useSettingsStore((s) => s.legendEnabled);
   const legendCategories = useSettingsStore((s) => s.legendCategories);
-  const hotspots = useEditorStore((s) => s.hotspots);
+  const hotspots = usePreviewHotspots();
   const disabledHotspotIds = usePreviewVisibilityStore(
     (s) => s.disabledHotspotIds,
   );

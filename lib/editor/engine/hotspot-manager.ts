@@ -8,6 +8,7 @@ import {
   type HotspotVisual,
 } from "@/lib/editor/engine/hotspot-visuals";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { listPreviewHotspots } from "@/lib/editor/state/preview-hotspots";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import {
@@ -35,7 +36,8 @@ export function createHotspotManager(
   let elapsed = 0;
 
   const syncFromStore = () => {
-    const { hotspots, isPreview } = useEditorStore.getState();
+    const { isPreview } = useEditorStore.getState();
+    const hotspots = listPreviewHotspots();
     const alive = new Set(hotspots.map((h) => h.id));
 
     for (const [id, visual] of visuals) {
@@ -89,7 +91,7 @@ export function createHotspotManager(
       editor.isPreview && legendFilter !== LEGEND_CATEGORY_ALL;
 
     let index = 0;
-    for (const hotspot of editor.hotspots) {
+    for (const hotspot of listPreviewHotspots()) {
       const visual = visuals.get(hotspot.id);
       if (!visual) {
         index += 1;

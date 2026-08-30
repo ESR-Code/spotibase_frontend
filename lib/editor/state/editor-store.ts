@@ -13,6 +13,7 @@ import {
 } from "@/lib/editor/constants/seed-scene";
 import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
 import { usePreviewMeshHighlightStore } from "@/lib/editor/state/preview-mesh-highlight-store";
+import { usePreviewSpawnedHotspotsStore } from "@/lib/editor/state/preview-spawned-hotspots-store";
 import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import { useCustomMenuToggleStore } from "@/lib/editor/state/custom-menu-toggle-store";
 import { hotspotTypeColors, PROJECT_NAME } from "@/lib/editor/theme/tokens";
@@ -49,7 +50,7 @@ type EditorState = {
   loadScene: (hotspots: Hotspot[], nextId: number) => void;
 };
 
-function createHotspotData(
+export function createHotspotData(
   id: number,
   position: Vec3,
   data: Partial<Omit<Hotspot, "id" | "position">> = {},
@@ -106,6 +107,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       usePreviewVisibilityStore.getState().reset();
       usePreviewAppearanceStore.getState().reset();
       usePreviewMeshHighlightStore.getState().reset();
+      usePreviewSpawnedHotspotsStore.getState().reset();
       useCustomMenuToggleStore.getState().reset();
       if (!isPreview) {
         void Promise.all([
@@ -141,6 +143,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       usePreviewVisibilityStore.getState().reset();
       usePreviewAppearanceStore.getState().reset();
       usePreviewMeshHighlightStore.getState().reset();
+      usePreviewSpawnedHotspotsStore.getState().reset();
       useCustomMenuToggleStore.getState().reset();
       void Promise.all([
         import("@/lib/editor/state/ui-store"),

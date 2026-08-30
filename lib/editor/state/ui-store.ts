@@ -52,6 +52,8 @@ type UIState = {
   infoBoxAnchor: InfoBoxAnchorState;
   scenesModalOpen: boolean;
   actionsModal: ActionsModalScope | null;
+  /** Spawn Hotspot template drawer (owner + node) while the Actions canvas is open. */
+  spawnTemplateEditor: { ownerId: number; nodeId: string } | null;
   /** Splash overlay for Go To Scene action transitions. */
   sceneTransition: SceneTransitionState;
   setLoading: (value: boolean) => void;
@@ -72,6 +74,8 @@ type UIState = {
   setScenesModalOpen: (value: boolean) => void;
   openActionsModal: (scope: ActionsModalScope) => void;
   closeActionsModal: () => void;
+  openSpawnTemplateEditor: (ownerId: number, nodeId: string) => void;
+  closeSpawnTemplateEditor: () => void;
   startSceneTransition: (sceneName: string) => void;
   holdSceneTransition: () => void;
   beginSceneTransitionOut: () => void;
@@ -97,6 +101,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   infoBoxAnchor: null,
   scenesModalOpen: false,
   actionsModal: null,
+  spawnTemplateEditor: null,
   sceneTransition: null,
   setLoading: (isLoading) => set({ isLoading }),
   setOutlinerCollapsed: (outlinerCollapsed) => set({ outlinerCollapsed }),
@@ -130,7 +135,10 @@ export const useUIStore = create<UIState>((set, get) => ({
   setInfoBoxAnchor: (infoBoxAnchor) => set({ infoBoxAnchor }),
   setScenesModalOpen: (scenesModalOpen) => set({ scenesModalOpen }),
   openActionsModal: (actionsModal) => set({ actionsModal }),
-  closeActionsModal: () => set({ actionsModal: null }),
+  closeActionsModal: () => set({ actionsModal: null, spawnTemplateEditor: null }),
+  openSpawnTemplateEditor: (ownerId, nodeId) =>
+    set({ spawnTemplateEditor: { ownerId, nodeId } }),
+  closeSpawnTemplateEditor: () => set({ spawnTemplateEditor: null }),
   startSceneTransition: (sceneName) =>
     set({ sceneTransition: { sceneName, phase: "in" } }),
   holdSceneTransition: () =>
@@ -157,6 +165,7 @@ export const useUIStore = create<UIState>((set, get) => ({
       propertiesDrawerOpen: false,
       scenesModalOpen: false,
       actionsModal: null,
+      spawnTemplateEditor: null,
       previewActiveHotspotId: null,
       previewLabelPending: false,
       hoverTooltip: null,

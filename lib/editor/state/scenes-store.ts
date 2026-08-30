@@ -21,6 +21,7 @@ import {
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
 import { usePreviewMeshHighlightStore } from "@/lib/editor/state/preview-mesh-highlight-store";
+import { usePreviewSpawnedHotspotsStore } from "@/lib/editor/state/preview-spawned-hotspots-store";
 import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import {
   readEffectsSnapshot,
@@ -312,6 +313,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
         usePreviewVisibilityStore.getState().reset();
         usePreviewAppearanceStore.getState().reset();
         usePreviewMeshHighlightStore.getState().reset();
+        usePreviewSpawnedHotspotsStore.getState().reset();
         void import("@/lib/editor/actions/run-action-graph").then(
           ({ runSceneStartActions }) => {
             void runSceneStartActions(id);

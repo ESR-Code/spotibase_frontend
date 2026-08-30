@@ -20,6 +20,7 @@ import type { HotspotBlockType } from "@/lib/editor/types/hotspot-block";
 
 type HotspotBlocksTabProps = {
   selected: Hotspot;
+  onChange?: (blocks: Hotspot["blocks"]) => void;
 };
 
 type BlocksUiState = {
@@ -40,7 +41,10 @@ function createBlocksUiState(hotspotId: number): BlocksUiState {
   };
 }
 
-export function HotspotBlocksTab({ selected }: HotspotBlocksTabProps) {
+export function HotspotBlocksTab({
+  selected,
+  onChange,
+}: HotspotBlocksTabProps) {
   const updateHotspot = useEditorStore((s) => s.updateHotspot);
   const [uiState, setUiState] = useState<BlocksUiState>(() =>
     createBlocksUiState(selected.id),
@@ -100,6 +104,10 @@ export function HotspotBlocksTab({ selected }: HotspotBlocksTabProps) {
     blocks.length > 0 && blocks.every((block) => collapsedIds.has(block.id));
 
   const setBlocks = (next: Hotspot["blocks"]) => {
+    if (onChange) {
+      onChange(next);
+      return;
+    }
     updateHotspot(selected.id, { blocks: next });
   };
 

@@ -116,6 +116,12 @@ function actionNodeDetail(
       if (resets === count) return `→ ${count} reset label`;
       return `→ ${count} label`;
     }
+    case "forEach":
+      return node.data.itemsPath.trim()
+        ? `→ ${node.data.itemsPath.trim()}`
+        : "→ (no items)";
+    case "spawnHotspots":
+      return `→ ${node.data.coordMode}`;
     default:
       return null;
   }

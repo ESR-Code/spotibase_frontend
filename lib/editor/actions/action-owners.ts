@@ -45,6 +45,8 @@ export const START_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "changeHotspotColor",
   "changeHotspotIcon",
   "changeHotspotNumberTitle",
+  "forEach",
+  "spawnHotspots",
 ];
 
 export const HOTSPOT_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
@@ -60,6 +62,8 @@ export const HOTSPOT_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "changeHotspotColor",
   "changeHotspotIcon",
   "changeHotspotNumberTitle",
+  "forEach",
+  "spawnHotspots",
 ];
 
 /** Click triggers on the Preview bottom bar — no hotspot-owned Open Modal. */
@@ -75,6 +79,8 @@ export const MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "changeHotspotColor",
   "changeHotspotIcon",
   "changeHotspotNumberTitle",
+  "forEach",
+  "spawnHotspots",
 ];
 
 export function isHotspotOwnerId(ownerId: number): boolean {
@@ -254,6 +260,48 @@ export function findHttpRequestNodeById(nodeId: string): {
         node,
         sampleJson: fieldSourceJson(node),
       };
+    }
+  }
+
+  return null;
+}
+
+/** Find any action node by id across hotspot, start, and menu graphs. */
+export function findActionNodeOwner(nodeId: string): {
+  ownerId: number;
+  graph: HotspotActionGraph;
+  node: ActionNode;
+} | null {
+  const editor = useEditorStore.getState();
+  for (const hotspot of editor.hotspots) {
+    const graph = getActionGraph(hotspot);
+    const node = graph.nodes.find((n) => n.id === nodeId);
+    if (node) return { ownerId: hotspot.id, graph, node };
+  }
+
+  const scenes = useScenesStore.getState();
+  const appGraph = scenes.appStartActions ?? createEmptyActionGraph();
+  const appNode = appGraph.nodes.find((n) => n.id === nodeId);
+  if (appNode) {
+    return { ownerId: APP_START_OWNER_ID, graph: appGraph, node: appNode };
+  }
+
+  const scene =
+    scenes.scenes.find((s) => s.id === scenes.activeSceneId) ?? scenes.scenes[0];
+  const sceneGraph = scene?.startActions ?? createEmptyActionGraph();
+  const sceneNode = sceneGraph.nodes.find((n) => n.id === nodeId);
+  if (sceneNode) {
+    return {
+      ownerId: SCENE_START_OWNER_ID,
+      graph: sceneGraph,
+      node: sceneNode,
+    };
+  }
+
+  for (const entry of listCustomMenuButtonGraphs()) {
+    const node = entry.graph.nodes.find((n) => n.id === nodeId);
+    if (node) {
+      return { ownerId: entry.ownerId, graph: entry.graph, node };
     }
   }
 

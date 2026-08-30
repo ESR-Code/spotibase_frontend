@@ -8,6 +8,7 @@ import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { EditorDialog } from "@/app/editor/_components/ui/editor-dialog";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { usePreviewHotspots } from "@/lib/editor/state/preview-hotspots";
 import {
   resolveHotspotAppearance,
   usePreviewAppearanceStore,
@@ -23,7 +24,7 @@ export function PreviewModal() {
   const setIndex = useUIStore((s) => s.setPreviewModalIndex);
   const infoBoxAnchor = useUIStore((s) => s.infoBoxAnchor);
   const setInfoBoxAnchor = useUIStore((s) => s.setInfoBoxAnchor);
-  const hotspots = useEditorStore((s) => s.hotspots);
+  const hotspots = usePreviewHotspots();
   const isPreview = useEditorStore((s) => s.isPreview);
   usePreviewAppearanceStore((s) => s.overrides);
   const presentation = useSettingsStore((s) => s.markerDialogPresentation);

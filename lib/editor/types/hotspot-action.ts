@@ -1,3 +1,10 @@
+import type {
+  HotspotShape,
+  HotspotStyle,
+  HotspotType,
+} from "@/lib/editor/types/hotspot";
+import type { HotspotBlock } from "@/lib/editor/types/hotspot-block";
+
 export type ActionNodeType =
   | "openModal"
   | "goToScene"
@@ -10,7 +17,9 @@ export type ActionNodeType =
   | "highlightMesh"
   | "changeHotspotColor"
   | "changeHotspotIcon"
-  | "changeHotspotNumberTitle";
+  | "changeHotspotNumberTitle"
+  | "forEach"
+  | "spawnHotspots";
 
 /** Relative destination from the selected target hotspot. */
 export type GoToHotspotOffset = "self" | "next" | "prev";
@@ -225,6 +234,59 @@ export type ChangeHotspotNumberTitleActionNode = ActionNodeBase<
     items: ChangeHotspotNumberTitleItem[];
   }
 >;
+
+/** How Spawn Hotspot interprets template position fields. */
+export type SpawnCoordMode = "auto" | "xyz" | "latlon";
+
+export const SPAWN_COORD_MODES: {
+  value: SpawnCoordMode;
+  label: string;
+}[] = [
+  { value: "auto", label: "Auto" },
+  { value: "xyz", label: "X / Y / Z" },
+  { value: "latlon", label: "Lat / Lon" },
+];
+
+/** Shared hotspot fields used as a For Each item template. */
+export type SpawnHotspotTemplate = {
+  title: string;
+  number: string;
+  desc: string;
+  type: HotspotType;
+  color: string;
+  style: HotspotStyle;
+  shape: HotspotShape;
+  icon: string;
+  markerImage: string;
+  image: string;
+  pulse: boolean;
+  wick: boolean;
+  category: string;
+  legendName: string;
+  positionX: string;
+  positionY: string;
+  positionZ: string;
+  blocks: HotspotBlock[];
+};
+
+export type ForEachActionNode = ActionNodeBase<
+  "forEach",
+  {
+    /** JSON path to the array to iterate (e.g. `items` or `{{items}}`). */
+    itemsPath: string;
+  }
+>;
+
+export type SpawnHotspotsActionNode = ActionNodeBase<
+  "spawnHotspots",
+  {
+    coordMode: SpawnCoordMode;
+    /** Clear this node's previous Preview batch on the first item of a pass. */
+    replaceOnRerun: boolean;
+    template: SpawnHotspotTemplate;
+  }
+>;
+
 export type ActionNode =
   | OpenModalActionNode
   | GoToSceneActionNode
@@ -237,7 +299,9 @@ export type ActionNode =
   | HighlightMeshActionNode
   | ChangeHotspotColorActionNode
   | ChangeHotspotIconActionNode
-  | ChangeHotspotNumberTitleActionNode;
+  | ChangeHotspotNumberTitleActionNode
+  | ForEachActionNode
+  | SpawnHotspotsActionNode;
 
 export type ActionEdge = {
   id: string;

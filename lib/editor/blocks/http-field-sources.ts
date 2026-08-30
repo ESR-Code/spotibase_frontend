@@ -193,6 +193,23 @@ export function groupHttpFieldSources(
   });
 }
 
+/** Build field sources from any JSON value (e.g. one For Each item). */
+export function fieldSourcesFromValue(
+  value: unknown,
+  meta: Pick<HttpFieldSource, "nodeId" | "ownerId" | "nodeLabel"> & {
+    kind?: FieldSourceKind;
+  },
+): HttpFieldSource[] {
+  return flattenJsonPaths(value).map((field) => ({
+    kind: meta.kind ?? "http",
+    nodeId: meta.nodeId,
+    nodeLabel: meta.nodeLabel,
+    path: field.path,
+    sample: field.sample,
+    ownerId: meta.ownerId,
+  }));
+}
+
 /** Build field sources from a single tested HTTP response JSON. */
 export function fieldSourcesFromResponseJson(
   responseJson: string,

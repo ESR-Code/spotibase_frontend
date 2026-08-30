@@ -34,10 +34,60 @@ export function buildFieldToken(
     : `{{${source.path}}}`;
 }
 
+type ActionItemScope = {
+  item: unknown;
+  index: number;
+};
+
+const itemScopeStack: ActionItemScope[] = [];
+
+/** Run `fn` with the current For Each item as the first interpolation scope. */
+export async function withActionItemScope<T>(
+  item: unknown,
+  index: number,
+  fn: () => T | Promise<T>,
+): Promise<T> {
+  itemScopeStack.push({ item, index });
+  try {
+    return await fn();
+  } finally {
+    itemScopeStack.pop();
+  }
+}
+
+export function peekActionItemScope(): ActionItemScope | null {
+  return itemScopeStack.at(-1) ?? null;
+}
+
+/**
+ * Parse `items`, `{{items}}`, or `{{items@nodeId}}` into a path + optional node.
+ */
+export function unwrapFieldPath(raw: string): { path: string; nodeId?: string } {
+  const trimmed = raw.trim();
+  if (!trimmed) return { path: "" };
+  FIELD_TOKEN_RE.lastIndex = 0;
+  const match = FIELD_TOKEN_RE.exec(trimmed);
+  FIELD_TOKEN_RE.lastIndex = 0;
+  if (match && match[0] === trimmed) {
+    return {
+      path: String(match[1] ?? "").trim(),
+      nodeId: match[2] ? String(match[2]) : undefined,
+    };
+  }
+  return { path: trimmed };
+}
+
 export function resolveActionFieldValue(
   path: string,
   nodeId?: string,
 ): unknown {
+  const scope = peekActionItemScope();
+  if (scope && !nodeId) {
+    if (path === "" || path === ".") return scope.item;
+    const fromItem = getValueByPath(scope.item, path);
+    if (fromItem !== undefined) return fromItem;
+  }
+
   if (nodeId) {
     return resolveFromNode(nodeId, path);
   }

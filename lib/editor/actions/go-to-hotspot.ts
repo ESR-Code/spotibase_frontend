@@ -6,7 +6,7 @@ import {
   substituteTokensForValidation,
 } from "@/lib/editor/actions/interpolate-fields";
 import { focusHotspotCamera } from "@/lib/editor/preview/open-hotspot-in-preview";
-import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { findHotspot, listPreviewHotspots } from "@/lib/editor/state/preview-hotspots";
 import type {
   GoToHotspotActionNode,
   GoToHotspotOffset,
@@ -103,9 +103,7 @@ export function validateGoToHotspotData(
 
   if (dynamic) return null;
 
-  const exists = useEditorStore
-    .getState()
-    .hotspots.some((hotspot) => hotspot.id === id);
+  const exists = listPreviewHotspots().some((hotspot) => hotspot.id === id);
   if (!exists) return "Target hotspot no longer exists";
   return null;
 }
@@ -115,7 +113,7 @@ export function resolveGoToHotspotId(
   hotspotId: number,
   offset: GoToHotspotOffset,
 ): number | null {
-  const hotspots = useEditorStore.getState().hotspots;
+  const hotspots = listPreviewHotspots();
   if (hotspots.length === 0) return null;
   const index = hotspots.findIndex((hotspot) => hotspot.id === hotspotId);
   if (index < 0) return null;
@@ -154,9 +152,7 @@ export async function applyGoToHotspot(
     return;
   }
 
-  const hotspot = useEditorStore
-    .getState()
-    .hotspots.find((item) => item.id === targetId);
+  const hotspot = findHotspot(targetId);
   if (!hotspot) return;
 
   runningTargetActionIds.add(targetId);

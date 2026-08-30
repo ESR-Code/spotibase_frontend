@@ -39,9 +39,18 @@ import {
   sendPostMessage,
 } from "@/lib/editor/actions/send-post-message";
 import {
+  resolveForEachItems,
+  runForEach,
+  validateForEachData,
+} from "@/lib/editor/actions/for-each";
+import {
   interpolateHttpRequestFields,
   interpolatePostMessageFields,
 } from "@/lib/editor/actions/interpolate-fields";
+import {
+  applySpawnHotspots,
+  validateSpawnHotspotsData,
+} from "@/lib/editor/actions/spawn-hotspots";
 import { transitionToScene } from "@/lib/editor/actions/transition-to-scene";
 import { openHotspotInPreview } from "@/lib/editor/preview/open-hotspot-in-preview";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -123,9 +132,10 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
         ownerKey: ctx.ownerKey,
       });
 
-      const hotspot = useEditorStore
-        .getState()
-        .hotspots.find((item) => item.id === ctx.ownerId);
+      const { findHotspot } = await import(
+        "@/lib/editor/state/preview-hotspots"
+      );
+      const hotspot = findHotspot(ctx.ownerId);
       const graph = hotspot ? getActionGraph(hotspot) : null;
       if (graph) {
         const onOpenChain = chainFrom(
@@ -385,6 +395,45 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     run: (node) => {
       if (node.type !== "changeHotspotNumberTitle") return;
       applyChangeHotspotNumberTitle(node.data);
+    },
+  },
+  forEach: {
+    type: "forEach",
+    label: "For Each",
+    description: "Run the next nodes once per item in an HTTP or Post Message array.",
+    createDefault: (position) => createActionNode("forEach", position),
+    validate: (node) => validateForEachData(node),
+    run: async (node, ctx) => {
+      if (node.type !== "forEach") return;
+      const items = resolveForEachItems(node.data.itemsPath);
+      if (items == null) {
+        toast.error("For Each: items path did not resolve to an array");
+        return "stop";
+      }
+      const { getOwnedActionGraph } = await import(
+        "@/lib/editor/actions/action-owners"
+      );
+      const { chainFrom } = await import("@/lib/editor/actions/graph-ops");
+      const { runActionNodeList } = await import(
+        "@/lib/editor/actions/run-action-graph"
+      );
+      const graph = getOwnedActionGraph(ctx.ownerId);
+      if (!graph) return "stop";
+      const tail = chainFrom(graph, node.id);
+      return runForEach(node, async () => {
+        await runActionNodeList(tail, ctx);
+      });
+    },
+  },
+  spawnHotspots: {
+    type: "spawnHotspots",
+    label: "Spawn Hotspot",
+    description: "Create a Preview hotspot from the current For Each item.",
+    createDefault: (position) => createActionNode("spawnHotspots", position),
+    validate: (node) => validateSpawnHotspotsData(node),
+    run: (node, ctx) => {
+      if (node.type !== "spawnHotspots") return;
+      applySpawnHotspots(node, ctx);
     },
   },
 };

@@ -19,6 +19,7 @@ import { geoMapProjection } from "@/lib/editor/geo/map-projection";
 import { geoMapStyleUrls } from "@/lib/editor/geo/map-styles";
 import { resolveGeoHomeViewport } from "@/lib/editor/geo/resolve-home-viewport";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { usePreviewHotspots } from "@/lib/editor/state/preview-hotspots";
 import { useGeoStore } from "@/lib/editor/state/geo-store";
 import { useMapViewportStore } from "@/lib/editor/state/map-viewport-store";
 import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
@@ -46,7 +47,7 @@ export function GeoMapViewport() {
     [resetPosition, geo],
   );
   const [viewport, setViewport] = useState<MapViewport>(home);
-  const hotspots = useEditorStore((s) => s.hotspots);
+  const hotspots = usePreviewHotspots();
   const isPreview = useEditorStore((s) => s.isPreview);
   const legendFilter = useUIStore((s) => s.legendFilterCategory);
   const disabledHotspotIds = usePreviewVisibilityStore(

@@ -8,6 +8,8 @@ import type {
   ChangeHotspotNumberTitleActionNode,
   ChangeHotspotNumberTitleItem,
   EnableDisableActionNode,
+  ForEachActionNode,
+  SpawnHotspotsActionNode,
   EnableDisableMeshActionNode,
   HighlightMeshActionNode,
   GoToHotspotActionNode,
@@ -34,6 +36,11 @@ import {
   OPEN_MODAL_HANDLE_ON_OPEN,
 } from "@/lib/editor/types/hotspot-action";
 import { markerColorSwatches } from "@/lib/editor/theme/tokens";
+import {
+  asSpawnCoordMode,
+  asSpawnHotspotTemplate,
+  createDefaultSpawnHotspotTemplate,
+} from "@/lib/editor/actions/spawn-hotspot-template";
 
 export function newActionId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -194,6 +201,14 @@ export function createActionNode(
   position: ActionNodeXY,
 ): ChangeHotspotNumberTitleActionNode;
 export function createActionNode(
+  type: "forEach",
+  position: ActionNodeXY,
+): ForEachActionNode;
+export function createActionNode(
+  type: "spawnHotspots",
+  position: ActionNodeXY,
+): SpawnHotspotsActionNode;
+export function createActionNode(
   type: ActionNodeType,
   position: ActionNodeXY,
 ): ActionNode;
@@ -320,6 +335,24 @@ export function createActionNode(
         type: "changeHotspotNumberTitle",
         position: { ...position },
         data: { items: [] },
+      };
+    case "forEach":
+      return {
+        id: newActionId(),
+        type: "forEach",
+        position: { ...position },
+        data: { itemsPath: "" },
+      };
+    case "spawnHotspots":
+      return {
+        id: newActionId(),
+        type: "spawnHotspots",
+        position: { ...position },
+        data: {
+          coordMode: "auto",
+          replaceOnRerun: true,
+          template: createDefaultSpawnHotspotTemplate(),
+        },
       };
   }
 }
@@ -515,6 +548,34 @@ export function cloneActionGraph(
           type: "changeHotspotNumberTitle",
           position: { ...node.position },
           data: { items: asNumberTitleItems(node.data.items) },
+        };
+      }
+      if (node.type === "forEach") {
+        return {
+          id: node.id,
+          type: "forEach",
+          position: { ...node.position },
+          data: {
+            itemsPath:
+              typeof node.data.itemsPath === "string"
+                ? node.data.itemsPath
+                : "",
+          },
+        };
+      }
+      if (node.type === "spawnHotspots") {
+        return {
+          id: node.id,
+          type: "spawnHotspots",
+          position: { ...node.position },
+          data: {
+            coordMode: asSpawnCoordMode(node.data.coordMode),
+            replaceOnRerun:
+              typeof node.data.replaceOnRerun === "boolean"
+                ? node.data.replaceOnRerun
+                : true,
+            template: asSpawnHotspotTemplate(node.data.template),
+          },
         };
       }
       return {

@@ -1,4 +1,5 @@
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { listPreviewHotspots } from "@/lib/editor/state/preview-hotspots";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
@@ -20,10 +21,11 @@ export function focusHotspotCamera(id: number) {
  */
 export function openHotspotInPreview(id: number) {
   const editor = useEditorStore.getState();
-  const index = editor.hotspots.findIndex((h) => h.id === id);
+  const hotspots = listPreviewHotspots();
+  const index = hotspots.findIndex((h) => h.id === id);
   if (index < 0) return;
 
-  const hotspot = editor.hotspots[index];
+  const hotspot = hotspots[index];
   const ui = useUIStore.getState();
   const settings = useSettingsStore.getState();
 

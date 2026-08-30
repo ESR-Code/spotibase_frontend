@@ -19,6 +19,8 @@ import {
   selectLayerExclusive,
 } from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { findHotspot } from "@/lib/editor/state/preview-hotspots";
+import { usePreviewSpawnedHotspotsStore } from "@/lib/editor/state/preview-spawned-hotspots-store";
 import { useGeoStore } from "@/lib/editor/state/geo-store";
 import { useLayersStore } from "@/lib/editor/state/layers-store";
 import { useMapViewportStore } from "@/lib/editor/state/map-viewport-store";
@@ -432,6 +434,9 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
     const unsubAppearance = usePreviewAppearanceStore.subscribe(() =>
       syncOverlayAnchors(map),
     );
+    const unsubSpawned = usePreviewSpawnedHotspotsStore.subscribe(() =>
+      syncOverlayAnchors(map),
+    );
 
     return () => {
       map.off("click", onClick);
@@ -454,13 +459,14 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
       unsubUi();
       unsubPreview();
       unsubAppearance();
+      unsubSpawned();
     };
   }, [map, isLoaded]);
 }
 
 export function handleGeoMarkerClick(id: number) {
   const editor = useEditorStore.getState();
-  const hotspot = editor.hotspots.find((h) => h.id === id);
+  const hotspot = findHotspot(id);
   if (!hotspot || !isPreviewHotspotEnabled(editor.isPreview, id)) return;
   if (editor.isPreview) {
     void runHotspotActions(id);
@@ -478,7 +484,7 @@ export function handleGeoMarkerEnter(id: number, clientX: number, clientY: numbe
   const ui = useUIStore.getState();
   const wrap = document.getElementById("editor-viewport-wrap");
   const rect = wrap?.getBoundingClientRect();
-  const hotspot = editor.hotspots.find((h) => h.id === id);
+  const hotspot = findHotspot(id);
   if (!hotspot || !rect) return;
   if (id === ui.previewActiveHotspotId) return;
   ui.setHoverTooltip({

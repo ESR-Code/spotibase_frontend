@@ -9,10 +9,12 @@ import {
   Globe,
   Hash,
   Highlighter,
+  MapPin,
   MapPinned,
   MessagesSquare,
   Palette,
   PanelRightOpen,
+  Repeat,
   Shapes,
   type LucideIcon,
 } from "lucide-react";
@@ -29,7 +31,9 @@ import { HotspotTriggerNode } from "@/app/editor/_components/actions/hotspot-tri
 import { HttpRequestNode } from "@/app/editor/_components/actions/http-request-node";
 import { OpenModalNode } from "@/app/editor/_components/actions/open-modal-node";
 import { OpenUrlNode } from "@/app/editor/_components/actions/open-url-node";
+import { ForEachNode } from "@/app/editor/_components/actions/for-each-node";
 import { SendPostMessageNode } from "@/app/editor/_components/actions/send-post-message-node";
+import { SpawnHotspotsNode } from "@/app/editor/_components/actions/spawn-hotspots-node";
 import { ActionFenceNode } from "@/app/editor/_components/actions/action-fence-node";
 import {
   ACTION_NODE_META,
@@ -133,6 +137,20 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     accent: "#a78bfa",
     Node: ChangeHotspotNumberTitleNode,
   },
+  forEach: {
+    type: "forEach",
+    meta: ACTION_NODE_META.forEach,
+    icon: Repeat,
+    accent: "#5ad0c8",
+    Node: ForEachNode,
+  },
+  spawnHotspots: {
+    type: "spawnHotspots",
+    meta: ACTION_NODE_META.spawnHotspots,
+    icon: MapPin,
+    accent: "#e07a5f",
+    Node: SpawnHotspotsNode,
+  },
 };
 
 export const ACTION_UI_MENU_ITEMS = Object.values(ACTION_UI_REGISTRY);
@@ -151,5 +169,7 @@ export const ACTION_FLOW_NODE_TYPES = {
   changeHotspotColor: ChangeHotspotColorNode,
   changeHotspotIcon: ChangeHotspotIconNode,
   changeHotspotNumberTitle: ChangeHotspotNumberTitleNode,
+  forEach: ForEachNode,
+  spawnHotspots: SpawnHotspotsNode,
   [ACTION_FENCE_TYPE]: ActionFenceNode,
 };

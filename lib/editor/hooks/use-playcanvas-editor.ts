@@ -31,6 +31,7 @@ import {
 } from "@/lib/editor/state/model-store";
 import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
 import { usePreviewMeshHighlightStore } from "@/lib/editor/state/preview-mesh-highlight-store";
+import { usePreviewSpawnedHotspotsStore } from "@/lib/editor/state/preview-spawned-hotspots-store";
 import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import { sceneSubjectCache } from "@/lib/editor/state/scene-subject-cache";
 import {
@@ -243,6 +244,9 @@ export function usePlayCanvasEditor() {
           hotspotMgr.syncFromStore();
         });
         const unsubAppearance = usePreviewAppearanceStore.subscribe(() => {
+          hotspotMgr.syncFromStore();
+        });
+        const unsubSpawned = usePreviewSpawnedHotspotsStore.subscribe(() => {
           hotspotMgr.syncFromStore();
         });
         const unsubMeshVisibility = usePreviewVisibilityStore.subscribe(
@@ -462,6 +466,7 @@ export function usePlayCanvasEditor() {
           unsubSettings();
           unsubEditor();
           unsubAppearance();
+          unsubSpawned();
           unsubMeshVisibility();
           unsubMeshHighlight();
           unsubWire();

@@ -5,6 +5,11 @@ import {
   newActionId,
   TRIGGER_NODE_ID,
 } from "@/lib/editor/actions/create-action-graph";
+import { canConnectToForEach } from "@/lib/editor/actions/for-each";
+import {
+  asSpawnCoordMode,
+  asSpawnHotspotTemplate,
+} from "@/lib/editor/actions/spawn-hotspot-template";
 import type {
   ActionEdge,
   ActionNode,
@@ -104,6 +109,7 @@ export function chainFrom(
     const node = byId.get(currentId);
     if (!node) break;
     chain.push(node);
+    if (node.type === "forEach") break;
     // After the first hop, continue along the default (unnamed) output.
     currentId = nextAlongHandle(graph, currentId, null);
   }
@@ -125,6 +131,9 @@ export function chainFromTrigger(graph: HotspotActionGraph): ActionNode[] {
     const node = byId.get(currentId);
     if (!node) break;
     chain.push(node);
+    if (node.type === "forEach") {
+      break;
+    }
     if (
       node.type === "sendPostMessage" &&
       (node.data.mode ?? "send") === "receive"
@@ -153,6 +162,12 @@ export function connect(
     return graph;
   }
   if (!graph.nodes.some((n) => n.id === target)) return graph;
+
+  const targetNode = graph.nodes.find((n) => n.id === target);
+  if (targetNode?.type === "forEach") {
+    const sourceNode = graph.nodes.find((n) => n.id === source);
+    if (!canConnectToForEach(sourceNode?.type)) return graph;
+  }
 
   const handle = normalizeSourceHandle(sourceHandle);
   const firstReceiveHandle = firstReceiveHandleForSource(graph, source);
@@ -597,6 +612,39 @@ export function updateNodeData(
             items: Array.isArray(patch.items)
               ? asNumberTitleItems(patch.items)
               : node.data.items,
+          },
+        };
+      }
+      if (node.type === "forEach") {
+        return {
+          ...node,
+          data: {
+            itemsPath:
+              typeof patch.itemsPath === "string"
+                ? patch.itemsPath
+                : node.data.itemsPath,
+          },
+        };
+      }
+      if (node.type === "spawnHotspots") {
+        return {
+          ...node,
+          data: {
+            coordMode: Object.prototype.hasOwnProperty.call(patch, "coordMode")
+              ? asSpawnCoordMode(patch.coordMode)
+              : node.data.coordMode,
+            replaceOnRerun:
+              typeof patch.replaceOnRerun === "boolean"
+                ? patch.replaceOnRerun
+                : node.data.replaceOnRerun,
+            template: Object.prototype.hasOwnProperty.call(patch, "template")
+              ? asSpawnHotspotTemplate({
+                  ...node.data.template,
+                  ...(typeof patch.template === "object" && patch.template
+                    ? patch.template
+                    : {}),
+                })
+              : node.data.template,
           },
         };
       }

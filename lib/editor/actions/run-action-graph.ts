@@ -147,9 +147,8 @@ export async function runActionGraph(
 }
 
 export async function runHotspotActions(hotspotId: number) {
-  const hotspot = useEditorStore
-    .getState()
-    .hotspots.find((h) => h.id === hotspotId);
+  const { findHotspot } = await import("@/lib/editor/state/preview-hotspots");
+  const hotspot = findHotspot(hotspotId);
   if (!hotspot) return;
 
   const editor = useEditorStore.getState();
