@@ -1,10 +1,19 @@
-import { findActionNodeOwner } from "@/lib/editor/actions/action-owners";
+import {
+  findActionNodeOwner,
+  findHttpRequestNodeById,
+  ownerKeyFor,
+} from "@/lib/editor/actions/action-owners";
+import { getHttpRequestCached, httpRequestCacheKey } from "@/lib/editor/actions/http-request";
 import {
   resolveActionFieldValue,
   unwrapFieldPath,
   withActionItemScope,
 } from "@/lib/editor/actions/interpolate-fields";
-import { getValueByPath, tryParseJson } from "@/lib/editor/blocks/json-paths";
+import {
+  getValueByPath,
+  isJsonRootPath,
+  tryParseJson,
+} from "@/lib/editor/blocks/json-paths";
 import type {
   ActionNode,
   ForEachActionNode,
@@ -96,19 +105,32 @@ export function canConnectToForEach(
   return isForEachSourceType(sourceType);
 }
 
-function predecessorSampleJson(
+function predecessorJsonValue(
   graph: HotspotActionGraph,
   nodeId: string,
-): string {
+): unknown {
   for (const source of incomingSources(graph, nodeId)) {
     if (source.type === "httpRequest") {
-      return source.data.lastResponseJson ?? "";
+      const found = findHttpRequestNodeById(source.id);
+      if (found) {
+        const key = httpRequestCacheKey(
+          ownerKeyFor(found.ownerId),
+          found.node.id,
+        );
+        const runtime = getHttpRequestCached(key);
+        if (runtime !== undefined) return runtime;
+      }
+      return tryParseJson(source.data.lastResponseJson ?? "");
     }
     if (source.type === "sendPostMessage") {
-      return source.data.lastPayloadJson ?? "";
+      return tryParseJson(source.data.lastPayloadJson ?? "");
     }
   }
-  return "";
+  return undefined;
+}
+
+function asItemArray(value: unknown): unknown[] | null {
+  return Array.isArray(value) ? value : null;
 }
 
 export function resolveItemsPathValue(itemsPath: string): unknown {
@@ -117,9 +139,42 @@ export function resolveItemsPathValue(itemsPath: string): unknown {
   return resolveActionFieldValue(path, nodeId);
 }
 
-export function resolveForEachItems(itemsPath: string): unknown[] | null {
-  const value = resolveItemsPathValue(itemsPath);
-  return Array.isArray(value) ? value : null;
+export function resolveForEachItems(
+  itemsPath: string,
+  graph?: HotspotActionGraph,
+  nodeId?: string,
+): unknown[] | null {
+  const { path, nodeId: tokenNodeId } = unwrapFieldPath(itemsPath);
+  const ownerGraph =
+    graph ?? (nodeId ? findActionNodeOwner(nodeId)?.graph : null) ?? null;
+  const predecessor =
+    ownerGraph && nodeId
+      ? predecessorJsonValue(ownerGraph, nodeId)
+      : undefined;
+
+  if (!path || isJsonRootPath(path)) {
+    if (path) {
+      const fromToken = asItemArray(
+        resolveActionFieldValue(path, tokenNodeId),
+      );
+      if (fromToken) return fromToken;
+    }
+    return asItemArray(predecessor);
+  }
+
+  const fromPath = asItemArray(resolveActionFieldValue(path, tokenNodeId));
+  if (fromPath) return fromPath;
+  if (predecessor !== undefined) {
+    const nested = asItemArray(getValueByPath(predecessor, path));
+    if (nested) return nested;
+    if (
+      Array.isArray(predecessor) &&
+      (path === "items" || path === "data")
+    ) {
+      return predecessor;
+    }
+  }
+  return null;
 }
 
 /** Sample array from the upstream HTTP / Post Message JSON (editor preview). */
@@ -127,15 +182,7 @@ export function sampleForEachItems(
   graph: HotspotActionGraph,
   node: ForEachActionNode,
 ): unknown[] | null {
-  const { path } = unwrapFieldPath(node.data.itemsPath);
-  if (!path) return null;
-  const parsed = tryParseJson(predecessorSampleJson(graph, node.id));
-  if (parsed === undefined) {
-    const live = resolveItemsPathValue(node.data.itemsPath);
-    return Array.isArray(live) ? live : null;
-  }
-  const value = getValueByPath(parsed, path);
-  return Array.isArray(value) ? value : null;
+  return resolveForEachItems(node.data.itemsPath, graph, node.id);
 }
 
 export function countForEachSampleItems(
@@ -161,7 +208,10 @@ export function validateForEachData(
       return "Connect For Each after HTTP Request or Post Message";
     }
   }
-  if (!node.data.itemsPath.trim()) return "Select an array field";
+  if (!node.data.itemsPath.trim()) {
+    if (resolved && sampleForEachItems(resolved, node)) return null;
+    return "Select an array field";
+  }
   return null;
 }
 
@@ -169,7 +219,12 @@ export async function runForEach(
   node: ForEachActionNode,
   runTail: (item: unknown, index: number) => Promise<void>,
 ): Promise<"stop"> {
-  const items = resolveForEachItems(node.data.itemsPath);
+  const owner = findActionNodeOwner(node.id);
+  const items = resolveForEachItems(
+    node.data.itemsPath,
+    owner?.graph,
+    node.id,
+  );
   if (items == null) {
     return "stop";
   }

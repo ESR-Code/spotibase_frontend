@@ -6,6 +6,7 @@ import {
   Crosshair,
   ExternalLink,
   Eye,
+  GitBranch,
   Globe,
   Hash,
   Highlighter,
@@ -34,6 +35,7 @@ import { OpenUrlNode } from "@/app/editor/_components/actions/open-url-node";
 import { ForEachNode } from "@/app/editor/_components/actions/for-each-node";
 import { SendPostMessageNode } from "@/app/editor/_components/actions/send-post-message-node";
 import { SpawnHotspotsNode } from "@/app/editor/_components/actions/spawn-hotspots-node";
+import { SwitchNode } from "@/app/editor/_components/actions/switch-node";
 import { ActionFenceNode } from "@/app/editor/_components/actions/action-fence-node";
 import {
   ACTION_NODE_META,
@@ -151,6 +153,13 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     accent: "#e07a5f",
     Node: SpawnHotspotsNode,
   },
+  switch: {
+    type: "switch",
+    meta: ACTION_NODE_META.switch,
+    icon: GitBranch,
+    accent: "#c9a227",
+    Node: SwitchNode,
+  },
 };
 
 export const ACTION_UI_MENU_ITEMS = Object.values(ACTION_UI_REGISTRY);
@@ -171,5 +180,6 @@ export const ACTION_FLOW_NODE_TYPES = {
   changeHotspotNumberTitle: ChangeHotspotNumberTitleNode,
   forEach: ForEachNode,
   spawnHotspots: SpawnHotspotsNode,
+  switch: SwitchNode,
   [ACTION_FENCE_TYPE]: ActionFenceNode,
 };

@@ -19,7 +19,8 @@ export type ActionNodeType =
   | "changeHotspotIcon"
   | "changeHotspotNumberTitle"
   | "forEach"
-  | "spawnHotspots";
+  | "spawnHotspots"
+  | "switch";
 
 /** Relative destination from the selected target hotspot. */
 export type GoToHotspotOffset = "self" | "next" | "prev";
@@ -287,6 +288,33 @@ export type SpawnHotspotsActionNode = ActionNodeBase<
   }
 >;
 
+export const COMPARE_OPS = [
+  "eq",
+  "neq",
+  "gt",
+  "gte",
+  "lt",
+  "lte",
+  "contains",
+] as const;
+
+export type CompareOp = (typeof COMPARE_OPS)[number];
+
+export type SwitchCase = {
+  id: string;
+  operator: CompareOp;
+  right: string;
+};
+
+export type SwitchActionNode = ActionNodeBase<
+  "switch",
+  {
+    /** Field or token to compare, e.g. `{{builtIn}}`. */
+    subject: string;
+    cases: SwitchCase[];
+  }
+>;
+
 export type ActionNode =
   | OpenModalActionNode
   | GoToSceneActionNode
@@ -301,7 +329,8 @@ export type ActionNode =
   | ChangeHotspotIconActionNode
   | ChangeHotspotNumberTitleActionNode
   | ForEachActionNode
-  | SpawnHotspotsActionNode;
+  | SpawnHotspotsActionNode
+  | SwitchActionNode;
 
 export type ActionEdge = {
   id: string;
@@ -312,6 +341,7 @@ export type ActionEdge = {
    * Open Modal uses `"onOpen"` / `"onClose"`.
    * Toggle custom-menu triggers use `"normal"` / `"toggled"`.
    * Post Message receive events use `"pm:<eventId>"`.
+   * Switch cases use `"case:<id>"`; Switch fallback is `"default"`.
    * Omitted = default output.
    */
   sourceHandle?: string | null;
@@ -320,6 +350,66 @@ export type ActionEdge = {
 /** Source handle ids on the Open Modal action node. */
 export const OPEN_MODAL_HANDLE_ON_OPEN = "onOpen";
 export const OPEN_MODAL_HANDLE_ON_CLOSE = "onClose";
+
+export const SWITCH_HANDLE_DEFAULT = "default";
+export const SWITCH_CASE_HANDLE_PREFIX = "case:";
+
+export function switchCaseHandleId(caseId: string): string {
+  return `${SWITCH_CASE_HANDLE_PREFIX}${caseId}`;
+}
+
+export function isSwitchCaseHandle(
+  handle: string | null | undefined,
+): boolean {
+  return (
+    typeof handle === "string" &&
+    handle.startsWith(SWITCH_CASE_HANDLE_PREFIX)
+  );
+}
+
+export function newSwitchCaseId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `sw-case-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+export function createEmptySwitchCase(): SwitchCase {
+  return {
+    id: newSwitchCaseId(),
+    operator: "gte",
+    right: "",
+  };
+}
+
+export function asCompareOp(value: unknown): CompareOp {
+  if (typeof value === "string" && COMPARE_OPS.includes(value as CompareOp)) {
+    return value as CompareOp;
+  }
+  return "eq";
+}
+
+export function parseSwitchCases(value: unknown): SwitchCase[] {
+  if (!Array.isArray(value)) return [];
+  const cases: SwitchCase[] = [];
+  const seen = new Set<string>();
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const rec = item as Record<string, unknown>;
+    const id =
+      typeof rec.id === "string" && rec.id.trim()
+        ? rec.id
+        : newSwitchCaseId();
+    if (seen.has(id)) continue;
+    seen.add(id);
+    cases.push({
+      id,
+      operator: asCompareOp(rec.operator),
+      right: typeof rec.right === "string" ? rec.right : "",
+    });
+  }
+  return cases;
+}
 
 /** Stable id used when migrating a legacy single-event receive node. */
 export const POST_MESSAGE_LEGACY_EVENT_ID = "default";

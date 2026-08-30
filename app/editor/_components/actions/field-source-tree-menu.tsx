@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import {
   buildJsonPathTree,
+  formatJsonPathLabel,
   type JsonPathTreeNode,
 } from "@/lib/editor/blocks/json-paths";
 import {
@@ -98,7 +99,9 @@ function FieldTreeNodes({
                     onSelect(source);
                   }}
                 >
-                  <span className="editor-field-tree-key">{node.segment}</span>
+                  <span className="editor-field-tree-key">
+                    {formatJsonPathLabel(node.segment)}
+                  </span>
                   {sampleText ? (
                     <span className="editor-field-tree-sample">{sampleText}</span>
                   ) : null}
@@ -116,7 +119,9 @@ function FieldTreeNodes({
                     if (hasChildren) onToggle(node.path);
                   }}
                 >
-                  <span className="editor-field-tree-key">{node.segment}</span>
+                  <span className="editor-field-tree-key">
+                    {formatJsonPathLabel(node.segment)}
+                  </span>
                   {hasChildren ? (
                     <span className="editor-field-tree-sample">
                       {leafCount} field{leafCount === 1 ? "" : "s"}

@@ -65,6 +65,20 @@ export function peekActionItemScope(): ActionItemScope | null {
   return itemScopeStack.at(-1) ?? null;
 }
 
+/** Sync variant for editor sample evaluation. */
+export function withActionItemScopeSync<T>(
+  item: unknown,
+  index: number,
+  fn: () => T,
+): T {
+  itemScopeStack.push({ item, index });
+  try {
+    return fn();
+  } finally {
+    itemScopeStack.pop();
+  }
+}
+
 /**
  * Parse `items`, `{{items}}`, or `{{items@nodeId}}` into a path + optional node.
  */

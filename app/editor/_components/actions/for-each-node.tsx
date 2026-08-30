@@ -13,6 +13,7 @@ import {
   validateForEachData,
 } from "@/lib/editor/actions/for-each";
 import { insertTextAt } from "@/lib/editor/actions/interpolate-fields";
+import { formatJsonPathLabel, isJsonRootPath } from "@/lib/editor/blocks/json-paths";
 import { useOwnedActionNode } from "@/lib/editor/actions/use-owned-action-node";
 import {
   listAllFieldSources,
@@ -87,9 +88,11 @@ export function ForEachNode({ data, selected }: NodeProps<ForEachFlowNode>) {
         ) : count != null ? (
           <div className="text-[10px]" style={{ color: "var(--editor-muted)" }}>
             {count} {count === 1 ? "item" : "items"}
-            {itemsPath.trim()
-              ? ` from ${itemsPath.replace(/^\{\{|\}\}$/g, "")}`
-              : ""}
+            {(() => {
+              const raw = itemsPath.replace(/^\{\{|\}\}$/g, "").trim();
+              if (!raw) return " from response";
+              return ` from ${isJsonRootPath(raw) ? formatJsonPathLabel(raw) : raw}`;
+            })()}
           </div>
         ) : null
       }
@@ -121,7 +124,7 @@ export function ForEachNode({ data, selected }: NodeProps<ForEachFlowNode>) {
           type="text"
           autoComplete="off"
           spellCheck={false}
-          placeholder="items or {{items}}"
+          placeholder="items, {{items}}, or {{$}}"
           value={itemsPath}
           onChange={(e) => {
             e.stopPropagation();

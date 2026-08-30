@@ -10,6 +10,7 @@ import type {
   EnableDisableActionNode,
   ForEachActionNode,
   SpawnHotspotsActionNode,
+  SwitchActionNode,
   EnableDisableMeshActionNode,
   HighlightMeshActionNode,
   GoToHotspotActionNode,
@@ -34,6 +35,8 @@ import {
   firstPostMessageReceiveHandleId,
   normalizeReceiveEvents,
   OPEN_MODAL_HANDLE_ON_OPEN,
+  parseSwitchCases,
+  createEmptySwitchCase,
 } from "@/lib/editor/types/hotspot-action";
 import { markerColorSwatches } from "@/lib/editor/theme/tokens";
 import {
@@ -209,6 +212,10 @@ export function createActionNode(
   position: ActionNodeXY,
 ): SpawnHotspotsActionNode;
 export function createActionNode(
+  type: "switch",
+  position: ActionNodeXY,
+): SwitchActionNode;
+export function createActionNode(
   type: ActionNodeType,
   position: ActionNodeXY,
 ): ActionNode;
@@ -352,6 +359,16 @@ export function createActionNode(
           coordMode: "auto",
           replaceOnRerun: true,
           template: createDefaultSpawnHotspotTemplate(),
+        },
+      };
+    case "switch":
+      return {
+        id: newActionId(),
+        type: "switch",
+        position: { ...position },
+        data: {
+          subject: "",
+          cases: [createEmptySwitchCase()],
         },
       };
   }
@@ -575,6 +592,19 @@ export function cloneActionGraph(
                 ? node.data.replaceOnRerun
                 : true,
             template: asSpawnHotspotTemplate(node.data.template),
+          },
+        };
+      }
+      if (node.type === "switch") {
+        const cases = parseSwitchCases(node.data.cases);
+        return {
+          id: node.id,
+          type: "switch",
+          position: { ...node.position },
+          data: {
+            subject:
+              typeof node.data.subject === "string" ? node.data.subject : "",
+            cases: cases.length > 0 ? cases : [createEmptySwitchCase()],
           },
         };
       }

@@ -1,3 +1,15 @@
+/** JSONPath-style root. Used when the HTTP body itself is the array. */
+export const JSON_ROOT_PATH = "$";
+
+export function isJsonRootPath(path: string): boolean {
+  const trimmed = path.trim();
+  return trimmed === JSON_ROOT_PATH || trimmed === "." || trimmed === "this";
+}
+
+export function formatJsonPathLabel(path: string): string {
+  return isJsonRootPath(path) ? "response" : path;
+}
+
 /** Flatten a JSON value into selectable dotted/bracket paths. */
 export function flattenJsonPaths(
   value: unknown,
@@ -21,9 +33,10 @@ export function flattenJsonPaths(
     }
 
     if (Array.isArray(current)) {
-      if (path) {
-        out.push({ path, sample: `Array(${current.length})` });
-      }
+      out.push({
+        path: path || JSON_ROOT_PATH,
+        sample: `Array(${current.length})`,
+      });
       current.slice(0, 25).forEach((item, index) => {
         const next = path ? `${path}[${index}]` : `[${index}]`;
         walk(item, next);
@@ -127,6 +140,7 @@ function formatSample(value: string | number | boolean | null): string {
 /** Resolve `a.b[0].c` style paths against a JSON value. */
 export function getValueByPath(root: unknown, path: string): unknown {
   const trimmed = path.trim();
+  if (isJsonRootPath(trimmed)) return root;
   if (!trimmed) return undefined;
 
   const tokens: Array<string | number> = [];

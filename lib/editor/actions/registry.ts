@@ -51,6 +51,10 @@ import {
   applySpawnHotspots,
   validateSpawnHotspotsData,
 } from "@/lib/editor/actions/spawn-hotspots";
+import {
+  runSwitch,
+  validateSwitchData,
+} from "@/lib/editor/actions/switch-case";
 import { transitionToScene } from "@/lib/editor/actions/transition-to-scene";
 import { openHotspotInPreview } from "@/lib/editor/preview/open-hotspot-in-preview";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -405,11 +409,6 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     validate: (node) => validateForEachData(node),
     run: async (node, ctx) => {
       if (node.type !== "forEach") return;
-      const items = resolveForEachItems(node.data.itemsPath);
-      if (items == null) {
-        toast.error("For Each: items path did not resolve to an array");
-        return "stop";
-      }
       const { getOwnedActionGraph } = await import(
         "@/lib/editor/actions/action-owners"
       );
@@ -418,6 +417,15 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
         "@/lib/editor/actions/run-action-graph"
       );
       const graph = getOwnedActionGraph(ctx.ownerId);
+      const items = resolveForEachItems(
+        node.data.itemsPath,
+        graph ?? undefined,
+        node.id,
+      );
+      if (items == null) {
+        toast.error("For Each: items path did not resolve to an array");
+        return "stop";
+      }
       if (!graph) return "stop";
       const tail = chainFrom(graph, node.id);
       return runForEach(node, async () => {
@@ -434,6 +442,31 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     run: (node, ctx) => {
       if (node.type !== "spawnHotspots") return;
       applySpawnHotspots(node, ctx);
+    },
+  },
+  switch: {
+    type: "switch",
+    label: "Switch",
+    description:
+      "Run one branch per matching case, or Default, using a field from For Each / HTTP / Post Message.",
+    createDefault: (position) => createActionNode("switch", position),
+    validate: (node) => validateSwitchData(node),
+    run: async (node, ctx) => {
+      if (node.type !== "switch") return;
+      const { getOwnedActionGraph } = await import(
+        "@/lib/editor/actions/action-owners"
+      );
+      const { chainFrom } = await import("@/lib/editor/actions/graph-ops");
+      const { runActionNodeList } = await import(
+        "@/lib/editor/actions/run-action-graph"
+      );
+      const graph = getOwnedActionGraph(ctx.ownerId);
+      if (!graph) return "stop";
+      return runSwitch(node, async (handle) => {
+        const branch = chainFrom(graph, node.id, handle);
+        if (branch.length === 0) return;
+        await runActionNodeList(branch, ctx);
+      });
     },
   },
 };

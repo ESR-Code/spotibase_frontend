@@ -2893,6 +2893,35 @@
   text-transform: uppercase;
 }
 
+.editor-root .editor-switch-cases {
+  gap: 10px;
+}
+
+.editor-root .editor-switch-case {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.editor-root .editor-switch-case-fields {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 2px;
+}
+
+.editor-root .editor-switch-op {
+  width: auto;
+  min-width: 4.5rem;
+  flex: 0 0 auto;
+  padding: 6px 8px;
+  font-size: 11px;
+}
+
+.editor-root .editor-switch-default-row {
+  justify-content: flex-start;
+}
+
 .editor-root .editor-action-handle-event {
   position: absolute !important;
   top: 50% !important;

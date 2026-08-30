@@ -58,7 +58,7 @@ const ITEMS = [
 
 export function GET() {
   return NextResponse.json(
-    { items: ITEMS },
+    ITEMS,
     { headers: CORS_HEADERS },
   );
 }

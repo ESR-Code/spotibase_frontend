@@ -30,6 +30,10 @@ import {
   OPEN_MODAL_HANDLE_ON_OPEN,
   parsePostMessageReceiveEvents,
   postMessageReceiveHandleId,
+  parseSwitchCases,
+  isSwitchCaseHandle,
+  SWITCH_HANDLE_DEFAULT,
+  switchCaseHandleId,
 } from "@/lib/editor/types/hotspot-action";
 
 export function normalizeSourceHandle(
@@ -109,7 +113,7 @@ export function chainFrom(
     const node = byId.get(currentId);
     if (!node) break;
     chain.push(node);
-    if (node.type === "forEach") break;
+    if (node.type === "forEach" || node.type === "switch") break;
     // After the first hop, continue along the default (unnamed) output.
     currentId = nextAlongHandle(graph, currentId, null);
   }
@@ -131,7 +135,7 @@ export function chainFromTrigger(graph: HotspotActionGraph): ActionNode[] {
     const node = byId.get(currentId);
     if (!node) break;
     chain.push(node);
-    if (node.type === "forEach") {
+    if (node.type === "forEach" || node.type === "switch") {
       break;
     }
     if (
@@ -412,6 +416,26 @@ function syncPostMessageReceiveEdges(
   });
 }
 
+function syncSwitchCaseEdges(
+  edges: ActionEdge[],
+  nodeId: string,
+  nextCases: { id: string }[],
+): ActionEdge[] {
+  const nextHandles = new Set(
+    nextCases.map((item) => switchCaseHandleId(item.id)),
+  );
+  nextHandles.add(SWITCH_HANDLE_DEFAULT);
+  return edges.filter((edge) => {
+    if (edge.source !== nodeId) return true;
+    const handle = normalizeSourceHandle(edge.sourceHandle);
+    if (handle === SWITCH_HANDLE_DEFAULT) return true;
+    if (handle && isSwitchCaseHandle(handle) && !nextHandles.has(handle)) {
+      return false;
+    }
+    return true;
+  });
+}
+
 export function updateNodeData(
   graph: HotspotActionGraph,
   id: string,
@@ -648,19 +672,38 @@ export function updateNodeData(
           },
         };
       }
+      if (node.type === "switch") {
+        return {
+          ...node,
+          data: {
+            subject:
+              typeof patch.subject === "string"
+                ? patch.subject
+                : node.data.subject,
+            cases: Object.prototype.hasOwnProperty.call(patch, "cases")
+              ? parseSwitchCases(patch.cases)
+              : node.data.cases,
+          },
+        };
+      }
       return node;
     });
 
   const nextNode = nodes.find((node) => node.id === id);
-  const edges =
-    prevNode?.type === "sendPostMessage" && nextNode?.type === "sendPostMessage"
-      ? syncPostMessageReceiveEdges(
-          graph.edges,
-          id,
-          prevNode.data,
-          nextNode.data,
-        )
-      : graph.edges;
+  let edges = graph.edges;
+  if (
+    prevNode?.type === "sendPostMessage" &&
+    nextNode?.type === "sendPostMessage"
+  ) {
+    edges = syncPostMessageReceiveEdges(
+      graph.edges,
+      id,
+      prevNode.data,
+      nextNode.data,
+    );
+  } else if (prevNode?.type === "switch" && nextNode?.type === "switch") {
+    edges = syncSwitchCaseEdges(graph.edges, id, nextNode.data.cases);
+  }
 
   return {
     ...graph,
