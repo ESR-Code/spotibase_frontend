@@ -2,6 +2,7 @@ import { findActionNodeOwner } from "@/lib/editor/actions/action-owners";
 import { hasForEachAncestor } from "@/lib/editor/actions/for-each";
 import {
   interpolatePlainText,
+  interpolateRichTextHtml,
   peekActionItemScope,
 } from "@/lib/editor/actions/interpolate-fields";
 import { geoToScene } from "@/lib/editor/coords/scene-coords";
@@ -42,7 +43,7 @@ function interpolateBlocks(blocks: HotspotBlock[]): HotspotBlock[] {
     }
     return {
       ...block,
-      content: interpolatePlainText(block.content),
+      content: interpolateRichTextHtml(block.content),
     };
   });
 }

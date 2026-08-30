@@ -2,8 +2,13 @@
 
 import { Braces } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { FieldSourceTreeMenu } from "@/app/editor/_components/actions/field-source-tree-menu";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import {
+  getEditorPortalHost,
+  useFixedMenuPosition,
+} from "@/app/editor/_components/ui/fixed-portal-menu";
 import { buildFieldToken } from "@/lib/editor/actions/interpolate-fields";
 import type { HttpFieldSource } from "@/lib/editor/blocks/http-field-sources";
 
@@ -24,13 +29,19 @@ export function VariableInsertButton({
   emptyTitle = "Test an HTTP Request or declare Post Message fields first",
 }: VariableInsertButtonProps) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [copiedPath, setCopiedPath] = useState<string | null>(null);
+  const menuPos = useFixedMenuPosition(open, rootRef, menuRef);
+  const host = getEditorPortalHost();
 
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (rootRef.current?.contains(target)) return;
+      if (menuRef.current?.contains(target)) return;
+      setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -84,17 +95,28 @@ export function VariableInsertButton({
       >
         <Braces className="h-3 w-3" />
       </IconButton>
-      {open ? (
-        <div className="editor-var-insert-menu">
-          <FieldSourceTreeMenu
-            sources={sources}
-            copiedPath={copiedPath}
-            onSelect={(source) => {
-              void selectSource(source);
-            }}
-          />
-        </div>
-      ) : null}
+      {open && host
+        ? createPortal(
+            <div
+              ref={menuRef}
+              className="editor-var-insert-menu is-fixed-portal"
+              style={
+                menuPos
+                  ? { top: menuPos.top, left: menuPos.left }
+                  : { top: -9999, left: -9999 }
+              }
+            >
+              <FieldSourceTreeMenu
+                sources={sources}
+                copiedPath={copiedPath}
+                onSelect={(source) => {
+                  void selectSource(source);
+                }}
+              />
+            </div>,
+            host,
+          )
+        : null}
     </div>
   );
 }

@@ -1,17 +1,21 @@
 "use client";
 
+import { TokenField } from "@/app/editor/_components/blocks/token-field";
+import type { HttpFieldSource } from "@/lib/editor/blocks/http-field-sources";
 import type { LinkBlock } from "@/lib/editor/types/hotspot-block";
 
 type LinkBlockEditorProps = {
   block: LinkBlock;
   onChange: (patch: Partial<Pick<LinkBlock, "label" | "url">>) => void;
   autoFocus?: boolean;
+  fieldSources?: HttpFieldSource[];
 };
 
 export function LinkBlockEditor({
   block,
   onChange,
   autoFocus,
+  fieldSources,
 }: LinkBlockEditorProps) {
   return (
     <div className="space-y-2.5">
@@ -22,12 +26,12 @@ export function LinkBlockEditor({
         >
           Button text
         </span>
-        <input
-          className="editor-input"
-          placeholder="Open Link"
+        <TokenField
           value={block.label}
+          placeholder="Open Link"
           autoFocus={autoFocus}
-          onChange={(e) => onChange({ label: e.target.value })}
+          sources={fieldSources}
+          onChange={(label) => onChange({ label })}
         />
       </label>
       <label className="block">
@@ -37,12 +41,12 @@ export function LinkBlockEditor({
         >
           URL
         </span>
-        <input
-          className="editor-input"
+        <TokenField
+          value={block.url}
           type="url"
           placeholder="https://…"
-          value={block.url}
-          onChange={(e) => onChange({ url: e.target.value })}
+          sources={fieldSources}
+          onChange={(url) => onChange({ url })}
         />
       </label>
     </div>

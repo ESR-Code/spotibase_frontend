@@ -48,6 +48,24 @@ export function resolveHttpFieldsInHtml(
   return root.innerHTML;
 }
 
+/** Replace field chips with their current text so preview does not re-resolve them. */
+export function unwrapHttpFieldChips(html: string): string {
+  if (typeof window === "undefined") return html;
+  if (!html.includes(HTTP_FIELD_CHIP_CLASS)) return html;
+
+  const doc = new DOMParser().parseFromString(`<div>${html}</div>`, "text/html");
+  const root = doc.body.firstElementChild;
+  if (!root) return html;
+
+  root.querySelectorAll(`.${HTTP_FIELD_CHIP_CLASS}`).forEach((el) => {
+    const missing = el.getAttribute("data-resolved") === "missing";
+    const text = missing ? "" : (el.textContent ?? "");
+    el.replaceWith(doc.createTextNode(text));
+  });
+
+  return root.innerHTML;
+}
+
 export function resolveHttpFieldValue(
   data: unknown,
   path: string,

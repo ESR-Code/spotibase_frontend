@@ -2,12 +2,18 @@
 
 import { Bold, Braces, Italic, Underline } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { FieldSourceTreeMenu } from "@/app/editor/_components/actions/field-source-tree-menu";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import {
+  getEditorPortalHost,
+  useFixedMenuPosition,
+} from "@/app/editor/_components/ui/fixed-portal-menu";
 import { buildHttpFieldChipHtml } from "@/lib/editor/blocks/http-field-chip";
 import {
   listHttpFieldSources,
   type FieldSourceKind,
+  type HttpFieldSource,
 } from "@/lib/editor/blocks/http-field-sources";
 import {
   normalizeRichTextContent,
@@ -22,6 +28,8 @@ type TextBlockEditorProps = {
   onChange: (content: string) => void;
   autoFocus?: boolean;
   hotspotId?: number;
+  /** When set, skip hotspot lookup (e.g. spawn template virtual hotspot). */
+  fieldSources?: HttpFieldSource[];
 };
 
 type FormatCommand = "bold" | "italic" | "underline";
@@ -31,8 +39,10 @@ export function TextBlockEditor({
   onChange,
   autoFocus,
   hotspotId,
+  fieldSources: fieldSourcesProp,
 }: TextBlockEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const focusedRef = useRef(false);
   const savedRangeRef = useRef<Range | null>(null);
@@ -54,9 +64,14 @@ export function TextBlockEditor({
   });
 
   const fieldSources = useMemo(
-    () => (hotspot ? listHttpFieldSources(hotspot) : []),
-    [appStartActions, hotspot, sceneStartActions],
+    () =>
+      fieldSourcesProp ?? (hotspot ? listHttpFieldSources(hotspot) : []),
+    [appStartActions, fieldSourcesProp, hotspot, sceneStartActions],
   );
+  const menuPos = useFixedMenuPosition(menuOpen, triggerRef, menuRef, {
+    align: "left",
+  });
+  const host = getEditorPortalHost();
 
   useEffect(() => {
     const el = editorRef.current;
@@ -84,9 +99,10 @@ export function TextBlockEditor({
   useEffect(() => {
     if (!menuOpen) return;
     const onPointerDown = (e: PointerEvent) => {
-      if (!menuRef.current?.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
+      const target = e.target as Node;
+      if (triggerRef.current?.contains(target)) return;
+      if (menuRef.current?.contains(target)) return;
+      setMenuOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setMenuOpen(false);
@@ -235,7 +251,7 @@ export function TextBlockEditor({
 
         <div className="editor-vsep" style={{ height: 16, margin: "0 2px" }} />
 
-        <div ref={menuRef} className="relative">
+        <div ref={triggerRef} className="relative">
           <IconButton
             type="button"
             title={
@@ -257,16 +273,27 @@ export function TextBlockEditor({
             <Braces className="h-3.5 w-3.5" />
           </IconButton>
 
-          {menuOpen ? (
-            <div className="absolute left-0 top-full z-30 mt-1">
-              <FieldSourceTreeMenu
-                sources={fieldSources}
-                onSelect={(source) =>
-                  insertField(source.nodeId, source.path, source.kind)
-                }
-              />
-            </div>
-          ) : null}
+          {menuOpen && host
+            ? createPortal(
+                <div
+                  ref={menuRef}
+                  className="editor-var-insert-menu is-fixed-portal"
+                  style={
+                    menuPos
+                      ? { top: menuPos.top, left: menuPos.left }
+                      : { top: -9999, left: -9999 }
+                  }
+                >
+                  <FieldSourceTreeMenu
+                    sources={fieldSources}
+                    onSelect={(source) =>
+                      insertField(source.nodeId, source.path, source.kind)
+                    }
+                  />
+                </div>,
+                host,
+              )
+            : null}
         </div>
       </div>
 

@@ -9,6 +9,7 @@ import { LinkBlockPreview } from "@/app/editor/_components/blocks/link-block-pre
 import { TextBlockEditor } from "@/app/editor/_components/blocks/text-block-editor";
 import { TextBlockPreview } from "@/app/editor/_components/blocks/text-block-preview";
 import { createBlock } from "@/lib/editor/blocks/create-block";
+import type { HttpFieldSource } from "@/lib/editor/blocks/http-field-sources";
 import type {
   HotspotBlock,
   HotspotBlockType,
@@ -21,6 +22,7 @@ type BlockEditorProps = {
   onChange: (patch: BlockEditorPatch) => void;
   autoFocus?: boolean;
   hotspotId?: number;
+  fieldSources?: HttpFieldSource[];
 };
 
 type BlockPreviewProps = {
@@ -59,12 +61,14 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
       block,
       onChange,
       autoFocus,
+      fieldSources,
     }) {
       if (block.type !== "heading") return null;
       return (
         <HeadingBlockEditor
           block={block}
           autoFocus={autoFocus}
+          fieldSources={fieldSources}
           onChange={(content) => onChange({ content })}
         />
       );
@@ -84,6 +88,7 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
       onChange,
       autoFocus,
       hotspotId,
+      fieldSources,
     }) {
       if (block.type !== "text") return null;
       return (
@@ -91,6 +96,7 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
           block={block}
           autoFocus={autoFocus}
           hotspotId={hotspotId}
+          fieldSources={fieldSources}
           onChange={(content) => onChange({ content })}
         />
       );
@@ -109,12 +115,14 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
       block,
       onChange,
       autoFocus,
+      fieldSources,
     }) {
       if (block.type !== "link") return null;
       return (
         <LinkBlockEditor
           block={block}
           autoFocus={autoFocus}
+          fieldSources={fieldSources}
           onChange={onChange}
         />
       );

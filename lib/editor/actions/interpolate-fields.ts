@@ -1,7 +1,13 @@
 import {
+  findActionNodeOwner,
   findHttpRequestNodeById,
   ownerKeyFor,
 } from "@/lib/editor/actions/action-owners";
+import {
+  HTTP_FIELD_CHIP_CLASS,
+  resolveHttpFieldsInHtml,
+  unwrapHttpFieldChips,
+} from "@/lib/editor/blocks/http-field-chip";
 import { getHttpRequestCached, httpRequestCacheKey } from "@/lib/editor/actions/http-request";
 import {
   listAllFieldSources,
@@ -170,6 +176,35 @@ export function interpolatePlainText(template: string): string {
     const formatted = formatResolvedFieldValue(value);
     return formatted === "—" ? "" : formatted;
   });
+}
+
+/**
+ * Resolve rich-text field chips (and any `{{tokens}}`) against the current
+ * For Each item / HTTP node, then unwrap chips to plain text.
+ */
+export function interpolateRichTextHtml(html: string): string {
+  if (!html) return html;
+  let next = html;
+  if (html.includes(HTTP_FIELD_CHIP_CLASS)) {
+    next = resolveHttpFieldsInHtml(next, resolveChipFieldValue);
+    next = unwrapHttpFieldChips(next);
+  }
+  return interpolatePlainText(next);
+}
+
+function resolveChipFieldValue(nodeId: string, path: string): unknown {
+  const scope = peekActionItemScope();
+  if (scope) {
+    const owner = nodeId ? findActionNodeOwner(nodeId) : null;
+    if (!nodeId || owner?.node.type === "forEach") {
+      if (path === "" || path === ".") return scope.item;
+      const fromItem = getValueByPath(scope.item, path);
+      if (fromItem !== undefined) return fromItem;
+    }
+    const fromItem = getValueByPath(scope.item, path);
+    if (fromItem !== undefined) return fromItem;
+  }
+  return resolveActionFieldValue(path, nodeId || undefined);
 }
 
 export function interpolateJsonText(template: string): string {

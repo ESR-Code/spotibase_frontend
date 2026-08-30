@@ -13,14 +13,20 @@ import { getBlockDefinition } from "@/app/editor/_components/blocks/block-regist
 import { AddBlockMenu } from "@/app/editor/_components/drawers/add-block-menu";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { createBlock } from "@/lib/editor/blocks/create-block";
+import {
+  listHttpFieldSources,
+  type HttpFieldSource,
+} from "@/lib/editor/blocks/http-field-sources";
 import { richTextToPlainPreview } from "@/lib/editor/blocks/rich-text";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 import type { HotspotBlockType } from "@/lib/editor/types/hotspot-block";
 
 type HotspotBlocksTabProps = {
   selected: Hotspot;
   onChange?: (blocks: Hotspot["blocks"]) => void;
+  fieldSources?: HttpFieldSource[];
 };
 
 type BlocksUiState = {
@@ -44,8 +50,19 @@ function createBlocksUiState(hotspotId: number): BlocksUiState {
 export function HotspotBlocksTab({
   selected,
   onChange,
+  fieldSources,
 }: HotspotBlocksTabProps) {
   const updateHotspot = useEditorStore((s) => s.updateHotspot);
+  const appStartActions = useScenesStore((s) => s.appStartActions);
+  const sceneStartActions = useScenesStore((s) => {
+    const scene =
+      s.scenes.find((sc) => sc.id === s.activeSceneId) ?? s.scenes[0];
+    return scene?.startActions ?? null;
+  });
+  const resolvedFieldSources = useMemo(
+    () => fieldSources ?? listHttpFieldSources(selected),
+    [appStartActions, fieldSources, sceneStartActions, selected],
+  );
   const [uiState, setUiState] = useState<BlocksUiState>(() =>
     createBlocksUiState(selected.id),
   );
@@ -325,6 +342,7 @@ export function HotspotBlocksTab({
                       block={block}
                       autoFocus={focusBlockId === block.id}
                       hotspotId={selected.id}
+                      fieldSources={resolvedFieldSources}
                       onChange={(patch) => handleBlockChange(block.id, patch)}
                     />
                   </div>

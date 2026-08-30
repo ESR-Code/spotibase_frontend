@@ -148,6 +148,7 @@ export function SpawnHotspotTemplateDrawer() {
         ) : (
           <HotspotBlocksTab
             selected={virtualHotspot}
+            fieldSources={fieldSources}
             onChange={(blocks) => patchTemplate({ blocks })}
           />
         )}

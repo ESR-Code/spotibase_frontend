@@ -2750,6 +2750,13 @@
   z-index: 40;
 }
 
+.editor-root .editor-var-insert-menu.is-fixed-portal {
+  position: fixed;
+  right: auto;
+  top: auto;
+  z-index: 96;
+}
+
 .editor-root .editor-http-headers-add {
   display: inline-flex;
   align-items: center;
