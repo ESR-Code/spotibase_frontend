@@ -35,7 +35,7 @@ export type ModelManager = {
   restoreFromCache: (
     kind: SceneTypeId,
     fileName: string,
-    buffer: ArrayBuffer,
+    blob: Blob,
   ) => Promise<Entity | null>;
   unloadCurrent: () => void;
   setWireframe: (enabled: boolean) => void;
@@ -333,7 +333,7 @@ export function createModelManager(
         sceneSubjectCache.set(sceneId, {
           kind: type,
           fileName: file.name,
-          buffer,
+          blob: file.slice(0, file.size, file.type || mimeFromFileName(file.name)),
         });
       }
       return entity;
@@ -351,9 +351,10 @@ export function createModelManager(
   const restoreFromCache = async (
     kind: SceneTypeId,
     fileName: string,
-    buffer: ArrayBuffer,
+    blob: Blob,
   ): Promise<Entity | null> => {
     try {
+      const buffer = await blob.arrayBuffer();
       if (kind === "image") {
         return await instantiateImageFromBuffer(fileName, buffer, {
           resetTransform: false,

@@ -16,7 +16,7 @@ import { useCoordsInspectorStore } from "@/lib/editor/state/coords-inspector-sto
 import { selectHotspotExclusive } from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { resolveHotspotAppearance } from "@/lib/editor/state/preview-appearance-store";
-import { findHotspot } from "@/lib/editor/state/preview-hotspots";
+import { findHotspot, listPreviewHotspots } from "@/lib/editor/state/preview-hotspots";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
@@ -45,12 +45,11 @@ export function createPickingController(
 
   const pickHotspotId = (clientX: number, clientY: number): number | null => {
     const ray = screenRayFromEvent(pcModule, camera, canvas, clientX, clientY);
-    const editor = useEditorStore.getState();
     let bestId: number | null = null;
     let bestDist = Infinity;
     const hit = new pcModule.Vec3();
 
-    for (const h of editor.hotspots) {
+    for (const h of listPreviewHotspots()) {
       const visual = hotspots.getVisual(h.id);
       if (!visual || !visual.root.enabled) continue;
       const center = visual.root.getPosition();

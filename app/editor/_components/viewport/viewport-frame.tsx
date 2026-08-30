@@ -38,7 +38,16 @@ export function ViewportFrame() {
       id="editor-viewport-wrap"
       className={`relative min-h-0 min-w-0 flex-1 editor-bp-grid ${mode === "add" || waitingLocal ? "crosshair" : ""}`}
     >
-      {isGeo ? <GeoMapViewport /> : <PlayCanvasViewport />}
+      <div
+        className="absolute inset-0 overflow-hidden"
+        style={
+          isGeo ? { visibility: "hidden", pointerEvents: "none" } : undefined
+        }
+        aria-hidden={isGeo}
+      >
+        <PlayCanvasViewport />
+      </div>
+      {isGeo ? <GeoMapViewport /> : null}
       {engineError && !isGeo ? <EngineErrorBanner message={engineError} /> : null}
       <HotspotHoverTooltip />
       {!isGeo ? <AlignmentMarkersOverlay /> : null}

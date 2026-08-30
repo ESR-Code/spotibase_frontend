@@ -3,7 +3,8 @@ import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 export type CachedSubject = {
   kind: SceneTypeId;
   fileName: string;
-  buffer: ArrayBuffer;
+  /** Original file (or a copy). Re-read on restore so the bytes stay valid. */
+  blob: Blob;
 };
 
 const cache = new Map<string, CachedSubject>();

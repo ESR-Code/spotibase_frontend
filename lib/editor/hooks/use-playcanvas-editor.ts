@@ -13,7 +13,11 @@ import { createPickingController } from "@/lib/editor/engine/picking-controller"
 import { createScene } from "@/lib/editor/engine/scene-manager";
 import { bindViewportResize } from "@/lib/editor/engine/viewport-resize";
 import type { ImportSubjectDetail } from "@/lib/editor/io/import-subject";
-import { getCameraModeForSceneType, getSceneType } from "@/lib/editor/scene-types/registry";
+import {
+  getCameraModeForSceneType,
+  getSceneType,
+  isPlayCanvasSceneType,
+} from "@/lib/editor/scene-types/registry";
 import { useAlignmentSessionStore } from "@/lib/editor/state/alignment-session-store";
 import { useCoordsInspectorStore } from "@/lib/editor/state/coords-inspector-store";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -107,8 +111,50 @@ export function usePlayCanvasEditor() {
         };
 
         const initialType = getActiveSceneType();
+        const initialSceneId = useScenesStore.getState().activeSceneId;
+        let loadedPlayCanvasSceneId = isPlayCanvasSceneType(initialType)
+          ? initialSceneId
+          : null;
+        let subjectLoadToken = 0;
+
+        const loadPlayCanvasSubject = async (
+          sceneId: string,
+          sceneType: SceneTypeId,
+        ) => {
+          const token = ++subjectLoadToken;
+          const cached = sceneSubjectCache.get(sceneId);
+          if (cached && cached.kind === sceneType) {
+            const entity = await models.restoreFromCache(
+              cached.kind,
+              cached.fileName,
+              cached.blob,
+            );
+            if (token !== subjectLoadToken) return;
+            if (!entity) models.loadDefault(sceneType);
+          } else {
+            models.loadDefault(sceneType);
+          }
+        };
+
+        const applyStoredModelPose = () => {
+          const model = useModelStore.getState();
+          models.applyTransform(model.modelScale, model.modelRotation);
+          models.applyReflection(
+            model.modelReflection ?? DEFAULT_MODEL_REFLECTION,
+          );
+        };
+
         applyScenePresentation(initialType);
-        models.loadDefault(initialType);
+        if (isPlayCanvasSceneType(initialType)) {
+          await loadPlayCanvasSubject(initialSceneId, initialType);
+        } else {
+          models.loadDefault(initialType);
+        }
+        if (destroyed) {
+          destroy();
+          return;
+        }
+        applyStoredModelPose();
         cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
 
         const unbindResize = bindViewportResize(app, canvas);
@@ -376,27 +422,25 @@ export function usePlayCanvasEditor() {
             ?.sceneId;
           if (!sceneId) return;
 
-          models.unloadCurrent();
-
           const targetScene = useScenesStore
             .getState()
             .scenes.find((s) => s.id === sceneId);
           const sceneType = targetScene?.type ?? "model";
+
+          // Geo uses a different viewport. Keep the current PlayCanvas subject
+          // so returning to this 2D/3D scene does not reload a placeholder.
+          if (!isPlayCanvasSceneType(sceneType)) {
+            return;
+          }
+
           applyScenePresentation(sceneType);
 
-          const cached = sceneSubjectCache.get(sceneId);
-
-          if (cached && cached.kind === sceneType) {
-            const entity = await models.restoreFromCache(
-              cached.kind,
-              cached.fileName,
-              cached.buffer,
-            );
-            if (!entity) {
-              models.loadDefault(sceneType);
-            }
-          } else {
-            models.loadDefault(sceneType);
+          const sameSubject = loadedPlayCanvasSceneId === sceneId;
+          if (!sameSubject) {
+            models.unloadCurrent();
+            await loadPlayCanvasSubject(sceneId, sceneType);
+            if (destroyed) return;
+            loadedPlayCanvasSceneId = sceneId;
           }
 
           if (targetScene) {
