@@ -27,7 +27,9 @@ export function usePreviewHotspots(): Hotspot[] {
   const authored = useEditorStore((s) => s.hotspots);
   const bySource = usePreviewSpawnedHotspotsStore((s) => s.bySource);
   return useMemo(() => {
-    const spawned = Object.values(bySource).flat();
+    const spawned = Object.values(bySource).flatMap((entries) =>
+      entries.map((entry) => entry.hotspot),
+    );
     return spawned.length === 0 ? authored : [...authored, ...spawned];
   }, [authored, bySource]);
 }

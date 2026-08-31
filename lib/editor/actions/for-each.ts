@@ -233,10 +233,23 @@ export async function runForEach(
     return "stop";
   }
   const limited = items.slice(0, FOR_EACH_MAX_ITEMS);
-  for (let index = 0; index < limited.length; index++) {
-    await withActionItemScope(limited[index], index, () =>
-      runTail(limited[index], index),
-    );
+  const { beginSpawnReplacePassesFromForEach, commitSpawnReplacePasses } =
+    await import("@/lib/editor/actions/spawn-hotspots");
+  try {
+    if (owner) {
+      beginSpawnReplacePassesFromForEach(
+        ownerKeyFor(owner.ownerId),
+        owner.graph,
+        node.id,
+      );
+    }
+    for (let index = 0; index < limited.length; index++) {
+      await withActionItemScope(limited[index], index, () =>
+        runTail(limited[index], index),
+      );
+    }
+  } finally {
+    commitSpawnReplacePasses();
   }
   return "stop";
 }

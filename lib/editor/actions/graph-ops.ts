@@ -122,6 +122,35 @@ export function chainFrom(
 }
 
 /**
+ * Every node reachable from `startId` via any outgoing edge (all Switch cases).
+ * Does not include `startId` itself.
+ */
+export function nodesReachableFrom(
+  graph: HotspotActionGraph,
+  startId: string,
+): ActionNode[] {
+  const byId = new Map(graph.nodes.map((node) => [node.id, node]));
+  const result: ActionNode[] = [];
+  const visited = new Set<string>([startId]);
+  const queue: string[] = [];
+  for (const edge of graph.edges) {
+    if (edge.source === startId) queue.push(edge.target);
+  }
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    if (visited.has(id)) continue;
+    visited.add(id);
+    const node = byId.get(id);
+    if (!node) continue;
+    result.push(node);
+    for (const edge of graph.edges) {
+      if (edge.source === id) queue.push(edge.target);
+    }
+  }
+  return result;
+}
+
+/**
  * Walk the primary chain from the trigger.
  * Open Modal continues via its onOpen branch (including legacy unlabeled edges).
  */

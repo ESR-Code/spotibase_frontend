@@ -10,7 +10,10 @@ import {
   countForEachSampleItems,
   findUpstreamForEach,
 } from "@/lib/editor/actions/for-each";
-import { validateSpawnHotspotsData } from "@/lib/editor/actions/spawn-hotspots";
+import {
+  SPAWN_NEEDS_FOR_EACH_MESSAGE,
+  validateSpawnHotspotsData,
+} from "@/lib/editor/actions/spawn-hotspots";
 import { useOwnedActionNode } from "@/lib/editor/actions/use-owned-action-node";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import {
@@ -37,7 +40,7 @@ export function SpawnHotspotsNode({
   const warning =
     ownedNode?.type === "spawnHotspots"
       ? validateSpawnHotspotsData(ownedNode)
-      : "Place this node after For Each";
+      : SPAWN_NEEDS_FOR_EACH_MESSAGE;
 
   const graph = getOwnedActionGraph(ownerId);
   const forEachNode =

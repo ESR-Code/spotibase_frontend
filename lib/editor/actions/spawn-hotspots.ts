@@ -1,5 +1,9 @@
 import { findActionNodeOwner } from "@/lib/editor/actions/action-owners";
-import { hasForEachAncestor } from "@/lib/editor/actions/for-each";
+import {
+  hasAncestorOfType,
+  hasForEachAncestor,
+} from "@/lib/editor/actions/for-each";
+import { nodesReachableFrom } from "@/lib/editor/actions/graph-ops";
 import {
   interpolatePlainText,
   interpolateRichTextHtml,
@@ -7,13 +11,16 @@ import {
 } from "@/lib/editor/actions/interpolate-fields";
 import { geoToScene } from "@/lib/editor/coords/scene-coords";
 import { createHotspotData } from "@/lib/editor/state/editor-store";
+import { findHotspotIndex } from "@/lib/editor/state/preview-hotspots";
 import {
   usePreviewSpawnedHotspotsStore,
 } from "@/lib/editor/state/preview-spawned-hotspots-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
+import { useUIStore } from "@/lib/editor/state/ui-store";
 import type { HotspotBlock } from "@/lib/editor/types/hotspot-block";
 import type {
   ActionNode,
+  HotspotActionGraph,
   SpawnCoordMode,
   SpawnHotspotTemplate,
   SpawnHotspotsActionNode,
@@ -88,12 +95,20 @@ function resolvePosition(
   return { x, y, z };
 }
 
+export const SPAWN_NEEDS_FOR_EACH_MESSAGE =
+  "Connect after For Each (Switch in between is OK)";
+export const SPAWN_NEEDS_FOR_EACH_BEFORE_SWITCH_MESSAGE =
+  "Connect For Each before this Switch";
+
 export function validateSpawnHotspotsData(node: ActionNode): string | null {
   if (node.type !== "spawnHotspots") return null;
   if (!peekActionItemScope()) {
     const found = findActionNodeOwner(node.id);
     if (!found || !hasForEachAncestor(found.graph, node.id)) {
-      return "Place this node after For Each";
+      if (found && hasAncestorOfType(found.graph, node.id, "switch")) {
+        return SPAWN_NEEDS_FOR_EACH_BEFORE_SWITCH_MESSAGE;
+      }
+      return SPAWN_NEEDS_FOR_EACH_MESSAGE;
     }
   }
 
@@ -121,23 +136,22 @@ export function applySpawnHotspots(
   const scope = peekActionItemScope();
   if (!scope) return;
 
-  const position = resolvePosition(node.data.template, node.data.coordMode);
-  if (!position) return;
-
   const sourceKey = `${ctx.ownerKey}:${node.id}`;
   const store = usePreviewSpawnedHotspotsStore.getState();
-  if (node.data.replaceOnRerun && scope.index === 0) {
-    store.beginBatch(sourceKey, true);
+  if (node.data.replaceOnRerun && store.pending[sourceKey] == null) {
+    store.beginPass(sourceKey);
   }
+
+  const position = resolvePosition(node.data.template, node.data.coordMode);
+  if (!position) return;
 
   const template = node.data.template;
   const title =
     interpolateOptional(template.title).trim() ||
     `Hotspot ${String(scope.index + 1).padStart(3, "0")}`;
   const numberText = interpolateOptional(template.number).trim();
-  const id = store.allocateId();
   const numberFallback = String(scope.index + 1);
-  const hotspot = createHotspotData(id, position, {
+  const fields = {
     title,
     desc: interpolateOptional(template.desc),
     image: interpolateOptional(template.image),
@@ -153,8 +167,65 @@ export function applySpawnHotspots(
     category: interpolateOptional(template.category),
     legendName: interpolateOptional(template.legendName) || title,
     blocks: interpolateBlocks(template.blocks),
-  });
-  store.append(sourceKey, hotspot);
+  };
+
+  if (node.data.replaceOnRerun) {
+    store.upsertPending(sourceKey, spawnItemKey(scope.item, scope.index), (id, previous) =>
+      createHotspotData(id, position, {
+        ...fields,
+        actions: previous?.actions,
+        customCamera: previous?.customCamera ?? null,
+        customCameraEnabled: previous?.customCameraEnabled ?? false,
+      }),
+    );
+    return;
+  }
+
+  const id = store.allocateId();
+  store.append(sourceKey, createHotspotData(id, position, fields));
+}
+
+/** Stable identity across Subscribe polls so an open modal is not torn down. */
+export function spawnItemKey(item: unknown, index: number): string {
+  if (item != null && typeof item === "object") {
+    const rec = item as Record<string, unknown>;
+    if (rec.id != null && rec.id !== "") return `id:${String(rec.id)}`;
+    if (typeof rec.key === "string" && rec.key.trim()) {
+      return `key:${rec.key.trim()}`;
+    }
+  }
+  return `i:${index}`;
+}
+
+/** Start replace passes for Spawn nodes after this For Each, including Switch branches. */
+export function beginSpawnReplacePassesFromForEach(
+  ownerKey: string,
+  graph: HotspotActionGraph,
+  forEachId: string,
+): void {
+  const store = usePreviewSpawnedHotspotsStore.getState();
+  for (const child of nodesReachableFrom(graph, forEachId)) {
+    if (child.type === "spawnHotspots" && child.data.replaceOnRerun) {
+      store.beginPass(`${ownerKey}:${child.id}`);
+    }
+  }
+}
+
+export function commitSpawnReplacePasses(): void {
+  usePreviewSpawnedHotspotsStore.getState().commitPasses();
+
+  const ui = useUIStore.getState();
+  if (!ui.previewModalOpen || ui.previewActiveHotspotId == null) return;
+  const index = findHotspotIndex(ui.previewActiveHotspotId);
+  if (index < 0) {
+    ui.setPreviewModalOpen(false);
+    ui.setPreviewActiveHotspotId(null);
+    ui.setPreviewLabelPending(false);
+    ui.setHoverTooltip(null);
+    ui.setInfoBoxAnchor(null);
+    return;
+  }
+  ui.setPreviewModalIndex(index);
 }
 
 export { resolvedCoordMode };

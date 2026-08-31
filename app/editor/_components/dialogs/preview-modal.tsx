@@ -34,7 +34,11 @@ export function PreviewModal() {
   const legendCategories = useSettingsStore((s) => s.legendCategories);
 
   const isInfoBox = presentation === "infobox";
-  const hotspot = hotspots[index] ?? null;
+  const previewActiveHotspotId = useUIStore((s) => s.previewActiveHotspotId);
+  const hotspot =
+    previewActiveHotspotId != null
+      ? (hotspots.find((item) => item.id === previewActiveHotspotId) ?? null)
+      : (hotspots[index] ?? null);
   const count = hotspots.length;
   const category =
     hotspot?.category
@@ -119,6 +123,33 @@ export function PreviewModal() {
     hotspots,
     setPreviewActiveHotspotId,
     revealSelectLabel,
+  ]);
+
+  useEffect(() => {
+    if (!open || previewActiveHotspotId == null) return;
+    const nextIndex = hotspots.findIndex(
+      (item) => item.id === previewActiveHotspotId,
+    );
+    if (nextIndex < 0) {
+      setOpen(false);
+      setPreviewActiveHotspotId(null);
+      setPreviewLabelPending(false);
+      setHoverTooltip(null);
+      setInfoBoxAnchor(null);
+      return;
+    }
+    if (nextIndex !== index) setIndex(nextIndex);
+  }, [
+    open,
+    previewActiveHotspotId,
+    hotspots,
+    index,
+    setIndex,
+    setOpen,
+    setPreviewActiveHotspotId,
+    setPreviewLabelPending,
+    setHoverTooltip,
+    setInfoBoxAnchor,
   ]);
 
   useEffect(() => {
