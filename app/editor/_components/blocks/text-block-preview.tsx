@@ -56,7 +56,9 @@ export function TextBlockPreview({ block, hotspotId }: TextBlockPreviewProps) {
       (nodeId) => {
         const found = findHttpRequestNodeById(nodeId);
         if (!found) return undefined;
-        return found.node.type === "sendPostMessage" ? "postMessage" : "http";
+        if (found.node.type === "sendPostMessage") return "postMessage";
+        if (found.node.type === "subscribe") return "subscribe";
+        return "http";
       },
     );
   }, [

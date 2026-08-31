@@ -25,7 +25,11 @@ export const FOR_EACH_MAX_ITEMS = 200;
 export function isForEachSourceType(
   type: ActionNode["type"] | string | undefined,
 ): boolean {
-  return type === "httpRequest" || type === "sendPostMessage";
+  return (
+    type === "httpRequest" ||
+    type === "subscribe" ||
+    type === "sendPostMessage"
+  );
 }
 
 export function incomingSources(
@@ -110,7 +114,7 @@ function predecessorJsonValue(
   nodeId: string,
 ): unknown {
   for (const source of incomingSources(graph, nodeId)) {
-    if (source.type === "httpRequest") {
+    if (source.type === "httpRequest" || source.type === "subscribe") {
       const found = findHttpRequestNodeById(source.id);
       if (found) {
         const key = httpRequestCacheKey(
@@ -205,7 +209,7 @@ export function validateForEachData(
       return "For Each cannot be nested";
     }
     if (!hasHttpOrPostMessagePredecessor(resolved, node.id)) {
-      return "Connect For Each after HTTP Request or Post Message";
+        return "Connect For Each after HTTP Request, Subscribe, or Post Message";
     }
   }
   if (!node.data.itemsPath.trim()) {

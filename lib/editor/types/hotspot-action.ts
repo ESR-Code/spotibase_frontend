@@ -12,6 +12,7 @@ export type ActionNodeType =
   | "openUrl"
   | "sendPostMessage"
   | "httpRequest"
+  | "subscribe"
   | "enableDisable"
   | "enableDisableMesh"
   | "highlightMesh"
@@ -135,6 +136,40 @@ export type HttpRequestActionNode = ActionNodeBase<
     lastResponseJson: string;
   }
 >;
+export type SubscribeActionNode = ActionNodeBase<
+  "subscribe",
+  {
+    url: string;
+    /** JSON object of request headers. */
+    headersJson: string;
+    /** Poll interval in milliseconds (clamped 1000–60000). */
+    intervalMs: number;
+    /**
+     * When true, skip re-running the downstream chain if the JSON
+     * fingerprint matches the previous tick.
+     */
+    skipUnchanged: boolean;
+    /**
+     * Last successful JSON response body (from Test or Preview).
+     * Used by text blocks and For Each like HTTP Request.
+     */
+    lastResponseJson: string;
+  }
+>;
+
+export const SUBSCRIBE_INTERVAL_MIN_MS = 1000;
+export const SUBSCRIBE_INTERVAL_MAX_MS = 60_000;
+export const SUBSCRIBE_INTERVAL_DEFAULT_MS = 5000;
+
+export function clampSubscribeIntervalMs(value: unknown): number {
+  const num = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(num)) return SUBSCRIBE_INTERVAL_DEFAULT_MS;
+  return Math.min(
+    SUBSCRIBE_INTERVAL_MAX_MS,
+    Math.max(SUBSCRIBE_INTERVAL_MIN_MS, Math.round(num)),
+  );
+}
+
 export type EnableDisableActionNode = ActionNodeBase<
   "enableDisable",
   {
@@ -322,6 +357,7 @@ export type ActionNode =
   | OpenUrlActionNode
   | SendPostMessageActionNode
   | HttpRequestActionNode
+  | SubscribeActionNode
   | EnableDisableActionNode
   | EnableDisableMeshActionNode
   | HighlightMeshActionNode

@@ -17,6 +17,7 @@ import type {
   HotspotActionGraph,
   HttpMethod,
   HttpRequestActionNode,
+  SubscribeActionNode,
   OpenModalActionNode,
   GoToSceneActionNode,
   OpenUrlActionNode,
@@ -24,6 +25,10 @@ import type {
   SendPostMessageActionNode,
 } from "@/lib/editor/types/hotspot-action";
 import { HTTP_METHODS, TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
+import {
+  clampSubscribeIntervalMs,
+  SUBSCRIBE_INTERVAL_DEFAULT_MS,
+} from "@/lib/editor/types/hotspot-action";
 import {
   DEFAULT_MESH_STROKE_COLOR,
   DEFAULT_MESH_STROKE_WIDTH,
@@ -180,6 +185,10 @@ export function createActionNode(
   position: ActionNodeXY,
 ): HttpRequestActionNode;
 export function createActionNode(
+  type: "subscribe",
+  position: ActionNodeXY,
+): SubscribeActionNode;
+export function createActionNode(
   type: "enableDisable",
   position: ActionNodeXY,
 ): EnableDisableActionNode;
@@ -279,6 +288,19 @@ export function createActionNode(
           headersJson: "{\n  \n}",
           body: "",
           cacheReuse: false,
+          lastResponseJson: "",
+        },
+      };
+    case "subscribe":
+      return {
+        id: newActionId(),
+        type: "subscribe",
+        position: { ...position },
+        data: {
+          url: "",
+          headersJson: "{\n  \n}",
+          intervalMs: SUBSCRIBE_INTERVAL_DEFAULT_MS,
+          skipUnchanged: true,
           lastResponseJson: "",
         },
       };
@@ -483,6 +505,26 @@ export function cloneActionGraph(
             body: node.data.body,
             cacheReuse: Boolean(node.data.cacheReuse),
             lastResponseJson: node.data.lastResponseJson ?? "",
+          },
+        };
+      }
+      if (node.type === "subscribe") {
+        return {
+          id: node.id,
+          type: "subscribe",
+          position: { ...node.position },
+          data: {
+            url: typeof node.data.url === "string" ? node.data.url : "",
+            headersJson:
+              typeof node.data.headersJson === "string"
+                ? node.data.headersJson
+                : "{\n  \n}",
+            intervalMs: clampSubscribeIntervalMs(node.data.intervalMs),
+            skipUnchanged: asBoolean(node.data.skipUnchanged, true),
+            lastResponseJson:
+              typeof node.data.lastResponseJson === "string"
+                ? node.data.lastResponseJson
+                : "",
           },
         };
       }

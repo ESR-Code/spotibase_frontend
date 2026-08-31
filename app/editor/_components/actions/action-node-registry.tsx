@@ -15,6 +15,7 @@ import {
   MessagesSquare,
   Palette,
   PanelRightOpen,
+  Radio,
   Repeat,
   Shapes,
   type LucideIcon,
@@ -30,6 +31,7 @@ import { GoToHotspotNode } from "@/app/editor/_components/actions/go-to-hotspot-
 import { GoToSceneNode } from "@/app/editor/_components/actions/go-to-scene-node";
 import { HotspotTriggerNode } from "@/app/editor/_components/actions/hotspot-trigger-node";
 import { HttpRequestNode } from "@/app/editor/_components/actions/http-request-node";
+import { SubscribeNode } from "@/app/editor/_components/actions/subscribe-node";
 import { OpenModalNode } from "@/app/editor/_components/actions/open-modal-node";
 import { OpenUrlNode } from "@/app/editor/_components/actions/open-url-node";
 import { ForEachNode } from "@/app/editor/_components/actions/for-each-node";
@@ -96,6 +98,13 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     icon: Globe,
     accent: "#56c8a0",
     Node: HttpRequestNode,
+  },
+  subscribe: {
+    type: "subscribe",
+    meta: ACTION_NODE_META.subscribe,
+    icon: Radio,
+    accent: "#4cc9f0",
+    Node: SubscribeNode,
   },
   enableDisable: {
     type: "enableDisable",
@@ -172,6 +181,7 @@ export const ACTION_FLOW_NODE_TYPES = {
   openUrl: OpenUrlNode,
   sendPostMessage: SendPostMessageNode,
   httpRequest: HttpRequestNode,
+  subscribe: SubscribeNode,
   enableDisable: EnableDisableNode,
   enableDisableMesh: EnableDisableMeshNode,
   highlightMesh: HighlightMeshNode,

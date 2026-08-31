@@ -179,8 +179,14 @@ export async function runSceneStartActions(sceneId?: string) {
   const scene = state.scenes.find((s) => s.id === id);
   if (!scene) return;
 
-  // Replace scene-scoped receive listeners when entering a scene.
+  // Replace scene-scoped receive listeners and polls when entering a scene.
   clearPostMessageListeners("sceneStart:");
+  const { clearSubscribePolls } = await import(
+    "@/lib/editor/actions/subscribe"
+  );
+  clearSubscribePolls("sceneStart:");
+  clearSubscribePolls("menuButton:");
+  clearSubscribePolls("h:");
 
   await runActionGraph(scene.startActions ?? createEmptyActionGraph(), {
     hotspotId: null,

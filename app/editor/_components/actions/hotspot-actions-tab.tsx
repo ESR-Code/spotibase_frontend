@@ -75,6 +75,10 @@ function actionNodeDetail(
       return node.data.url.trim()
         ? `→ ${node.data.method} ${node.data.url.trim()}`
         : `→ ${node.data.method} (no url)`;
+    case "subscribe":
+      return node.data.url.trim()
+        ? `→ every ${Math.round(node.data.intervalMs / 1000)}s ${node.data.url.trim()}`
+        : `→ every ${Math.round(node.data.intervalMs / 1000)}s (no url)`;
     case "enableDisable": {
       const count =
         (node.data.disabledHotspotIds?.length ?? 0) +

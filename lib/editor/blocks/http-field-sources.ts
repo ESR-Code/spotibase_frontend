@@ -19,7 +19,7 @@ import type { Hotspot } from "@/lib/editor/types/hotspot";
 import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 import { normalizeReceiveEvents } from "@/lib/editor/types/hotspot-action";
 
-export type FieldSourceKind = "http" | "postMessage";
+export type FieldSourceKind = "http" | "postMessage" | "subscribe";
 
 export type HttpFieldSource = {
   kind: FieldSourceKind;
@@ -40,6 +40,7 @@ export type FieldSourceGroup = {
 const KIND_LABEL: Record<FieldSourceKind, string> = {
   http: "HTTP Request",
   postMessage: "Post Message",
+  subscribe: "Subscribe",
 };
 
 function collectFromGraph(
@@ -50,18 +51,24 @@ function collectFromGraph(
 ) {
   let httpIndex = 0;
   let postMessageIndex = 0;
+  let subscribeIndex = 0;
 
   graph.nodes.forEach((node) => {
-    if (node.type === "httpRequest") {
+    if (node.type === "httpRequest" || node.type === "subscribe") {
       const parsed = tryParseJson(node.data.lastResponseJson ?? "");
       if (parsed === undefined) return;
 
-      httpIndex += 1;
-      const label = `${nodeLabelPrefix} · ${KIND_LABEL.http} ${httpIndex}`;
+      const kind: FieldSourceKind =
+        node.type === "subscribe" ? "subscribe" : "http";
+      if (kind === "subscribe") subscribeIndex += 1;
+      else httpIndex += 1;
+      const label = `${nodeLabelPrefix} · ${KIND_LABEL[kind]} ${
+        kind === "subscribe" ? subscribeIndex : httpIndex
+      }`;
 
       for (const field of flattenJsonPaths(parsed)) {
         sources.push({
-          kind: "http",
+          kind,
           nodeId: node.id,
           nodeLabel: label,
           path: field.path,
@@ -179,11 +186,17 @@ export function groupHttpFieldSources(
 
   let httpIndex = 0;
   let postMessageIndex = 0;
+  let subscribeIndex = 0;
 
   return order.map((nodeId) => {
     const items = byNode.get(nodeId) ?? [];
     const kind = items[0]?.kind ?? "http";
-    const index = kind === "http" ? ++httpIndex : ++postMessageIndex;
+    const index =
+      kind === "postMessage"
+        ? ++postMessageIndex
+        : kind === "subscribe"
+          ? ++subscribeIndex
+          : ++httpIndex;
     return {
       id: nodeId,
       kind,

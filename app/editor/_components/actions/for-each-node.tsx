@@ -115,7 +115,7 @@ export function ForEachNode({ data, selected }: NodeProps<ForEachFlowNode>) {
               );
               updateNodeData(ownerId, actionNodeId, { itemsPath: next });
             }}
-            emptyTitle="Test an HTTP Request or declare Post Message fields first"
+            emptyTitle="Test an HTTP Request or Subscribe, or declare Post Message fields first"
           />
         </span>
         <input

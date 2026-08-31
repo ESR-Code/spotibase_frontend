@@ -19,6 +19,7 @@ import type {
   SendPostMessageActionNode,
 } from "@/lib/editor/types/hotspot-action";
 import {
+  clampSubscribeIntervalMs,
   createEmptyPostMessageReceiveEvent,
   firstPostMessageReceiveHandleId,
   isPostMessageReceiveHandle,
@@ -513,6 +514,31 @@ export function updateNodeData(
               typeof patch.cacheReuse === "boolean"
                 ? patch.cacheReuse
                 : node.data.cacheReuse,
+            lastResponseJson:
+              typeof patch.lastResponseJson === "string"
+                ? patch.lastResponseJson
+                : (node.data.lastResponseJson ?? ""),
+          },
+        };
+      }
+      if (node.type === "subscribe") {
+        return {
+          ...node,
+          data: {
+            url: typeof patch.url === "string" ? patch.url : node.data.url,
+            headersJson:
+              typeof patch.headersJson === "string"
+                ? patch.headersJson
+                : node.data.headersJson,
+            intervalMs:
+              typeof patch.intervalMs === "number" ||
+              typeof patch.intervalMs === "string"
+                ? clampSubscribeIntervalMs(patch.intervalMs)
+                : node.data.intervalMs,
+            skipUnchanged:
+              typeof patch.skipUnchanged === "boolean"
+                ? patch.skipUnchanged
+                : node.data.skipUnchanged,
             lastResponseJson:
               typeof patch.lastResponseJson === "string"
                 ? patch.lastResponseJson

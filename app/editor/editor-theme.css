@@ -1224,6 +1224,12 @@
   color: #b7cbff;
 }
 
+.editor-root .editor-http-field-chip[data-field-kind="subscribe"] {
+  border-color: rgba(76, 201, 240, 0.4);
+  background: rgba(76, 201, 240, 0.16);
+  color: #9ee7f7;
+}
+
 .editor-root .editor-http-field-chip[data-resolved="missing"] {
   border-color: rgba(230, 57, 70, 0.35);
   background: rgba(230, 57, 70, 0.12);
@@ -1263,6 +1269,10 @@
   color: #b7cbff;
 }
 
+.editor-root .editor-http-field-menu-group[data-field-kind="subscribe"] {
+  color: #9ee7f7;
+}
+
 .editor-root .editor-http-field-menu-item {
   display: block;
   width: 100%;
@@ -1280,6 +1290,10 @@
 
 .editor-root .editor-http-field-menu-item[data-field-kind="postMessage"]:hover {
   background: rgba(122, 162, 255, 0.12);
+}
+
+.editor-root .editor-http-field-menu-item[data-field-kind="subscribe"]:hover {
+  background: rgba(76, 201, 240, 0.12);
 }
 
 .editor-root .editor-field-tree-row {
@@ -1333,6 +1347,11 @@
 .editor-root .editor-field-tree-leaf[data-field-kind="postMessage"]:hover,
 .editor-root .editor-field-tree-branch[data-field-kind="postMessage"]:hover {
   background: rgba(122, 162, 255, 0.12);
+}
+
+.editor-root .editor-field-tree-leaf[data-field-kind="subscribe"]:hover,
+.editor-root .editor-field-tree-branch[data-field-kind="subscribe"]:hover {
+  background: rgba(76, 201, 240, 0.12);
 }
 
 .editor-root .editor-field-tree-key {

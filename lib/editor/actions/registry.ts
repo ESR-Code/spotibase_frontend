@@ -1,4 +1,4 @@
-import { patchOwnedActionNodeData } from "@/lib/editor/actions/action-owners";
+import { patchOwnedActionNodeData, findOwnedActionNode } from "@/lib/editor/actions/action-owners";
 import { createActionNode, getActionGraph } from "@/lib/editor/actions/create-action-graph";
 import {
   applyChangeHotspotColor,
@@ -47,6 +47,14 @@ import {
   interpolateHttpRequestFields,
   interpolatePostMessageFields,
 } from "@/lib/editor/actions/interpolate-fields";
+import {
+  clampSubscribeIntervalMs,
+  executeSubscribeGet,
+  interpolateSubscribeFields,
+  startSubscribePoll,
+  stopSubscribePoll,
+  validateSubscribeData,
+} from "@/lib/editor/actions/subscribe";
 import {
   applySpawnHotspots,
   validateSpawnHotspotsData,
@@ -307,6 +315,75 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
           markHttpRequestCached(key, null);
         }
       }
+    },
+  },
+  subscribe: {
+    type: "subscribe",
+    label: "Subscribe",
+    description:
+      "Poll a URL in Preview and re-run the next nodes when the JSON updates.",
+    createDefault: (position) => createActionNode("subscribe", position),
+    validate: (node) => {
+      if (node.type !== "subscribe") return null;
+      return validateSubscribeData({
+        ...node.data,
+        ...interpolateSubscribeFields(node.data),
+      });
+    },
+    run: async (node, ctx) => {
+      if (node.type !== "subscribe") return;
+      if (!useEditorStore.getState().isPreview) return "stop";
+
+      const key = httpRequestCacheKey(ctx.ownerKey, node.id);
+      startSubscribePoll({
+        key,
+        intervalMs: clampSubscribeIntervalMs(node.data.intervalMs),
+        skipUnchanged: node.data.skipUnchanged !== false,
+        fetchTick: async () => {
+          if (!useEditorStore.getState().isPreview) {
+            stopSubscribePoll(key);
+            return null;
+          }
+          const latest = findOwnedActionNode(ctx.ownerId, node.id);
+          if (!latest || latest.type !== "subscribe") {
+            stopSubscribePoll(key);
+            return null;
+          }
+          const interpolated = interpolateSubscribeFields(latest.data);
+          const error = validateSubscribeData({
+            ...latest.data,
+            ...interpolated,
+          });
+          if (error) return { ok: false, json: undefined };
+
+          const result = await executeSubscribeGet(interpolated);
+          if (!result.ok || result.json === undefined) {
+            return { ok: false, json: undefined };
+          }
+          return { ok: true, json: result.json };
+        },
+        onPayload: async (json) => {
+          markHttpRequestCached(key, json);
+          patchOwnedActionNodeData(ctx.ownerId, node.id, {
+            lastResponseJson: JSON.stringify(json),
+          });
+          const { getOwnedActionGraph } = await import(
+            "@/lib/editor/actions/action-owners"
+          );
+          const { chainFrom } = await import(
+            "@/lib/editor/actions/graph-ops"
+          );
+          const { runActionNodeList } = await import(
+            "@/lib/editor/actions/run-action-graph"
+          );
+          const graph = getOwnedActionGraph(ctx.ownerId);
+          if (!graph) return;
+          const tail = chainFrom(graph, node.id);
+          if (tail.length === 0) return;
+          await runActionNodeList(tail, ctx);
+        },
+      });
+      return "stop";
     },
   },
   enableDisable: {

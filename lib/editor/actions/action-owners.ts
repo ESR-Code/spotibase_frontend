@@ -39,6 +39,7 @@ export const START_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "goToHotspot",
   "sendPostMessage",
   "httpRequest",
+  "subscribe",
   "enableDisable",
   "enableDisableMesh",
   "highlightMesh",
@@ -57,6 +58,7 @@ export const HOTSPOT_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "openUrl",
   "sendPostMessage",
   "httpRequest",
+  "subscribe",
   "enableDisable",
   "enableDisableMesh",
   "highlightMesh",
@@ -75,6 +77,7 @@ export const MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "openUrl",
   "sendPostMessage",
   "httpRequest",
+  "subscribe",
   "enableDisable",
   "enableDisableMesh",
   "highlightMesh",
@@ -202,17 +205,20 @@ export function findOwnedActionNode(
 
 export type FieldSourceActionNode =
   | Extract<ActionNode, { type: "httpRequest" }>
+  | Extract<ActionNode, { type: "subscribe" }>
   | Extract<ActionNode, { type: "sendPostMessage" }>;
 
 function isFieldSourceNode(node: ActionNode): node is FieldSourceActionNode {
-  if (node.type === "httpRequest") return true;
+  if (node.type === "httpRequest" || node.type === "subscribe") return true;
   return (
     node.type === "sendPostMessage" && (node.data.mode ?? "send") === "receive"
   );
 }
 
 function fieldSourceJson(node: FieldSourceActionNode): string {
-  if (node.type === "httpRequest") return node.data.lastResponseJson ?? "";
+  if (node.type === "httpRequest" || node.type === "subscribe") {
+    return node.data.lastResponseJson ?? "";
+  }
   return node.data.lastPayloadJson ?? "";
 }
 

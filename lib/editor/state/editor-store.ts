@@ -5,6 +5,7 @@ import {
 } from "@/lib/editor/actions/create-action-graph";
 import { clearHttpRequestCache } from "@/lib/editor/actions/http-request";
 import { clearPostMessageListeners } from "@/lib/editor/actions/send-post-message";
+import { clearSubscribePolls } from "@/lib/editor/actions/subscribe";
 import { cloneCameraResetPosition } from "@/lib/editor/constants/default-settings";
 import { DEMO_HOTSPOTS } from "@/lib/editor/constants/demo-hotspots";
 import {
@@ -104,6 +105,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const isPreview = !get().isPreview;
       clearHttpRequestCache();
       clearPostMessageListeners();
+      clearSubscribePolls();
       usePreviewVisibilityStore.getState().reset();
       usePreviewAppearanceStore.getState().reset();
       usePreviewMeshHighlightStore.getState().reset();
@@ -140,6 +142,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (get().isPreview) {
       clearHttpRequestCache();
       clearPostMessageListeners();
+      clearSubscribePolls();
       usePreviewVisibilityStore.getState().reset();
       usePreviewAppearanceStore.getState().reset();
       usePreviewMeshHighlightStore.getState().reset();

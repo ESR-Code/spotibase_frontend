@@ -60,7 +60,7 @@ function sanitizeNode(node: Node, doc: Document): Node | null {
     clean.setAttribute("data-http-node", el.getAttribute("data-http-node") ?? "");
     clean.setAttribute("data-http-path", el.getAttribute("data-http-path") ?? "");
     const kind = el.getAttribute("data-field-kind");
-    if (kind === "http" || kind === "postMessage") {
+    if (kind === "http" || kind === "postMessage" || kind === "subscribe") {
       clean.setAttribute("data-field-kind", kind);
     }
     const path = el.getAttribute("data-http-path") ?? "";
