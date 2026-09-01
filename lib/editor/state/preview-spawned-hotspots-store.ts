@@ -7,6 +7,8 @@ export const SPAWNED_HOTSPOT_ID_BASE = 1_000_000;
 export type SpawnedEntry = {
   itemKey: string;
   hotspot: Hotspot;
+  item: unknown;
+  index: number;
 };
 
 type PreviewSpawnedState = {
@@ -21,12 +23,20 @@ type PreviewSpawnedState = {
     sourceKey: string,
     itemKey: string,
     build: (id: number, previous?: Hotspot) => Hotspot,
+    item: unknown,
+    index: number,
   ) => void;
-  append: (sourceKey: string, hotspot: Hotspot) => void;
+  append: (
+    sourceKey: string,
+    hotspot: Hotspot,
+    item: unknown,
+    index: number,
+  ) => void;
   allocateId: () => number;
   commitPasses: () => void;
   list: () => Hotspot[];
   find: (id: number) => Hotspot | undefined;
+  findEntry: (id: number) => SpawnedEntry | undefined;
   reset: () => void;
 };
 
@@ -62,7 +72,7 @@ export const usePreviewSpawnedHotspotsStore = create<PreviewSpawnedState>(
         pending: { ...state.pending, [sourceKey]: [] },
       }));
     },
-    upsertPending: (sourceKey, itemKey, build) => {
+    upsertPending: (sourceKey, itemKey, build, item, index) => {
       const state = get();
       const pendingList = state.pending[sourceKey];
       if (!pendingList) return;
@@ -83,15 +93,15 @@ export const usePreviewSpawnedHotspotsStore = create<PreviewSpawnedState>(
         state.idsByItemKey[itemKey] ??
         get().allocateId();
       const hotspot = build(id, previous?.hotspot);
-      const nextEntry: SpawnedEntry = { itemKey, hotspot };
+      const nextEntry: SpawnedEntry = { itemKey, hotspot, item, index };
 
       set((latest) => {
         const list = latest.pending[sourceKey];
         if (!list) return latest;
-        const index = list.findIndex((entry) => entry.itemKey === itemKey);
+        const found = list.findIndex((entry) => entry.itemKey === itemKey);
         const nextList =
-          index >= 0
-            ? list.map((entry, i) => (i === index ? nextEntry : entry))
+          found >= 0
+            ? list.map((entry, i) => (i === found ? nextEntry : entry))
             : [...list, nextEntry];
         return {
           pending: { ...latest.pending, [sourceKey]: nextList },
@@ -99,13 +109,13 @@ export const usePreviewSpawnedHotspotsStore = create<PreviewSpawnedState>(
         };
       });
     },
-    append: (sourceKey, hotspot) =>
+    append: (sourceKey, hotspot, item, index) =>
       set((state) => ({
         bySource: {
           ...state.bySource,
           [sourceKey]: [
             ...(state.bySource[sourceKey] ?? []),
-            { itemKey: `new:${hotspot.id}`, hotspot },
+            { itemKey: `new:${hotspot.id}`, hotspot, item, index },
           ],
         },
       })),
@@ -130,6 +140,13 @@ export const usePreviewSpawnedHotspotsStore = create<PreviewSpawnedState>(
     },
     list: () => hotspotsFrom(get().bySource),
     find: (id) => get().list().find((hotspot) => hotspot.id === id),
+    findEntry: (id) => {
+      for (const entries of Object.values(get().bySource)) {
+        const found = entries.find((entry) => entry.hotspot.id === id);
+        if (found) return found;
+      }
+      return undefined;
+    },
     reset: () =>
       set({
         bySource: {},

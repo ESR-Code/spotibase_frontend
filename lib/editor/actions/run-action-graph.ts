@@ -26,6 +26,8 @@ import {
 } from "@/lib/editor/actions/send-post-message";
 import { useCustomMenuToggleStore } from "@/lib/editor/state/custom-menu-toggle-store";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { withActionItemScope } from "@/lib/editor/actions/interpolate-fields";
+import { usePreviewSpawnedHotspotsStore } from "@/lib/editor/state/preview-spawned-hotspots-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import {
@@ -157,11 +159,18 @@ export async function runHotspotActions(hotspotId: number) {
 
   focusHotspotCamera(hotspotId);
 
-  await runActionGraph(getActionGraph(hotspot), {
+  const ctx = {
     hotspotId,
     ownerId: hotspotId,
     ownerKey: ownerKeyFor(hotspotId),
-  });
+  };
+  const run = () => runActionGraph(getActionGraph(hotspot), ctx);
+  const spawned = usePreviewSpawnedHotspotsStore.getState().findEntry(hotspotId);
+  if (spawned) {
+    await withActionItemScope(spawned.item, spawned.index, run);
+    return;
+  }
+  await run();
 }
 
 export async function runAppStartActions() {

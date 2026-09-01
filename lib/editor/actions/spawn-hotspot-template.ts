@@ -1,4 +1,8 @@
 import {
+  cloneActionGraph,
+  createDefaultActionGraph,
+} from "@/lib/editor/actions/create-action-graph";
+import {
   DEFAULT_HOTSPOT_SHAPE,
   normalizeHotspotShape,
   type HotspotStyle,
@@ -6,6 +10,7 @@ import {
 } from "@/lib/editor/types/hotspot";
 import type { HotspotBlock } from "@/lib/editor/types/hotspot-block";
 import type {
+  HotspotActionGraph,
   SpawnCoordMode,
   SpawnHotspotTemplate,
 } from "@/lib/editor/types/hotspot-action";
@@ -88,7 +93,21 @@ export function createDefaultSpawnHotspotTemplate(): SpawnHotspotTemplate {
     positionY: "{{lat}}",
     positionZ: "0",
     blocks: [],
+    actions: createDefaultActionGraph(),
   };
+}
+
+function asTemplateActions(value: unknown): HotspotActionGraph {
+  if (!value || typeof value !== "object") return createDefaultActionGraph();
+  const rec = value as Partial<HotspotActionGraph>;
+  if (!Array.isArray(rec.nodes) || !Array.isArray(rec.edges) || !rec.trigger) {
+    return createDefaultActionGraph();
+  }
+  try {
+    return cloneActionGraph(rec as HotspotActionGraph);
+  } catch {
+    return createDefaultActionGraph();
+  }
 }
 
 export function asSpawnCoordMode(value: unknown): SpawnCoordMode {
@@ -124,5 +143,6 @@ export function asSpawnHotspotTemplate(value: unknown): SpawnHotspotTemplate {
     positionY: asString(rec.positionY, fallback.positionY),
     positionZ: asString(rec.positionZ, fallback.positionZ),
     blocks: cloneSpawnBlocks(rec.blocks),
+    actions: asTemplateActions(rec.actions),
   };
 }

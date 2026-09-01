@@ -303,6 +303,8 @@ export type SpawnHotspotTemplate = {
   positionY: string;
   positionZ: string;
   blocks: HotspotBlock[];
+  /** Click graph cloned onto each spawned pin. */
+  actions: HotspotActionGraph;
 };
 
 export type ForEachActionNode = ActionNodeBase<

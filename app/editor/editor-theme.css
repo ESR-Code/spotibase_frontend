@@ -1212,6 +1212,7 @@
 }
 
 .editor-root .editor-http-field-chip[data-field-kind="http"],
+.editor-root .editor-http-field-chip[data-field-kind="forEach"],
 .editor-root .editor-http-field-chip:not([data-field-kind]) {
   border-color: rgba(86, 200, 160, 0.35);
   background: rgba(86, 200, 160, 0.14);
@@ -1261,7 +1262,8 @@
   text-transform: uppercase;
 }
 
-.editor-root .editor-http-field-menu-group[data-field-kind="http"] {
+.editor-root .editor-http-field-menu-group[data-field-kind="http"],
+.editor-root .editor-http-field-menu-group[data-field-kind="forEach"] {
   color: #9ee6c8;
 }
 
@@ -1284,7 +1286,8 @@
   cursor: pointer;
 }
 
-.editor-root .editor-http-field-menu-item[data-field-kind="http"]:hover {
+.editor-root .editor-http-field-menu-item[data-field-kind="http"]:hover,
+.editor-root .editor-http-field-menu-item[data-field-kind="forEach"]:hover {
   background: rgba(86, 200, 160, 0.12);
 }
 
@@ -1340,7 +1343,9 @@
 }
 
 .editor-root .editor-field-tree-leaf[data-field-kind="http"]:hover,
-.editor-root .editor-field-tree-branch[data-field-kind="http"]:hover {
+.editor-root .editor-field-tree-branch[data-field-kind="http"]:hover,
+.editor-root .editor-field-tree-leaf[data-field-kind="forEach"]:hover,
+.editor-root .editor-field-tree-branch[data-field-kind="forEach"]:hover {
   background: rgba(86, 200, 160, 0.12);
 }
 

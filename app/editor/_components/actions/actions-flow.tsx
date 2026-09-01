@@ -50,6 +50,7 @@ import {
   HOTSPOT_GRAPH_ALLOWED_NODE_TYPES,
   MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES,
   SCENE_START_OWNER_ID,
+  SPAWN_CLICK_LANE_OWNER_ID,
   START_GRAPH_ALLOWED_NODE_TYPES,
   canConnectActionOwners,
   getOwnedActionGraph,
@@ -101,10 +102,19 @@ import {
 import { TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 
+export type IsolatedActionLane = {
+  title: string;
+  graph: HotspotActionGraph;
+  onChange: (graph: HotspotActionGraph) => void;
+  fenceScopeKey: string;
+};
+
 type ActionsFlowProps = {
   hotspots: Hotspot[];
   /** Prepend App Start + Scene Start lanes (scene-wide Actions modal). */
   includeStartGraphs?: boolean;
+  /** Single-lane editor for a Spawn template click graph. */
+  isolatedLane?: IsolatedActionLane;
 };
 
 type ActionsFlowCanvasProps = ActionsFlowProps & {
@@ -131,7 +141,9 @@ function canvasSessionKeyFor(
   hotspots: Hotspot[],
   includeStartGraphs: boolean,
   menuButtonOwnerIds: number[],
+  isolatedKey?: string,
 ): string {
+  if (isolatedKey) return isolatedKey;
   const owners = includeStartGraphs
     ? ["app", "scene", ...menuButtonOwnerIds.map((id) => `m${id}`)]
     : [];
@@ -148,6 +160,7 @@ function graphStructureKeyFor(entries: ActionFlowEntry[]): string {
 function ActionsFlowCanvas({
   hotspots,
   includeStartGraphs = false,
+  isolatedLane,
   clipboard,
   onClipboardChange,
 }: ActionsFlowCanvasProps) {
@@ -158,9 +171,15 @@ function ActionsFlowCanvas({
   const { screenToFlowPosition, getViewport } = useReactFlow();
   const flowRootRef = useRef<HTMLDivElement>(null);
   const [rawMenu, setRawMenu] = useState<ActionsContextMenuState | null>(null);
-  const scopeKey = actionFencesScopeKey(activeScene.id);
+  const isolatedLaneRef = useRef(isolatedLane);
+  isolatedLaneRef.current = isolatedLane;
+  const scopeKey = isolatedLane
+    ? isolatedLane.fenceScopeKey
+    : actionFencesScopeKey(activeScene.id);
   const storeFences = useActionFencesStore((s) => s.byScope[scopeKey]);
-  const fences = storeFences ?? activeScene.actionFences ?? [];
+  const fences = isolatedLane
+    ? (storeFences ?? [])
+    : (storeFences ?? activeScene.actionFences ?? []);
   const pendingCreate = useActionFencesStore((s) => s.pendingCreate);
   const consumeCreateFence = useActionFencesStore((s) => s.consumeCreateFence);
   const addFence = useActionFencesStore((s) => s.addFence);
@@ -171,6 +190,11 @@ function ActionsFlowCanvas({
   const setFences = useActionFencesStore((s) => s.setFences);
 
   useLayoutEffect(() => {
+    if (isolatedLane) {
+      const existing = useActionFencesStore.getState().byScope[scopeKey];
+      if (existing === undefined) hydrateScope(scopeKey, []);
+      return;
+    }
     const leftover = useActionFencesStore.getState().takeHotspotFences();
     const existing = useActionFencesStore.getState().byScope[scopeKey];
     const base = existing ?? activeScene.actionFences ?? [];
@@ -185,7 +209,7 @@ function ActionsFlowCanvas({
     if (existing === undefined) {
       hydrateScope(scopeKey, activeScene.actionFences ?? []);
     }
-  }, [activeScene.actionFences, hydrateScope, scopeKey, setFences]);
+  }, [activeScene.actionFences, hydrateScope, isolatedLane, scopeKey, setFences]);
 
   const menuPositionFromEvent = useCallback(
     (event: { clientX: number; clientY: number }) => {
@@ -200,10 +224,24 @@ function ActionsFlowCanvas({
   );
 
   const entries: ActionFlowEntry[] = useMemo(() => {
-    const list: ActionFlowEntry[] = [];
-    let laneIndex = 0;
     const forScene = (types: ActionNodeType[]) =>
       filterActionNodeTypesForScene(types, activeScene.type);
+
+    if (isolatedLane) {
+      return [
+        {
+          ownerId: SPAWN_CLICK_LANE_OWNER_ID,
+          title: isolatedLane.title,
+          graph: isolatedLane.graph,
+          laneIndex: 0,
+          triggerKind: "hotspot" as const,
+          allowedNodeTypes: forScene(HOTSPOT_GRAPH_ALLOWED_NODE_TYPES),
+        },
+      ];
+    }
+
+    const list: ActionFlowEntry[] = [];
+    let laneIndex = 0;
 
     if (includeStartGraphs) {
       list.push({
@@ -274,6 +312,7 @@ function ActionsFlowCanvas({
     customMenuButtons,
     hotspots,
     includeStartGraphs,
+    isolatedLane,
   ]);
 
   const laneByOwnerId = useMemo(() => {
@@ -403,6 +442,11 @@ function ActionsFlowCanvas({
 
   const writeGraph = useCallback(
     (ownerId: number, graph: HotspotActionGraph) => {
+      const isolated = isolatedLaneRef.current;
+      if (isolated && ownerId === SPAWN_CLICK_LANE_OWNER_ID) {
+        isolated.onChange(graph);
+        return;
+      }
       if (isHotspotOwnerId(ownerId)) {
         updateHotspot(ownerId, { actions: graph });
         return;
@@ -412,16 +456,24 @@ function ActionsFlowCanvas({
     [updateHotspot],
   );
 
+  const readGraph = useCallback((ownerId: number): HotspotActionGraph | null => {
+    const isolated = isolatedLaneRef.current;
+    if (isolated && ownerId === SPAWN_CLICK_LANE_OWNER_ID) {
+      return isolated.graph;
+    }
+    return getOwnedActionGraph(ownerId);
+  }, []);
+
   const updateGraph = useCallback(
     (
       ownerId: number,
       updater: (graph: HotspotActionGraph) => HotspotActionGraph,
     ) => {
-      const current = getOwnedActionGraph(ownerId);
+      const current = readGraph(ownerId);
       if (!current) return;
       writeGraph(ownerId, updater(current));
     },
-    [writeGraph],
+    [readGraph, writeGraph],
   );
 
   const api: ActionsEditorApi = useMemo(
@@ -447,7 +499,7 @@ function ActionsFlowCanvas({
       },
       clipboard,
       copyNode: (ownerId, nodeId) => {
-        const graph = getOwnedActionGraph(ownerId);
+        const graph = readGraph(ownerId);
         const node = graph?.nodes.find((item) => item.id === nodeId);
         if (!node) return;
         onClipboardChange(structuredClone(node));
@@ -460,7 +512,7 @@ function ActionsFlowCanvas({
           toast.error("That node type isn’t allowed in this lane");
           return false;
         }
-        const graph = getOwnedActionGraph(ownerId);
+        const graph = readGraph(ownerId);
         if (!graph) return false;
         const position =
           target?.position ?? pastePositionNear(graph, target?.nearNodeId);
@@ -468,7 +520,7 @@ function ActionsFlowCanvas({
         return true;
       },
     }),
-    [allowedByOwnerId, clipboard, onClipboardChange, updateGraph, writeGraph],
+    [allowedByOwnerId, clipboard, onClipboardChange, readGraph, updateGraph, writeGraph],
   );
 
   const persistActionPosition = useCallback(
@@ -1071,7 +1123,7 @@ function ActionsFlowCanvas({
           onAdd={handleAdd}
           onDelete={api.deleteNode}
         />
-        <SpawnHotspotTemplateDrawer />
+        {isolatedLane ? null : <SpawnHotspotTemplateDrawer />}
       </div>
     </ActionsEditorProvider>
   );
@@ -1080,6 +1132,7 @@ function ActionsFlowCanvas({
 export function ActionsFlow({
   hotspots,
   includeStartGraphs = false,
+  isolatedLane,
 }: ActionsFlowProps) {
   const [clipboard, setClipboard] = useState<ActionNode | null>(null);
   const activeScene = useActiveScene();
@@ -1089,9 +1142,10 @@ export function ActionsFlow({
     hotspots,
     includeStartGraphs,
     customMenuButtons.map((button) => button.ownerId),
+    isolatedLane?.fenceScopeKey,
   );
 
-  if (!includeStartGraphs && hotspots.length === 0) {
+  if (!isolatedLane && !includeStartGraphs && hotspots.length === 0) {
     return (
       <div
         className="flex h-full items-center justify-center text-[13px]"
@@ -1107,6 +1161,7 @@ export function ActionsFlow({
       <ActionsFlowCanvas
         hotspots={hotspots}
         includeStartGraphs={includeStartGraphs}
+        isolatedLane={isolatedLane}
         clipboard={clipboard}
         onClipboardChange={setClipboard}
       />

@@ -1,12 +1,17 @@
 import {
   APP_START_OWNER_ID,
   SCENE_START_OWNER_ID,
+  getOwnedActionGraph,
 } from "@/lib/editor/actions/action-owners";
 import { listCustomMenuButtonGraphs } from "@/lib/editor/actions/custom-menu-buttons";
 import {
   createEmptyActionGraph,
   getActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
+import {
+  findUpstreamForEach,
+  sampleForEachItems,
+} from "@/lib/editor/actions/for-each";
 import {
   flattenJsonPaths,
   formatResolvedFieldValue,
@@ -15,11 +20,12 @@ import {
 } from "@/lib/editor/blocks/json-paths";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
+import { useUIStore } from "@/lib/editor/state/ui-store";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
 import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 import { normalizeReceiveEvents } from "@/lib/editor/types/hotspot-action";
 
-export type FieldSourceKind = "http" | "postMessage" | "subscribe";
+export type FieldSourceKind = "http" | "postMessage" | "subscribe" | "forEach";
 
 export type HttpFieldSource = {
   kind: FieldSourceKind;
@@ -41,6 +47,7 @@ const KIND_LABEL: Record<FieldSourceKind, string> = {
   http: "HTTP Request",
   postMessage: "Post Message",
   subscribe: "Subscribe",
+  forEach: "For Each item",
 };
 
 function collectFromGraph(
@@ -117,12 +124,27 @@ function collectFromGraph(
   });
 }
 
-/**
- * Collect selectable JSON field paths from tested HTTP responses and
- * declared Post Message receive fields.
- */
-export function listAllFieldSources(excludeNodeId?: string): HttpFieldSource[] {
-  const sources: HttpFieldSource[] = [];
+function listSpawnClickItemFieldSources(): HttpFieldSource[] {
+  const editor = useUIStore.getState().spawnClickActionsEditor;
+  if (!editor) return [];
+  const graph = getOwnedActionGraph(editor.ownerId);
+  if (!graph) return [];
+  const forEach = findUpstreamForEach(graph, editor.nodeId);
+  if (!forEach) return [];
+  const items = sampleForEachItems(graph, forEach);
+  const first = items?.[0];
+  if (first === undefined) return [];
+  return fieldSourcesFromValue(first, {
+    nodeId: forEach.id,
+    ownerId: editor.ownerId,
+    nodeLabel: "For Each item",
+    kind: "forEach",
+  });
+}
+
+let collectingFieldSources = false;
+
+function collectGraphFieldSources(sources: HttpFieldSource[]): void {
   const scenes = useScenesStore.getState();
 
   collectFromGraph(
@@ -144,11 +166,35 @@ export function listAllFieldSources(excludeNodeId?: string): HttpFieldSource[] {
   }
 
   for (const hotspot of useEditorStore.getState().hotspots) {
-    collectFromGraph(getActionGraph(hotspot), hotspot.id, hotspot.title || "Hotspot", sources);
+    collectFromGraph(
+      getActionGraph(hotspot),
+      hotspot.id,
+      hotspot.title || "Hotspot",
+      sources,
+    );
   }
 
   for (const entry of listCustomMenuButtonGraphs()) {
     collectFromGraph(entry.graph, entry.ownerId, entry.label, sources);
+  }
+}
+
+/**
+ * Collect selectable JSON field paths from tested HTTP responses and
+ * declared Post Message receive fields.
+ */
+export function listAllFieldSources(excludeNodeId?: string): HttpFieldSource[] {
+  const sources: HttpFieldSource[] = [];
+  if (collectingFieldSources) {
+    collectGraphFieldSources(sources);
+  } else {
+    collectingFieldSources = true;
+    try {
+      sources.push(...listSpawnClickItemFieldSources());
+      collectGraphFieldSources(sources);
+    } finally {
+      collectingFieldSources = false;
+    }
   }
 
   return excludeNodeId
@@ -196,11 +242,14 @@ export function groupHttpFieldSources(
         ? ++postMessageIndex
         : kind === "subscribe"
           ? ++subscribeIndex
-          : ++httpIndex;
+          : kind === "forEach"
+            ? 1
+            : ++httpIndex;
     return {
       id: nodeId,
       kind,
-      label: `${KIND_LABEL[kind]} ${index}`,
+      label:
+        kind === "forEach" ? KIND_LABEL.forEach : `${KIND_LABEL[kind]} ${index}`,
       items,
     };
   });

@@ -9,6 +9,7 @@ import {
   interpolateRichTextHtml,
   peekActionItemScope,
 } from "@/lib/editor/actions/interpolate-fields";
+import { cloneActionGraph, createDefaultActionGraph } from "@/lib/editor/actions/create-action-graph";
 import { geoToScene } from "@/lib/editor/coords/scene-coords";
 import { createHotspotData } from "@/lib/editor/state/editor-store";
 import { findHotspotIndex } from "@/lib/editor/state/preview-hotspots";
@@ -167,22 +168,34 @@ export function applySpawnHotspots(
     category: interpolateOptional(template.category),
     legendName: interpolateOptional(template.legendName) || title,
     blocks: interpolateBlocks(template.blocks),
+    actions: cloneActionGraph(
+      template.actions ?? createDefaultActionGraph(),
+    ),
   };
 
   if (node.data.replaceOnRerun) {
-    store.upsertPending(sourceKey, spawnItemKey(scope.item, scope.index), (id, previous) =>
-      createHotspotData(id, position, {
-        ...fields,
-        actions: previous?.actions,
-        customCamera: previous?.customCamera ?? null,
-        customCameraEnabled: previous?.customCameraEnabled ?? false,
-      }),
+    store.upsertPending(
+      sourceKey,
+      spawnItemKey(scope.item, scope.index),
+      (id, previous) =>
+        createHotspotData(id, position, {
+          ...fields,
+          customCamera: previous?.customCamera ?? null,
+          customCameraEnabled: previous?.customCameraEnabled ?? false,
+        }),
+      scope.item,
+      scope.index,
     );
     return;
   }
 
   const id = store.allocateId();
-  store.append(sourceKey, createHotspotData(id, position, fields));
+  store.append(
+    sourceKey,
+    createHotspotData(id, position, fields),
+    scope.item,
+    scope.index,
+  );
 }
 
 /** Stable identity across Subscribe polls so an open modal is not torn down. */

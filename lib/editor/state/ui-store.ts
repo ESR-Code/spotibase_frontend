@@ -54,6 +54,8 @@ type UIState = {
   actionsModal: ActionsModalScope | null;
   /** Spawn Hotspot template drawer (owner + node) while the Actions canvas is open. */
   spawnTemplateEditor: { ownerId: number; nodeId: string } | null;
+  /** Nested click-graph editor for a Spawn template (does not replace Scene Actions). */
+  spawnClickActionsEditor: { ownerId: number; nodeId: string } | null;
   /** Splash overlay for Go To Scene action transitions. */
   sceneTransition: SceneTransitionState;
   setLoading: (value: boolean) => void;
@@ -76,6 +78,8 @@ type UIState = {
   closeActionsModal: () => void;
   openSpawnTemplateEditor: (ownerId: number, nodeId: string) => void;
   closeSpawnTemplateEditor: () => void;
+  openSpawnClickActionsEditor: (ownerId: number, nodeId: string) => void;
+  closeSpawnClickActionsEditor: () => void;
   startSceneTransition: (sceneName: string) => void;
   holdSceneTransition: () => void;
   beginSceneTransitionOut: () => void;
@@ -102,6 +106,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   scenesModalOpen: false,
   actionsModal: null,
   spawnTemplateEditor: null,
+  spawnClickActionsEditor: null,
   sceneTransition: null,
   setLoading: (isLoading) => set({ isLoading }),
   setOutlinerCollapsed: (outlinerCollapsed) => set({ outlinerCollapsed }),
@@ -135,10 +140,19 @@ export const useUIStore = create<UIState>((set, get) => ({
   setInfoBoxAnchor: (infoBoxAnchor) => set({ infoBoxAnchor }),
   setScenesModalOpen: (scenesModalOpen) => set({ scenesModalOpen }),
   openActionsModal: (actionsModal) => set({ actionsModal }),
-  closeActionsModal: () => set({ actionsModal: null, spawnTemplateEditor: null }),
+  closeActionsModal: () =>
+    set({
+      actionsModal: null,
+      spawnTemplateEditor: null,
+      spawnClickActionsEditor: null,
+    }),
   openSpawnTemplateEditor: (ownerId, nodeId) =>
     set({ spawnTemplateEditor: { ownerId, nodeId } }),
-  closeSpawnTemplateEditor: () => set({ spawnTemplateEditor: null }),
+  closeSpawnTemplateEditor: () =>
+    set({ spawnTemplateEditor: null, spawnClickActionsEditor: null }),
+  openSpawnClickActionsEditor: (ownerId, nodeId) =>
+    set({ spawnClickActionsEditor: { ownerId, nodeId } }),
+  closeSpawnClickActionsEditor: () => set({ spawnClickActionsEditor: null }),
   startSceneTransition: (sceneName) =>
     set({ sceneTransition: { sceneName, phase: "in" } }),
   holdSceneTransition: () =>
@@ -166,6 +180,7 @@ export const useUIStore = create<UIState>((set, get) => ({
       scenesModalOpen: false,
       actionsModal: null,
       spawnTemplateEditor: null,
+      spawnClickActionsEditor: null,
       previewActiveHotspotId: null,
       previewLabelPending: false,
       hoverTooltip: null,

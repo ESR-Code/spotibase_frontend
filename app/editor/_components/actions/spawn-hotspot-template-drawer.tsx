@@ -1,7 +1,8 @@
 "use client";
 
-import { LayoutList, Settings2, X } from "lucide-react";
+import { LayoutList, Settings2, Workflow, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { ActionGraphSummary } from "@/app/editor/_components/actions/hotspot-actions-tab";
 import { SpawnHotspotGeneralTab } from "@/app/editor/_components/actions/spawn-hotspot-general-tab";
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
 import { HotspotBlocksTab } from "@/app/editor/_components/drawers/hotspot-blocks-tab";
@@ -12,6 +13,7 @@ import {
   findUpstreamForEach,
   sampleForEachItems,
 } from "@/lib/editor/actions/for-each";
+import { createDefaultActionGraph } from "@/lib/editor/actions/create-action-graph";
 import { createHotspotData } from "@/lib/editor/state/editor-store";
 import { useOwnedActionNode } from "@/lib/editor/actions/use-owned-action-node";
 import {
@@ -24,16 +26,20 @@ import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import type { SpawnHotspotTemplate } from "@/lib/editor/types/hotspot-action";
 
-type PropertiesTab = "general" | "blocks";
+type PropertiesTab = "general" | "blocks" | "actions";
 
 const TABS: { id: PropertiesTab; label: string; icon: typeof Settings2 }[] = [
   { id: "general", label: "General", icon: Settings2 },
   { id: "blocks", label: "Blocks", icon: LayoutList },
+  { id: "actions", label: "Actions", icon: Workflow },
 ];
 
 export function SpawnHotspotTemplateDrawer() {
   const editor = useUIStore((s) => s.spawnTemplateEditor);
   const close = useUIStore((s) => s.closeSpawnTemplateEditor);
+  const openSpawnClickActionsEditor = useUIStore(
+    (s) => s.openSpawnClickActionsEditor,
+  );
   const { updateNodeData } = useActionsEditor();
   const [tab, setTab] = useState<PropertiesTab>("general");
   const ownedNode = useOwnedActionNode(editor?.ownerId ?? 0, editor?.nodeId);
@@ -62,6 +68,7 @@ export function SpawnHotspotTemplateDrawer() {
       nodeId: forEach.id,
       ownerId: editor.ownerId,
       nodeLabel: "For Each item",
+      kind: "forEach",
     });
     return [...itemSources, ...global];
   }, [
@@ -145,11 +152,20 @@ export function SpawnHotspotTemplateDrawer() {
             fieldSources={fieldSources}
             onChange={patchTemplate}
           />
-        ) : (
+        ) : tab === "blocks" ? (
           <HotspotBlocksTab
             selected={virtualHotspot}
             fieldSources={fieldSources}
             onChange={(blocks) => patchTemplate({ blocks })}
+          />
+        ) : (
+          <ActionGraphSummary
+            graph={template.actions ?? createDefaultActionGraph()}
+            triggerLabel="When this pin is clicked"
+            emptyHint="No actions yet. Open the editor to add nodes for spawned pins."
+            onOpenEditor={() =>
+              openSpawnClickActionsEditor(editor.ownerId, editor.nodeId)
+            }
           />
         )}
       </div>

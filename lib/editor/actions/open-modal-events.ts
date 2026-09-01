@@ -48,7 +48,14 @@ export function registerOpenModalCloseHandler(
 async function fireOpenModalClose(
   registration: OpenModalCloseRegistration,
 ): Promise<void> {
-  const graph = getOwnedActionGraph(registration.ownerId);
+  const { findHotspot } = await import("@/lib/editor/state/preview-hotspots");
+  const { getActionGraph } = await import(
+    "@/lib/editor/actions/create-action-graph"
+  );
+  const hotspot = findHotspot(registration.hotspotId);
+  const graph = hotspot
+    ? getActionGraph(hotspot)
+    : getOwnedActionGraph(registration.ownerId);
   if (!graph) return;
   const chain = chainFrom(
     graph,
@@ -60,12 +67,26 @@ async function fireOpenModalClose(
   const { runActionNodeList } = await import(
     "@/lib/editor/actions/run-action-graph"
   );
+  const { withActionItemScope } = await import(
+    "@/lib/editor/actions/interpolate-fields"
+  );
+  const { usePreviewSpawnedHotspotsStore } = await import(
+    "@/lib/editor/state/preview-spawned-hotspots-store"
+  );
   const ctx: ActionRunContext = {
     hotspotId: registration.hotspotId,
     ownerId: registration.ownerId,
     ownerKey: registration.ownerKey || ownerKeyFor(registration.ownerId),
   };
-  await runActionNodeList(chain, ctx);
+  const run = () => runActionNodeList(chain, ctx);
+  const spawned = usePreviewSpawnedHotspotsStore
+    .getState()
+    .findEntry(registration.hotspotId);
+  if (spawned) {
+    await withActionItemScope(spawned.item, spawned.index, run);
+    return;
+  }
+  await run();
 }
 
 /** Call when the preview modal / drawer / infobox transitions open → closed. */

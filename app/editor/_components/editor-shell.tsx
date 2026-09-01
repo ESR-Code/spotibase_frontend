@@ -12,6 +12,7 @@ import {
 import { GeneralSettingsDrawer } from "@/app/editor/_components/drawers/general-settings-drawer";
 import { SettingsDrawer } from "@/app/editor/_components/drawers/settings-drawer";
 import { ActionsModal } from "@/app/editor/_components/actions/actions-modal";
+import { SpawnClickActionsModal } from "@/app/editor/_components/actions/spawn-click-actions-modal";
 import { PreviewModal } from "@/app/editor/_components/dialogs/preview-modal";
 import { ScenesModal } from "@/app/editor/_components/dialogs/scenes-modal";
 import { GeoreferenceModal } from "@/app/editor/_components/dialogs/georeference-modal";
@@ -53,6 +54,7 @@ export function EditorShell() {
         <ScenesModal />
         <GeoreferenceModal />
         <ActionsModal />
+        <SpawnClickActionsModal />
       </div>
 
       <SceneTransitionOverlay />

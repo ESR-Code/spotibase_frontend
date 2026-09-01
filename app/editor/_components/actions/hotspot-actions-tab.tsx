@@ -137,6 +137,13 @@ function actionNodeDetail(
   }
 }
 
+type ActionGraphSummaryProps = {
+  graph: HotspotActionGraph;
+  triggerLabel: string;
+  emptyHint: string;
+  onOpenEditor: () => void;
+};
+
 function ActionNodeRow({
   node,
   index,
@@ -178,10 +185,13 @@ function ActionNodeRow({
   );
 }
 
-export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
-  const openActionsModal = useUIStore((s) => s.openActionsModal);
+export function ActionGraphSummary({
+  graph,
+  triggerLabel,
+  emptyHint,
+  onOpenEditor,
+}: ActionGraphSummaryProps) {
   const scenes = useScenesStore((s) => s.scenes);
-  const graph = getActionGraph(selected);
   const chain = chainFromTrigger(graph);
   const chainedIds = new Set(chain.map((node) => node.id));
   const extras = graph.nodes.filter(
@@ -207,7 +217,7 @@ export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
 
         {chain.length === 0 && extras.length === 0 ? (
           <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
-            No actions yet. Open the editor to add nodes for this hotspot.
+            {emptyHint}
           </div>
         ) : (
           <ol className="space-y-2">
@@ -216,7 +226,7 @@ export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
               style={{ color: "var(--editor-muted)" }}
             >
               <span className="editor-chip">Start</span>
-              Hotspot clicked
+              {triggerLabel}
             </li>
             {chain.length === 0 ? (
               <li className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
@@ -259,9 +269,7 @@ export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
       <EditorButton
         variant="primary"
         className="w-full justify-center"
-        onClick={() =>
-          openActionsModal({ kind: "hotspot", hotspotId: selected.id })
-        }
+        onClick={onOpenEditor}
       >
         <Workflow className="h-3.5 w-3.5" />
         Open Actions Editor
@@ -272,5 +280,19 @@ export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
         nodes.
       </div>
     </div>
+  );
+}
+
+export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
+  const openActionsModal = useUIStore((s) => s.openActionsModal);
+  return (
+    <ActionGraphSummary
+      graph={getActionGraph(selected)}
+      triggerLabel="Hotspot clicked"
+      emptyHint="No actions yet. Open the editor to add nodes for this hotspot."
+      onOpenEditor={() =>
+        openActionsModal({ kind: "hotspot", hotspotId: selected.id })
+      }
+    />
   );
 }

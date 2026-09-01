@@ -15,6 +15,7 @@ import {
   useScenesStore,
 } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
+import { useUIStore } from "@/lib/editor/state/ui-store";
 import type {
   ActionNode,
   ActionNodeType,
@@ -27,6 +28,8 @@ export { isMenuButtonOwnerId } from "@/lib/editor/actions/custom-menu-buttons";
 export const APP_START_OWNER_ID = -1;
 /** Synthetic lane owner for the active scene's Scene Start graph. */
 export const SCENE_START_OWNER_ID = -2;
+/** Editor-only lane for a Spawn template click graph. Not persisted. */
+export const SPAWN_CLICK_LANE_OWNER_ID = -3;
 
 export type ActionTriggerKind =
   | "hotspot"
@@ -136,7 +139,46 @@ export function ownerKeyFor(ownerId: number, sceneId?: string): string {
   return `h:${ownerId}`;
 }
 
+function spawnClickEditorState(): { ownerId: number; nodeId: string } | null {
+  return useUIStore.getState().spawnClickActionsEditor;
+}
+
+/** Live (not cloned) node inside the open Spawn template click graph. */
+export function findNodeInSpawnTemplateActions(
+  parentGraph: HotspotActionGraph | null | undefined,
+  spawnNodeId: string,
+  clickNodeId: string,
+): ActionNode | null {
+  const spawn = parentGraph?.nodes.find((n) => n.id === spawnNodeId);
+  if (!spawn || spawn.type !== "spawnHotspots") return null;
+  return (
+    spawn.data.template.actions?.nodes.find((n) => n.id === clickNodeId) ?? null
+  );
+}
+
+function spawnClickParentGraph(): {
+  editor: { ownerId: number; nodeId: string };
+  parent: HotspotActionGraph;
+} | null {
+  const editor = spawnClickEditorState();
+  if (!editor || editor.ownerId === SPAWN_CLICK_LANE_OWNER_ID) return null;
+  const parent = getOwnedActionGraph(editor.ownerId);
+  if (!parent) return null;
+  return { editor, parent };
+}
+
 export function getOwnedActionGraph(ownerId: number): HotspotActionGraph | null {
+  if (ownerId === SPAWN_CLICK_LANE_OWNER_ID) {
+    const resolved = spawnClickParentGraph();
+    if (!resolved) return null;
+    const spawn = resolved.parent.nodes.find(
+      (n) => n.id === resolved.editor.nodeId,
+    );
+    if (!spawn || spawn.type !== "spawnHotspots") return null;
+    return cloneActionGraph(
+      spawn.data.template.actions ?? createEmptyActionGraph(),
+    );
+  }
   if (ownerId === APP_START_OWNER_ID) {
     return cloneActionGraph(useScenesStore.getState().appStartActions);
   }
@@ -163,6 +205,24 @@ export function setOwnedActionGraph(
   ownerId: number,
   graph: HotspotActionGraph,
 ): void {
+  if (ownerId === SPAWN_CLICK_LANE_OWNER_ID) {
+    const resolved = spawnClickParentGraph();
+    if (!resolved) return;
+    const spawn = resolved.parent.nodes.find(
+      (n) => n.id === resolved.editor.nodeId,
+    );
+    if (!spawn || spawn.type !== "spawnHotspots") return;
+    setOwnedActionGraph(
+      resolved.editor.ownerId,
+      updateNodeData(resolved.parent, resolved.editor.nodeId, {
+        template: {
+          ...spawn.data.template,
+          actions: cloneActionGraph(graph),
+        },
+      }),
+    );
+    return;
+  }
   if (ownerId === APP_START_OWNER_ID) {
     useScenesStore.getState().setAppStartActions(graph);
     return;
