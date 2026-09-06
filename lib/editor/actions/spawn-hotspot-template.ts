@@ -23,7 +23,13 @@ const HOTSPOT_TYPES: HotspotType[] = [
   "spec",
   "link",
 ];
-const HOTSPOT_STYLES: HotspotStyle[] = ["dot", "number", "icon", "image"];
+const HOTSPOT_STYLES: HotspotStyle[] = [
+  "dot",
+  "number",
+  "icon",
+  "image",
+  "hidden",
+];
 
 function asHotspotType(value: unknown): HotspotType {
   return HOTSPOT_TYPES.includes(value as HotspotType)

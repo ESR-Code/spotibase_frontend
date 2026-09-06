@@ -42,6 +42,9 @@ export function createPickingController(
   const groundPoint = new pcModule.Vec3();
   const groundNormal = new pcModule.Vec3();
   const groundHit = new pcModule.Vec3();
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let didDragHotspot = false;
 
   const pickHotspotId = (clientX: number, clientY: number): number | null => {
     const ray = screenRayFromEvent(pcModule, camera, canvas, clientX, clientY);
@@ -49,9 +52,12 @@ export function createPickingController(
     let bestDist = Infinity;
     const hit = new pcModule.Vec3();
 
+    const editor = useEditorStore.getState();
     for (const h of listPreviewHotspots()) {
       const visual = hotspots.getVisual(h.id);
       if (!visual || !visual.root.enabled) continue;
+      const appearance = resolveHotspotAppearance(h, editor.isPreview);
+      if (editor.isPreview && appearance.style === "hidden") continue;
       const center = visual.root.getPosition();
       const radius = 0.28 * visual.root.getLocalScale().x;
       if (raySphereHit(ray, center, radius, pcModule, hit)) {
@@ -138,8 +144,11 @@ export function createPickingController(
     const id = pickHotspotId(e.clientX, e.clientY);
     if (id != null) {
       if (editor.mode === "select") {
-        selectAndOpen(id);
+        selectHotspotExclusive(id);
         useEditorStore.getState().setDraggingId(id);
+        didDragHotspot = false;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
         cameraCtrl.setEnabled(false);
 
         const visual = hotspots.getVisual(id);
@@ -268,6 +277,11 @@ export function createPickingController(
     }
 
     if (editor.draggingId != null) {
+      const dx = e.clientX - dragStartX;
+      const dy = e.clientY - dragStartY;
+      if (dx * dx + dy * dy > PREVIEW_CLICK_PX * PREVIEW_CLICK_PX) {
+        didDragHotspot = true;
+      }
       const ray = screenRayFromEvent(pcModule, camera, canvas, e.clientX, e.clientY);
       if (dragPlane.intersectsRay(ray, planeHit)) {
         const next = new pcModule.Vec3().copy(planeHit).add(dragOffset);
@@ -302,6 +316,10 @@ export function createPickingController(
     }
 
     if (editor.draggingId != null) {
+      if (!didDragHotspot) {
+        useUIStore.getState().setPropertiesDrawerOpen(true);
+      }
+      didDragHotspot = false;
       useEditorStore.getState().setDraggingId(null);
       cameraCtrl.setEnabled(true);
     }

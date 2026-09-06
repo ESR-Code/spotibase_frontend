@@ -15,7 +15,7 @@ import {
   isPreviewHotspotEnabled,
 } from "@/lib/editor/state/preview-visibility-store";
 import { resolveHotspotAppearance } from "@/lib/editor/state/preview-appearance-store";
-import type { Vec3 } from "@/lib/editor/types/hotspot";
+import { isHiddenHotspotStyle, type Vec3 } from "@/lib/editor/types/hotspot";
 import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
 
 export type HotspotManager = {
@@ -67,9 +67,10 @@ export function createHotspotManager(
       if (existing.styleKey !== nextKey) {
         void rebuildCore(app, pcModule, existing, resolved);
       } else {
-        existing.ring.enabled = !!resolved.pulse;
+        const hidden = isHiddenHotspotStyle(resolved.style);
+        existing.ring.enabled = !!resolved.pulse && !hidden;
         existing.stick.enabled =
-          !!resolved.wick && resolved.style !== "image";
+          !!resolved.wick && resolved.style !== "image" && !hidden;
       }
     }
   };
@@ -98,10 +99,13 @@ export function createHotspotManager(
         continue;
       }
 
+      const resolved = resolveHotspotAppearance(hotspot, editor.isPreview);
+      const hiddenStyle = isHiddenHotspotStyle(resolved.style);
       const categoryVisible =
         !filterByLegend || hotspot.category === legendFilter;
       const enabled =
         categoryVisible &&
+        !(editor.isPreview && hiddenStyle) &&
         (!editor.isPreview ||
           isPreviewHotspotEnabled(editor.isPreview, hotspot.id));
       if (visual.root.enabled !== enabled) {

@@ -3202,6 +3202,10 @@
   padding: 0 1px;
 }
 
+.editor-geo-marker-ghost {
+  opacity: 0.28;
+}
+
 .editor-geo-marker-selected .editor-geo-marker-core {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--geo-marker-color) 45%, transparent);
 }

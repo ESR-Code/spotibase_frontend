@@ -32,16 +32,8 @@ export function EditorHeader() {
             }}
           />
         </div>
-        <div>
-          <div className="font-display text-[15px] font-bold leading-none">
-            VectorForge
-          </div>
-          <div
-            className="mt-1 text-[10px] uppercase tracking-[0.18em]"
-            style={{ color: "var(--editor-muted-2)" }}
-          >
-            3D Hotspot Studio
-          </div>
+        <div className="font-display text-[15px] font-bold leading-none">
+          VectorForge
         </div>
       </div>
 

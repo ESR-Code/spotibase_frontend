@@ -221,6 +221,20 @@ function LegendMarkerVisual({ hotspot }: { hotspot: Hotspot }) {
   const resolved = resolveHotspotAppearance(hotspot, isPreview);
   const shapeClass = hotspotShapeClass(resolved.shape);
 
+  if (resolved.style === "hidden") {
+    return (
+      <span
+        className={`editor-hot-dot editor-hot-dot-lg ${shapeClass}`}
+        title="Hidden"
+        style={{
+          background: "transparent",
+          border: "1.5px dashed var(--editor-muted-2)",
+          boxShadow: "none",
+        }}
+      />
+    );
+  }
+
   if (resolved.style === "image" && resolved.markerImage) {
     return (
       <span

@@ -81,6 +81,19 @@ export function HotspotListItem({
 function MarkerVisual({ hotspot }: { hotspot: Hotspot }) {
   const shapeClass = hotspotShapeClass(hotspot.shape);
 
+  if (hotspot.style === "hidden") {
+    return (
+      <span
+        className={`editor-hot-dot ${shapeClass}`}
+        title="Hidden"
+        style={{
+          background: "transparent",
+          border: "1.5px dashed var(--editor-muted-2)",
+        }}
+      />
+    );
+  }
+
   if (hotspot.style === "image" && hotspot.markerImage) {
     return (
       <span

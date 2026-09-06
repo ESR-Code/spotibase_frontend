@@ -10,6 +10,7 @@ import {
 import { hotspotTypeColors } from "@/lib/editor/theme/tokens";
 import {
   DEFAULT_HOTSPOT_SHAPE,
+  isHiddenHotspotStyle,
   normalizeHotspotShape,
   type Hotspot,
 } from "@/lib/editor/types/hotspot";
@@ -139,11 +140,31 @@ export async function rebuildCore(
   const shape = normalizeHotspotShape(hotspot.shape ?? DEFAULT_HOTSPOT_SHAPE);
   replacePulseRingTexture(visual, pcModule, app, shape);
 
+  const isHidden = isHiddenHotspotStyle(hotspot.style);
   const isImage = hotspot.style === "image";
-  visual.stick.enabled = !!hotspot.wick && !isImage;
+  visual.stick.enabled = !!hotspot.wick && !isImage && !isHidden;
+  visual.ring.enabled = !!hotspot.pulse && !isHidden;
 
   const requestKey = visualStyleKey(hotspot);
   visual.styleKey = requestKey;
+
+  if (isHidden) {
+    attachSpriteCore(
+      visual,
+      createTextTexture(
+        pcModule,
+        app.graphicsDevice,
+        "",
+        colorHex,
+        false,
+        shape,
+      ),
+      pcModule,
+      0.28,
+    );
+    visual.styleKey = requestKey;
+    return;
+  }
 
   if (isImage && hotspot.markerImage) {
     try {

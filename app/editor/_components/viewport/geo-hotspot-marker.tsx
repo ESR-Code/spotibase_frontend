@@ -10,7 +10,7 @@ import {
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { hotspotShapeClass } from "@/lib/editor/theme/hotspot-shape";
 import { hotspotTypeColors } from "@/lib/editor/theme/tokens";
-import type { Hotspot } from "@/lib/editor/types/hotspot";
+import { isHiddenHotspotStyle, type Hotspot } from "@/lib/editor/types/hotspot";
 import { cn } from "@/lib/utils";
 
 type GeoHotspotMarkerProps = {
@@ -46,7 +46,9 @@ export function GeoHotspotMarker({
   const hovered = hoveredId === hotspot.id;
   const color = resolved.color || hotspotTypeColors[resolved.type];
   const scale = Math.max(0.55, hotspotSize) * (selected || hovered ? 1.15 : 1);
-  const draggable = !hidden && !isPreview && mode === "select";
+  const styleHidden = isHiddenHotspotStyle(resolved.style);
+  const fullyHidden = hidden || (isPreview && styleHidden);
+  const draggable = !fullyHidden && !isPreview && mode === "select";
   const lng = hotspot.position.x;
   const lat = hotspot.position.y;
   if (!Number.isFinite(lng) || !Number.isFinite(lat)) return null;
@@ -57,35 +59,36 @@ export function GeoHotspotMarker({
       latitude={lat}
       draggable={draggable}
       onClick={(event) => {
-        if (hidden) return;
+        if (fullyHidden) return;
         event.stopPropagation();
         onMarkerClick(hotspot, event);
       }}
       onMouseEnter={(event) => {
-        if (hidden) return;
+        if (fullyHidden) return;
         onMarkerEnter(hotspot, event);
       }}
       onMouseLeave={(event) => {
         onMarkerLeave(hotspot, event);
       }}
       onDragEnd={(lngLat) => {
-        if (hidden) return;
+        if (fullyHidden) return;
         onDragEnd(hotspot, lngLat);
       }}
     >
       <MarkerContent
         className={cn(
           "editor-geo-marker-wrap",
-          hidden && "editor-geo-marker-hidden",
+          fullyHidden && "editor-geo-marker-hidden",
         )}
       >
         <div
           className={cn(
             "editor-geo-marker",
             hotspotShapeClass(resolved.shape),
-            resolved.wick && "editor-geo-marker-has-wick",
-            resolved.pulse && !hidden && "editor-geo-marker-pulse",
+            resolved.wick && !styleHidden && "editor-geo-marker-has-wick",
+            resolved.pulse && !fullyHidden && !styleHidden && "editor-geo-marker-pulse",
             selected && "editor-geo-marker-selected",
+            styleHidden && !isPreview && "editor-geo-marker-ghost",
           )}
           style={
             {
@@ -97,11 +100,11 @@ export function GeoHotspotMarker({
           <span
             className={cn(
               "editor-geo-marker-stick",
-              !resolved.wick && "editor-geo-marker-stick-hidden",
+              (!resolved.wick || styleHidden) && "editor-geo-marker-stick-hidden",
             )}
           />
           <span className="editor-geo-marker-core">
-            {resolved.style === "number" ? (
+            {styleHidden ? null : resolved.style === "number" ? (
               <span className="editor-geo-marker-label editor-marker-shape-content">
                 {resolved.number}
               </span>

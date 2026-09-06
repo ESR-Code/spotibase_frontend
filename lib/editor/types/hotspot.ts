@@ -8,7 +8,20 @@ export type HotspotType = "none" | "info" | "warning" | "spec" | "link";
 export function hotspotTypeLabel(type: HotspotType): string {
   return type === "none" ? "default" : type;
 }
-export type HotspotStyle = "dot" | "number" | "icon" | "image";
+export const HOTSPOT_STYLES = [
+  "dot",
+  "number",
+  "icon",
+  "image",
+  "hidden",
+] as const;
+export type HotspotStyle = (typeof HOTSPOT_STYLES)[number];
+
+export function isHiddenHotspotStyle(
+  style: HotspotStyle | string | undefined,
+): boolean {
+  return style === "hidden";
+}
 /** Marker silhouette for dot / number / icon styles. */
 export type HotspotShape = "circle" | "square" | "rounded" | "diamond";
 export const HOTSPOT_SHAPES: readonly HotspotShape[] = [

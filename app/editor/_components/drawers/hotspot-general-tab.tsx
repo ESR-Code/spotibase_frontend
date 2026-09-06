@@ -121,15 +121,17 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
         <div>
           <FieldLabel>Style</FieldLabel>
           <div className="editor-pill-row">
-            {(["dot", "number", "icon", "image"] as const).map((style) => (
-              <TypePill
-                key={style}
-                active={values.style === style}
-                onClick={() => form.setValue("style", style)}
-              >
-                {style}
-              </TypePill>
-            ))}
+            {(["dot", "number", "icon", "image", "hidden"] as const).map(
+              (style) => (
+                <TypePill
+                  key={style}
+                  active={values.style === style}
+                  onClick={() => form.setValue("style", style)}
+                >
+                  {style}
+                </TypePill>
+              ),
+            )}
           </div>
           {values.style === "number" && (
             <input

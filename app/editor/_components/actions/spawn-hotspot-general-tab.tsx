@@ -144,15 +144,17 @@ export function SpawnHotspotGeneralTab({
         <div>
           <FieldLabel>Style</FieldLabel>
           <div className="editor-pill-row">
-            {(["dot", "number", "icon", "image"] as const).map((style) => (
-              <TypePill
-                key={style}
-                active={template.style === style}
-                onClick={() => onChange({ style })}
-              >
-                {style}
-              </TypePill>
-            ))}
+            {(["dot", "number", "icon", "image", "hidden"] as const).map(
+              (style) => (
+                <TypePill
+                  key={style}
+                  active={template.style === style}
+                  onClick={() => onChange({ style })}
+                >
+                  {style}
+                </TypePill>
+              ),
+            )}
           </div>
           {template.style === "number" ? (
             <div className="mt-2">
