@@ -8,6 +8,13 @@ import type {
   HotspotActionGraph,
 } from "@/lib/editor/types/hotspot-action";
 
+export type ActionsPendingConnect = {
+  nodeId: string;
+  handleId: string | null;
+  /** Handle the user dragged from. */
+  handleType: "source" | "target";
+};
+
 export type ActionsEditorApi = {
   updateGraph: (
     hotspotId: number,
@@ -24,6 +31,7 @@ export type ActionsEditorApi = {
     hotspotId: number,
     type: ActionNodeType,
     position: ActionNodeXY,
+    pendingConnect?: ActionsPendingConnect,
   ) => void;
   clipboard: ActionNode | null;
   copyNode: (hotspotId: number, nodeId: string) => void;

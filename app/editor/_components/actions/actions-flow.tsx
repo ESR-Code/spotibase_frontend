@@ -13,6 +13,7 @@ import {
   type Node,
   type NodeChange,
   type OnConnect,
+  type OnConnectEnd,
   type OnEdgesChange,
   type OnNodeDrag,
   type OnNodesChange,
@@ -44,6 +45,7 @@ import { ActionsEdge, ACTIONS_EDGE_TYPE } from "@/app/editor/_components/actions
 import {
   ActionsEditorProvider,
   type ActionsEditorApi,
+  type ActionsPendingConnect,
 } from "@/app/editor/_components/actions/actions-editor-context";
 import {
   APP_START_OWNER_ID,
@@ -124,6 +126,35 @@ type ActionsFlowCanvasProps = ActionsFlowProps & {
 
 const ACTION_EDGE_TYPES = { [ACTIONS_EDGE_TYPE]: ActionsEdge };
 
+const NODE_PLACE_WIDTH = 240;
+const NODE_PLACE_Y = 24;
+const NODE_PLACE_GAP = 16;
+
+function clientPointFromConnectEvent(event: MouseEvent | TouchEvent): {
+  clientX: number;
+  clientY: number;
+} {
+  if ("changedTouches" in event) {
+    const touch = event.changedTouches[0];
+    if (touch) return { clientX: touch.clientX, clientY: touch.clientY };
+  }
+  const mouse = event as MouseEvent;
+  return { clientX: mouse.clientX, clientY: mouse.clientY };
+}
+
+function placeNodeFromHandleDrop(
+  drop: ActionNodeXY,
+  handleType: ActionsPendingConnect["handleType"],
+): ActionNodeXY {
+  return {
+    x:
+      handleType === "target"
+        ? drop.x - NODE_PLACE_WIDTH - NODE_PLACE_GAP
+        : drop.x + NODE_PLACE_GAP,
+    y: drop.y - NODE_PLACE_Y,
+  };
+}
+
 function graphFingerprint(graph: HotspotActionGraph): string {
   const nodes = graph.nodes.map((n) => `${n.id}:${n.type}`).join(",");
   const edges = graph.edges
@@ -171,6 +202,7 @@ function ActionsFlowCanvas({
   const { screenToFlowPosition, getViewport } = useReactFlow();
   const flowRootRef = useRef<HTMLDivElement>(null);
   const [rawMenu, setRawMenu] = useState<ActionsContextMenuState | null>(null);
+  const skipNextPaneClickRef = useRef(false);
   const isolatedLaneRef = useRef(isolatedLane);
   isolatedLaneRef.current = isolatedLane;
   const scopeKey = isolatedLane
@@ -488,13 +520,23 @@ function ActionsFlowCanvas({
       updateNodeData: (ownerId, nodeId, patch) => {
         updateGraph(ownerId, (graph) => updateNodeData(graph, nodeId, patch));
       },
-      addNode: (ownerId, type, position) => {
+      addNode: (ownerId, type, position, pendingConnect) => {
         const allowed =
           allowedByOwnerId.get(ownerId) ?? HOTSPOT_GRAPH_ALLOWED_NODE_TYPES;
         if (!allowed.includes(type)) return;
         updateGraph(ownerId, (graph) => {
-          const { graph: next } = addNode(graph, type, position);
-          return next;
+          const { graph: withNode, node } = addNode(graph, type, position);
+          if (!pendingConnect) return withNode;
+          if (pendingConnect.handleType === "source") {
+            return connect(
+              withNode,
+              pendingConnect.nodeId,
+              node.id,
+              pendingConnect.handleId,
+            );
+          }
+          if (pendingConnect.nodeId === TRIGGER_NODE_ID) return withNode;
+          return connect(withNode, node.id, pendingConnect.nodeId, null);
         });
       },
       clipboard,
@@ -793,6 +835,61 @@ function ActionsFlowCanvas({
     [entries, menuPositionFromEvent, screenToFlowPosition],
   );
 
+  const onConnectEnd: OnConnectEnd = useCallback(
+    (event, connectionState) => {
+      if (connectionState.isValid) return;
+      if (connectionState.toHandle) return;
+      const fromNode = connectionState.fromNode;
+      const fromHandle = connectionState.fromHandle;
+      if (!fromNode || !fromHandle) return;
+      if (isFenceNode(fromNode)) return;
+
+      const parsed = parseFlowNodeId(fromNode.id);
+      if (!parsed) return;
+      const entry = entries.find((item) => item.ownerId === parsed.hotspotId);
+      if (!entry) return;
+
+      let allowed = entry.allowedNodeTypes;
+      if (fromHandle.type === "source") {
+        const sourceType =
+          fromNode.type === TRIGGER_FLOW_TYPE ? undefined : fromNode.type;
+        if (!canConnectToForEach(sourceType)) {
+          allowed = allowed.filter((type) => type !== "forEach");
+        }
+      } else if (fromNode.type === "forEach") {
+        allowed = allowed.filter((type) => canConnectToForEach(type));
+      }
+      if (allowed.length === 0) return;
+
+      const client = clientPointFromConnectEvent(event);
+      const flowPos = screenToFlowPosition({
+        x: client.clientX,
+        y: client.clientY,
+      });
+      const graphPos = toGraphPosition(
+        flowPos.x,
+        flowPos.y,
+        entry.laneIndex,
+      );
+
+      skipNextPaneClickRef.current = true;
+      setRawMenu({
+        kind: "pane",
+        x: menuPositionFromEvent(client).x,
+        y: menuPositionFromEvent(client).y,
+        hotspotId: parsed.hotspotId,
+        flowPosition: placeNodeFromHandleDrop(graphPos, fromHandle.type),
+        allowedNodeTypes: allowed,
+        pendingConnect: {
+          nodeId: parsed.nodeId,
+          handleId: fromHandle.id ?? null,
+          handleType: fromHandle.type,
+        },
+      });
+    },
+    [entries, menuPositionFromEvent, screenToFlowPosition],
+  );
+
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
       event.preventDefault();
@@ -888,8 +985,13 @@ function ActionsFlowCanvas({
   );
 
   const handleAdd = useCallback(
-    (ownerId: number, type: ActionNodeType, position: ActionNodeXY) => {
-      api.addNode(ownerId, type, position);
+    (
+      ownerId: number,
+      type: ActionNodeType,
+      position: ActionNodeXY,
+      pendingConnect?: ActionsPendingConnect,
+    ) => {
+      api.addNode(ownerId, type, position, pendingConnect);
     },
     [api],
   );
@@ -1048,13 +1150,20 @@ function ActionsFlowCanvas({
           onEdgesChange={onEdgesChange}
           onEdgesDelete={onEdgesDelete}
           onConnect={onConnect}
+          onConnectEnd={onConnectEnd}
           onPaneContextMenu={onPaneContextMenu}
           onNodeContextMenu={onNodeContextMenu}
           onNodeDragStop={onNodeDragStop}
           onSelectionDragStop={(_event, dragged) =>
             commitFenceMembership(dragged)
           }
-          onPaneClick={() => setRawMenu(null)}
+          onPaneClick={() => {
+            if (skipNextPaneClickRef.current) {
+              skipNextPaneClickRef.current = false;
+              return;
+            }
+            setRawMenu(null);
+          }}
           onEdgeClick={() => setRawMenu(null)}
           onInit={(instance) => {
             void instance.fitView({ padding: 0.2 });

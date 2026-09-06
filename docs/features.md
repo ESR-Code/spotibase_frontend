@@ -52,6 +52,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 - HTTP cache-reuse in Preview. Subscribe skip-unchanged. For Each + Switch + field interpolation.
 - Spawn Hotspot from For Each items (xyz or lat/lon; lat/lon projects through geo reference on PlayCanvas). Replace-on-rerun. Template drawer + click-actions editor.
 - Action fences (named colored frames, scene-scoped).
+- Drag from a node handle onto empty canvas to add and connect a node.
 - Custom menu buttons with optional toggle (two outgoing chains).
 
 

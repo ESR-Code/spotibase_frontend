@@ -3,9 +3,14 @@
 import { ClipboardPaste, Copy, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ACTION_MENU_GROUPS, ACTION_UI_MENU_ITEMS } from "@/app/editor/_components/actions/action-node-registry";
-import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
+import {
+  useActionsEditor,
+  type ActionsPendingConnect,
+} from "@/app/editor/_components/actions/actions-editor-context";
 import type { ActionNodeType } from "@/lib/editor/types/hotspot-action";
 import { TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
+
+export type { ActionsPendingConnect };
 
 export type ActionsContextMenuState =
   | {
@@ -15,6 +20,7 @@ export type ActionsContextMenuState =
       hotspotId: number;
       flowPosition: { x: number; y: number };
       allowedNodeTypes: ActionNodeType[];
+      pendingConnect?: ActionsPendingConnect;
     }
   | {
       kind: "node";
@@ -32,6 +38,7 @@ type ActionsContextMenuProps = {
     hotspotId: number,
     type: ActionNodeType,
     position: { x: number; y: number },
+    pendingConnect?: ActionsPendingConnect,
   ) => void;
   onDelete: (hotspotId: number, nodeId: string) => void;
 };
@@ -107,7 +114,7 @@ export function ActionsContextMenu({
     >
       {menu.kind === "pane" ? (
         <>
-          {clipboard ? (
+          {clipboard && !menu.pendingConnect ? (
             <button
               type="button"
               role="menuitem"
@@ -121,7 +128,9 @@ export function ActionsContextMenu({
               Paste node
             </button>
           ) : null}
-          <div className="editor-actions-context-menu-label">Add node</div>
+          <div className="editor-actions-context-menu-label">
+            {menu.pendingConnect ? "Add & connect" : "Add node"}
+          </div>
           <div className="editor-actions-context-menu-search">
             <Search
               className="h-3.5 w-3.5 shrink-0"
@@ -166,7 +175,12 @@ export function ActionsContextMenu({
                         role="menuitem"
                         className="editor-actions-context-menu-item"
                         onClick={() => {
-                          onAdd(menu.hotspotId, item.type, menu.flowPosition);
+                          onAdd(
+                            menu.hotspotId,
+                            item.type,
+                            menu.flowPosition,
+                            menu.pendingConnect,
+                          );
                           onClose();
                         }}
                       >
