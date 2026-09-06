@@ -8,9 +8,17 @@ import {
   usePreviewAppearanceStore,
 } from "@/lib/editor/state/preview-appearance-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
-import { hotspotShapeClass } from "@/lib/editor/theme/hotspot-shape";
+import {
+  HOTSPOT_PIN_HOLE_PATH,
+  HOTSPOT_PIN_PATH,
+  hotspotShapeClass,
+} from "@/lib/editor/theme/hotspot-shape";
 import { hotspotTypeColors } from "@/lib/editor/theme/tokens";
-import { isHiddenHotspotStyle, type Hotspot } from "@/lib/editor/types/hotspot";
+import {
+  isHiddenHotspotStyle,
+  normalizeHotspotShape,
+  type Hotspot,
+} from "@/lib/editor/types/hotspot";
 import { cn } from "@/lib/utils";
 
 type GeoHotspotMarkerProps = {
@@ -48,6 +56,13 @@ export function GeoHotspotMarker({
   const scale = Math.max(0.55, hotspotSize) * (selected || hovered ? 1.15 : 1);
   const styleHidden = isHiddenHotspotStyle(resolved.style);
   const fullyHidden = hidden || (isPreview && styleHidden);
+  const isPin = normalizeHotspotShape(resolved.shape) === "pin";
+  const pinHole =
+    isPin &&
+    !styleHidden &&
+    resolved.style !== "number" &&
+    resolved.style !== "icon" &&
+    resolved.style !== "image";
   const draggable = !fullyHidden && !isPreview && mode === "select";
   const lng = hotspot.position.x;
   const lat = hotspot.position.y;
@@ -93,7 +108,9 @@ export function GeoHotspotMarker({
           style={
             {
               "--geo-marker-color": color,
-              transform: `scale(${scale})`,
+              transform: isPin
+                ? `translateY(-50%) scale(${scale})`
+                : `scale(${scale})`,
             } as React.CSSProperties
           }
         >
@@ -104,6 +121,22 @@ export function GeoHotspotMarker({
             )}
           />
           <span className="editor-geo-marker-core">
+            {isPin ? (
+              <svg
+                className="editor-geo-marker-pin-svg"
+                viewBox="0 0 100 130"
+                aria-hidden
+              >
+                <path
+                  d={pinHole ? HOTSPOT_PIN_HOLE_PATH : HOTSPOT_PIN_PATH}
+                  fill="currentColor"
+                  fillRule={pinHole ? "evenodd" : "nonzero"}
+                  stroke={pinHole ? "none" : "#fff"}
+                  strokeWidth={pinHole ? 0 : 6}
+                  strokeLinejoin="round"
+                />
+              </svg>
+            ) : null}
             {styleHidden ? null : resolved.style === "number" ? (
               <span className="editor-geo-marker-label editor-marker-shape-content">
                 {resolved.number}

@@ -339,44 +339,37 @@
   transform-origin: center;
 }
 
-.editor-root .editor-hot-dot.editor-marker-shape-pin {
-  width: 22px;
-  height: 28px;
+.editor-root,
+.editor-geo-marker-wrap {
+  --editor-pin-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 130'%3E%3Cpath fill='black' d='M50 128L12.18 79.55A48 48 0 1 1 87.82 79.55Z'/%3E%3C/svg%3E");
+  --editor-pin-hole-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 130'%3E%3Cpath fill='black' fill-rule='evenodd' d='M50 128L12.18 79.55A48 48 0 1 1 87.82 79.55ZM50 25c13.81 0 25 11.19 25 25s-11.19 25-25 25-25-11.19-25-25 11.19-25 25-25z'/%3E%3C/svg%3E");
 }
 
-.editor-root .editor-hot-dot.editor-marker-shape-pin,
-.editor-geo-marker.editor-marker-shape-pin .editor-geo-marker-core,
-.editor-geo-marker.editor-marker-shape-pin.editor-geo-marker-pulse::after {
+.editor-root .editor-hot-dot.editor-marker-shape-pin {
+  position: relative;
+  width: 22px;
+  height: 29px;
   border-radius: 0;
-  clip-path: polygon(
-    50% 100%,
-    20% 72%,
-    8% 56%,
-    2% 40%,
-    4% 24%,
-    16% 8%,
-    34% 1%,
-    50% 0%,
-    66% 1%,
-    84% 8%,
-    96% 24%,
-    98% 40%,
-    92% 56%,
-    80% 72%
-  );
+  -webkit-mask-image: var(--editor-pin-mask);
+  mask-image: var(--editor-pin-mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
 }
 
 .editor-root
-  .editor-hot-dot.editor-marker-shape-pin:not(:has(.editor-marker-shape-content)),
-.editor-geo-marker.editor-marker-shape-pin
-  .editor-geo-marker-core:not(:has(.editor-marker-shape-content, img)) {
-  border-color: transparent;
-  -webkit-mask-image: radial-gradient(
-    circle at 50% 34%,
-    transparent 31%,
-    #000 32.5%
-  );
-  mask-image: radial-gradient(circle at 50% 34%, transparent 31%, #000 32.5%);
+  .editor-hot-dot.editor-marker-shape-pin:not(:has(.editor-marker-shape-content)) {
+  -webkit-mask-image: var(--editor-pin-hole-mask);
+  mask-image: var(--editor-pin-hole-mask);
+}
+
+.editor-root .editor-hot-dot.editor-marker-shape-pin .editor-marker-shape-content {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 76%;
 }
 
 .editor-root .editor-marker-shape-content {
@@ -415,7 +408,7 @@
 
 .editor-root .editor-hot-dot-lg.editor-marker-shape-pin {
   width: 30px;
-  height: 38px;
+  height: 39px;
 }
 
 /* Category select / option template */
@@ -3258,13 +3251,81 @@
 }
 
 .editor-geo-marker.editor-marker-shape-pin .editor-geo-marker-core {
-  width: 26px;
-  height: 34px;
+  position: relative;
+  width: 28px;
+  height: 36px;
+  overflow: visible;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.editor-geo-marker-pin-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  color: var(--geo-marker-color, var(--editor-crimson));
+  pointer-events: none;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+}
+
+.editor-geo-marker.editor-marker-shape-pin .editor-marker-shape-content {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 76%;
+  padding: 0;
+  line-height: 0;
+}
+
+.editor-geo-marker.editor-marker-shape-pin .editor-marker-shape-content svg {
+  display: block;
+}
+
+.editor-geo-marker.editor-marker-shape-pin .editor-geo-marker-core img {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  -webkit-mask-image: var(--editor-pin-mask);
+  mask-image: var(--editor-pin-mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+.editor-geo-marker-selected.editor-marker-shape-pin .editor-geo-marker-core {
+  box-shadow: none;
+}
+
+.editor-geo-marker-selected.editor-marker-shape-pin .editor-geo-marker-pin-svg {
+  filter:
+    drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35))
+    drop-shadow(
+      0 0 4px color-mix(in srgb, var(--geo-marker-color) 55%, transparent)
+    );
 }
 
 .editor-geo-marker.editor-marker-shape-pin.editor-geo-marker-pulse::after {
-  width: 26px;
-  height: 34px;
+  width: 28px;
+  height: 36px;
+  border: none;
+  background: var(--geo-marker-color, var(--editor-crimson));
+  border-radius: 0;
+  -webkit-mask-image: var(--editor-pin-mask);
+  mask-image: var(--editor-pin-mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
 }
 
 .editor-geo-marker-core img {
