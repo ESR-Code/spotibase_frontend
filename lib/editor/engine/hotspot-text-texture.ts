@@ -117,7 +117,7 @@ function drawMarkerShape(
   shape: HotspotShape,
   pinHole = false,
 ) {
-  const pad = shape === "pin" ? 8 : 4;
+  const pad = shape === "pin" ? 6 : 4;
   const cx = size / 2;
   const cy = size / 2;
   const extent = size - pad * 2;
@@ -128,18 +128,21 @@ function drawMarkerShape(
   pathMarkerOutline(ctx, cx, cy, pad, extent, shape);
   if (pinHole && shape === "pin") {
     const pin = pinMetrics(cx, pad, extent);
-    ctx.arc(cx, pin.headCy, pin.headR * 0.42, 0, Math.PI * 2, true);
+    ctx.moveTo(cx + pin.holeR, pin.headCy);
+    ctx.arc(cx, pin.headCy, pin.holeR, 0, Math.PI * 2, true);
   }
   ctx.fill("evenodd");
 
-  ctx.strokeStyle = "rgba(255,255,255,0.5)";
-  ctx.lineWidth = 4;
-  ctx.stroke();
+  if (!pinHole) {
+    ctx.strokeStyle = "rgba(255,255,255,0.5)";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+  }
 }
 
 function markerContentCenter(size: number, shape: HotspotShape) {
   if (shape === "pin") {
-    const pad = 8;
+    const pad = 6;
     const pin = pinMetrics(size / 2, pad, size - pad * 2);
     return { x: size / 2, y: pin.headCy };
   }
@@ -147,14 +150,15 @@ function markerContentCenter(size: number, shape: HotspotShape) {
 }
 
 function pinMetrics(_cx: number, top: number, extent: number) {
-  const tipY = top + extent - 2;
-  const headR = extent * 0.4;
-  const headCy = top + headR + 2;
+  const tipY = top + extent - 1;
+  const headR = extent * 0.38;
+  const headCy = top + headR + 3;
   const dist = Math.max(tipY - headCy, headR + 1);
-  const a = Math.acos(Math.min(0.96, headR / dist));
+  const a = Math.acos(Math.min(0.92, headR / dist));
   return {
     tipY,
     headR,
+    holeR: headR * 0.52,
     headCy,
     leftAngle: Math.PI / 2 + a,
     rightAngle: Math.PI / 2 - a,

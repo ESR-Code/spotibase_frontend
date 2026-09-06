@@ -363,12 +363,13 @@
   .editor-hot-dot.editor-marker-shape-pin:not(:has(.editor-marker-shape-content)),
 .editor-geo-marker.editor-marker-shape-pin
   .editor-geo-marker-core:not(:has(.editor-marker-shape-content, img)) {
+  border-color: transparent;
   -webkit-mask-image: radial-gradient(
     circle at 50% 34%,
-    transparent 22%,
-    #000 23.5%
+    transparent 31%,
+    #000 32.5%
   );
-  mask-image: radial-gradient(circle at 50% 34%, transparent 22%, #000 23.5%);
+  mask-image: radial-gradient(circle at 50% 34%, transparent 31%, #000 32.5%);
 }
 
 .editor-root .editor-marker-shape-diamond .editor-marker-shape-content,
