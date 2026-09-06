@@ -19,6 +19,7 @@ import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { markerColorSwatches } from "@/lib/editor/theme/tokens";
 import type { SpawnHotspotTemplate } from "@/lib/editor/types/hotspot-action";
 import type { SpawnCoordMode } from "@/lib/editor/types/hotspot-action";
+import { HOTSPOT_SHAPES } from "@/lib/editor/types/hotspot";
 
 type SpawnHotspotGeneralTabProps = {
   template: SpawnHotspotTemplate;
@@ -186,17 +187,15 @@ export function SpawnHotspotGeneralTab({
         <div>
           <FieldLabel>Shape</FieldLabel>
           <div className="editor-pill-row">
-            {(["circle", "square", "rounded", "diamond"] as const).map(
-              (shape) => (
-                <TypePill
-                  key={shape}
-                  active={template.shape === shape}
-                  onClick={() => onChange({ shape })}
-                >
-                  {shape}
-                </TypePill>
-              ),
-            )}
+            {HOTSPOT_SHAPES.map((shape) => (
+              <TypePill
+                key={shape}
+                active={template.shape === shape}
+                onClick={() => onChange({ shape })}
+              >
+                {shape}
+              </TypePill>
+            ))}
           </div>
         </div>
 

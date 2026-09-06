@@ -23,7 +23,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 ### Hotspots
 
-- Place, select, drag, duplicate, delete. Types, colors, styles (dot / number / icon / image / hidden), shapes, pulse, wick, enable flag.
+- Place, select, drag, duplicate, delete. Types, colors, styles (dot / number / icon / image / hidden), shapes (circle / square / rounded / diamond / pin), pulse, wick, enable flag.
 - 2D/3D: click a marker to open the Hotspot Editor; drag repositions without opening it.
 - Per-hotspot custom camera pose. Category + legend name.
 - Content blocks: heading, text, link. Token fields can insert HTTP / Post Message / For Each paths.

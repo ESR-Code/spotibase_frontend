@@ -23,12 +23,13 @@ export function isHiddenHotspotStyle(
   return style === "hidden";
 }
 /** Marker silhouette for dot / number / icon styles. */
-export type HotspotShape = "circle" | "square" | "rounded" | "diamond";
+export type HotspotShape = "circle" | "square" | "rounded" | "diamond" | "pin";
 export const HOTSPOT_SHAPES: readonly HotspotShape[] = [
   "circle",
   "square",
   "rounded",
   "diamond",
+  "pin",
 ] as const;
 export const DEFAULT_HOTSPOT_SHAPE: HotspotShape = "circle";
 

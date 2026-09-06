@@ -30,16 +30,23 @@ export function createTextTexture(
     return new pcModule.Texture(appGraphicsDevice, { width: size, height: size });
   }
 
-  drawMarkerShape(ctx, size, color, normalizeHotspotShape(shape));
+  const resolved = normalizeHotspotShape(shape);
+  drawMarkerShape(ctx, size, color, resolved, resolved === "pin" && !text);
 
   if (text) {
+    const content = markerContentCenter(size, resolved);
     ctx.fillStyle = "#ffffff";
-    ctx.font = isIcon
-      ? "bold 70px sans-serif"
-      : "bold 64px Manrope, sans-serif";
+    ctx.font =
+      resolved === "pin"
+        ? isIcon
+          ? "bold 52px sans-serif"
+          : "bold 48px Manrope, sans-serif"
+        : isIcon
+          ? "bold 70px sans-serif"
+          : "bold 64px Manrope, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(text, size / 2, size / 2 + 4);
+    ctx.fillText(text, content.x, content.y);
   }
 
   return canvasToTexture(pcModule, appGraphicsDevice, canvas);
@@ -55,7 +62,8 @@ export function createLucideIconTexture(
 ): Promise<Texture> {
   return new Promise((resolve, reject) => {
     const size = 128;
-    const iconSize = 70;
+    const resolved = normalizeHotspotShape(shape);
+    const iconSize = resolved === "pin" ? 52 : 70;
     const canvas = document.createElement("canvas");
     canvas.width = size;
     canvas.height = size;
@@ -67,7 +75,7 @@ export function createLucideIconTexture(
       return;
     }
 
-    drawMarkerShape(ctx, size, color, normalizeHotspotShape(shape));
+    drawMarkerShape(ctx, size, color, resolved);
 
     const Icon = getCategoryLucideIcon(normalizeCategoryIcon(icon));
     const svgMarkup = renderToStaticMarkup(
@@ -86,8 +94,14 @@ export function createLucideIconTexture(
 
     const img = new Image();
     img.onload = () => {
-      const offset = (size - iconSize) / 2;
-      ctx.drawImage(img, offset, offset, iconSize, iconSize);
+      const content = markerContentCenter(size, resolved);
+      ctx.drawImage(
+        img,
+        content.x - iconSize / 2,
+        content.y - iconSize / 2,
+        iconSize,
+        iconSize,
+      );
       resolve(canvasToTexture(pcModule, appGraphicsDevice, canvas));
     };
     img.onerror = () =>
@@ -101,8 +115,9 @@ function drawMarkerShape(
   size: number,
   color: string,
   shape: HotspotShape,
+  pinHole = false,
 ) {
-  const pad = 4;
+  const pad = shape === "pin" ? 8 : 4;
   const cx = size / 2;
   const cy = size / 2;
   const extent = size - pad * 2;
@@ -111,11 +126,61 @@ function drawMarkerShape(
   ctx.fillStyle = color;
   ctx.beginPath();
   pathMarkerOutline(ctx, cx, cy, pad, extent, shape);
-  ctx.fill();
+  if (pinHole && shape === "pin") {
+    const pin = pinMetrics(cx, pad, extent);
+    ctx.arc(cx, pin.headCy, pin.headR * 0.42, 0, Math.PI * 2, true);
+  }
+  ctx.fill("evenodd");
 
   ctx.strokeStyle = "rgba(255,255,255,0.5)";
   ctx.lineWidth = 4;
   ctx.stroke();
+}
+
+function markerContentCenter(size: number, shape: HotspotShape) {
+  if (shape === "pin") {
+    const pad = 8;
+    const pin = pinMetrics(size / 2, pad, size - pad * 2);
+    return { x: size / 2, y: pin.headCy };
+  }
+  return { x: size / 2, y: size / 2 + 4 };
+}
+
+function pinMetrics(_cx: number, top: number, extent: number) {
+  const tipY = top + extent - 2;
+  const headR = extent * 0.4;
+  const headCy = top + headR + 2;
+  const dist = Math.max(tipY - headCy, headR + 1);
+  const a = Math.acos(Math.min(0.96, headR / dist));
+  return {
+    tipY,
+    headR,
+    headCy,
+    leftAngle: Math.PI / 2 + a,
+    rightAngle: Math.PI / 2 - a,
+  };
+}
+
+/** Landmark / map-pin: circular head with a tip at the bottom. */
+function pathPin(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  top: number,
+  extent: number,
+  reverse: boolean,
+) {
+  const { tipY, headR, headCy, leftAngle, rightAngle } = pinMetrics(
+    cx,
+    top,
+    extent,
+  );
+  ctx.moveTo(cx, tipY);
+  if (reverse) {
+    ctx.arc(cx, headCy, headR, rightAngle, leftAngle, true);
+  } else {
+    ctx.arc(cx, headCy, headR, leftAngle, rightAngle, false);
+  }
+  ctx.closePath();
 }
 
 function pathMarkerOutline(
@@ -142,6 +207,10 @@ function pathMarkerOutline(
       ctx.lineTo(cx, pad + extent);
       ctx.lineTo(pad, cy);
       ctx.closePath();
+      break;
+    }
+    case "pin": {
+      pathPin(ctx, cx, pad, extent, false);
       break;
     }
     default: {
@@ -291,6 +360,11 @@ function pathCenteredShape(
     } else {
       ctx.rect(x, y, size, size);
     }
+    return;
+  }
+
+  if (shape === "pin") {
+    pathPin(ctx, cx, cy - radius, radius * 2, reverse);
     return;
   }
 

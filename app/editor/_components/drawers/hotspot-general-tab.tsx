@@ -165,17 +165,15 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
         <div>
           <FieldLabel>Shape</FieldLabel>
           <div className="editor-pill-row">
-            {(["circle", "square", "rounded", "diamond"] as const).map(
-              (shape) => (
-                <TypePill
-                  key={shape}
-                  active={(values.shape ?? "circle") === shape}
-                  onClick={() => form.setValue("shape", shape)}
-                >
-                  {shape}
-                </TypePill>
-              ),
-            )}
+            {HOTSPOT_SHAPES.map((shape) => (
+              <TypePill
+                key={shape}
+                active={(values.shape ?? "circle") === shape}
+                onClick={() => form.setValue("shape", shape)}
+              >
+                {shape}
+              </TypePill>
+            ))}
           </div>
         </div>
 

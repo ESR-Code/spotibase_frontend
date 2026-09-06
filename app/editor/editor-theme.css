@@ -337,6 +337,40 @@
   transform: rotate(45deg) scale(0.72);
 }
 
+.editor-root .editor-hot-dot.editor-marker-shape-pin,
+.editor-geo-marker.editor-marker-shape-pin .editor-geo-marker-core,
+.editor-geo-marker.editor-marker-shape-pin.editor-geo-marker-pulse::after {
+  border-radius: 0;
+  clip-path: polygon(
+    50% 100%,
+    20% 72%,
+    8% 56%,
+    2% 40%,
+    4% 24%,
+    16% 8%,
+    34% 1%,
+    50% 0%,
+    66% 1%,
+    84% 8%,
+    96% 24%,
+    98% 40%,
+    92% 56%,
+    80% 72%
+  );
+}
+
+.editor-root
+  .editor-hot-dot.editor-marker-shape-pin:not(:has(.editor-marker-shape-content)),
+.editor-geo-marker.editor-marker-shape-pin
+  .editor-geo-marker-core:not(:has(.editor-marker-shape-content, img)) {
+  -webkit-mask-image: radial-gradient(
+    circle at 50% 34%,
+    transparent 22%,
+    #000 23.5%
+  );
+  mask-image: radial-gradient(circle at 50% 34%, transparent 22%, #000 23.5%);
+}
+
 .editor-root .editor-marker-shape-diamond .editor-marker-shape-content,
 .editor-root
   .editor-marker-shape-diamond
@@ -3240,6 +3274,10 @@
   animation-name: editor-geo-marker-pulse-diamond;
 }
 
+.editor-geo-marker.editor-marker-shape-pin.editor-geo-marker-pulse::after {
+  animation-name: editor-geo-marker-pulse-pin;
+}
+
 @keyframes editor-geo-marker-pulse {
   0% {
     opacity: 0.7;
@@ -3259,6 +3297,17 @@
   100% {
     opacity: 0;
     transform: translateX(-50%) rotate(45deg) scale(2.4);
+  }
+}
+
+@keyframes editor-geo-marker-pulse-pin {
+  0% {
+    opacity: 0.7;
+    transform: translateX(-50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(2.4);
   }
 }
 
