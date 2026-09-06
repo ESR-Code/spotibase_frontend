@@ -1,0 +1,14 @@
+---
+description: Read AGENTS.md and docs/ before coding; update docs after significant changes.
+alwaysApply: true
+---
+
+# Project workflow
+
+Before implementing anything, read `AGENTS.md` and the relevant files in `docs/`.
+
+Identify the feature/module and open only the source files you need. Search for existing components, utilities, APIs, and patterns before creating new ones.
+
+Follow `docs/architecture.md` and `docs/decisions.md`.
+
+After a significant feature, architecture change, or important technical decision, update the matching doc. Do not document trivial changes. Never modify application code only to update documentation unless the user asks.
