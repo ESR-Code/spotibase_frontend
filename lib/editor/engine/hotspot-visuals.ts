@@ -1,6 +1,9 @@
 import type { Application, Entity, StandardMaterial, Texture } from "playcanvas";
 import type * as pc from "playcanvas";
-import { MARKER_SPRITE_SIZE } from "@/lib/editor/constants/default-settings";
+import {
+  MARKER_SPRITE_SIZE,
+  PIN_SPRITE_SCALE,
+} from "@/lib/editor/constants/default-settings";
 import {
   createImageTexture,
   createLucideIconTexture,
@@ -13,6 +16,7 @@ import {
   isHiddenHotspotStyle,
   normalizeHotspotShape,
   type Hotspot,
+  type HotspotShape,
 } from "@/lib/editor/types/hotspot";
 
 export type HotspotVisual = {
@@ -161,6 +165,7 @@ export async function rebuildCore(
       ),
       pcModule,
       0.28,
+      shape,
     );
     visual.styleKey = requestKey;
     return;
@@ -218,6 +223,8 @@ export async function rebuildCore(
         shape,
       ),
       pcModule,
+      1,
+      shape,
     );
   } else if (hotspot.style === "icon" && hotspot.icon) {
     try {
@@ -233,7 +240,7 @@ export async function rebuildCore(
         return;
       }
       destroyCore(visual);
-      attachSpriteCore(visual, texture, pcModule);
+      attachSpriteCore(visual, texture, pcModule, 1, shape);
     } catch {
       attachSpriteCore(
         visual,
@@ -246,6 +253,8 @@ export async function rebuildCore(
           shape,
         ),
         pcModule,
+        1,
+        shape,
       );
     }
   } else {
@@ -263,6 +272,7 @@ export async function rebuildCore(
       ),
       pcModule,
       isImage ? 0.85 : 1,
+      shape,
     );
   }
 
@@ -334,10 +344,13 @@ function attachSpriteCore(
   texture: Texture,
   pcModule: typeof pc,
   opacity = 1,
+  shape: HotspotShape = DEFAULT_HOTSPOT_SHAPE,
 ) {
   const mat = spriteMat(pcModule, texture, opacity);
   const core = makePlane(pcModule, "Core", mat);
-  core.setLocalScale(MARKER_SPRITE_SIZE, 1, MARKER_SPRITE_SIZE);
+  const size =
+    shape === "pin" ? MARKER_SPRITE_SIZE * PIN_SPRITE_SCALE : MARKER_SPRITE_SIZE;
+  core.setLocalScale(size, 1, size);
   visual.root.addChild(core);
   visual.core = core;
   visual.coreMat = mat;

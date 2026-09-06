@@ -334,7 +334,14 @@
 
 .editor-root .editor-hot-dot.editor-marker-shape-diamond {
   border-radius: 2px;
+  position: relative;
   transform: rotate(45deg) scale(0.72);
+  transform-origin: center;
+}
+
+.editor-root .editor-hot-dot.editor-marker-shape-pin {
+  width: 22px;
+  height: 28px;
 }
 
 .editor-root .editor-hot-dot.editor-marker-shape-pin,
@@ -372,12 +379,28 @@
   mask-image: radial-gradient(circle at 50% 34%, transparent 31%, #000 32.5%);
 }
 
+.editor-root .editor-marker-shape-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.editor-root .editor-marker-shape-content svg {
+  display: block;
+}
+
 .editor-root .editor-marker-shape-diamond .editor-marker-shape-content,
 .editor-root
   .editor-marker-shape-diamond
   .editor-geo-marker-label.editor-marker-shape-content,
 .editor-geo-marker.editor-marker-shape-diamond .editor-marker-shape-content {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   transform: rotate(-45deg);
+  transform-origin: center;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -388,6 +411,11 @@
   height: 28px;
   font-size: 12px;
   box-shadow: 0 0 14px currentColor;
+}
+
+.editor-root .editor-hot-dot-lg.editor-marker-shape-pin {
+  width: 30px;
+  height: 38px;
 }
 
 /* Category select / option template */
@@ -3224,7 +3252,19 @@
 
 .editor-geo-marker.editor-marker-shape-diamond .editor-geo-marker-core {
   border-radius: 2px;
+  position: relative;
   transform: rotate(45deg) scale(0.72);
+  transform-origin: center;
+}
+
+.editor-geo-marker.editor-marker-shape-pin .editor-geo-marker-core {
+  width: 26px;
+  height: 34px;
+}
+
+.editor-geo-marker.editor-marker-shape-pin.editor-geo-marker-pulse::after {
+  width: 26px;
+  height: 34px;
 }
 
 .editor-geo-marker-core img {

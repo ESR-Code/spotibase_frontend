@@ -15,7 +15,12 @@ import {
   isPreviewHotspotEnabled,
 } from "@/lib/editor/state/preview-visibility-store";
 import { resolveHotspotAppearance } from "@/lib/editor/state/preview-appearance-store";
-import { isHiddenHotspotStyle, type Vec3 } from "@/lib/editor/types/hotspot";
+import { PIN_SPRITE_SCALE } from "@/lib/editor/constants/default-settings";
+import {
+  isHiddenHotspotStyle,
+  normalizeHotspotShape,
+  type Vec3,
+} from "@/lib/editor/types/hotspot";
 import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
 
 export type HotspotManager = {
@@ -142,7 +147,11 @@ export function createHotspotManager(
         const cycle = ((t * 0.55 + index * 0.37) % 1 + 1) % 1;
         const ease = 1 - Math.pow(1 - cycle, 2.2);
         const ringScale = 0.38 + ease * 1.15;
-        visual.ring.setLocalScale(ringScale, 1, ringScale);
+        const pinBoost =
+          normalizeHotspotShape(resolved.shape) === "pin"
+            ? PIN_SPRITE_SCALE
+            : 1;
+        visual.ring.setLocalScale(ringScale * pinBoost, 1, ringScale * pinBoost);
         visual.ringMat.opacity = (1 - ease) * 0.78;
         visual.ringMat.blendType = pcModule.BLEND_NORMAL;
         visual.ringMat.update();

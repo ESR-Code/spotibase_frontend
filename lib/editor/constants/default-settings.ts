@@ -125,6 +125,8 @@ export const DEFAULT_EFFECTS_SETTINGS: EffectsSettings = {
 
 export const GRID_BASE_SIZE = 42;
 export const MARKER_SPRITE_SIZE = 0.45;
+/** Pin head occupies only part of a square sprite; scale so it matches other shapes. */
+export const PIN_SPRITE_SCALE = 1.45;
 export const PREVIEW_CLICK_PX = 6;
 
 export function cloneLegendCategories(

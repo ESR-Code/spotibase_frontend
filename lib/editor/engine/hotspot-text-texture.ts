@@ -34,7 +34,7 @@ export function createTextTexture(
   drawMarkerShape(ctx, size, color, resolved, resolved === "pin" && !text);
 
   if (text) {
-    const content = markerContentCenter(size, resolved);
+    const content = markerContentCenter(size, resolved, "text");
     ctx.fillStyle = "#ffffff";
     ctx.font =
       resolved === "pin"
@@ -63,7 +63,8 @@ export function createLucideIconTexture(
   return new Promise((resolve, reject) => {
     const size = 128;
     const resolved = normalizeHotspotShape(shape);
-    const iconSize = resolved === "pin" ? 52 : 70;
+    const iconSize =
+      resolved === "pin" ? 52 : resolved === "diamond" ? 50 : 70;
     const canvas = document.createElement("canvas");
     canvas.width = size;
     canvas.height = size;
@@ -94,7 +95,13 @@ export function createLucideIconTexture(
 
     const img = new Image();
     img.onload = () => {
-      const content = markerContentCenter(size, resolved);
+      const content = markerContentCenter(size, resolved, "icon");
+      ctx.save();
+      if (resolved === "diamond") {
+        ctx.beginPath();
+        pathMarkerOutline(ctx, size / 2, size / 2, 4, size - 8, resolved);
+        ctx.clip();
+      }
       ctx.drawImage(
         img,
         content.x - iconSize / 2,
@@ -102,6 +109,7 @@ export function createLucideIconTexture(
         iconSize,
         iconSize,
       );
+      ctx.restore();
       resolve(canvasToTexture(pcModule, appGraphicsDevice, canvas));
     };
     img.onerror = () =>
@@ -140,11 +148,18 @@ function drawMarkerShape(
   }
 }
 
-function markerContentCenter(size: number, shape: HotspotShape) {
+function markerContentCenter(
+  size: number,
+  shape: HotspotShape,
+  kind: "text" | "icon" = "text",
+) {
   if (shape === "pin") {
     const pad = 6;
     const pin = pinMetrics(size / 2, pad, size - pad * 2);
     return { x: size / 2, y: pin.headCy };
+  }
+  if (kind === "icon" || shape === "diamond") {
+    return { x: size / 2, y: size / 2 };
   }
   return { x: size / 2, y: size / 2 + 4 };
 }
