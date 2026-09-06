@@ -140,3 +140,29 @@ export function registerPostMessageReceive(options: {
   listeners.set(options.listenerKey, { eventName, handler });
   return null;
 }
+
+/**
+ * Editor Preview tester: post `{ event, data }` to this window so live
+ * receive listeners can fire. Returns an error message, or null on success.
+ */
+export function injectPostMessageReceiveTest(
+  eventName: string,
+  payloadJson: string,
+): string | null {
+  if (typeof window === "undefined") return "Window unavailable";
+  const name = eventName.trim();
+  if (!name) return "Enter an event name";
+
+  const parsed = parsePayloadJson(payloadJson);
+  if (!parsed.ok) return parsed.error;
+
+  try {
+    window.postMessage(
+      { event: name, data: parsed.value },
+      window.location.origin,
+    );
+    return null;
+  } catch {
+    return "Failed to send postMessage";
+  }
+}

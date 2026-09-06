@@ -25,6 +25,7 @@ Only decisions that constrain how new work should be done.
 - **Owner allow-lists** (`action-owners.ts`) decide which nodes appear on hotspot vs start vs menu graphs. Start graphs cannot use Open Modal; menu graphs cannot either.
 - **Synthetic owner ids** (`−1`, `−2`, `≤ −10000`) must never collide with hotspot ids or spawned ids (`SPAWNED_HOTSPOT_ID_BASE = 1_000_000`).
 - **Preview overlays, not authored edits**, for Enable/Disable, appearance changes, mesh highlight, and spawned pins. Leaving Preview resets them and stops Subscribe polls / Post Message listeners / HTTP cache.
+- **Post Message receive tester** is editor-session state (`preview-post-message-test-store`), not `node.data`. It injects `{ event, data }` to the same window; do not rewrite send targets or fall back to `self` for outgoing sends. Do not show this HUD in a future viewer.
 - **`run` returning `"stop"`** ends the primary walk (Open Modal branches, Subscribe poll, receive-mode Post Message, Switch/For Each tails).
 - **Action fences are scene-wide** so hotspot and scene canvases share the same frames.
 

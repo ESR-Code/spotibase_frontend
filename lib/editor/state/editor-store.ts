@@ -14,6 +14,7 @@ import {
 } from "@/lib/editor/constants/seed-scene";
 import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
 import { usePreviewMeshHighlightStore } from "@/lib/editor/state/preview-mesh-highlight-store";
+import { usePreviewPostMessageTestStore } from "@/lib/editor/state/preview-post-message-test-store";
 import { usePreviewSpawnedHotspotsStore } from "@/lib/editor/state/preview-spawned-hotspots-store";
 import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import { useCustomMenuToggleStore } from "@/lib/editor/state/custom-menu-toggle-store";
@@ -111,6 +112,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       usePreviewMeshHighlightStore.getState().reset();
       usePreviewSpawnedHotspotsStore.getState().reset();
       useCustomMenuToggleStore.getState().reset();
+      if (isPreview) {
+        usePreviewPostMessageTestStore.getState().beginPreview();
+      } else {
+        usePreviewPostMessageTestStore.getState().reset();
+      }
       if (!isPreview) {
         void Promise.all([
           import("@/lib/editor/state/ui-store"),
@@ -148,6 +154,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       usePreviewMeshHighlightStore.getState().reset();
       usePreviewSpawnedHotspotsStore.getState().reset();
       useCustomMenuToggleStore.getState().reset();
+      usePreviewPostMessageTestStore.getState().reset();
       void Promise.all([
         import("@/lib/editor/state/ui-store"),
         import("@/lib/editor/actions/open-modal-events"),

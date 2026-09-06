@@ -75,7 +75,9 @@ EditorPageClient (ssr:false)
 
 On scene switch / add, `scenes-store` snapshots live stores into the outgoing `Scene` and hydrates the incoming one (`hotspots`, model, settings, environment, effects, geo, layers, `geoReference`). New per-scene fields must join that path.
 
-**Preview overlays** (cleared when leaving Preview): `preview-appearance-store`, `preview-visibility-store`, `preview-spawned-hotspots-store`, `preview-mesh-highlight-store`. Authored hotspots stay unchanged.
+**Preview overlays** (cleared when leaving Preview): `preview-appearance-store`, `preview-visibility-store`, `preview-spawned-hotspots-store`, `preview-mesh-highlight-store`, `preview-post-message-test-store`. Authored hotspots stay unchanged.
+
+The Post Message receive tester HUD (`PostMessageReceiveTestSuite`) is editor chrome: opt-in keys live in the session store, not on the action node. It injects `{ event, data }` to the same window so live receive listeners run.
 
 **Project-wide chrome:** `general-settings-store` (Preview style tokens). Not per-scene.
 

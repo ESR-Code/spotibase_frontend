@@ -16,6 +16,7 @@ import { SpawnClickActionsModal } from "@/app/editor/_components/actions/spawn-c
 import { PreviewModal } from "@/app/editor/_components/dialogs/preview-modal";
 import { ScenesModal } from "@/app/editor/_components/dialogs/scenes-modal";
 import { GeoreferenceModal } from "@/app/editor/_components/dialogs/georeference-modal";
+import { PostMessageReceiveTestSuite } from "@/app/editor/_components/viewport/post-message-receive-test-suite";
 import { SceneTransitionOverlay } from "@/app/editor/_components/viewport/scene-transition-overlay";
 import { useEditorKeyboard } from "@/lib/editor/hooks/use-editor-keyboard";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -50,6 +51,7 @@ export function EditorShell() {
         <GeneralSettingsDrawer />
         <LegendDrawer />
         <LegendButton />
+        <PostMessageReceiveTestSuite />
         <PreviewModal />
         <ScenesModal />
         <GeoreferenceModal />

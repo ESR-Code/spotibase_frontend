@@ -13,6 +13,7 @@ import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-car
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
 import { VariableInsertButton } from "@/app/editor/_components/actions/variable-insert-button";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import {
   isStartOwnerId,
 } from "@/lib/editor/actions/action-owners";
@@ -22,6 +23,10 @@ import { parsePayloadJson } from "@/lib/editor/actions/send-post-message";
 import { useOwnedActionNode } from "@/lib/editor/actions/use-owned-action-node";
 import { listAllFieldSources } from "@/lib/editor/blocks/http-field-sources";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import {
+  postMessageTestNodeKey,
+  usePreviewPostMessageTestStore,
+} from "@/lib/editor/state/preview-post-message-test-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import {
@@ -325,6 +330,11 @@ export function SendPostMessageNode({
             onChange={(e) => {
               const next = e.target.value as PostMessageMode;
               if (next === "receive" && !allowReceive) return;
+              if (next !== "receive") {
+                usePreviewPostMessageTestStore
+                  .getState()
+                  .setNodeEnabled(ownerId, actionNodeId, false);
+              }
               patch({ mode: next });
             }}
             {...stop}
@@ -667,9 +677,37 @@ export function SendPostMessageNode({
               <code>items[0].id</code>). Values resolve from the received
               payload in Preview.
             </div>
+            <ReceiveTestSwitch ownerId={ownerId} nodeId={actionNodeId} />
           </div>
         )}
       </div>
     </ActionNodeCard>
+  );
+}
+
+function ReceiveTestSwitch({
+  ownerId,
+  nodeId,
+}: {
+  ownerId: number;
+  nodeId: string;
+}) {
+  const enabled = usePreviewPostMessageTestStore((s) =>
+    s.enabledKeys.has(postMessageTestNodeKey(ownerId, nodeId)),
+  );
+  const setNodeEnabled = usePreviewPostMessageTestStore((s) => s.setNodeEnabled);
+
+  return (
+    <div
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <SwitchField
+        label="Test in Preview"
+        description="Show the tester HUD in Preview to inject incoming events"
+        checked={enabled}
+        onChange={(checked) => setNodeEnabled(ownerId, nodeId, checked)}
+      />
+    </div>
   );
 }

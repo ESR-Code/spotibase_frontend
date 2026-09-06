@@ -3975,4 +3975,58 @@
   background: rgba(0, 0, 0, 0.15);
 }
 
+/* Editor-only Post Message receive tester (not product Preview chrome) */
+.editor-root .editor-pm-test-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--editor-amber) 45%, var(--editor-line));
+  padding: 7px 10px;
+  color: var(--editor-amber);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.editor-root .editor-pm-test-chip:hover {
+  background: color-mix(in srgb, var(--editor-amber) 12%, transparent);
+}
+
+.editor-root .editor-pm-test-panel {
+  border: 1px solid color-mix(in srgb, var(--editor-amber) 40%, var(--editor-line));
+  border-radius: 12px;
+  overflow: hidden;
+  max-height: min(28rem, calc(100% - 0.5rem));
+}
+
+.editor-root .editor-pm-test-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--editor-line-soft);
+}
+
+.editor-root .editor-pm-test-badge {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 1px 6px;
+  background: color-mix(in srgb, var(--editor-amber) 18%, transparent);
+  color: var(--editor-amber);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.editor-root .editor-pm-test-log {
+  max-height: 8.5rem;
+  overflow: auto;
+}
+
+.editor-root .editor-pm-test-log pre {
+  max-height: 4.5rem;
+}
+
 
