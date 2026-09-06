@@ -47,11 +47,27 @@ import { ACTION_FENCE_TYPE } from "@/lib/editor/types/action-fence";
 import { TRIGGER_FLOW_TYPE } from "@/lib/editor/actions/flow-adapter";
 import type { ActionNodeType } from "@/lib/editor/types/hotspot-action";
 
+export type ActionMenuGroupId =
+  | "navigate"
+  | "integrate"
+  | "visibility"
+  | "appearance"
+  | "logic";
+
+export const ACTION_MENU_GROUPS: { id: ActionMenuGroupId; label: string }[] = [
+  { id: "navigate", label: "Navigate" },
+  { id: "integrate", label: "Integrate" },
+  { id: "visibility", label: "Visibility" },
+  { id: "appearance", label: "Appearance" },
+  { id: "logic", label: "Logic" },
+];
+
 export type ActionUiDefinition = {
   type: ActionNodeType;
   meta: ActionNodeMeta;
   icon: LucideIcon;
   accent: string;
+  menuGroup: ActionMenuGroupId;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Node: ComponentType<NodeProps<any>>;
 };
@@ -62,6 +78,7 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     meta: ACTION_NODE_META.openModal,
     icon: PanelRightOpen,
     accent: "var(--editor-crimson-2)",
+    menuGroup: "navigate",
     Node: OpenModalNode,
   },
   goToScene: {
@@ -69,6 +86,7 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     meta: ACTION_NODE_META.goToScene,
     icon: MapPinned,
     accent: "var(--editor-amber)",
+    menuGroup: "navigate",
     Node: GoToSceneNode,
   },
   goToHotspot: {
@@ -76,6 +94,7 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     meta: ACTION_NODE_META.goToHotspot,
     icon: Crosshair,
     accent: "#f0a35a",
+    menuGroup: "navigate",
     Node: GoToHotspotNode,
   },
   openUrl: {
@@ -83,6 +102,7 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     meta: ACTION_NODE_META.openUrl,
     icon: ExternalLink,
     accent: "var(--editor-teal)",
+    menuGroup: "navigate",
     Node: OpenUrlNode,
   },
   sendPostMessage: {
@@ -90,6 +110,7 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     meta: ACTION_NODE_META.sendPostMessage,
     icon: MessagesSquare,
     accent: "#7aa2ff",
+    menuGroup: "integrate",
     Node: SendPostMessageNode,
   },
   httpRequest: {
@@ -97,6 +118,7 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     meta: ACTION_NODE_META.httpRequest,
     icon: Globe,
     accent: "#56c8a0",
+    menuGroup: "integrate",
     Node: HttpRequestNode,
   },
   subscribe: {
@@ -104,6 +126,7 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     meta: ACTION_NODE_META.subscribe,
     icon: Radio,
     accent: "#4cc9f0",
+    menuGroup: "integrate",
     Node: SubscribeNode,
   },
   enableDisable: {
@@ -111,6 +134,7 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     meta: ACTION_NODE_META.enableDisable,
     icon: Eye,
     accent: "#c4a35a",
+    menuGroup: "visibility",
     Node: EnableDisableNode,
   },
   enableDisableMesh: {
@@ -118,6 +142,7 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     meta: ACTION_NODE_META.enableDisableMesh,
     icon: Boxes,
     accent: "#8eb5d4",
+    menuGroup: "visibility",
     Node: EnableDisableMeshNode,
   },
   highlightMesh: {
@@ -125,6 +150,7 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     meta: ACTION_NODE_META.highlightMesh,
     icon: Highlighter,
     accent: "#ffd166",
+    menuGroup: "visibility",
     Node: HighlightMeshNode,
   },
   changeHotspotColor: {
@@ -132,6 +158,7 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     meta: ACTION_NODE_META.changeHotspotColor,
     icon: Palette,
     accent: "#ff7a59",
+    menuGroup: "appearance",
     Node: ChangeHotspotColorNode,
   },
   changeHotspotIcon: {
@@ -139,6 +166,7 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     meta: ACTION_NODE_META.changeHotspotIcon,
     icon: Shapes,
     accent: "#6ec6ff",
+    menuGroup: "appearance",
     Node: ChangeHotspotIconNode,
   },
   changeHotspotNumberTitle: {
@@ -146,6 +174,7 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     meta: ACTION_NODE_META.changeHotspotNumberTitle,
     icon: Hash,
     accent: "#a78bfa",
+    menuGroup: "appearance",
     Node: ChangeHotspotNumberTitleNode,
   },
   forEach: {
@@ -153,6 +182,7 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     meta: ACTION_NODE_META.forEach,
     icon: Repeat,
     accent: "#5ad0c8",
+    menuGroup: "logic",
     Node: ForEachNode,
   },
   spawnHotspots: {
@@ -160,6 +190,7 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     meta: ACTION_NODE_META.spawnHotspots,
     icon: MapPin,
     accent: "#e07a5f",
+    menuGroup: "logic",
     Node: SpawnHotspotsNode,
   },
   switch: {
@@ -167,6 +198,7 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     meta: ACTION_NODE_META.switch,
     icon: GitBranch,
     accent: "#c9a227",
+    menuGroup: "logic",
     Node: SwitchNode,
   },
 };

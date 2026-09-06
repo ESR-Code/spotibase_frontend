@@ -3015,6 +3015,21 @@
   overscroll-behavior: contain;
 }
 
+.editor-root .editor-actions-context-menu-group:not([data-first="true"]) {
+  border-top: 1px solid var(--editor-line-soft);
+  margin-top: 2px;
+  padding-top: 2px;
+}
+
+.editor-root .editor-actions-context-menu-group-label {
+  padding: 8px 12px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--editor-muted-2);
+}
+
 .editor-root .editor-actions-context-menu-item {
   display: flex;
   width: 100%;

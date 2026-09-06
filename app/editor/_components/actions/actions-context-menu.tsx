@@ -2,7 +2,7 @@
 
 import { ClipboardPaste, Copy, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ACTION_UI_MENU_ITEMS } from "@/app/editor/_components/actions/action-node-registry";
+import { ACTION_MENU_GROUPS, ACTION_UI_MENU_ITEMS } from "@/app/editor/_components/actions/action-node-registry";
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
 import type { ActionNodeType } from "@/lib/editor/types/hotspot-action";
 import { TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
@@ -74,18 +74,27 @@ export function ActionsContextMenu({
     return () => window.cancelAnimationFrame(id);
   }, [menu]);
 
-  const filteredItems = useMemo(() => {
+  const groupedItems = useMemo(() => {
     if (!menu || menu.kind !== "pane") return [];
     const allowed = ACTION_UI_MENU_ITEMS.filter((item) =>
       menu.allowedNodeTypes.includes(item.type),
     );
     const q = query.trim().toLowerCase();
-    if (!q) return allowed;
-    return allowed.filter((item) => {
-      const haystack = `${item.meta.label} ${item.meta.description}`.toLowerCase();
-      return haystack.includes(q);
-    });
+    const filtered = q
+      ? allowed.filter((item) => {
+          const haystack =
+            `${item.meta.label} ${item.meta.description}`.toLowerCase();
+          return haystack.includes(q);
+        })
+      : allowed;
+
+    return ACTION_MENU_GROUPS.map((group) => ({
+      ...group,
+      items: filtered.filter((item) => item.menuGroup === group.id),
+    })).filter((group) => group.items.length > 0);
   }, [menu, query]);
+
+  const hasMatchingItems = groupedItems.length > 0;
 
   if (!menu) return null;
 
@@ -131,7 +140,7 @@ export function ActionsContextMenu({
             />
           </div>
           <div className="editor-actions-context-menu-list">
-            {filteredItems.length === 0 ? (
+            {!hasMatchingItems ? (
               <div
                 className="px-3 py-3 text-[11px]"
                 style={{ color: "var(--editor-muted)" }}
@@ -139,37 +148,48 @@ export function ActionsContextMenu({
                 No matching nodes
               </div>
             ) : (
-              filteredItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.type}
-                    type="button"
-                    role="menuitem"
-                    className="editor-actions-context-menu-item"
-                    onClick={() => {
-                      onAdd(menu.hotspotId, item.type, menu.flowPosition);
-                      onClose();
-                    }}
-                  >
-                    <Icon
-                      className="h-3.5 w-3.5"
-                      style={{ color: item.accent }}
-                    />
-                    <span className="min-w-0">
-                      <span className="block text-[12px] font-medium">
-                        {item.meta.label}
-                      </span>
-                      <span
-                        className="block text-[10px]"
-                        style={{ color: "var(--editor-muted)" }}
+              groupedItems.map((group, groupIndex) => (
+                <div
+                  key={group.id}
+                  className="editor-actions-context-menu-group"
+                  data-first={groupIndex === 0 ? "true" : undefined}
+                >
+                  <div className="editor-actions-context-menu-group-label">
+                    {group.label}
+                  </div>
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.type}
+                        type="button"
+                        role="menuitem"
+                        className="editor-actions-context-menu-item"
+                        onClick={() => {
+                          onAdd(menu.hotspotId, item.type, menu.flowPosition);
+                          onClose();
+                        }}
                       >
-                        {item.meta.description}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })
+                        <Icon
+                          className="h-3.5 w-3.5"
+                          style={{ color: item.accent }}
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-[12px] font-medium">
+                            {item.meta.label}
+                          </span>
+                          <span
+                            className="block text-[10px]"
+                            style={{ color: "var(--editor-muted)" }}
+                          >
+                            {item.meta.description}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))
             )}
           </div>
         </>
