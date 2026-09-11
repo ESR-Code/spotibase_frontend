@@ -51,6 +51,7 @@ import {
   APP_START_OWNER_ID,
   HOTSPOT_GRAPH_ALLOWED_NODE_TYPES,
   MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES,
+  SCENE_START_GRAPH_ALLOWED_NODE_TYPES,
   SCENE_START_OWNER_ID,
   SPAWN_CLICK_LANE_OWNER_ID,
   START_GRAPH_ALLOWED_NODE_TYPES,
@@ -290,7 +291,7 @@ function ActionsFlowCanvas({
         graph: activeScene.startActions ?? createEmptyActionGraph(),
         laneIndex: laneIndex++,
         triggerKind: "sceneStart",
-        allowedNodeTypes: forScene(START_GRAPH_ALLOWED_NODE_TYPES),
+        allowedNodeTypes: forScene(SCENE_START_GRAPH_ALLOWED_NODE_TYPES),
       });
       for (const button of customMenuButtons) {
         list.push({

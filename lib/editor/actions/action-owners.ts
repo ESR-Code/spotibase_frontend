@@ -46,6 +46,24 @@ export const START_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "enableDisable",
   "enableDisableMesh",
   "highlightMesh",
+  "changeHotspotColor",
+  "changeHotspotIcon",
+  "changeHotspotNumberTitle",
+  "forEach",
+  "spawnHotspots",
+  "switch",
+];
+
+/** Scene Start can play the active 3D subject; App Start cannot. */
+export const SCENE_START_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
+  "goToScene",
+  "goToHotspot",
+  "sendPostMessage",
+  "httpRequest",
+  "subscribe",
+  "enableDisable",
+  "enableDisableMesh",
+  "highlightMesh",
   "playAnimation",
   "changeHotspotColor",
   "changeHotspotIcon",

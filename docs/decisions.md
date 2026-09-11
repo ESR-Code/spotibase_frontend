@@ -22,7 +22,7 @@ Only decisions that constrain how new work should be done.
 ## Actions
 
 - **Registry-driven nodes.** Add a type to `hotspot-action.ts`, defaults in `create-action-graph.ts`, `validate`/`run` in `actions/registry.ts`, and a canvas component in `action-node-registry.tsx`. Gate with `sceneTypes` when the node is engine-specific.
-- **Owner allow-lists** (`action-owners.ts`) decide which nodes appear on hotspot vs start vs menu graphs. Start graphs cannot use Open Modal; menu graphs cannot either.
+- **Owner allow-lists** (`action-owners.ts`) decide which nodes appear on hotspot vs start vs menu graphs. Start graphs cannot use Open Modal; menu graphs cannot either. Animation is on hotspot, Scene Start, and menu graphs — not App Start.
 - **Synthetic owner ids** (`−1`, `−2`, `≤ −10000`) must never collide with hotspot ids or spawned ids (`SPAWNED_HOTSPOT_ID_BASE = 1_000_000`).
 - **Preview overlays, not authored edits**, for Enable/Disable, appearance changes, mesh highlight, spawned pins, and GLB animation playback. Leaving Preview resets them (including bind pose) and stops Subscribe polls / Post Message listeners / HTTP cache.
 - **Post Message receive tester** is editor-session state (`preview-post-message-test-store`), not `node.data`. It injects `{ event, data }` to the same window; do not rewrite send targets or fall back to `self` for outgoing sends. Do not show this HUD in a future viewer.
