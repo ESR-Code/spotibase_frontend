@@ -15,6 +15,7 @@ import {
   MessagesSquare,
   Palette,
   PanelRightOpen,
+  Play,
   Radio,
   Repeat,
   Shapes,
@@ -34,6 +35,7 @@ import { HttpRequestNode } from "@/app/editor/_components/actions/http-request-n
 import { SubscribeNode } from "@/app/editor/_components/actions/subscribe-node";
 import { OpenModalNode } from "@/app/editor/_components/actions/open-modal-node";
 import { OpenUrlNode } from "@/app/editor/_components/actions/open-url-node";
+import { PlayAnimationNode } from "@/app/editor/_components/actions/play-animation-node";
 import { ForEachNode } from "@/app/editor/_components/actions/for-each-node";
 import { SendPostMessageNode } from "@/app/editor/_components/actions/send-post-message-node";
 import { SpawnHotspotsNode } from "@/app/editor/_components/actions/spawn-hotspots-node";
@@ -153,6 +155,14 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     menuGroup: "visibility",
     Node: HighlightMeshNode,
   },
+  playAnimation: {
+    type: "playAnimation",
+    meta: ACTION_NODE_META.playAnimation,
+    icon: Play,
+    accent: "#c084fc",
+    menuGroup: "visibility",
+    Node: PlayAnimationNode,
+  },
   changeHotspotColor: {
     type: "changeHotspotColor",
     meta: ACTION_NODE_META.changeHotspotColor,
@@ -217,6 +227,7 @@ export const ACTION_FLOW_NODE_TYPES = {
   enableDisable: EnableDisableNode,
   enableDisableMesh: EnableDisableMeshNode,
   highlightMesh: HighlightMeshNode,
+  playAnimation: PlayAnimationNode,
   changeHotspotColor: ChangeHotspotColorNode,
   changeHotspotIcon: ChangeHotspotIconNode,
   changeHotspotNumberTitle: ChangeHotspotNumberTitleNode,

@@ -4,6 +4,13 @@ import { toast } from "sonner";
 import { buildDefaultBox } from "@/lib/editor/engine/default-scene-builder";
 import { createImageTexture } from "@/lib/editor/engine/hotspot-text-texture";
 import {
+  bindModelAnimation,
+  captureBindPose,
+  restoreBindPose,
+  unbindModelAnimation,
+} from "@/lib/editor/engine/model-animation";
+import { collectContainerAnimations } from "@/lib/editor/engine/model-animations";
+import {
   collectModelMeshes,
   type CollectedModelMesh,
 } from "@/lib/editor/engine/model-meshes";
@@ -69,10 +76,48 @@ export function createModelManager(
     }
   };
 
+  const clearAnimationBinding = () => {
+    unbindModelAnimation();
+    useModelStore.getState().setAnimations([]);
+  };
+
+  const attachModelAnimations = (entity: Entity, resource: unknown) => {
+    const collected = collectContainerAnimations(resource);
+    if (collected.length === 0) {
+      clearAnimationBinding();
+      return;
+    }
+
+    const restPose = captureBindPose(entity);
+    entity.addComponent("anim", { activate: false, speed: 1 });
+    const anim = entity.anim;
+    if (!anim) {
+      clearAnimationBinding();
+      return;
+    }
+
+    for (const clip of collected) {
+      anim.assignAnimation(clip.id, clip.track, undefined, 1, false);
+    }
+    anim.playing = false;
+    const durations = new Map(
+      collected.map((clip) => [clip.id, clip.duration] as const),
+    );
+    bindModelAnimation({
+      getEntity: () => entity,
+      restoreBindPose: () => restoreBindPose(restPose),
+      durationFor: (animationName) => durations.get(animationName) ?? 0,
+    });
+    useModelStore.getState().setAnimations(
+      collected.map(({ id, name, duration }) => ({ id, name, duration })),
+    );
+  };
+
   const syncMeshCatalog = () => {
     if (activeSceneType() !== "model") {
       meshEntities = [];
       useModelStore.getState().setMeshes([]);
+      clearAnimationBinding();
       return;
     }
     const collected = collectModelMeshes(modelRoot);
@@ -149,6 +194,7 @@ export function createModelManager(
     clearChildren(modelRoot);
     destroyOwnedTexture();
     materialBaselines = [];
+    clearAnimationBinding();
 
     const plane = buildImagePlane(pcModule, null, 16 / 9);
     modelRoot.addChild(plane);
@@ -181,6 +227,7 @@ export function createModelManager(
     }
 
     destroyOwnedTexture();
+    clearAnimationBinding();
     const entity = buildDefaultBox(app, pcModule, modelRoot);
     const { modelScale, modelRotation } = useModelStore.getState();
     applyTransform(modelScale, modelRotation);
@@ -219,6 +266,7 @@ export function createModelManager(
         app.assets.load(asset);
       });
 
+      clearAnimationBinding();
       clearChildren(modelRoot);
       destroyOwnedTexture();
       materialBaselines = [];
@@ -230,11 +278,13 @@ export function createModelManager(
 
       const resource = asset.resource as {
         instantiateRenderEntity: () => Entity;
+        animations?: unknown;
       };
       const entity = resource.instantiateRenderEntity();
       const { sizeLabel, triangles } = normalizeEntity(entity, pcModule);
       prepareImportedModelMaterials(entity, pcModule);
       modelRoot.addChild(entity);
+      attachModelAnimations(entity, resource);
 
       const wireframe = useModelStore.getState().wireframe;
       if (wireframe) setWireframe(true);
@@ -277,6 +327,7 @@ export function createModelManager(
       destroyOwnedTexture();
       ownedTexture = texture;
       materialBaselines = [];
+      clearAnimationBinding();
 
       if (options.resetTransform) {
         useModelStore.getState().resetModelTransform();
@@ -378,6 +429,7 @@ export function createModelManager(
   };
 
   const unloadCurrent = () => {
+    clearAnimationBinding();
     clearChildren(modelRoot);
     destroyOwnedTexture();
     materialBaselines = [];

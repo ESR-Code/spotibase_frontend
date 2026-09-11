@@ -19,6 +19,7 @@ import type {
   SendPostMessageActionNode,
 } from "@/lib/editor/types/hotspot-action";
 import {
+  clampPlayAnimationSpeed,
   clampSubscribeIntervalMs,
   createEmptyPostMessageReceiveEvent,
   firstPostMessageReceiveHandleId,
@@ -738,6 +739,25 @@ export function updateNodeData(
             cases: Object.prototype.hasOwnProperty.call(patch, "cases")
               ? parseSwitchCases(patch.cases)
               : node.data.cases,
+          },
+        };
+      }
+      if (node.type === "playAnimation") {
+        return {
+          ...node,
+          data: {
+            animationName:
+              typeof patch.animationName === "string"
+                ? patch.animationName
+                : node.data.animationName,
+            inverse:
+              typeof patch.inverse === "boolean"
+                ? patch.inverse
+                : node.data.inverse,
+            speed:
+              Object.prototype.hasOwnProperty.call(patch, "speed")
+                ? clampPlayAnimationSpeed(patch.speed)
+                : node.data.speed,
           },
         };
       }

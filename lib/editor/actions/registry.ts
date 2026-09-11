@@ -63,6 +63,10 @@ import {
   runSwitch,
   validateSwitchData,
 } from "@/lib/editor/actions/switch-case";
+import {
+  applyPlayAnimation,
+  validatePlayAnimationData,
+} from "@/lib/editor/actions/play-animation";
 import { transitionToScene } from "@/lib/editor/actions/transition-to-scene";
 import { openHotspotInPreview } from "@/lib/editor/preview/open-hotspot-in-preview";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -544,6 +548,21 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
         if (branch.length === 0) return;
         await runActionNodeList(branch, ctx);
       });
+    },
+  },
+  playAnimation: {
+    type: "playAnimation",
+    label: "Animation",
+    description: "Play a named animation clip from the 3D model.",
+    sceneTypes: ["model"],
+    createDefault: (position) => createActionNode("playAnimation", position),
+    validate: (node) => {
+      if (node.type !== "playAnimation") return null;
+      return validatePlayAnimationData(node.data);
+    },
+    run: async (node) => {
+      if (node.type !== "playAnimation") return;
+      return applyPlayAnimation(node.data);
     },
   },
 };

@@ -8,6 +8,7 @@ import { createPlayCanvasAppAsync } from "@/lib/editor/engine/create-playcanvas-
 import { createEffectsManager } from "@/lib/editor/engine/effects-manager";
 import { createHotspotManager } from "@/lib/editor/engine/hotspot-manager";
 import { createMeshHighlightManager } from "@/lib/editor/engine/mesh-highlight-manager";
+import { unbindModelAnimation, resetModelAnimation } from "@/lib/editor/engine/model-animation";
 import { createModelManager } from "@/lib/editor/engine/model-manager";
 import { createPickingController } from "@/lib/editor/engine/picking-controller";
 import { createScene } from "@/lib/editor/engine/scene-manager";
@@ -422,6 +423,8 @@ export function usePlayCanvasEditor() {
             ?.sceneId;
           if (!sceneId) return;
 
+          resetModelAnimation();
+
           const targetScene = useScenesStore
             .getState()
             .scenes.find((s) => s.id === sceneId);
@@ -520,6 +523,7 @@ export function usePlayCanvasEditor() {
           meshHighlight.destroy();
           effectsMgr.destroy();
           cameraCtrl.dispose();
+          unbindModelAnimation();
           destroy();
         };
       } catch (error) {
@@ -538,8 +542,10 @@ export function usePlayCanvasEditor() {
     return () => {
       destroyed = true;
       cleanup?.();
+      unbindModelAnimation();
       useModelStore.getState().setEngineReady(false);
       useModelStore.getState().setMeshes([]);
+      useModelStore.getState().setAnimations([]);
     };
   }, []);
 

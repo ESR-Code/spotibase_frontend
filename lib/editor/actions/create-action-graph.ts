@@ -23,10 +23,13 @@ import type {
   OpenUrlActionNode,
   PostMessageTarget,
   SendPostMessageActionNode,
+  PlayAnimationActionNode,
 } from "@/lib/editor/types/hotspot-action";
 import { HTTP_METHODS, TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
 import {
+  clampPlayAnimationSpeed,
   clampSubscribeIntervalMs,
+  PLAY_ANIMATION_SPEED_DEFAULT,
   SUBSCRIBE_INTERVAL_DEFAULT_MS,
 } from "@/lib/editor/types/hotspot-action";
 import {
@@ -225,6 +228,10 @@ export function createActionNode(
   position: ActionNodeXY,
 ): SwitchActionNode;
 export function createActionNode(
+  type: "playAnimation",
+  position: ActionNodeXY,
+): PlayAnimationActionNode;
+export function createActionNode(
   type: ActionNodeType,
   position: ActionNodeXY,
 ): ActionNode;
@@ -391,6 +398,17 @@ export function createActionNode(
         data: {
           subject: "",
           cases: [createEmptySwitchCase()],
+        },
+      };
+    case "playAnimation":
+      return {
+        id: newActionId(),
+        type: "playAnimation",
+        position: { ...position },
+        data: {
+          animationName: "",
+          inverse: false,
+          speed: PLAY_ANIMATION_SPEED_DEFAULT,
         },
       };
   }
@@ -647,6 +665,21 @@ export function cloneActionGraph(
             subject:
               typeof node.data.subject === "string" ? node.data.subject : "",
             cases: cases.length > 0 ? cases : [createEmptySwitchCase()],
+          },
+        };
+      }
+      if (node.type === "playAnimation") {
+        return {
+          id: node.id,
+          type: "playAnimation",
+          position: { ...node.position },
+          data: {
+            animationName:
+              typeof node.data.animationName === "string"
+                ? node.data.animationName
+                : "",
+            inverse: asBoolean(node.data.inverse, false),
+            speed: clampPlayAnimationSpeed(node.data.speed),
           },
         };
       }

@@ -22,6 +22,15 @@ export type ModelMeshEntry = {
   name: string;
 };
 
+export type ModelAnimationEntry = {
+  /** Stable clip id used by the Animation action node and PlayCanvas state. */
+  id: string;
+  /** Display name from the GLB animation. */
+  name: string;
+  /** Clip length in seconds. */
+  duration: number;
+};
+
 type ModelState = {
   modelName: string;
   modelInfo: string;
@@ -35,6 +44,7 @@ type ModelState = {
   engineReady: boolean;
   engineError: string | null;
   meshes: ModelMeshEntry[];
+  animations: ModelAnimationEntry[];
   setModelMeta: (name: string, info: string, hasUserModel?: boolean) => void;
   setModelScale: (scale: number) => void;
   setModelRotation: (axis: keyof ModelRotation, value: number) => void;
@@ -45,6 +55,7 @@ type ModelState = {
   setEngineReady: (ready: boolean) => void;
   setEngineError: (error: string | null) => void;
   setMeshes: (meshes: ModelMeshEntry[]) => void;
+  setAnimations: (animations: ModelAnimationEntry[]) => void;
   unload: () => void;
   hydrateFromScene: (model: SceneModelState) => void;
 };
@@ -62,6 +73,7 @@ export const useModelStore = create<ModelState>((set) => ({
   engineReady: false,
   engineError: null,
   meshes: [],
+  animations: [],
   setModelMeta: (name, info, hasUserModel) =>
     set((state) => ({
       modelName: name,
@@ -88,6 +100,7 @@ export const useModelStore = create<ModelState>((set) => ({
   setEngineReady: (engineReady) => set({ engineReady }),
   setEngineError: (engineError) => set({ engineError }),
   setMeshes: (meshes) => set({ meshes }),
+  setAnimations: (animations) => set({ animations }),
   unload: () =>
     set({
       modelName: DEFAULT_MODEL_META.name,
@@ -98,6 +111,7 @@ export const useModelStore = create<ModelState>((set) => ({
       modelReflection: DEFAULT_MODEL_REFLECTION,
       triangleCount: 0,
       meshes: [],
+      animations: [],
     }),
   hydrateFromScene: (model) =>
     set({

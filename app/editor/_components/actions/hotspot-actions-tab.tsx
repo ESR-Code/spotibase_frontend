@@ -99,6 +99,17 @@ function actionNodeDetail(
       if (stroke) return `→ ${count} stroke`;
       return `→ ${count} (off)`;
     }
+    case "playAnimation": {
+      const name = node.data.animationName.trim();
+      if (!name) return "→ (no clip)";
+      const extras = [
+        node.data.inverse ? "reverse" : null,
+        node.data.speed !== 1 ? `${node.data.speed}×` : null,
+      ].filter(Boolean);
+      return extras.length > 0
+        ? `→ ${name} ${extras.join(" ")}`
+        : `→ ${name}`;
+    }
     case "changeHotspotColor":
       return (node.data.hotspotIds?.length ?? 0) > 0
         ? node.data.color.trim()

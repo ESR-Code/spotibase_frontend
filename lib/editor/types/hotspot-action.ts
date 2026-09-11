@@ -21,7 +21,8 @@ export type ActionNodeType =
   | "changeHotspotNumberTitle"
   | "forEach"
   | "spawnHotspots"
-  | "switch";
+  | "switch"
+  | "playAnimation";
 
 /** Relative destination from the selected target hotspot. */
 export type GoToHotspotOffset = "self" | "next" | "prev";
@@ -352,6 +353,31 @@ export type SwitchActionNode = ActionNodeBase<
   }
 >;
 
+export const PLAY_ANIMATION_SPEED_MIN = 0.25;
+export const PLAY_ANIMATION_SPEED_MAX = 4;
+export const PLAY_ANIMATION_SPEED_DEFAULT = 1;
+
+export function clampPlayAnimationSpeed(value: unknown): number {
+  const num = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(num)) return PLAY_ANIMATION_SPEED_DEFAULT;
+  return Math.min(
+    PLAY_ANIMATION_SPEED_MAX,
+    Math.max(PLAY_ANIMATION_SPEED_MIN, num),
+  );
+}
+
+export type PlayAnimationActionNode = ActionNodeBase<
+  "playAnimation",
+  {
+    /** Catalog clip id from the loaded GLB. */
+    animationName: string;
+    /** When true, play the clip backwards. */
+    inverse: boolean;
+    /** Playback magnitude (0.25–4). Inverse does not change this value. */
+    speed: number;
+  }
+>;
+
 export type ActionNode =
   | OpenModalActionNode
   | GoToSceneActionNode
@@ -368,7 +394,8 @@ export type ActionNode =
   | ChangeHotspotNumberTitleActionNode
   | ForEachActionNode
   | SpawnHotspotsActionNode
-  | SwitchActionNode;
+  | SwitchActionNode
+  | PlayAnimationActionNode;
 
 export type ActionEdge = {
   id: string;
