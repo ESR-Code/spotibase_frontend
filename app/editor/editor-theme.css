@@ -403,7 +403,6 @@
   width: 28px;
   height: 28px;
   font-size: 12px;
-  box-shadow: 0 0 14px currentColor;
 }
 
 .editor-root .editor-hot-dot-lg.editor-marker-shape-pin {
@@ -549,7 +548,6 @@
   font-size: 11px;
   color: #fff;
   line-height: 1;
-  box-shadow: 0 0 10px currentColor;
 }
 
 .editor-root .editor-category-option-icon svg {
@@ -1687,6 +1685,33 @@
   animation-name: editor-dialog-drawer-in-left;
 }
 
+.editor-root .editor-dialog-drawer.editor-dialog-drawer-inset {
+  --editor-dialog-drawer-inset: 12px;
+  top: var(--editor-dialog-drawer-inset);
+  right: var(--editor-dialog-drawer-inset);
+  bottom: var(--editor-dialog-drawer-inset);
+  width: min(380px, calc(100% - var(--editor-dialog-drawer-inset)));
+  height: auto;
+  border-radius: 12px;
+  border-right: 1px solid var(--editor-line);
+  animation-name: editor-dialog-drawer-in-inset;
+}
+
+.editor-root .editor-dialog-drawer.editor-dialog-size-large.editor-dialog-drawer-inset {
+  width: min(520px, calc(100% - var(--editor-dialog-drawer-inset)));
+}
+
+.editor-root .editor-dialog-drawer.editor-dialog-size-fullscreen.editor-dialog-drawer-inset {
+  width: calc(100% - var(--editor-dialog-drawer-inset));
+}
+
+.editor-root .editor-dialog-drawer-left.editor-dialog-drawer-inset {
+  left: var(--editor-dialog-drawer-inset);
+  right: auto;
+  border-left: 1px solid var(--editor-line);
+  animation-name: editor-dialog-drawer-in-left-inset;
+}
+
 /* Mobile: always fullscreen regardless of size setting */
 @media (max-width: 767px) {
   .editor-root .editor-dialog-root-modal {
@@ -1700,6 +1725,22 @@
     height: 100%;
     max-height: 100%;
     border-radius: 0;
+  }
+
+  .editor-root .editor-dialog-drawer.editor-dialog-drawer-inset {
+    width: min(380px, calc(100% - var(--editor-dialog-drawer-inset)));
+    max-width: none;
+    height: auto;
+    max-height: none;
+    border-radius: 12px;
+  }
+
+  .editor-root .editor-dialog-drawer.editor-dialog-size-large.editor-dialog-drawer-inset {
+    width: min(520px, calc(100% - var(--editor-dialog-drawer-inset)));
+  }
+
+  .editor-root .editor-dialog-drawer.editor-dialog-size-fullscreen.editor-dialog-drawer-inset {
+    width: calc(100% - var(--editor-dialog-drawer-inset));
   }
 
   .editor-root .editor-dialog-infobox {
@@ -1726,6 +1767,24 @@
 @keyframes editor-dialog-drawer-in-left {
   from {
     transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes editor-dialog-drawer-in-inset {
+  from {
+    transform: translateX(calc(100% + var(--editor-dialog-drawer-inset)));
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes editor-dialog-drawer-in-left-inset {
+  from {
+    transform: translateX(calc(-100% - var(--editor-dialog-drawer-inset)));
   }
   to {
     transform: translateX(0);

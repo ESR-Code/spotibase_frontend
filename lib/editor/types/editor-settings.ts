@@ -75,6 +75,11 @@ export type EditorSettings = {
   markerDialogPresentation: MarkerDialogPresentation;
   /** Desktop size for drawer/modal/info box presentation. */
   markerDialogSize: MarkerDialogSize;
+  /**
+   * When presentation is drawer, inset the panel from the top, bottom, and
+   * docked edge so it doesn’t hug the viewport.
+   */
+  markerDialogDrawerInset: boolean;
   /** Dimmed overlay behind the marker dialog. */
   markerDialogBackdrop: boolean;
   /** Blur the viewport through the backdrop (requires backdrop). */

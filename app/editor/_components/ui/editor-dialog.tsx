@@ -51,6 +51,11 @@ export type EditorDialogProps = {
   side?: "left" | "right";
   /** Desktop size. Mobile always renders fullscreen. Default `"medium"`. */
   size?: MarkerDialogSize;
+  /**
+   * Drawer-only: inset from the top, bottom, and docked edge so the panel
+   * doesn’t hug the viewport. Ignored for modal and info box.
+   */
+  inset?: boolean;
   /** Screen-space anchor for `"infobox"` presentation (hotspot center). */
   anchor?: { x: number; y: number } | null;
   /** Hide the surface when the anchor is behind the camera. */
@@ -69,6 +74,7 @@ export function EditorDialog({
   closeOnEscape = true,
   side = "right",
   size = "medium",
+  inset = false,
   anchor = null,
   anchorVisible = true,
   className,
@@ -103,6 +109,8 @@ export function EditorDialog({
 
   if (!open) return null;
 
+  const isDrawer = presentation === "drawer";
+  const drawerInset = isDrawer && inset;
   const surfaceClass = isInfoBox
     ? "editor-dialog-infobox"
     : presentation === "modal"
@@ -110,6 +118,7 @@ export function EditorDialog({
       : cn(
           "editor-dialog-drawer",
           side === "left" && "editor-dialog-drawer-left",
+          drawerInset && "editor-dialog-drawer-inset",
         );
 
   const sizeClass = `editor-dialog-size-${size}`;
@@ -121,7 +130,8 @@ export function EditorDialog({
         className={cn(
           "editor-dialog-root",
           presentation === "modal" && "editor-dialog-root-modal",
-          presentation === "drawer" && "editor-dialog-root-drawer",
+          isDrawer && "editor-dialog-root-drawer",
+          drawerInset && "editor-dialog-root-drawer-inset",
           isInfoBox && "editor-dialog-root-infobox",
           sizeClass,
           open && "open",

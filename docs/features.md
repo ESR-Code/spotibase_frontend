@@ -15,7 +15,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 - Multiple scenes; one primary. Types: **3D Model** (orbit + GLB), **2D Image** (pan/zoom + PNG/JPG/WebP), **Geo map** (MapLibre globe/flat).
 - Type is fixed at creation. Settings sections and outliner tabs follow the scene-type registry.
 - Subject import via file picker or drag-drop (`import-subject`). Scene subject cache when switching.
-- Scene settings: camera limits, grid, logo, marker dialog presentation (modal / drawer / infobox), legend, custom Preview bottom-menu buttons.
+- Scene settings: camera limits, grid, logo, marker dialog presentation (modal / drawer / infobox, optional drawer inset), legend, custom Preview bottom-menu buttons.
 - Environment + lighting (PlayCanvas). SSAO effects (model scenes).
 - Geo start pin, zoom, map style, globe vs flat mercator. Nominatim place search.
 

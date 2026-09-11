@@ -272,6 +272,17 @@ export function SettingsDrawer() {
             </p>
           </div>
 
+          {values.markerDialogPresentation === "drawer" ? (
+            <SwitchField
+              label="Inset from edges"
+              description="Keep a gap on the top, bottom, and right so the drawer does not hug the screen"
+              checked={values.markerDialogDrawerInset}
+              onChange={(checked) =>
+                form.setValue("markerDialogDrawerInset", checked)
+              }
+            />
+          ) : null}
+
           <div>
             <FieldLabel>Size</FieldLabel>
             <div className="flex flex-wrap gap-2">

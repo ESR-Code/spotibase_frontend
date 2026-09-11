@@ -35,6 +35,7 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   hotspotLabelBorderColor: "#e63946",
   markerDialogPresentation: "drawer",
   markerDialogSize: "medium",
+  markerDialogDrawerInset: false,
   markerDialogBackdrop: false,
   markerDialogBackdropBlur: false,
   markerDialogResetCameraOnClose: true,
@@ -178,6 +179,7 @@ export function cloneEditorSettings(settings: EditorSettings): EditorSettings {
     maxZoom: settings.maxZoom ?? DEFAULT_EDITOR_SETTINGS.maxZoom,
     markerDialogPresentation: presentation,
     markerDialogSize: size,
+    markerDialogDrawerInset: settings.markerDialogDrawerInset ?? false,
     markerDialogBackdrop:
       presentation === "infobox" ? false : settings.markerDialogBackdrop,
     markerDialogBackdropBlur:

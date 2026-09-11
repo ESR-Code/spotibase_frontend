@@ -33,6 +33,7 @@ function toFormValues(
     hotspotLabelBorderColor: settings.hotspotLabelBorderColor,
     markerDialogPresentation: settings.markerDialogPresentation,
     markerDialogSize: settings.markerDialogSize,
+    markerDialogDrawerInset: settings.markerDialogDrawerInset ?? false,
     markerDialogBackdrop: settings.markerDialogBackdrop,
     markerDialogBackdropBlur: settings.markerDialogBackdropBlur,
     markerDialogResetCameraOnClose: settings.markerDialogResetCameraOnClose,

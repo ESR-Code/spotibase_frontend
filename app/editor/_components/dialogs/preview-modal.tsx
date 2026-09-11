@@ -29,6 +29,7 @@ export function PreviewModal() {
   usePreviewAppearanceStore((s) => s.overrides);
   const presentation = useSettingsStore((s) => s.markerDialogPresentation);
   const size = useSettingsStore((s) => s.markerDialogSize);
+  const drawerInset = useSettingsStore((s) => s.markerDialogDrawerInset);
   const backdrop = useSettingsStore((s) => s.markerDialogBackdrop);
   const backdropBlur = useSettingsStore((s) => s.markerDialogBackdropBlur);
   const legendCategories = useSettingsStore((s) => s.legendCategories);
@@ -210,6 +211,7 @@ export function PreviewModal() {
       onClose={close}
       presentation={presentation}
       size={size}
+      inset={presentation === "drawer" && drawerInset}
       backdrop={isInfoBox ? false : backdrop}
       backdropBlur={isInfoBox ? false : backdropBlur}
       anchor={isInfoBox ? infoBoxAnchor : null}
