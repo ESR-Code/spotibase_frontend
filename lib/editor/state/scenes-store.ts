@@ -76,6 +76,9 @@ function snapshotCurrentIntoScene(scene: Scene): Scene {
     startActions: cloneActionGraph(
       scene.startActions ?? createEmptyActionGraph(),
     ),
+    legendActions: cloneActionGraph(
+      scene.legendActions ?? createEmptyActionGraph(),
+    ),
     actionFences: cloneActionFences(scene.actionFences),
     nextHotspotId: editor.nextId,
     model: {
@@ -120,6 +123,7 @@ type ScenesState = {
   appStartActions: HotspotActionGraph;
   setAppStartActions: (graph: HotspotActionGraph) => void;
   setActiveSceneStartActions: (graph: HotspotActionGraph) => void;
+  setActiveSceneLegendActions: (graph: HotspotActionGraph) => void;
   addScene: (input: AddSceneInput) => string;
   removeScene: (id: string) => void;
   renameScene: (id: string, name: string) => void;
@@ -147,6 +151,9 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
       startActions: cloneActionGraph(
         SEED_SCENE.startActions ?? createEmptyActionGraph(),
       ),
+      legendActions: cloneActionGraph(
+        SEED_SCENE.legendActions ?? createEmptyActionGraph(),
+      ),
       actionFences: cloneActionFences(SEED_SCENE.actionFences),
       model: { ...SEED_SCENE.model, rotation: { ...SEED_SCENE.model.rotation } },
       settings: cloneEditorSettings(SEED_SCENE.settings),
@@ -170,6 +177,17 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
       scenes: state.scenes.map((scene) =>
         scene.id === state.activeSceneId
           ? { ...scene, startActions: cloneActionGraph(graph) }
+          : scene,
+      ),
+    });
+  },
+
+  setActiveSceneLegendActions: (graph) => {
+    const state = get();
+    set({
+      scenes: state.scenes.map((scene) =>
+        scene.id === state.activeSceneId
+          ? { ...scene, legendActions: cloneActionGraph(graph) }
           : scene,
       ),
     });

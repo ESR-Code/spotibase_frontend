@@ -93,9 +93,10 @@ Graphs are `{ nodes, edges }` owned by:
 | App Start | `APP_START_OWNER_ID` (−1) |
 | Scene Start | `SCENE_START_OWNER_ID` (−2) |
 | Spawn click template (editor-only) | `SPAWN_CLICK_LANE_OWNER_ID` (−3), not persisted |
+| Legend category | `LEGEND_OWNER_ID` (−4); lane only while legend is enabled |
 | Custom bottom-menu button | `ownerId ≤ MENU_BUTTON_OWNER_BASE` (−10000) |
 
-Runtime metadata: `lib/editor/actions/registry.ts` (`validate` / `run`, optional `sceneTypes`). Canvas UI: `action-node-registry.tsx`. Allowed node types differ by owner (`action-owners.ts`). Runner: `run-action-graph.ts`.
+Runtime metadata: `lib/editor/actions/registry.ts` (`validate` / `run`, optional `sceneTypes`). Canvas UI: `action-node-registry.tsx`. Allowed node types differ by owner (`action-owners.ts`). Runner: `run-action-graph.ts`. The Legend trigger is a scene-scoped graph (`Scene.legendActions`); Preview category changes walk that trigger’s matching output (`lib/editor/actions/legend-category.ts`).
 
 XYFlow edits the graph; `flow-adapter.ts` maps domain nodes ↔ flow nodes. Named frames on the canvas are `ActionFence`s (scene-scoped).
 

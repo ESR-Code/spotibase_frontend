@@ -47,9 +47,9 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 ### Action graphs
 
-- Canvases: hotspot click, App Start, Scene Start, custom menu buttons, Spawn template + nested click graph.
+- Canvases: hotspot click, App Start, Scene Start, Legend (when enabled), custom menu buttons, Spawn template + nested click graph.
 - Nodes: Open Modal, Go To Scene, Go To Hotspot, Open URL, Post Message (send/receive), HTTP Request, Subscribe, Enable/Disable, Enable/Disable Mesh, Highlight Mesh, Animation, Change Color / Icon / Number & Title, For Each, Spawn Hotspot, Switch.
-- Mesh nodes and Animation only on `model` scenes. Animation plays a named GLB clip in Preview (inverse + speed; waits until the clip finishes). Open Modal only from a hotspot click. Animation is not on App Start. Post Message receive only on App/Scene Start. Subscribe polls only in Preview.
+- Mesh nodes and Animation only on `model` scenes. Animation plays a named GLB clip in Preview (inverse + speed; waits until the clip finishes). Open Modal only from a hotspot click. Animation is not on App Start. Post Message receive only on App/Scene Start. Subscribe polls only in Preview. The Legend trigger appears on Scene Actions while Enable legend is on (handles for All + each category) and runs that chain when the Preview legend drawer selects it.
 - Post Message receive tester: opt-in **Test in Preview** on the node, then a bottom-right HUD injects `{ event, data }` into live listeners and logs the send. Editor-session only; not authored on the graph.
 - HTTP cache-reuse in Preview. Subscribe skip-unchanged. For Each + Switch + field interpolation.
 - Spawn Hotspot from For Each items (xyz or lat/lon; lat/lon projects through geo reference on PlayCanvas). Replace-on-rerun. Template drawer + click-actions editor.

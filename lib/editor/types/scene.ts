@@ -37,6 +37,11 @@ export type Scene = {
   nextHotspotId: number;
   /** Runs when this scene becomes active in Preview (after App Start). */
   startActions: HotspotActionGraph;
+  /**
+   * Runs when a Preview legend category is selected.
+   * The Scene Actions lane is shown only while legend is enabled.
+   */
+  legendActions: HotspotActionGraph;
   /** Named colored frames on the Scene Actions canvas. */
   actionFences: ActionFence[];
   model: SceneModelState;

@@ -4,6 +4,7 @@ import type {
   HotspotType,
 } from "@/lib/editor/types/hotspot";
 import type { HotspotBlock } from "@/lib/editor/types/hotspot-block";
+import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
 
 export type ActionNodeType =
   | "openModal"
@@ -405,6 +406,7 @@ export type ActionEdge = {
    * Optional source handle id for multi-output nodes.
    * Open Modal uses `"onOpen"` / `"onClose"`.
    * Toggle custom-menu triggers use `"normal"` / `"toggled"`.
+   * Legend trigger uses `"legend:<categoryId>"` (All is `"legend:__all__"`).
    * Post Message receive events use `"pm:<eventId>"`.
    * Switch cases use `"case:<id>"`; Switch fallback is `"default"`.
    * Omitted = default output.
@@ -596,6 +598,28 @@ export function mirrorReceiveEventLegacyFields(
 /** Source handle ids on a toggle-enabled custom menu-button trigger. */
 export const MENU_BUTTON_HANDLE_NORMAL = "normal";
 export const MENU_BUTTON_HANDLE_TOGGLED = "toggled";
+
+/** Source handle prefix for the Legend trigger (`legend:<categoryId>`). */
+export const LEGEND_HANDLE_PREFIX = "legend:";
+
+export function legendCategoryHandleId(categoryId: string): string {
+  return `${LEGEND_HANDLE_PREFIX}${categoryId}`;
+}
+
+export function isLegendCategoryHandle(
+  handle: string | null | undefined,
+): handle is string {
+  return typeof handle === "string" && handle.startsWith(LEGEND_HANDLE_PREFIX);
+}
+
+export function legendCategoryIdFromHandle(
+  handle: string | null | undefined,
+): string | null {
+  if (!isLegendCategoryHandle(handle)) return null;
+  return handle.slice(LEGEND_HANDLE_PREFIX.length);
+}
+
+export const LEGEND_HANDLE_ALL = legendCategoryHandleId(LEGEND_CATEGORY_ALL);
 
 /**
  * Trigger ("hotspot clicked") is implicit; its id is TRIGGER_NODE_ID

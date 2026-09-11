@@ -8,7 +8,7 @@ import {
   createEmptyActionGraph,
   getActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
-import { updateNodeData } from "@/lib/editor/actions/graph-ops";
+import { pruneLegendTriggerEdges, updateNodeData } from "@/lib/editor/actions/graph-ops";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import {
   syncActiveSceneSettings,
@@ -30,12 +30,15 @@ export const APP_START_OWNER_ID = -1;
 export const SCENE_START_OWNER_ID = -2;
 /** Editor-only lane for a Spawn template click graph. Not persisted. */
 export const SPAWN_CLICK_LANE_OWNER_ID = -3;
+/** Synthetic lane owner for the active scene's Legend category graph. */
+export const LEGEND_OWNER_ID = -4;
 
 export type ActionTriggerKind =
   | "hotspot"
   | "sceneStart"
   | "appStart"
-  | "menuButton";
+  | "menuButton"
+  | "legend";
 
 export const START_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "goToScene",
@@ -121,13 +124,21 @@ export function isStartOwnerId(ownerId: number): boolean {
   return ownerId === APP_START_OWNER_ID || ownerId === SCENE_START_OWNER_ID;
 }
 
-/** App Start, Scene Start, or a custom bottom-menu button. */
+export function isLegendOwnerId(ownerId: number): boolean {
+  return ownerId === LEGEND_OWNER_ID;
+}
+
+/** App Start, Scene Start, Legend, or a custom bottom-menu button. */
 export function isStartOrMenuOwnerId(ownerId: number): boolean {
-  return isStartOwnerId(ownerId) || isMenuButtonOwnerId(ownerId);
+  return (
+    isStartOwnerId(ownerId) ||
+    isLegendOwnerId(ownerId) ||
+    isMenuButtonOwnerId(ownerId)
+  );
 }
 
 /**
- * Same lane, or pull a node into App Start / Scene Start / a menu button.
+ * Same lane, or pull a node into App Start / Scene Start / Legend / a menu button.
  * Hotspot lanes stay isolated from each other.
  */
 export function canConnectActionOwners(
@@ -141,6 +152,7 @@ export function canConnectActionOwners(
 export function triggerKindForOwner(ownerId: number): ActionTriggerKind {
   if (ownerId === APP_START_OWNER_ID) return "appStart";
   if (ownerId === SCENE_START_OWNER_ID) return "sceneStart";
+  if (ownerId === LEGEND_OWNER_ID) return "legend";
   if (isMenuButtonOwnerId(ownerId)) return "menuButton";
   return "hotspot";
 }
@@ -151,6 +163,11 @@ export function ownerKeyFor(ownerId: number, sceneId?: string): string {
     const id =
       sceneId ?? useScenesStore.getState().activeSceneId ?? "unknown";
     return `sceneStart:${id}`;
+  }
+  if (ownerId === LEGEND_OWNER_ID) {
+    const id =
+      sceneId ?? useScenesStore.getState().activeSceneId ?? "unknown";
+    return `legend:${id}`;
   }
   if (isMenuButtonOwnerId(ownerId)) {
     const id =
@@ -210,6 +227,17 @@ export function getOwnedActionGraph(ownerId: number): HotspotActionGraph | null 
     if (!scene) return createEmptyActionGraph();
     return cloneActionGraph(scene.startActions ?? createEmptyActionGraph());
   }
+  if (ownerId === LEGEND_OWNER_ID) {
+    const state = useScenesStore.getState();
+    const scene =
+      state.scenes.find((s) => s.id === state.activeSceneId) ?? state.scenes[0];
+    if (!scene) return createEmptyActionGraph();
+    const categories = useSettingsStore.getState().legendCategories;
+    return pruneLegendTriggerEdges(
+      cloneActionGraph(scene.legendActions ?? createEmptyActionGraph()),
+      categories.map((category) => category.id),
+    );
+  }
   if (isMenuButtonOwnerId(ownerId)) {
     const button = findCustomMenuButtonByOwnerId(ownerId);
     if (!button) return null;
@@ -250,6 +278,10 @@ export function setOwnedActionGraph(
   }
   if (ownerId === SCENE_START_OWNER_ID) {
     useScenesStore.getState().setActiveSceneStartActions(graph);
+    return;
+  }
+  if (ownerId === LEGEND_OWNER_ID) {
+    useScenesStore.getState().setActiveSceneLegendActions(graph);
     return;
   }
   if (isMenuButtonOwnerId(ownerId)) {
@@ -342,6 +374,15 @@ export function findHttpRequestNodeById(nodeId: string): {
     };
   }
 
+  const legendNode = scene?.legendActions?.nodes.find((n) => n.id === nodeId);
+  if (legendNode && isFieldSourceNode(legendNode)) {
+    return {
+      ownerId: LEGEND_OWNER_ID,
+      node: legendNode,
+      sampleJson: fieldSourceJson(legendNode),
+    };
+  }
+
   for (const entry of listCustomMenuButtonGraphs()) {
     const node = entry.graph.nodes.find((n) => n.id === nodeId);
     if (node && isFieldSourceNode(node)) {
@@ -385,6 +426,16 @@ export function findActionNodeOwner(nodeId: string): {
       ownerId: SCENE_START_OWNER_ID,
       graph: sceneGraph,
       node: sceneNode,
+    };
+  }
+
+  const legendGraph = scene?.legendActions ?? createEmptyActionGraph();
+  const legendNode = legendGraph.nodes.find((n) => n.id === nodeId);
+  if (legendNode) {
+    return {
+      ownerId: LEGEND_OWNER_ID,
+      graph: legendGraph,
+      node: legendNode,
     };
   }
 

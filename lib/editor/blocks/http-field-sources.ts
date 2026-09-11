@@ -1,5 +1,6 @@
 import {
   APP_START_OWNER_ID,
+  LEGEND_OWNER_ID,
   SCENE_START_OWNER_ID,
   getOwnedActionGraph,
 } from "@/lib/editor/actions/action-owners";
@@ -163,6 +164,12 @@ function collectGraphFieldSources(sources: HttpFieldSource[]): void {
       "Scene Start",
       sources,
     );
+    collectFromGraph(
+      scene.legendActions ?? createEmptyActionGraph(),
+      LEGEND_OWNER_ID,
+      "Legend",
+      sources,
+    );
   }
 
   for (const hotspot of useEditorStore.getState().hotspots) {
@@ -208,7 +215,8 @@ export function listHttpFieldSources(hotspot: Hotspot): HttpFieldSource[] {
     return (
       source.ownerId === hotspot.id ||
       source.ownerId === APP_START_OWNER_ID ||
-      source.ownerId === SCENE_START_OWNER_ID
+      source.ownerId === SCENE_START_OWNER_ID ||
+      source.ownerId === LEGEND_OWNER_ID
     );
   });
 }

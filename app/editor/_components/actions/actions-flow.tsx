@@ -53,6 +53,7 @@ import {
   MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES,
   SCENE_START_GRAPH_ALLOWED_NODE_TYPES,
   SCENE_START_OWNER_ID,
+  LEGEND_OWNER_ID,
   SPAWN_CLICK_LANE_OWNER_ID,
   START_GRAPH_ALLOWED_NODE_TYPES,
   canConnectActionOwners,
@@ -173,11 +174,17 @@ function canvasSessionKeyFor(
   hotspots: Hotspot[],
   includeStartGraphs: boolean,
   menuButtonOwnerIds: number[],
+  legendEnabled: boolean,
   isolatedKey?: string,
 ): string {
   if (isolatedKey) return isolatedKey;
   const owners = includeStartGraphs
-    ? ["app", "scene", ...menuButtonOwnerIds.map((id) => `m${id}`)]
+    ? [
+        "app",
+        "scene",
+        ...(legendEnabled ? ["legend"] : []),
+        ...menuButtonOwnerIds.map((id) => `m${id}`),
+      ]
     : [];
   for (const hotspot of hotspots) owners.push(`h${hotspot.id}`);
   return `${sceneId}:${owners.join(",")}`;
@@ -200,6 +207,8 @@ function ActionsFlowCanvas({
   const activeScene = useActiveScene();
   const appStartActions = useScenesStore((s) => s.appStartActions);
   const customMenuButtons = useSettingsStore((s) => s.customMenuButtons);
+  const legendEnabled = useSettingsStore((s) => s.legendEnabled);
+  const legendCategories = useSettingsStore((s) => s.legendCategories);
   const { screenToFlowPosition, getViewport } = useReactFlow();
   const flowRootRef = useRef<HTMLDivElement>(null);
   const [rawMenu, setRawMenu] = useState<ActionsContextMenuState | null>(null);
@@ -293,6 +302,17 @@ function ActionsFlowCanvas({
         triggerKind: "sceneStart",
         allowedNodeTypes: forScene(SCENE_START_GRAPH_ALLOWED_NODE_TYPES),
       });
+      if (legendEnabled) {
+        list.push({
+          ownerId: LEGEND_OWNER_ID,
+          title: "Legend",
+          graph:
+            getOwnedActionGraph(LEGEND_OWNER_ID) ?? createEmptyActionGraph(),
+          laneIndex: laneIndex++,
+          triggerKind: "legend",
+          allowedNodeTypes: forScene(SCENE_START_GRAPH_ALLOWED_NODE_TYPES),
+        });
+      }
       for (const button of customMenuButtons) {
         list.push({
           ownerId: button.ownerId,
@@ -321,7 +341,8 @@ function ActionsFlowCanvas({
 
     // Hotspot-only canvas uses the same lane Y as Scene Actions so fences
     // (stored in scene flow coords) line up with these nodes.
-    const sceneLaneBase = 2 + customMenuButtons.length;
+    const sceneLaneBase =
+      2 + (legendEnabled ? 1 : 0) + customMenuButtons.length;
     const sceneHotspots = activeScene.hotspots;
     for (const hotspot of hotspots) {
       const sceneIndex = sceneHotspots.findIndex((item) => item.id === hotspot.id);
@@ -340,12 +361,15 @@ function ActionsFlowCanvas({
     activeScene.hotspots,
     activeScene.name,
     activeScene.startActions,
+    activeScene.legendActions,
     activeScene.type,
     appStartActions,
     customMenuButtons,
     hotspots,
     includeStartGraphs,
     isolatedLane,
+    legendCategories,
+    legendEnabled,
   ]);
 
   const laneByOwnerId = useMemo(() => {
@@ -1247,11 +1271,13 @@ export function ActionsFlow({
   const [clipboard, setClipboard] = useState<ActionNode | null>(null);
   const activeScene = useActiveScene();
   const customMenuButtons = useSettingsStore((s) => s.customMenuButtons);
+  const legendEnabled = useSettingsStore((s) => s.legendEnabled);
   const canvasSessionKey = canvasSessionKeyFor(
     activeScene.id,
     hotspots,
     includeStartGraphs,
     customMenuButtons.map((button) => button.ownerId),
+    legendEnabled,
     isolatedLane?.fenceScopeKey,
   );
 

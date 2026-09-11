@@ -26,6 +26,9 @@ import {
   isPostMessageReceiveHandle,
   MENU_BUTTON_HANDLE_NORMAL,
   MENU_BUTTON_HANDLE_TOGGLED,
+  LEGEND_HANDLE_ALL,
+  isLegendCategoryHandle,
+  legendCategoryHandleId,
   mirrorReceiveEventLegacyFields,
   normalizeReceiveEvents,
   OPEN_MODAL_HANDLE_ON_CLOSE,
@@ -75,6 +78,9 @@ export function edgeMatchesHandle(
     return (
       edgeHandle === MENU_BUTTON_HANDLE_NORMAL || edgeHandle === null
     );
+  }
+  if (handle === LEGEND_HANDLE_ALL) {
+    return edgeHandle === LEGEND_HANDLE_ALL || edgeHandle === null;
   }
   if (graph && isPostMessageReceiveHandle(handle)) {
     const first = firstReceiveHandleForSource(graph, edge.source);
@@ -223,6 +229,12 @@ export function connect(
       return (
         normalizeSourceHandle(edge.sourceHandle) !== MENU_BUTTON_HANDLE_TOGGLED
       );
+    }
+    if (handle === LEGEND_HANDLE_ALL) {
+      return !edgeMatchesHandle(edge, LEGEND_HANDLE_ALL, graph);
+    }
+    if (isLegendCategoryHandle(handle)) {
+      return normalizeSourceHandle(edge.sourceHandle) !== handle;
     }
     if (firstReceiveHandle && handle === firstReceiveHandle) {
       return !edgeMatchesHandle(edge, firstReceiveHandle, graph);
@@ -813,6 +825,25 @@ export function moveTrigger(
   return {
     ...graph,
     trigger: { position: { ...position } },
+  };
+}
+
+/** Drop Legend trigger edges whose category no longer exists. */
+export function pruneLegendTriggerEdges(
+  graph: HotspotActionGraph,
+  categoryIds: string[],
+): HotspotActionGraph {
+  const allowed = new Set(categoryIds.map(legendCategoryHandleId));
+  allowed.add(LEGEND_HANDLE_ALL);
+  return {
+    ...graph,
+    edges: graph.edges.filter((edge) => {
+      if (edge.source !== TRIGGER_NODE_ID) return true;
+      const handle = normalizeSourceHandle(edge.sourceHandle);
+      if (handle === null) return true;
+      if (!isLegendCategoryHandle(handle)) return true;
+      return allowed.has(handle);
+    }),
   };
 }
 

@@ -5,6 +5,7 @@ import {
   findNodeInSpawnTemplateActions,
   isHotspotOwnerId,
   isMenuButtonOwnerId,
+  LEGEND_OWNER_ID,
   SPAWN_CLICK_LANE_OWNER_ID,
 } from "@/lib/editor/actions/action-owners";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -42,11 +43,13 @@ export function useOwnedActionNode(
     ) {
       return null;
     }
+    const scene = s.scenes.find((sc) => sc.id === s.activeSceneId);
     const parent =
       spawnClick.ownerId === APP_START_OWNER_ID
         ? s.appStartActions
-        : (s.scenes.find((sc) => sc.id === s.activeSceneId)?.startActions ??
-          null);
+        : spawnClick.ownerId === LEGEND_OWNER_ID
+          ? (scene?.legendActions ?? null)
+          : (scene?.startActions ?? null);
     return findNodeInSpawnTemplateActions(
       parent,
       spawnClick.nodeId,
@@ -86,11 +89,13 @@ export function useOwnedActionNode(
     ) {
       return null;
     }
+    const scene = s.scenes.find((sc) => sc.id === s.activeSceneId);
     const graph =
       ownerId === APP_START_OWNER_ID
         ? s.appStartActions
-        : (s.scenes.find((sc) => sc.id === s.activeSceneId)?.startActions ??
-          null);
+        : ownerId === LEGEND_OWNER_ID
+          ? (scene?.legendActions ?? null)
+          : (scene?.startActions ?? null);
     return graph?.nodes.find((n) => n.id === nodeId) ?? null;
   });
 

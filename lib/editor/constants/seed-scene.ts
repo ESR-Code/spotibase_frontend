@@ -71,6 +71,7 @@ export function createScene(partial: {
   hotspots?: Hotspot[];
   nextHotspotId?: number;
   startActions?: HotspotActionGraph;
+  legendActions?: HotspotActionGraph;
   actionFences?: ActionFence[];
   model?: SceneModelState;
   settings?: EditorSettings;
@@ -91,6 +92,9 @@ export function createScene(partial: {
       partial.nextHotspotId ?? (hotspots.length > 0 ? hotspots.length + 1 : 1),
     startActions: cloneActionGraph(
       partial.startActions ?? createEmptyActionGraph(),
+    ),
+    legendActions: cloneActionGraph(
+      partial.legendActions ?? createEmptyActionGraph(),
     ),
     actionFences: cloneActionFences(partial.actionFences),
     model: partial.model ?? createEmptyModelState(partial.type),

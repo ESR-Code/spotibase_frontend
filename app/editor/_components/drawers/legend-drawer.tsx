@@ -9,6 +9,7 @@ import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { HotspotMarkerIcon } from "@/app/editor/_components/ui/hotspot-marker-icon";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { runHotspotActions } from "@/lib/editor/actions/run-hotspot-actions";
+import { selectLegendFilterCategory } from "@/lib/editor/actions/legend-category";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { usePreviewHotspots } from "@/lib/editor/state/preview-hotspots";
 import {
@@ -65,7 +66,6 @@ export function LegendDrawer() {
   const open = useUIStore((s) => s.legendDrawerOpen);
   const setOpen = useUIStore((s) => s.setLegendDrawerOpen);
   const category = useUIStore((s) => s.legendFilterCategory);
-  const setCategory = useUIStore((s) => s.setLegendFilterCategory);
 
   const [search, setSearch] = useState("");
 
@@ -122,7 +122,7 @@ export function LegendDrawer() {
           value={category}
           categories={legendCategories}
           includeAllOption
-          onChange={setCategory}
+          onChange={selectLegendFilterCategory}
         />
         <div>
           <FieldLabel>Search</FieldLabel>

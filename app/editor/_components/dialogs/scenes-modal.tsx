@@ -52,6 +52,9 @@ function syncActiveSceneSnapshot() {
             startActions: cloneActionGraph(
               scene.startActions ?? createEmptyActionGraph(),
             ),
+            legendActions: cloneActionGraph(
+              scene.legendActions ?? createEmptyActionGraph(),
+            ),
             nextHotspotId: editor.nextId,
             model: {
               name: model.modelName,

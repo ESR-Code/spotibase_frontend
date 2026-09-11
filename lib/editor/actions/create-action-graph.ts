@@ -442,7 +442,14 @@ export function createEmptyActionGraph(): HotspotActionGraph {
 export function cloneActionGraph(
   graph: HotspotActionGraph,
 ): HotspotActionGraph {
-  const nodes = graph.nodes.map((node): ActionNode => {
+  const droppedIds = new Set(
+    graph.nodes
+      .filter((node) => (node as { type: string }).type === "legendCategory")
+      .map((node) => node.id),
+  );
+  const nodes = graph.nodes
+    .filter((node) => !droppedIds.has(node.id))
+    .map((node): ActionNode => {
       if (node.type === "goToScene") {
         return {
           id: node.id,
@@ -693,7 +700,12 @@ export function cloneActionGraph(
   return {
     trigger: { position: { ...graph.trigger.position } },
     nodes,
-    edges: graph.edges.map((edge) => {
+    edges: graph.edges
+      .filter(
+        (edge) =>
+          !droppedIds.has(edge.source) && !droppedIds.has(edge.target),
+      )
+      .map((edge) => {
       const sourceNode = nodes.find((node) => node.id === edge.source);
       const unlabeled =
         edge.sourceHandle == null || edge.sourceHandle === "";
