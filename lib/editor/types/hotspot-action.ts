@@ -367,6 +367,31 @@ export function clampPlayAnimationSpeed(value: unknown): number {
   );
 }
 
+/** Seconds on the clip timeline. Missing / invalid → fallback. */
+export function asPlayAnimationTime(value: unknown, fallback = 0): number {
+  const num = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(num)) return fallback;
+  return Math.max(0, num);
+}
+
+/**
+ * Clamp a start/end window to the clip. `endTime` 0 or omitted means
+ * the clip duration (legacy nodes and “use full clip”).
+ */
+export function resolvePlayAnimationRange(
+  data: { startTime?: unknown; endTime?: unknown },
+  clipDuration: number,
+): { startTime: number; endTime: number } {
+  const duration = Math.max(0, clipDuration);
+  const start = Math.min(duration, asPlayAnimationTime(data.startTime, 0));
+  const rawEnd = asPlayAnimationTime(data.endTime, 0);
+  const end = rawEnd > start ? Math.min(duration, rawEnd) : duration;
+  if (end <= start) {
+    return { startTime: 0, endTime: duration };
+  }
+  return { startTime: start, endTime: end };
+}
+
 export type PlayAnimationActionNode = ActionNodeBase<
   "playAnimation",
   {
@@ -376,6 +401,13 @@ export type PlayAnimationActionNode = ActionNodeBase<
     inverse: boolean;
     /** Playback magnitude (0.25–4). Inverse does not change this value. */
     speed: number;
+    /** Inclusive start on the clip timeline, in seconds. Default 0. */
+    startTime: number;
+    /**
+     * Exclusive end on the clip timeline, in seconds.
+     * 0 means the clip duration (full clip / legacy nodes).
+     */
+    endTime: number;
   }
 >;
 

@@ -27,6 +27,7 @@ import type {
 } from "@/lib/editor/types/hotspot-action";
 import { HTTP_METHODS, TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
 import {
+  asPlayAnimationTime,
   clampPlayAnimationSpeed,
   clampSubscribeIntervalMs,
   PLAY_ANIMATION_SPEED_DEFAULT,
@@ -409,6 +410,8 @@ export function createActionNode(
           animationName: "",
           inverse: false,
           speed: PLAY_ANIMATION_SPEED_DEFAULT,
+          startTime: 0,
+          endTime: 0,
         },
       };
   }
@@ -687,6 +690,8 @@ export function cloneActionGraph(
                 : "",
             inverse: asBoolean(node.data.inverse, false),
             speed: clampPlayAnimationSpeed(node.data.speed),
+            startTime: asPlayAnimationTime(node.data.startTime, 0),
+            endTime: asPlayAnimationTime(node.data.endTime, 0),
           },
         };
       }

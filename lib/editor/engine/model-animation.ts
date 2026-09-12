@@ -4,6 +4,8 @@ export type PlaySubjectAnimationOpts = {
   animationName: string;
   inverse: boolean;
   speed: number;
+  startTime: number;
+  endTime: number;
 };
 
 export type PlaySubjectAnimationResult = "completed" | "cancelled";
@@ -82,15 +84,26 @@ export async function playSubjectAnimation(
   // PlayCanvas AnimComponentSystem only ticks layers when this is true.
   // layer.play() sets the controller flag, not the component flag.
   anim.playing = true;
-  if (opts.inverse) {
-    layer.activeStateCurrentTime = layer.activeStateDuration;
+
+  const clipDuration =
+    layer.activeStateDuration || binding.durationFor(opts.animationName);
+  const startTime = Math.min(Math.max(0, opts.startTime), clipDuration);
+  const endTime =
+    opts.endTime > startTime ? Math.min(opts.endTime, clipDuration) : clipDuration;
+  const span = endTime - startTime;
+  if (!(span > 0)) {
+    holdPoseAt(entity, startTime);
+    return token === generation ? "completed" : "cancelled";
   }
 
-  const duration = layer.activeStateDuration || binding.durationFor(opts.animationName);
-  if (!(duration > 0)) return token === generation ? "completed" : "cancelled";
+  layer.activeStateCurrentTime = opts.inverse ? endTime : startTime;
 
-  const waitMs = (duration / speed) * 1000;
-  return waitForPlayback(token, waitMs);
+  const waitMs = (span / speed) * 1000;
+  const result = await waitForPlayback(token, waitMs);
+  if (result === "completed" && token === generation) {
+    holdPoseAt(entity, opts.inverse ? startTime : endTime);
+  }
+  return result;
 }
 
 function pauseAnim(entity: Entity | null): void {
@@ -102,6 +115,17 @@ function pauseAnim(entity: Entity | null): void {
   if (!layer) return;
   layer.pause();
   layer.reset();
+}
+
+/** Stop advancing but keep the current clip pose at `time`. */
+function holdPoseAt(entity: Entity | null, time: number): void {
+  const anim = entity?.anim;
+  const layer = anim?.baseLayer;
+  if (!anim || !layer) return;
+  anim.playing = false;
+  anim.speed = 1;
+  layer.pause();
+  layer.activeStateCurrentTime = time;
 }
 
 function waitForPlayback(

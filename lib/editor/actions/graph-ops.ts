@@ -19,6 +19,7 @@ import type {
   SendPostMessageActionNode,
 } from "@/lib/editor/types/hotspot-action";
 import {
+  asPlayAnimationTime,
   clampPlayAnimationSpeed,
   clampSubscribeIntervalMs,
   createEmptyPostMessageReceiveEvent,
@@ -770,6 +771,12 @@ export function updateNodeData(
               Object.prototype.hasOwnProperty.call(patch, "speed")
                 ? clampPlayAnimationSpeed(patch.speed)
                 : node.data.speed,
+            startTime: Object.prototype.hasOwnProperty.call(patch, "startTime")
+              ? asPlayAnimationTime(patch.startTime, 0)
+              : (node.data.startTime ?? 0),
+            endTime: Object.prototype.hasOwnProperty.call(patch, "endTime")
+              ? asPlayAnimationTime(patch.endTime, 0)
+              : (node.data.endTime ?? 0),
           },
         };
       }

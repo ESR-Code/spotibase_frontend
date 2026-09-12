@@ -12,10 +12,12 @@ import type { ActionFlowNodeData } from "@/lib/editor/actions/flow-adapter";
 import { useModelStore } from "@/lib/editor/state/model-store";
 import { useActiveScene } from "@/lib/editor/state/scenes-store";
 import {
+  asPlayAnimationTime,
   clampPlayAnimationSpeed,
   PLAY_ANIMATION_SPEED_DEFAULT,
   PLAY_ANIMATION_SPEED_MAX,
   PLAY_ANIMATION_SPEED_MIN,
+  resolvePlayAnimationRange,
   type PlayAnimationActionNode,
 } from "@/lib/editor/types/hotspot-action";
 
@@ -25,7 +27,13 @@ const EMPTY_DATA: PlayAnimationActionNode["data"] = {
   animationName: "",
   inverse: false,
   speed: PLAY_ANIMATION_SPEED_DEFAULT,
+  startTime: 0,
+  endTime: 0,
 };
+
+function formatSeconds(value: number): string {
+  return value.toFixed(2).replace(/\.?0+$/, "") || "0";
+}
 
 export function PlayAnimationNode({
   data,
@@ -50,6 +58,11 @@ export function PlayAnimationNode({
       : "Select an animation";
   const selectedClip = clipOptions.find((clip) => clip.id === live.animationName);
   const speed = clampPlayAnimationSpeed(live.speed);
+  const clipDuration = selectedClip?.duration ?? 0;
+  const range = resolvePlayAnimationRange(live, clipDuration);
+  const trimmed =
+    clipDuration > 0 &&
+    (range.startTime > 0.001 || range.endTime < clipDuration - 0.001);
 
   const patch = (partial: Partial<PlayAnimationActionNode["data"]>) => {
     updateNodeData(ownerId, actionNodeId, partial);
@@ -59,6 +72,9 @@ export function PlayAnimationNode({
     ? null
     : [
         selectedClip.name,
+        trimmed
+          ? `${formatSeconds(range.startTime)}–${formatSeconds(range.endTime)}s`
+          : null,
         live.inverse ? "reverse" : null,
         speed !== 1 ? `${speed.toFixed(2).replace(/\.?0+$/, "")}×` : null,
       ]
@@ -104,7 +120,13 @@ export function PlayAnimationNode({
           disabled={!isModelScene || clipOptions.length === 0}
           onChange={(e) => {
             e.stopPropagation();
-            patch({ animationName: e.target.value });
+            const nextId = e.target.value;
+            const clip = clipOptions.find((item) => item.id === nextId);
+            patch({
+              animationName: nextId,
+              startTime: 0,
+              endTime: clip?.duration ?? 0,
+            });
           }}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
@@ -123,6 +145,64 @@ export function PlayAnimationNode({
           ))}
         </select>
       </label>
+
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <label className="block">
+          <span
+            className="mb-1 block text-[10px] font-semibold uppercase tracking-wider"
+            style={{ color: "var(--editor-muted-2)" }}
+          >
+            Start (s)
+          </span>
+          <input
+            className="editor-input nodrag nopan nowheel"
+            type="number"
+            min={0}
+            max={clipDuration || undefined}
+            step={0.01}
+            disabled={!selectedClip}
+            value={asPlayAnimationTime(live.startTime, 0)}
+            aria-label="Animation start time"
+            onChange={(e) =>
+              patch({ startTime: asPlayAnimationTime(e.target.value, 0) })
+            }
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </label>
+        <label className="block">
+          <span
+            className="mb-1 flex justify-between text-[10px] font-semibold uppercase tracking-wider"
+            style={{ color: "var(--editor-muted-2)" }}
+          >
+            <span>End (s)</span>
+            {clipDuration > 0 ? (
+              <span className="font-medium normal-case tracking-normal">
+                clip {formatSeconds(clipDuration)}s
+              </span>
+            ) : null}
+          </span>
+          <input
+            className="editor-input nodrag nopan nowheel"
+            type="number"
+            min={0}
+            max={clipDuration || undefined}
+            step={0.01}
+            disabled={!selectedClip}
+            value={
+              live.endTime > 0
+                ? asPlayAnimationTime(live.endTime, 0)
+                : clipDuration || 0
+            }
+            aria-label="Animation end time"
+            onChange={(e) =>
+              patch({ endTime: asPlayAnimationTime(e.target.value, 0) })
+            }
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </label>
+      </div>
 
       <div
         className="mt-2 nodrag nopan"

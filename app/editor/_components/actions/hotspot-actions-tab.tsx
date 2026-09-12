@@ -102,7 +102,10 @@ function actionNodeDetail(
     case "playAnimation": {
       const name = node.data.animationName.trim();
       if (!name) return "→ (no clip)";
+      const start = node.data.startTime ?? 0;
+      const end = node.data.endTime ?? 0;
       const extras = [
+        end > start ? `${start}–${end}s` : null,
         node.data.inverse ? "reverse" : null,
         node.data.speed !== 1 ? `${node.data.speed}×` : null,
       ].filter(Boolean);

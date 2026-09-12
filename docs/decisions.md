@@ -29,7 +29,7 @@ Only decisions that constrain how new work should be done.
 - **`run` returning `"stop"`** ends the primary walk (Open Modal branches, Subscribe poll, receive-mode Post Message, Switch/For Each tails, cancelled Animation playback).
 - **Legend trigger** is first-class like Scene Start: a scene-scoped graph (`legendActions`) whose canvas lane appears only while Enable legend is on. One source handle per category (plus All). `selectLegendFilterCategory` walks the matching handle; leaving Preview must not fire it. Keep the graph when legend is turned off so re-enabling restores wiring.
 - **Action fences are scene-wide** so hotspot and scene canvases share the same frames.
-- **Animation clips by name.** The Animation node plays named glTF clips from the loaded GLB, not Blender frame ranges. `run` waits until the clip completes before the next node; interrupt / leave Preview / subject replace cancels the wait (`"stop"`). Optional trim (start/end time on a named clip) is later, not a second mode.
+- **Animation clips by name.** The Animation node plays named glTF clips from the loaded GLB, not Blender frame ranges. Optional start/end seconds trim that clip (defaults to the clip’s own range). `run` waits until the window completes, then holds that pose; interrupt / leave Preview / subject replace cancels the wait (`"stop"`).
 
 ## Geo and coordinates
 
