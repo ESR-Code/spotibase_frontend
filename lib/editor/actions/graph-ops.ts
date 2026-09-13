@@ -22,6 +22,7 @@ import {
   asPlayAnimationTime,
   clampPlayAnimationSpeed,
   clampSubscribeIntervalMs,
+  clampWaitDurationSeconds,
   createEmptyPostMessageReceiveEvent,
   firstPostMessageReceiveHandleId,
   isPostMessageReceiveHandle,
@@ -777,6 +778,19 @@ export function updateNodeData(
             endTime: Object.prototype.hasOwnProperty.call(patch, "endTime")
               ? asPlayAnimationTime(patch.endTime, 0)
               : (node.data.endTime ?? 0),
+          },
+        };
+      }
+      if (node.type === "wait") {
+        return {
+          ...node,
+          data: {
+            durationSeconds: Object.prototype.hasOwnProperty.call(
+              patch,
+              "durationSeconds",
+            )
+              ? clampWaitDurationSeconds(patch.durationSeconds)
+              : node.data.durationSeconds,
           },
         };
       }

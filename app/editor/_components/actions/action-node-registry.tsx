@@ -19,6 +19,7 @@ import {
   Radio,
   Repeat,
   Shapes,
+  Timer,
   type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
@@ -40,6 +41,7 @@ import { ForEachNode } from "@/app/editor/_components/actions/for-each-node";
 import { SendPostMessageNode } from "@/app/editor/_components/actions/send-post-message-node";
 import { SpawnHotspotsNode } from "@/app/editor/_components/actions/spawn-hotspots-node";
 import { SwitchNode } from "@/app/editor/_components/actions/switch-node";
+import { WaitNode } from "@/app/editor/_components/actions/wait-node";
 import { ActionFenceNode } from "@/app/editor/_components/actions/action-fence-node";
 import {
   ACTION_NODE_META,
@@ -211,6 +213,14 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     menuGroup: "logic",
     Node: SwitchNode,
   },
+  wait: {
+    type: "wait",
+    meta: ACTION_NODE_META.wait,
+    icon: Timer,
+    accent: "#818cf8",
+    menuGroup: "logic",
+    Node: WaitNode,
+  },
 };
 
 export const ACTION_UI_MENU_ITEMS = Object.values(ACTION_UI_REGISTRY);
@@ -234,5 +244,6 @@ export const ACTION_FLOW_NODE_TYPES = {
   forEach: ForEachNode,
   spawnHotspots: SpawnHotspotsNode,
   switch: SwitchNode,
+  wait: WaitNode,
   [ACTION_FENCE_TYPE]: ActionFenceNode,
 };

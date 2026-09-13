@@ -67,6 +67,7 @@ import {
   applyPlayAnimation,
   validatePlayAnimationData,
 } from "@/lib/editor/actions/play-animation";
+import { applyWait, validateWaitData } from "@/lib/editor/actions/wait";
 import { transitionToScene } from "@/lib/editor/actions/transition-to-scene";
 import { openHotspotInPreview } from "@/lib/editor/preview/open-hotspot-in-preview";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -563,6 +564,20 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     run: async (node) => {
       if (node.type !== "playAnimation") return;
       return applyPlayAnimation(node.data);
+    },
+  },
+  wait: {
+    type: "wait",
+    label: "Wait",
+    description: "Pause the chain for a duration, then continue.",
+    createDefault: (position) => createActionNode("wait", position),
+    validate: (node) => {
+      if (node.type !== "wait") return null;
+      return validateWaitData(node.data);
+    },
+    run: async (node) => {
+      if (node.type !== "wait") return;
+      return applyWait(node.data);
     },
   },
 };

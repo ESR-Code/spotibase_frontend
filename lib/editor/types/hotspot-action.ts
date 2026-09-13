@@ -23,7 +23,8 @@ export type ActionNodeType =
   | "forEach"
   | "spawnHotspots"
   | "switch"
-  | "playAnimation";
+  | "playAnimation"
+  | "wait";
 
 /** Relative destination from the selected target hotspot. */
 export type GoToHotspotOffset = "self" | "next" | "prev";
@@ -411,6 +412,27 @@ export type PlayAnimationActionNode = ActionNodeBase<
   }
 >;
 
+export const WAIT_DURATION_MIN_SECONDS = 0;
+export const WAIT_DURATION_MAX_SECONDS = 300;
+export const WAIT_DURATION_DEFAULT_SECONDS = 1;
+
+export function clampWaitDurationSeconds(value: unknown): number {
+  const num = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(num)) return WAIT_DURATION_DEFAULT_SECONDS;
+  return Math.min(
+    WAIT_DURATION_MAX_SECONDS,
+    Math.max(WAIT_DURATION_MIN_SECONDS, num),
+  );
+}
+
+export type WaitActionNode = ActionNodeBase<
+  "wait",
+  {
+    /** Pause length in seconds before the chain continues. */
+    durationSeconds: number;
+  }
+>;
+
 export type ActionNode =
   | OpenModalActionNode
   | GoToSceneActionNode
@@ -428,7 +450,8 @@ export type ActionNode =
   | ForEachActionNode
   | SpawnHotspotsActionNode
   | SwitchActionNode
-  | PlayAnimationActionNode;
+  | PlayAnimationActionNode
+  | WaitActionNode;
 
 export type ActionEdge = {
   id: string;

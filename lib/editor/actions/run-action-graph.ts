@@ -24,6 +24,7 @@ import {
   clearPostMessageListeners,
   registerPostMessageReceive,
 } from "@/lib/editor/actions/send-post-message";
+import { cancelPendingWaits } from "@/lib/editor/actions/wait";
 import { useCustomMenuToggleStore } from "@/lib/editor/state/custom-menu-toggle-store";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { withActionItemScope } from "@/lib/editor/actions/interpolate-fields";
@@ -188,7 +189,8 @@ export async function runSceneStartActions(sceneId?: string) {
   const scene = state.scenes.find((s) => s.id === id);
   if (!scene) return;
 
-  // Replace scene-scoped receive listeners and polls when entering a scene.
+  // Replace scene-scoped receive listeners, polls, and waits when entering a scene.
+  cancelPendingWaits();
   clearPostMessageListeners("sceneStart:");
   const { clearSubscribePolls } = await import(
     "@/lib/editor/actions/subscribe"

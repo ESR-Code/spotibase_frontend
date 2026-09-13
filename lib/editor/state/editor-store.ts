@@ -6,6 +6,7 @@ import {
 import { clearHttpRequestCache } from "@/lib/editor/actions/http-request";
 import { clearPostMessageListeners } from "@/lib/editor/actions/send-post-message";
 import { clearSubscribePolls } from "@/lib/editor/actions/subscribe";
+import { cancelPendingWaits } from "@/lib/editor/actions/wait";
 import { cloneCameraResetPosition } from "@/lib/editor/constants/default-settings";
 import { DEMO_HOTSPOTS } from "@/lib/editor/constants/demo-hotspots";
 import {
@@ -130,6 +131,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             clearOpenModalCloseHandler();
           }
         });
+      } else {
+        cancelPendingWaits();
       }
       set({
         isPreview,
@@ -144,6 +147,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             void runPreviewStartActions();
           },
         );
+      } else {
+        cancelPendingWaits();
       }
       return;
     }
@@ -175,6 +180,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       previewDown: null,
       previewDragged: false,
     });
+    cancelPendingWaits();
   },
 
   addHotspot: (position, data = {}) => {

@@ -55,6 +55,7 @@ export const START_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "forEach",
   "spawnHotspots",
   "switch",
+  "wait",
 ];
 
 /** Scene Start can play the active 3D subject; App Start cannot. */
@@ -74,6 +75,7 @@ export const SCENE_START_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "forEach",
   "spawnHotspots",
   "switch",
+  "wait",
 ];
 
 export const HOTSPOT_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
@@ -94,6 +96,7 @@ export const HOTSPOT_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "forEach",
   "spawnHotspots",
   "switch",
+  "wait",
 ];
 
 /** Click triggers on the Preview bottom bar — no hotspot-owned Open Modal. */
@@ -114,6 +117,7 @@ export const MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "forEach",
   "spawnHotspots",
   "switch",
+  "wait",
 ];
 
 export function isHotspotOwnerId(ownerId: number): boolean {

@@ -24,6 +24,7 @@ import type {
   PostMessageTarget,
   SendPostMessageActionNode,
   PlayAnimationActionNode,
+  WaitActionNode,
 } from "@/lib/editor/types/hotspot-action";
 import { HTTP_METHODS, TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
 import {
@@ -32,6 +33,8 @@ import {
   clampSubscribeIntervalMs,
   PLAY_ANIMATION_SPEED_DEFAULT,
   SUBSCRIBE_INTERVAL_DEFAULT_MS,
+  WAIT_DURATION_DEFAULT_SECONDS,
+  clampWaitDurationSeconds,
 } from "@/lib/editor/types/hotspot-action";
 import {
   DEFAULT_MESH_STROKE_COLOR,
@@ -233,6 +236,10 @@ export function createActionNode(
   position: ActionNodeXY,
 ): PlayAnimationActionNode;
 export function createActionNode(
+  type: "wait",
+  position: ActionNodeXY,
+): WaitActionNode;
+export function createActionNode(
   type: ActionNodeType,
   position: ActionNodeXY,
 ): ActionNode;
@@ -413,6 +420,13 @@ export function createActionNode(
           startTime: 0,
           endTime: 0,
         },
+      };
+    case "wait":
+      return {
+        id: newActionId(),
+        type: "wait",
+        position: { ...position },
+        data: { durationSeconds: WAIT_DURATION_DEFAULT_SECONDS },
       };
   }
 }
@@ -692,6 +706,16 @@ export function cloneActionGraph(
             speed: clampPlayAnimationSpeed(node.data.speed),
             startTime: asPlayAnimationTime(node.data.startTime, 0),
             endTime: asPlayAnimationTime(node.data.endTime, 0),
+          },
+        };
+      }
+      if (node.type === "wait") {
+        return {
+          id: node.id,
+          type: "wait",
+          position: { ...node.position },
+          data: {
+            durationSeconds: clampWaitDurationSeconds(node.data.durationSeconds),
           },
         };
       }
