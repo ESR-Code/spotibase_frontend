@@ -84,7 +84,17 @@ export function HotspotTriggerNode({
               bg: "rgba(63,184,175,0.15)",
               border: "rgba(63,184,175,0.4)",
             }
-          : {
+          : kind === "contentButton"
+            ? {
+                label: data.hotspotTitle || "Action button",
+                subtitle: data.triggerSubtitle || "Hotspot content",
+                chip: "BTN",
+                Icon: MenuIcon,
+                color: "var(--editor-crimson)",
+                bg: "rgba(230,57,70,0.15)",
+                border: "rgba(230,57,70,0.4)",
+              }
+            : {
               label: "Hotspot clicked",
               subtitle: data.hotspotTitle,
               chip: `HSP-${String(data.hotspotId).padStart(3, "0")}`,

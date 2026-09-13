@@ -1,4 +1,12 @@
-export type HotspotBlockType = "heading" | "text" | "link" | "image" | "video";
+import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
+
+export type HotspotBlockType =
+  | "heading"
+  | "text"
+  | "link"
+  | "image"
+  | "video"
+  | "button";
 
 export type HotspotBlockBase = {
   id: string;
@@ -40,9 +48,22 @@ export type VideoBlock = HotspotBlockBase & {
   url: string;
 };
 
+export type ButtonBlock = HotspotBlockBase & {
+  type: "button";
+  /** Lucide icon name from CATEGORY_ICONS. */
+  icon: string;
+  label: string;
+  /** Optional italic line under the label in Preview. */
+  description: string;
+  /** Synthetic action-graph owner id (content-button range). */
+  ownerId: number;
+  actions: HotspotActionGraph;
+};
+
 export type HotspotBlock =
   | HeadingBlock
   | TextBlock
   | LinkBlock
   | ImageBlock
-  | VideoBlock;
+  | VideoBlock
+  | ButtonBlock;

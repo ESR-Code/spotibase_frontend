@@ -24,6 +24,7 @@ export type ActionFlowNodeData = {
   toggledIcon?: string;
   /** Dual normal/toggled outputs on the trigger. */
   toggleEnabled?: boolean;
+  triggerSubtitle?: string;
   allowedNodeTypes?: ActionNodeType[];
 };
 
@@ -36,6 +37,7 @@ export type ActionFlowEntry = {
   triggerIcon?: string;
   toggledIcon?: string;
   toggleEnabled?: boolean;
+  triggerSubtitle?: string;
   allowedNodeTypes: ActionNodeType[];
 };
 
@@ -68,6 +70,7 @@ export function toFlowGraph(entries: ActionFlowEntry[]): {
       triggerIcon,
       toggledIcon,
       toggleEnabled,
+      triggerSubtitle,
       allowedNodeTypes,
     } = entry;
     const yOffset = laneIndex * LANE_HEIGHT;
@@ -87,6 +90,7 @@ export function toFlowGraph(entries: ActionFlowEntry[]): {
         triggerIcon,
         toggledIcon,
         toggleEnabled,
+        triggerSubtitle,
         allowedNodeTypes,
       },
       deletable: false,

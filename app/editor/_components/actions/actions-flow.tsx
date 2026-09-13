@@ -86,6 +86,7 @@ import {
 } from "@/lib/editor/actions/graph-ops";
 import { canConnectToForEach } from "@/lib/editor/actions/for-each";
 import { filterActionNodeTypesForScene } from "@/lib/editor/actions/registry";
+import { listButtonBlocks } from "@/lib/editor/blocks/content-buttons";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import {
   createActionFence,
@@ -187,6 +188,9 @@ function canvasSessionKeyFor(
       ]
     : [];
   for (const hotspot of hotspots) owners.push(`h${hotspot.id}`);
+  for (const { block } of listButtonBlocks(hotspots)) {
+    owners.push(`b${block.ownerId}`);
+  }
   return `${sceneId}:${owners.join(",")}`;
 }
 
@@ -204,6 +208,7 @@ function ActionsFlowCanvas({
   onClipboardChange,
 }: ActionsFlowCanvasProps) {
   const updateHotspot = useEditorStore((s) => s.updateHotspot);
+  const liveHotspots = useEditorStore((s) => s.hotspots);
   const activeScene = useActiveScene();
   const appStartActions = useScenesStore((s) => s.appStartActions);
   const customMenuButtons = useSettingsStore((s) => s.customMenuButtons);
@@ -336,6 +341,18 @@ function ActionsFlowCanvas({
           allowedNodeTypes: forScene(HOTSPOT_GRAPH_ALLOWED_NODE_TYPES),
         });
       }
+      for (const { hotspot, block } of listButtonBlocks(hotspots)) {
+        list.push({
+          ownerId: block.ownerId,
+          title: block.label.trim() || "Action button",
+          graph: block.actions ?? createEmptyActionGraph(),
+          laneIndex: laneIndex++,
+          triggerKind: "contentButton",
+          triggerIcon: block.icon,
+          triggerSubtitle: hotspot.title,
+          allowedNodeTypes: forScene(MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES),
+        });
+      }
       return list;
     }
 
@@ -356,6 +373,21 @@ function ActionsFlowCanvas({
       });
     }
 
+    const shownHotspotIds = new Set(hotspots.map((hotspot) => hotspot.id));
+    listButtonBlocks(liveHotspots).forEach(({ hotspot, block }, globalIndex) => {
+      if (!shownHotspotIds.has(hotspot.id)) return;
+      list.push({
+        ownerId: block.ownerId,
+        title: block.label.trim() || "Action button",
+        graph: block.actions ?? createEmptyActionGraph(),
+        laneIndex: sceneLaneBase + liveHotspots.length + globalIndex,
+        triggerKind: "contentButton",
+        triggerIcon: block.icon,
+        triggerSubtitle: hotspot.title,
+        allowedNodeTypes: forScene(MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES),
+      });
+    });
+
     return list;
   }, [
     activeScene.hotspots,
@@ -370,6 +402,7 @@ function ActionsFlowCanvas({
     isolatedLane,
     legendCategories,
     legendEnabled,
+    liveHotspots,
   ]);
 
   const laneByOwnerId = useMemo(() => {
@@ -470,7 +503,8 @@ function ActionsFlowCanvas({
           data.hotspotTitle === entry.title &&
           data.triggerIcon === entry.triggerIcon &&
           data.toggledIcon === entry.toggledIcon &&
-          data.toggleEnabled === entry.toggleEnabled
+          data.toggleEnabled === entry.toggleEnabled &&
+          data.triggerSubtitle === entry.triggerSubtitle
         ) {
           return node;
         }
@@ -482,6 +516,7 @@ function ActionsFlowCanvas({
             triggerIcon: entry.triggerIcon,
             toggledIcon: entry.toggledIcon,
             toggleEnabled: entry.toggleEnabled,
+            triggerSubtitle: entry.triggerSubtitle,
           },
         };
       }),

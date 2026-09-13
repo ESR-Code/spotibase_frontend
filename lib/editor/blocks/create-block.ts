@@ -1,4 +1,8 @@
+import { createEmptyActionGraph } from "@/lib/editor/actions/create-action-graph";
+import { nextContentButtonOwnerId } from "@/lib/editor/blocks/content-buttons";
+import { DEFAULT_CATEGORY_ICON } from "@/lib/editor/theme/category-icons";
 import type {
+  ButtonBlock,
   HeadingBlock,
   HotspotBlock,
   HotspotBlockType,
@@ -20,6 +24,7 @@ export function createBlock(type: "text"): TextBlock;
 export function createBlock(type: "link"): LinkBlock;
 export function createBlock(type: "image"): ImageBlock;
 export function createBlock(type: "video"): VideoBlock;
+export function createBlock(type: "button"): ButtonBlock;
 export function createBlock(type: HotspotBlockType): HotspotBlock;
 export function createBlock(type: HotspotBlockType): HotspotBlock {
   switch (type) {
@@ -38,6 +43,16 @@ export function createBlock(type: HotspotBlockType): HotspotBlock {
       return { id: createBlockId(), type: "image", items: [] };
     case "video":
       return { id: createBlockId(), type: "video", url: "" };
+    case "button":
+      return {
+        id: createBlockId(),
+        type: "button",
+        icon: DEFAULT_CATEGORY_ICON,
+        label: "Action button",
+        description: "",
+        ownerId: nextContentButtonOwnerId(),
+        actions: createEmptyActionGraph(),
+      };
   }
 }
 

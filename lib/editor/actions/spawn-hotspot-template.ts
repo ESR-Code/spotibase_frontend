@@ -2,6 +2,8 @@ import {
   cloneActionGraph,
   createDefaultActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
+import { CONTENT_BUTTON_OWNER_BASE } from "@/lib/editor/blocks/content-button-ids";
+import { DEFAULT_CATEGORY_ICON } from "@/lib/editor/theme/category-icons";
 import {
   DEFAULT_HOTSPOT_SHAPE,
   normalizeHotspotShape,
@@ -101,6 +103,21 @@ function cloneSpawnBlocks(value: unknown): HotspotBlock[] {
         id,
         type: "video",
         url: typeof rec.url === "string" ? rec.url : "",
+      });
+      continue;
+    }
+    if (rec.type === "button") {
+      blocks.push({
+        id,
+        type: "button",
+        icon: typeof rec.icon === "string" ? rec.icon : DEFAULT_CATEGORY_ICON,
+        label: typeof rec.label === "string" ? rec.label : "Action button",
+        description: typeof rec.description === "string" ? rec.description : "",
+        ownerId:
+          typeof rec.ownerId === "number" && Number.isFinite(rec.ownerId)
+            ? rec.ownerId
+            : CONTENT_BUTTON_OWNER_BASE,
+        actions: asTemplateActions(rec.actions),
       });
     }
   }

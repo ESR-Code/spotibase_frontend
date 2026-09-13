@@ -22,8 +22,8 @@ Only decisions that constrain how new work should be done.
 ## Actions
 
 - **Registry-driven nodes.** Add a type to `hotspot-action.ts`, defaults in `create-action-graph.ts`, `validate`/`run` in `actions/registry.ts`, and a canvas component in `action-node-registry.tsx`. Gate with `sceneTypes` when the node is engine-specific.
-- **Owner allow-lists** (`action-owners.ts`) decide which nodes appear on hotspot vs start vs menu graphs. Start graphs cannot use Open Modal; menu graphs cannot either. Animation is on hotspot, Scene Start, Legend, and menu graphs — not App Start.
-- **Synthetic owner ids** (`−1`, `−2`, `−4`, `≤ −10000`) must never collide with hotspot ids, spawn-click (`−3`), or spawned ids (`SPAWNED_HOTSPOT_ID_BASE = 1_000_000`).
+- **Owner allow-lists** (`action-owners.ts`) decide which nodes appear on hotspot vs start vs menu / Action button graphs. Start graphs cannot use Open Modal; menu and Action button graphs cannot either. Animation is on hotspot, Scene Start, Legend, menu, and Action button graphs — not App Start.
+- **Synthetic owner ids** (`−1`, `−2`, `−4`, Action buttons `−5000…−9999`, `≤ −10000`) must never collide with hotspot ids, spawn-click (`−3`), or spawned ids (`SPAWNED_HOTSPOT_ID_BASE = 1_000_000`).
 - **Preview overlays, not authored edits**, for Enable/Disable, appearance changes, mesh highlight, spawned pins, and GLB animation playback. Leaving Preview resets them (including bind pose) and stops Subscribe polls / Post Message listeners / HTTP cache.
 - **Post Message receive tester** is editor-session state (`preview-post-message-test-store`), not `node.data`. It injects `{ event, data }` to the same window; do not rewrite send targets or fall back to `self` for outgoing sends. Do not show this HUD in a future viewer.
 - **`run` returning `"stop"`** ends the primary walk (Open Modal branches, Subscribe poll, receive-mode Post Message, Switch/For Each tails, cancelled Animation playback).
@@ -50,6 +50,7 @@ Only decisions that constrain how new work should be done.
 - **Registry-driven blocks.** Add a type to `hotspot-block.ts`, defaults in `create-block.ts`, non-UI meta in `blocks/registry.ts`, and Editor / Preview / `collapsedPreview` in `block-registry.tsx`. Do not add one-off `if (type === …)` checks in the blocks tab.
 - **Image blocks** store uploaded data URLs in `items[]` with an optional per-slide caption. One slide is a still; two or more render a Preview carousel (buttons only — do not bind ArrowLeft/Right, those switch hotspots in the marker dialog).
 - **Video blocks** accept YouTube or Vimeo URLs only. Parse to a privacy-aware embed (`youtube-nocookie` / `player.vimeo.com`). No file upload or direct `.mp4`.
+- **Action button blocks** store icon, label, optional italic description, a synthetic graph owner (`−5000…−9999`), and an action graph. They appear as first-class canvas lanes after hotspot click lanes (so fence Y for hotspots does not shift). Same allow-list as custom menu buttons (no Open Modal). Remint `ownerId` when duplicating a hotspot or spawning from a template; keep it on scene load.
 
 ## Persistence and IO
 

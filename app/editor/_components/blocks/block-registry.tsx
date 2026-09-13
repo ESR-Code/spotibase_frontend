@@ -6,9 +6,12 @@ import {
   Heading,
   ImageIcon,
   Type,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
+import { ButtonBlockEditor } from "@/app/editor/_components/blocks/button-block-editor";
+import { ButtonBlockPreview } from "@/app/editor/_components/blocks/button-block-preview";
 import { HeadingBlockEditor } from "@/app/editor/_components/blocks/heading-block-editor";
 import { HeadingBlockPreview } from "@/app/editor/_components/blocks/heading-block-preview";
 import { ImageBlockEditor } from "@/app/editor/_components/blocks/image-block-editor";
@@ -206,6 +209,34 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
     Preview: asBlockPreview(function VideoPreviewAdapter({ block }) {
       if (block.type !== "video") return null;
       return <VideoBlockPreview block={block} />;
+    }),
+  },
+  button: {
+    type: "button",
+    label: "Action button",
+    icon: Zap,
+    createDefault: () => createBlock("button"),
+    collapsedPreview: (block) =>
+      block.type === "button" ? block.label.trim() || "Action button" : "",
+    Editor: asBlockEditor(function ButtonEditorAdapter({
+      block,
+      onChange,
+      autoFocus,
+      fieldSources,
+    }) {
+      if (block.type !== "button") return null;
+      return (
+        <ButtonBlockEditor
+          block={block}
+          autoFocus={autoFocus}
+          fieldSources={fieldSources}
+          onChange={onChange}
+        />
+      );
+    }),
+    Preview: asBlockPreview(function ButtonPreviewAdapter({ block, hotspotId }) {
+      if (block.type !== "button") return null;
+      return <ButtonBlockPreview block={block} hotspotId={hotspotId} />;
     }),
   },
 };

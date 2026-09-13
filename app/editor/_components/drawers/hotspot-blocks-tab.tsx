@@ -197,8 +197,8 @@ export function HotspotBlocksTab({
       >
         <div className="mb-1 text-[12px] font-semibold">No blocks yet</div>
         <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
-          Add a heading, text, link, image, or video block to build hotspot
-          content.
+          Add a heading, text, link, image, video, or action button block to
+          build hotspot content.
         </div>
       </div>
     ),

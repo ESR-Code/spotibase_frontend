@@ -6,6 +6,7 @@ import {
   patchOwnedActionNodeData,
   SCENE_START_OWNER_ID,
 } from "@/lib/editor/actions/action-owners";
+import { isButtonBlock } from "@/lib/editor/blocks/content-buttons";
 import { findCustomMenuButtonByOwnerId } from "@/lib/editor/actions/custom-menu-buttons";
 import {
   createEmptyActionGraph,
@@ -197,12 +198,31 @@ export async function runSceneStartActions(sceneId?: string) {
   );
   clearSubscribePolls("sceneStart:");
   clearSubscribePolls("menuButton:");
+  clearSubscribePolls("contentButton:");
   clearSubscribePolls("h:");
 
   await runActionGraph(scene.startActions ?? createEmptyActionGraph(), {
     hotspotId: null,
     ownerId: SCENE_START_OWNER_ID,
     ownerKey: ownerKeyFor(SCENE_START_OWNER_ID, id),
+  });
+}
+
+export async function runContentButtonActions(
+  ownerId: number,
+  hotspotId: number,
+) {
+  const { findHotspot } = await import("@/lib/editor/state/preview-hotspots");
+  const hotspot = findHotspot(hotspotId);
+  const block = hotspot?.blocks.find(
+    (item) => isButtonBlock(item) && item.ownerId === ownerId,
+  );
+  if (!block || !isButtonBlock(block)) return;
+
+  await runActionGraph(block.actions, {
+    hotspotId,
+    ownerId,
+    ownerKey: ownerKeyFor(ownerId),
   });
 }
 

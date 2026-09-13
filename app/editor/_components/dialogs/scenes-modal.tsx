@@ -11,6 +11,7 @@ import {
   createDefaultActionGraph,
   createEmptyActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
+import { cloneHotspotBlocks } from "@/lib/editor/blocks/content-buttons";
 import { cloneCameraResetPosition } from "@/lib/editor/constants/default-settings";
 import { cloneGeoReference } from "@/lib/editor/types/geo-reference";
 import { getSceneType, listSceneTypes } from "@/lib/editor/scene-types/registry";
@@ -42,7 +43,7 @@ function syncActiveSceneSnapshot() {
             hotspots: editor.hotspots.map((h) => ({
               ...h,
               position: { ...h.position },
-              blocks: [...h.blocks],
+              blocks: cloneHotspotBlocks(h.blocks),
               customCameraEnabled: h.customCameraEnabled ?? false,
               customCamera: cloneCameraResetPosition(h.customCamera ?? null),
               actions: h.actions

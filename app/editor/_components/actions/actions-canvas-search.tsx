@@ -78,6 +78,19 @@ function hitsFromEntries(entries: ActionFlowEntry[]): SearchHit[] {
         border: "rgba(63,184,175,0.4)",
       };
     }
+    if (entry.triggerKind === "contentButton") {
+      return {
+        flowId: flowIdValue,
+        title: entry.title || "Action button",
+        subtitle: entry.triggerSubtitle || "Hotspot content",
+        chip: "BTN",
+        haystack: `action button content ${entry.title} ${entry.triggerSubtitle ?? ""}`,
+        Icon: getCategoryLucideIcon(entry.triggerIcon ?? "Star"),
+        color: "var(--editor-crimson)",
+        bg: "rgba(230,57,70,0.15)",
+        border: "rgba(230,57,70,0.4)",
+      };
+    }
     const chip = `HSP-${String(entry.ownerId).padStart(3, "0")}`;
     return {
       flowId: flowIdValue,

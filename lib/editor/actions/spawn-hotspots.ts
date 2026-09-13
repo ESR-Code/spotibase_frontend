@@ -10,6 +10,7 @@ import {
   peekActionItemScope,
 } from "@/lib/editor/actions/interpolate-fields";
 import { cloneActionGraph, createDefaultActionGraph } from "@/lib/editor/actions/create-action-graph";
+import { nextContentButtonOwnerId } from "@/lib/editor/blocks/content-buttons";
 import { geoToScene } from "@/lib/editor/coords/scene-coords";
 import { createHotspotData } from "@/lib/editor/state/editor-store";
 import { findHotspotIndex } from "@/lib/editor/state/preview-hotspots";
@@ -62,6 +63,17 @@ function interpolateBlocks(blocks: HotspotBlock[]): HotspotBlock[] {
       return {
         ...block,
         url: interpolatePlainText(block.url),
+      };
+    }
+    if (block.type === "button") {
+      return {
+        ...block,
+        label: interpolatePlainText(block.label),
+        description: interpolatePlainText(block.description),
+        ownerId: nextContentButtonOwnerId(),
+        actions: cloneActionGraph(
+          block.actions ?? createDefaultActionGraph(),
+        ),
       };
     }
     return {

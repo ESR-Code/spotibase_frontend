@@ -7,6 +7,7 @@ import { clearHttpRequestCache } from "@/lib/editor/actions/http-request";
 import { clearPostMessageListeners } from "@/lib/editor/actions/send-post-message";
 import { clearSubscribePolls } from "@/lib/editor/actions/subscribe";
 import { cancelPendingWaits } from "@/lib/editor/actions/wait";
+import { cloneHotspotBlocks } from "@/lib/editor/blocks/content-buttons";
 import { cloneCameraResetPosition } from "@/lib/editor/constants/default-settings";
 import { DEMO_HOTSPOTS } from "@/lib/editor/constants/demo-hotspots";
 import {
@@ -82,7 +83,7 @@ export function createHotspotData(
     category: data.category ?? "",
     legendName: data.legendName ?? title,
     position,
-    blocks: data.blocks ?? [],
+    blocks: cloneHotspotBlocks(data.blocks ?? []),
     customCameraEnabled: data.customCameraEnabled ?? false,
     customCamera: cloneCameraResetPosition(data.customCamera ?? null),
     actions: data.actions
@@ -229,7 +230,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         y: position.y,
         z: position.z + 0.5,
       },
-      { ...rest, title, legendName: title },
+      {
+        ...rest,
+        title,
+        legendName: title,
+        blocks: cloneHotspotBlocks(source.blocks, true),
+      },
     );
   },
 
@@ -250,7 +256,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         shape: normalizeHotspotShape(h.shape),
         wick: h.wick ?? false,
         position: { ...h.position },
-        blocks: [...h.blocks],
+        blocks: cloneHotspotBlocks(h.blocks),
         enabled: h.enabled ?? true,
         customCameraEnabled: h.customCameraEnabled ?? false,
         customCamera: cloneCameraResetPosition(h.customCamera ?? null),

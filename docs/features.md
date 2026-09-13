@@ -26,7 +26,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 - Place, select, drag, duplicate, delete. Types, colors, styles (dot / number / icon / image / hidden), shapes (circle / square / rounded / diamond / pin), pulse, wick, enable flag.
 - 2D/3D: click a marker to open the Hotspot Editor; drag repositions without opening it.
 - Per-hotspot custom camera pose. Category + legend name.
-- Content blocks: heading, text, link, image (optional per-slide caption; 2+ images become a Preview carousel), video (YouTube / Vimeo embed). Token fields can insert HTTP / Post Message / For Each paths.
+- Content blocks: heading, text, link, image (optional per-slide caption; 2+ images become a Preview carousel), video (YouTube / Vimeo embed), action button (icon + label + optional italic description; Preview accent). Token fields can insert HTTP / Post Message / For Each paths.
 - Preview: hover tooltip, select label, open presentation, legend filter.
 
 
@@ -47,7 +47,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 ### Action graphs
 
-- Canvases: hotspot click, App Start, Scene Start, Legend (when enabled), custom menu buttons, Spawn template + nested click graph.
+- Canvases: hotspot click, App Start, Scene Start, Legend (when enabled), custom menu buttons, hotspot Action buttons, Spawn template + nested click graph.
 - Nodes: Open Modal, Go To Scene, Go To Hotspot, Open URL, Post Message (send/receive), HTTP Request, Subscribe, Enable/Disable, Enable/Disable Mesh, Highlight Mesh, Animation, Change Color / Icon / Number & Title, For Each, Spawn Hotspot, Switch, Wait.
 - Mesh nodes and Animation only on `model` scenes. Animation plays a named GLB clip in Preview (inverse, speed, optional start/end time; waits until the window finishes). Wait pauses the chain for a duration (seconds) then continues; leave Preview or scene switch cancels in-flight waits. Open Modal only from a hotspot click. Animation is not on App Start. Post Message receive only on App/Scene Start. Subscribe polls only in Preview. The Legend trigger appears on Scene Actions while Enable legend is on (handles for All + each category) and runs that chain when the Preview legend drawer selects it.
 - Post Message receive tester: opt-in **Test in Preview** on the node, then a bottom-right HUD injects `{ event, data }` into live listeners and logs the send. Editor-session only; not authored on the graph.
@@ -55,7 +55,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 - Spawn Hotspot from For Each items (xyz or lat/lon; lat/lon projects through geo reference on PlayCanvas). Replace-on-rerun. Template drawer + click-actions editor.
 - Action fences (named colored frames, scene-scoped).
 - Drag from a node handle onto empty canvas to add and connect a node.
-- Custom menu buttons with optional toggle (two outgoing chains).
+- Custom menu buttons with optional toggle (two outgoing chains). Action button blocks are first-class canvas lanes (same node allow-list as menu buttons — no Open Modal).
 
 
 

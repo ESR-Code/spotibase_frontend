@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { toast } from "sonner";
+import { cloneHotspotBlocks } from "@/lib/editor/blocks/content-buttons";
 import {
   cloneActionGraph,
   createDefaultActionGraph,
@@ -66,7 +67,7 @@ function snapshotCurrentIntoScene(scene: Scene): Scene {
       shape: h.shape ?? "circle",
       wick: h.wick ?? false,
       position: { ...h.position },
-      blocks: [...h.blocks],
+      blocks: cloneHotspotBlocks(h.blocks),
       enabled: h.enabled ?? true,
       customCameraEnabled: h.customCameraEnabled ?? false,
       customCamera: cloneCameraResetPosition(h.customCamera ?? null),
@@ -141,7 +142,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
       hotspots: SEED_SCENE.hotspots.map((h) => ({
         ...h,
         position: { ...h.position },
-        blocks: [...h.blocks],
+        blocks: cloneHotspotBlocks(h.blocks),
         enabled: h.enabled ?? true,
         customCameraEnabled: h.customCameraEnabled ?? false,
         customCamera: cloneCameraResetPosition(h.customCamera ?? null),

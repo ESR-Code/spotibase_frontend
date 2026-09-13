@@ -6,6 +6,10 @@ import {
 } from "@/lib/editor/actions/action-owners";
 import { listCustomMenuButtonGraphs } from "@/lib/editor/actions/custom-menu-buttons";
 import {
+  isButtonBlock,
+  listContentButtonGraphs,
+} from "@/lib/editor/blocks/content-buttons";
+import {
   createEmptyActionGraph,
   getActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
@@ -184,6 +188,10 @@ function collectGraphFieldSources(sources: HttpFieldSource[]): void {
   for (const entry of listCustomMenuButtonGraphs()) {
     collectFromGraph(entry.graph, entry.ownerId, entry.label, sources);
   }
+
+  for (const entry of listContentButtonGraphs()) {
+    collectFromGraph(entry.graph, entry.ownerId, entry.label, sources);
+  }
 }
 
 /**
@@ -210,13 +218,17 @@ export function listAllFieldSources(excludeNodeId?: string): HttpFieldSource[] {
 }
 
 export function listHttpFieldSources(hotspot: Hotspot): HttpFieldSource[] {
+  const buttonOwnerIds = new Set(
+    hotspot.blocks.filter(isButtonBlock).map((block) => block.ownerId),
+  );
   return listAllFieldSources().filter((source) => {
     // Keep hotspot-local sources plus start-graph sources (same as before).
     return (
       source.ownerId === hotspot.id ||
       source.ownerId === APP_START_OWNER_ID ||
       source.ownerId === SCENE_START_OWNER_ID ||
-      source.ownerId === LEGEND_OWNER_ID
+      source.ownerId === LEGEND_OWNER_ID ||
+      buttonOwnerIds.has(source.ownerId)
     );
   });
 }

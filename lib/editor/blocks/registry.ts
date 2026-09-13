@@ -35,6 +35,11 @@ export const BLOCK_TYPE_META: Record<
     label: "Video",
     createDefault: () => createBlock("video"),
   },
+  button: {
+    type: "button",
+    label: "Action button",
+    createDefault: () => createBlock("button"),
+  },
 };
 
 export const BLOCK_TYPE_LIST = Object.values(BLOCK_TYPE_META);

@@ -4166,4 +4166,37 @@
   border-radius: 8px;
 }
 
+.editor-root .editor-content-button {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
+  max-width: 100%;
+  white-space: normal;
+  height: auto;
+  min-height: 36px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.editor-root .editor-content-button-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.editor-root .editor-content-button-label {
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.editor-root .editor-content-button-desc {
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.35;
+  opacity: 0.88;
+}
+
 

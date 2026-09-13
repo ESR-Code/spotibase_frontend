@@ -1,4 +1,9 @@
 import {
+  findContentButtonByOwnerId,
+  isContentButtonOwnerId,
+  listContentButtonGraphs,
+} from "@/lib/editor/blocks/content-buttons";
+import {
   findCustomMenuButtonByOwnerId,
   isMenuButtonOwnerId,
   listCustomMenuButtonGraphs,
@@ -23,6 +28,7 @@ import type {
 } from "@/lib/editor/types/hotspot-action";
 
 export { isMenuButtonOwnerId } from "@/lib/editor/actions/custom-menu-buttons";
+export { isContentButtonOwnerId } from "@/lib/editor/blocks/content-buttons";
 
 /** Synthetic lane owner for the project-wide App Start graph. */
 export const APP_START_OWNER_ID = -1;
@@ -38,6 +44,7 @@ export type ActionTriggerKind =
   | "sceneStart"
   | "appStart"
   | "menuButton"
+  | "contentButton"
   | "legend";
 
 export const START_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
@@ -137,7 +144,8 @@ export function isStartOrMenuOwnerId(ownerId: number): boolean {
   return (
     isStartOwnerId(ownerId) ||
     isLegendOwnerId(ownerId) ||
-    isMenuButtonOwnerId(ownerId)
+    isMenuButtonOwnerId(ownerId) ||
+    isContentButtonOwnerId(ownerId)
   );
 }
 
@@ -158,6 +166,7 @@ export function triggerKindForOwner(ownerId: number): ActionTriggerKind {
   if (ownerId === SCENE_START_OWNER_ID) return "sceneStart";
   if (ownerId === LEGEND_OWNER_ID) return "legend";
   if (isMenuButtonOwnerId(ownerId)) return "menuButton";
+  if (isContentButtonOwnerId(ownerId)) return "contentButton";
   return "hotspot";
 }
 
@@ -177,6 +186,11 @@ export function ownerKeyFor(ownerId: number, sceneId?: string): string {
     const id =
       sceneId ?? useScenesStore.getState().activeSceneId ?? "unknown";
     return `menuButton:${id}:${ownerId}`;
+  }
+  if (isContentButtonOwnerId(ownerId)) {
+    const id =
+      sceneId ?? useScenesStore.getState().activeSceneId ?? "unknown";
+    return `contentButton:${id}:${ownerId}`;
   }
   return `h:${ownerId}`;
 }
@@ -247,6 +261,11 @@ export function getOwnedActionGraph(ownerId: number): HotspotActionGraph | null 
     if (!button) return null;
     return cloneActionGraph(button.actions);
   }
+  if (isContentButtonOwnerId(ownerId)) {
+    const match = findContentButtonByOwnerId(ownerId);
+    if (!match) return null;
+    return cloneActionGraph(match.block.actions);
+  }
   const hotspot = useEditorStore
     .getState()
     .hotspots.find((h) => h.id === ownerId);
@@ -297,6 +316,22 @@ export function setOwnedActionGraph(
     );
     useSettingsStore.getState().setSettings({ customMenuButtons: next });
     syncActiveSceneSettings();
+    return;
+  }
+  if (isContentButtonOwnerId(ownerId)) {
+    const match = findContentButtonByOwnerId(ownerId);
+    if (!match) return;
+    const authored = useEditorStore
+      .getState()
+      .hotspots.find((hotspot) => hotspot.id === match.hotspot.id);
+    if (!authored) return;
+    useEditorStore.getState().updateHotspot(authored.id, {
+      blocks: authored.blocks.map((block) =>
+        block.type === "button" && block.ownerId === ownerId
+          ? { ...block, actions: cloneActionGraph(graph) }
+          : block,
+      ),
+    });
     return;
   }
   useEditorStore.getState().updateHotspot(ownerId, { actions: graph });
@@ -398,6 +433,17 @@ export function findHttpRequestNodeById(nodeId: string): {
     }
   }
 
+  for (const entry of listContentButtonGraphs()) {
+    const node = entry.graph.nodes.find((n) => n.id === nodeId);
+    if (node && isFieldSourceNode(node)) {
+      return {
+        ownerId: entry.ownerId,
+        node,
+        sampleJson: fieldSourceJson(node),
+      };
+    }
+  }
+
   return null;
 }
 
@@ -444,6 +490,13 @@ export function findActionNodeOwner(nodeId: string): {
   }
 
   for (const entry of listCustomMenuButtonGraphs()) {
+    const node = entry.graph.nodes.find((n) => n.id === nodeId);
+    if (node) {
+      return { ownerId: entry.ownerId, graph: entry.graph, node };
+    }
+  }
+
+  for (const entry of listContentButtonGraphs()) {
     const node = entry.graph.nodes.find((n) => n.id === nodeId);
     if (node) {
       return { ownerId: entry.ownerId, graph: entry.graph, node };
