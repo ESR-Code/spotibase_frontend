@@ -1,4 +1,4 @@
-export type HotspotBlockType = "heading" | "text" | "link";
+export type HotspotBlockType = "heading" | "text" | "link" | "image" | "video";
 
 export type HotspotBlockBase = {
   id: string;
@@ -22,4 +22,27 @@ export type LinkBlock = HotspotBlockBase & {
   url: string;
 };
 
-export type HotspotBlock = HeadingBlock | TextBlock | LinkBlock;
+/** One slide in an image block. Caption is optional. */
+export type ImageBlockItem = {
+  id: string;
+  src: string;
+  caption: string;
+};
+
+export type ImageBlock = HotspotBlockBase & {
+  type: "image";
+  items: ImageBlockItem[];
+};
+
+export type VideoBlock = HotspotBlockBase & {
+  type: "video";
+  /** YouTube or Vimeo URL. Uploads are not supported. */
+  url: string;
+};
+
+export type HotspotBlock =
+  | HeadingBlock
+  | TextBlock
+  | LinkBlock
+  | ImageBlock
+  | VideoBlock;

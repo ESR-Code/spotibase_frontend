@@ -26,7 +26,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 - Place, select, drag, duplicate, delete. Types, colors, styles (dot / number / icon / image / hidden), shapes (circle / square / rounded / diamond / pin), pulse, wick, enable flag.
 - 2D/3D: click a marker to open the Hotspot Editor; drag repositions without opening it.
 - Per-hotspot custom camera pose. Category + legend name.
-- Content blocks: heading, text, link. Token fields can insert HTTP / Post Message / For Each paths.
+- Content blocks: heading, text, link, image (optional per-slide caption; 2+ images become a Preview carousel), video (YouTube / Vimeo embed). Token fields can insert HTTP / Post Message / For Each paths.
 - Preview: hover tooltip, select label, open presentation, legend filter.
 
 
@@ -93,7 +93,7 @@ These are implied by gaps or comments, not a committed roadmap.
 
 - Save / load (or full project import-export) covering scenes, graphs, subjects, layers, and geo references.
 - Additional overlay kinds beyond image + shape.
-- Additional hotspot block types.
+- Additional hotspot block types beyond heading / text / link / image / video.
 - Wire or replace hotspot-only JSON export with a project-level format.
 - Replace the `/` starter page and default Next.js metadata with a product entry.
 - Backend, auth, or multi-user hosting (none present).

@@ -25,6 +25,16 @@ export const BLOCK_TYPE_META: Record<
     label: "Link",
     createDefault: () => createBlock("link"),
   },
+  image: {
+    type: "image",
+    label: "Image",
+    createDefault: () => createBlock("image"),
+  },
+  video: {
+    type: "video",
+    label: "Video",
+    createDefault: () => createBlock("video"),
+  },
 };
 
 export const BLOCK_TYPE_LIST = Object.values(BLOCK_TYPE_META);

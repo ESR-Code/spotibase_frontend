@@ -2896,6 +2896,19 @@
   z-index: 96;
 }
 
+.editor-root .editor-add-block-menu {
+  position: fixed;
+  z-index: 96;
+  min-width: 160px;
+  overflow: hidden;
+  border-radius: 8px;
+  padding: 4px 0;
+  border: 1px solid var(--editor-line);
+  background: rgba(17, 30, 54, 0.98);
+  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px);
+}
+
 .editor-root .editor-http-headers-add {
   display: inline-flex;
   align-items: center;
@@ -4092,6 +4105,65 @@
 
 .editor-root .editor-pm-test-log pre {
   max-height: 4.5rem;
+}
+
+.editor-root .editor-image-block-frame,
+.editor-root .editor-video-block {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 10px;
+  background: rgba(11, 20, 36, 0.55);
+  border: 1px solid var(--editor-line-soft, rgba(255, 255, 255, 0.08));
+}
+
+.editor-root .editor-image-block-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.editor-root .editor-image-block-caption {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--editor-muted);
+}
+
+.editor-root .editor-image-block-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.editor-root .editor-image-block-count {
+  font-size: 11px;
+  color: var(--editor-muted-2);
+}
+
+.editor-root .editor-video-block-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.editor-root .editor-video-block-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--editor-muted-2);
+}
+
+.editor-root .editor-marker-infobox .editor-image-block-frame,
+.editor-root .editor-marker-infobox .editor-video-block {
+  border-radius: 8px;
 }
 
 

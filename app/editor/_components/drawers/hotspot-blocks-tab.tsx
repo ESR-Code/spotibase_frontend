@@ -17,7 +17,6 @@ import {
   listHttpFieldSources,
   type HttpFieldSource,
 } from "@/lib/editor/blocks/http-field-sources";
-import { richTextToPlainPreview } from "@/lib/editor/blocks/rich-text";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
@@ -198,7 +197,8 @@ export function HotspotBlocksTab({
       >
         <div className="mb-1 text-[12px] font-semibold">No blocks yet</div>
         <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
-          Add a heading, text, or link block to build hotspot content.
+          Add a heading, text, link, image, or video block to build hotspot
+          content.
         </div>
       </div>
     ),
@@ -242,12 +242,7 @@ export function HotspotBlocksTab({
             const collapsed = collapsedIds.has(block.id);
             const isDragging = draggingId === block.id;
             const isOver = overId === block.id && draggingId !== block.id;
-            const preview =
-              block.type === "text"
-                ? richTextToPlainPreview(block.content)
-                : block.type === "link"
-                  ? block.label.trim() || block.url.trim() || "Empty link"
-                  : block.content.trim() || "Empty heading";
+            const preview = def.collapsedPreview(block);
 
             return (
               <div

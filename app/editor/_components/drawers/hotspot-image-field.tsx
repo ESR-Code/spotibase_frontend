@@ -4,10 +4,12 @@ import { ImageIcon, Upload, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import {
+  HOTSPOT_IMAGE_ACCEPT,
+  ImageFileReadError,
+  readImageFileAsDataUrl,
+} from "@/lib/editor/io/read-image-data-url";
 import { cn } from "@/lib/utils";
-
-const MAX_BYTES = 2.5 * 1024 * 1024;
-const ACCEPT = "image/png,image/jpeg,image/webp,image/svg+xml,image/gif";
 
 type HotspotImageFieldProps = {
   value: string;
@@ -50,27 +52,26 @@ export function HotspotImageField({
           {uploadLabel}
           <input
             type="file"
-            accept={ACCEPT}
+            accept={HOTSPOT_IMAGE_ACCEPT}
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
               e.target.value = "";
               if (!file) return;
-              if (!file.type.startsWith("image/")) {
-                toast.error("Please choose an image file");
-                return;
-              }
-              if (file.size > MAX_BYTES) {
-                toast.error(sizeErrorMessage);
-                return;
-              }
-              const reader = new FileReader();
-              reader.onload = () => {
-                onChange(String(reader.result ?? ""));
-                toast.success(successMessage);
-              };
-              reader.onerror = () => toast.error("Could not read image file");
-              reader.readAsDataURL(file);
+              void readImageFileAsDataUrl(file)
+                .then((dataUrl) => {
+                  onChange(dataUrl);
+                  toast.success(successMessage);
+                })
+                .catch((error) => {
+                  const fallback =
+                    error instanceof ImageFileReadError
+                      ? error.message
+                      : "Could not read image file";
+                  toast.error(
+                    fallback.includes("2.5 MB") ? sizeErrorMessage : fallback,
+                  );
+                });
             }}
           />
         </label>

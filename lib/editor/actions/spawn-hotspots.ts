@@ -49,6 +49,21 @@ function interpolateBlocks(blocks: HotspotBlock[]): HotspotBlock[] {
         url: interpolatePlainText(block.url),
       };
     }
+    if (block.type === "image") {
+      return {
+        ...block,
+        items: block.items.map((item) => ({
+          ...item,
+          caption: interpolatePlainText(item.caption),
+        })),
+      };
+    }
+    if (block.type === "video") {
+      return {
+        ...block,
+        url: interpolatePlainText(block.url),
+      };
+    }
     return {
       ...block,
       content: interpolateRichTextHtml(block.content),

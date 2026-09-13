@@ -45,6 +45,12 @@ Only decisions that constrain how new work should be done.
 - MapLibre workers are copied into `public/` on `postinstall` and served with a JavaScript `Content-Type` (module workers).
 - On geo scenes the PlayCanvas layer stays mounted but hidden so the engine is not torn down every switch.
 
+## Hotspot content blocks
+
+- **Registry-driven blocks.** Add a type to `hotspot-block.ts`, defaults in `create-block.ts`, non-UI meta in `blocks/registry.ts`, and Editor / Preview / `collapsedPreview` in `block-registry.tsx`. Do not add one-off `if (type === …)` checks in the blocks tab.
+- **Image blocks** store uploaded data URLs in `items[]` with an optional per-slide caption. One slide is a still; two or more render a Preview carousel (buttons only — do not bind ArrowLeft/Right, those switch hotspots in the marker dialog).
+- **Video blocks** accept YouTube or Vimeo URLs only. Parse to a privacy-aware embed (`youtube-nocookie` / `player.vimeo.com`). No file upload or direct `.mp4`.
+
 ## Persistence and IO
 
 - **Session-only.** No localStorage/IndexedDB project save. Do not assume refresh keeps work.

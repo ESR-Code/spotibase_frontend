@@ -74,6 +74,34 @@ function cloneSpawnBlocks(value: unknown): HotspotBlock[] {
         label: typeof rec.label === "string" ? rec.label : "",
         url: typeof rec.url === "string" ? rec.url : "",
       });
+      continue;
+    }
+    if (rec.type === "image") {
+      const items = Array.isArray(rec.items)
+        ? rec.items.flatMap((rawItem) => {
+            if (!rawItem || typeof rawItem !== "object") return [];
+            const item = rawItem as Record<string, unknown>;
+            const itemId = typeof item.id === "string" ? item.id : "";
+            const src = typeof item.src === "string" ? item.src : "";
+            if (!itemId || !src) return [];
+            return [
+              {
+                id: itemId,
+                src,
+                caption: typeof item.caption === "string" ? item.caption : "",
+              },
+            ];
+          })
+        : [];
+      blocks.push({ id, type: "image", items });
+      continue;
+    }
+    if (rec.type === "video") {
+      blocks.push({
+        id,
+        type: "video",
+        url: typeof rec.url === "string" ? rec.url : "",
+      });
     }
   }
   return blocks;

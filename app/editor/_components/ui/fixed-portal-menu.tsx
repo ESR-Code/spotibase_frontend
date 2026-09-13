@@ -20,7 +20,7 @@ export function useFixedMenuPosition(
   triggerRef: RefObject<HTMLElement | null>,
   menuRef: RefObject<HTMLElement | null>,
   options?: {
-    align?: "left" | "right";
+    align?: "left" | "right" | "center";
     gap?: number;
   },
 ): FixedMenuPosition | null {
@@ -41,7 +41,12 @@ export function useFixedMenuPosition(
       const menu = menuRef.current;
       const width = menu?.offsetWidth || 260;
       const height = menu?.offsetHeight || 260;
-      let left = align === "right" ? rect.right - width : rect.left;
+      let left =
+        align === "right"
+          ? rect.right - width
+          : align === "center"
+            ? rect.left + rect.width / 2 - width / 2
+            : rect.left;
       left = Math.min(
         Math.max(12, left),
         Math.max(12, window.innerWidth - width - 12),
