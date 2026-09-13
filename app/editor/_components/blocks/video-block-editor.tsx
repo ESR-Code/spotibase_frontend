@@ -6,6 +6,7 @@ import {
   embedVideoUrlHasTokens,
   parseEmbedVideoUrl,
 } from "@/lib/editor/blocks/embed-video-url";
+import { useInterpolatedPlainText } from "@/lib/editor/blocks/use-interpolated-plain-text";
 import type { VideoBlock } from "@/lib/editor/types/hotspot-block";
 
 type VideoBlockEditorProps = {
@@ -22,20 +23,31 @@ export function VideoBlockEditor({
   fieldSources,
 }: VideoBlockEditorProps) {
   const trimmed = block.url.trim();
-  const parsed = parseEmbedVideoUrl(block.url);
+  const parsedRaw = parseEmbedVideoUrl(block.url);
   const hasTokens = embedVideoUrlHasTokens(block.url);
+  const resolvedUrl = useInterpolatedPlainText(block.url).trim();
+  const parsedResolved = hasTokens ? parseEmbedVideoUrl(resolvedUrl) : null;
 
   let hint = "YouTube or Vimeo link. Uploads are not supported.";
   let hintTone: "muted" | "ok" | "warn" = "muted";
   if (trimmed) {
-    if (parsed) {
+    if (parsedRaw) {
       hint =
-        parsed.provider === "youtube"
+        parsedRaw.provider === "youtube"
           ? "YouTube video — plays in Preview"
           : "Vimeo video — plays in Preview";
       hintTone = "ok";
+    } else if (hasTokens && parsedResolved) {
+      hint =
+        parsedResolved.provider === "youtube"
+          ? "YouTube video — plays in Preview"
+          : "Vimeo video — plays in Preview";
+      hintTone = "ok";
+    } else if (hasTokens && !resolvedUrl) {
+      hint = "Uses tokens — waiting for a YouTube or Vimeo URL";
     } else if (hasTokens) {
-      hint = "Uses tokens — the URL is checked in Preview";
+      hint = "Resolved URL is not a YouTube or Vimeo link";
+      hintTone = "warn";
     } else {
       hint = "Enter a YouTube or Vimeo URL";
       hintTone = "warn";
@@ -53,7 +65,6 @@ export function VideoBlockEditor({
         </span>
         <TokenField
           value={block.url}
-          type="url"
           placeholder="https://youtube.com/watch?v=… or vimeo.com/…"
           autoFocus={autoFocus}
           sources={fieldSources}
@@ -66,9 +77,7 @@ export function VideoBlockEditor({
           color:
             hintTone === "warn"
               ? "var(--editor-amber)"
-              : hintTone === "ok"
-                ? "var(--editor-muted)"
-                : "var(--editor-muted)",
+              : "var(--editor-muted)",
         }}
       >
         {hint}

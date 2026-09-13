@@ -4153,7 +4153,8 @@
   border: 0;
 }
 
-.editor-root .editor-video-block-empty {
+.editor-root .editor-video-block-empty,
+.editor-root .editor-image-block-empty {
   display: flex;
   align-items: center;
   gap: 8px;

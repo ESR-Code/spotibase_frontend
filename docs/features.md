@@ -26,7 +26,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 - Place, select, drag, duplicate, delete. Types, colors, styles (dot / number / icon / image / hidden), shapes (circle / square / rounded / diamond / pin), pulse, wick, enable flag.
 - 2D/3D: click a marker to open the Hotspot Editor; drag repositions without opening it.
 - Per-hotspot custom camera pose. Category + legend name.
-- Content blocks: heading, text, link, image (optional per-slide caption; 2+ images become a Preview carousel), video (YouTube / Vimeo embed), action button (icon + label + optional italic description; Preview accent). Token fields can insert HTTP / Post Message / For Each paths.
+- Content blocks: heading, text, link, image (upload or URL / token; optional per-slide caption; 2+ images become a Preview carousel), video (YouTube / Vimeo embed), action button (icon + label + optional italic description; Preview accent). Token fields can insert HTTP / Post Message / For Each paths.
 - Preview: hover tooltip, select label, open presentation, legend filter.
 
 

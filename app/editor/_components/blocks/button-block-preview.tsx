@@ -1,6 +1,7 @@
 "use client";
 
 import { runContentButtonActions } from "@/lib/editor/actions/run-action-graph";
+import { useInterpolatedPlainText } from "@/lib/editor/blocks/use-interpolated-plain-text";
 import { getCategoryLucideIcon } from "@/lib/editor/theme/category-icons";
 import type { ButtonBlock } from "@/lib/editor/types/hotspot-block";
 
@@ -13,8 +14,9 @@ export function ButtonBlockPreview({
   block,
   hotspotId,
 }: ButtonBlockPreviewProps) {
-  const label = block.label.trim() || "Action button";
-  const description = block.description.trim();
+  const label =
+    useInterpolatedPlainText(block.label).trim() || "Action button";
+  const description = useInterpolatedPlainText(block.description).trim();
   const Icon = getCategoryLucideIcon(block.icon);
 
   return (

@@ -48,9 +48,9 @@ Only decisions that constrain how new work should be done.
 ## Hotspot content blocks
 
 - **Registry-driven blocks.** Add a type to `hotspot-block.ts`, defaults in `create-block.ts`, non-UI meta in `blocks/registry.ts`, and Editor / Preview / `collapsedPreview` in `block-registry.tsx`. Do not add one-off `if (type === …)` checks in the blocks tab.
-- **Image blocks** store uploaded data URLs in `items[]` with an optional per-slide caption. One slide is a still; two or more render a Preview carousel (buttons only — do not bind ArrowLeft/Right, those switch hotspots in the marker dialog).
-- **Video blocks** accept YouTube or Vimeo URLs only. Parse to a privacy-aware embed (`youtube-nocookie` / `player.vimeo.com`). No file upload or direct `.mp4`.
-- **Action button blocks** store icon, label, optional italic description, a synthetic graph owner (`−5000…−9999`), and an action graph. They appear as first-class canvas lanes after hotspot click lanes (so fence Y for hotspots does not shift). Same allow-list as custom menu buttons (no Open Modal). Remint `ownerId` when duplicating a hotspot or spawning from a template; keep it on scene load.
+- **Image blocks** store slides in `items[]` (uploaded data URL or a URL / `{{token}}`) with an optional per-slide caption. Caption and URL fields persist tokens immediately (same insert control as other blocks). Preview and Spawn interpolate both `src` and `caption`. One slide is a still; two or more render a Preview carousel (buttons only — do not bind ArrowLeft/Right, those switch hotspots in the marker dialog).
+- **Video blocks** accept YouTube or Vimeo URLs only. Parse to a privacy-aware embed (`youtube-nocookie` / `player.vimeo.com`). No file upload or direct `.mp4`. Token URLs are interpolated, then checked as YouTube/Vimeo (editor hint + Preview iframe).
+- **Action button blocks** store icon, label, optional italic description, a synthetic graph owner (`−5000…−9999`), and an action graph. Preview interpolates label and description. They appear as first-class canvas lanes after hotspot click lanes (so fence Y for hotspots does not shift). Same allow-list as custom menu buttons (no Open Modal). Remint `ownerId` when duplicating a hotspot or spawning from a template; keep it on scene load.
 
 ## Persistence and IO
 

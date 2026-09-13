@@ -167,13 +167,23 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
       if (block.type !== "image") return "";
       const count = block.items.length;
       if (count === 0) return "No images";
-      return count === 1 ? "1 image" : `${count} images`;
+      if (count === 1) {
+        const src = block.items[0]?.src.trim() ?? "";
+        if (!src || src.startsWith("data:")) return "1 image";
+        return src;
+      }
+      return `${count} images`;
     },
-    Editor: asBlockEditor(function ImageEditorAdapter({ block, onChange }) {
+    Editor: asBlockEditor(function ImageEditorAdapter({
+      block,
+      onChange,
+      fieldSources,
+    }) {
       if (block.type !== "image") return null;
       return (
         <ImageBlockEditor
           block={block}
+          fieldSources={fieldSources}
           onChange={(patch) => onChange(patch)}
         />
       );

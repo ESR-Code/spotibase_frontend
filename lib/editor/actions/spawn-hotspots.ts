@@ -55,6 +55,7 @@ function interpolateBlocks(blocks: HotspotBlock[]): HotspotBlock[] {
         ...block,
         items: block.items.map((item) => ({
           ...item,
+          src: interpolatePlainText(item.src),
           caption: interpolatePlainText(item.caption),
         })),
       };

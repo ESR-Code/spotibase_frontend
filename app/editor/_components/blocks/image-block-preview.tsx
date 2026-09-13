@@ -1,13 +1,31 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
+import {
+  hasFieldTokens,
+  interpolatePlainText,
+} from "@/lib/editor/actions/interpolate-fields";
+import { useLiveFieldInterpolation } from "@/lib/editor/blocks/use-interpolated-plain-text";
 import type { ImageBlock } from "@/lib/editor/types/hotspot-block";
 
 type ImageBlockPreviewProps = {
   block: ImageBlock;
+  hotspotId?: number;
 };
+
+function isDisplayableSrc(src: string): boolean {
+  const value = src.trim();
+  if (!value || hasFieldTokens(value)) return false;
+  return (
+    value.startsWith("data:image/") ||
+    value.startsWith("blob:") ||
+    value.startsWith("//") ||
+    value.startsWith("/") ||
+    /^https?:\/\//i.test(value)
+  );
+}
 
 function SlideFigure({
   src,
@@ -31,7 +49,18 @@ function SlideFigure({
 }
 
 export function ImageBlockPreview({ block }: ImageBlockPreviewProps) {
-  const items = block.items.filter((item) => item.src.trim());
+  useLiveFieldInterpolation();
+
+  const items = block.items.flatMap((item) => {
+    const src = interpolatePlainText(item.src).trim();
+    const caption = interpolatePlainText(item.caption);
+    if (!isDisplayableSrc(src)) return [];
+    return [{ id: item.id, src, caption }];
+  });
+
+  const pendingToken = block.items.some(
+    (item) => hasFieldTokens(item.src) || hasFieldTokens(item.caption),
+  );
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -42,7 +71,15 @@ export function ImageBlockPreview({ block }: ImageBlockPreviewProps) {
     if (index >= items.length) setIndex(0);
   }, [index, items.length]);
 
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    if (!pendingToken) return null;
+    return (
+      <div className="editor-image-block-empty">
+        <ImageIcon className="h-4 w-4" />
+        Image (URL not resolved yet)
+      </div>
+    );
+  }
 
   if (items.length === 1) {
     return <SlideFigure src={items[0].src} caption={items[0].caption} />;
