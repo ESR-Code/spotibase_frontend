@@ -68,6 +68,68 @@ export function resetModelAnimation(): void {
   binding.restoreBindPose();
 }
 
+function resolveClipDuration(clipId: string): number {
+  const binding = bound;
+  const layer = binding?.getEntity()?.anim?.baseLayer;
+  const fromTrack = binding?.durationFor(clipId) ?? 0;
+  const fromLayer = layer?.activeStateDuration ?? 0;
+  const duration = fromTrack || fromLayer;
+  return Number.isFinite(duration) && duration > 0 ? duration : 0;
+}
+
+/** Hold a clip pose at `time` for editor scrubbing. Cancels graph waits. */
+export function seekEditorAnimation(clipId: string, time: number): void {
+  generation += 1;
+  const binding = bound;
+  const entity = binding?.getEntity() ?? null;
+  const anim = entity?.anim;
+  const layer = anim?.baseLayer;
+  if (!binding || !anim || !layer || !clipId) return;
+
+  const duration = resolveClipDuration(clipId);
+  const clamped = duration > 0 ? Math.min(Math.max(0, time), duration) : 0;
+
+  anim.speed = 1;
+  layer.play(clipId);
+  // Component flag must be true or the clip does not evaluate.
+  anim.playing = true;
+  layer.activeStateCurrentTime = clamped;
+  holdPoseAt(entity, clamped);
+}
+
+/** Play a clip at 1× from `fromTime` to the end. Cancels graph waits. */
+export function playEditorAnimation(clipId: string, fromTime: number): void {
+  const binding = bound;
+  const entity = binding?.getEntity() ?? null;
+  const anim = entity?.anim;
+  const layer = anim?.baseLayer;
+  if (!binding || !anim || !layer || !clipId) return;
+
+  const duration = resolveClipDuration(clipId);
+  const start = duration > 0 ? Math.min(Math.max(0, fromTime), duration) : 0;
+  if (!(duration > start)) {
+    seekEditorAnimation(clipId, duration);
+    return;
+  }
+
+  generation += 1;
+  anim.speed = 1;
+  layer.play(clipId);
+  anim.playing = true;
+  layer.activeStateCurrentTime = start;
+}
+
+/** Stop advancing and keep the current clip pose. Cancels graph waits. */
+export function pauseEditorAnimation(): void {
+  generation += 1;
+  holdPoseAt(bound?.getEntity() ?? null, readEditorAnimationTime());
+}
+
+export function readEditorAnimationTime(): number {
+  const time = bound?.getEntity()?.anim?.baseLayer?.activeStateCurrentTime;
+  return Number.isFinite(time) ? Math.max(0, time as number) : 0;
+}
+
 export async function playSubjectAnimation(
   opts: PlaySubjectAnimationOpts,
 ): Promise<PlaySubjectAnimationResult> {

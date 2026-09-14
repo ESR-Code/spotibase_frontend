@@ -20,6 +20,7 @@ import {
   type ModelRotation,
   useModelStore,
 } from "@/lib/editor/state/model-store";
+import { useEditorAnimPreviewStore } from "@/lib/editor/state/editor-anim-preview-store";
 import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import { sceneSubjectCache } from "@/lib/editor/state/scene-subject-cache";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
@@ -79,6 +80,7 @@ export function createModelManager(
   const clearAnimationBinding = () => {
     unbindModelAnimation();
     useModelStore.getState().setAnimations([]);
+    useEditorAnimPreviewStore.getState().reset(null);
   };
 
   const attachModelAnimations = (entity: Entity, resource: unknown) => {

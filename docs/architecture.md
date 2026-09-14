@@ -77,6 +77,8 @@ On scene switch / add, `scenes-store` snapshots live stores into the outgoing `S
 
 **Preview overlays** (cleared when leaving Preview): `preview-appearance-store`, `preview-visibility-store`, `preview-spawned-hotspots-store`, `preview-mesh-highlight-store`, `preview-post-message-test-store`. Authored hotspots stay unchanged.
 
+**Editor pose preview** (`editor-anim-preview-store`) is session chrome for the viewport clip transport. Not snapshotted; bind pose is restored on Preview toggle, scene switch, and subject replace.
+
 The Post Message receive tester HUD (`PostMessageReceiveTestSuite`) is editor chrome: opt-in keys live in the session store, not on the action node. It injects `{ event, data }` to the same window so live receive listeners run.
 
 **Project-wide chrome:** `general-settings-store` (Preview style tokens). Not per-scene.

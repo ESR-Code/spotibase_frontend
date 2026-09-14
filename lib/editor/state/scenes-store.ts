@@ -321,6 +321,11 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
         useCoordsInspectorStore.getState().reset();
       },
     );
+    void import("@/lib/editor/state/editor-anim-preview-store").then(
+      ({ useEditorAnimPreviewStore }) => {
+        useEditorAnimPreviewStore.getState().reset(null);
+      },
+    );
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(

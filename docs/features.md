@@ -9,6 +9,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 - `/editor` client app: header, mode toolbar (select / add / preview), outliner, viewport HUD, drawers, dialogs.
 - Keyboard: `V` select, `A` add, `P` preview, `Escape` / `Delete` for selection (ignored in text fields).
 - Loading overlay, engine error banner, scene-transition splash.
+- Model scenes with GLB clips: viewport clip transport (play / pause / scrub / reset) so authors can freeze a pose in Select/Add. Hidden in Preview; does not run the action graph.
 
 ### Scenes
 
@@ -49,7 +50,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 - Canvases: hotspot click, App Start, Scene Start, Legend (when enabled), custom menu buttons, hotspot Action buttons, Spawn template + nested click graph.
 - Nodes: Open Modal, Go To Scene, Go To Hotspot, Open URL, Post Message (send/receive), HTTP Request, Subscribe, Enable/Disable, Enable/Disable Mesh, Highlight Mesh, Animation, Change Color / Icon / Number & Title, For Each, Spawn Hotspot, Switch, Wait.
-- Mesh nodes and Animation only on `model` scenes. Animation plays a named GLB clip in Preview (inverse, speed, optional start/end time; waits until the window finishes). Wait pauses the chain for a duration (seconds) then continues; leave Preview or scene switch cancels in-flight waits. Open Modal only from a hotspot click. Animation is not on App Start. Post Message receive only on App/Scene Start. Subscribe polls only in Preview. The Legend trigger appears on Scene Actions while Enable legend is on (handles for All + each category) and runs that chain when the Preview legend drawer selects it.
+- Mesh nodes and Animation only on `model` scenes. Animation plays a named GLB clip in Preview (inverse, speed, optional start/end time; waits until the window finishes). The editor viewport transport can pose the same clips in Select/Add without running that graph. Wait pauses the chain for a duration (seconds) then continues; leave Preview or scene switch cancels in-flight waits. Open Modal only from a hotspot click. Animation is not on App Start. Post Message receive only on App/Scene Start. Subscribe polls only in Preview. The Legend trigger appears on Scene Actions while Enable legend is on (handles for All + each category) and runs that chain when the Preview legend drawer selects it.
 - Post Message receive tester: opt-in **Test in Preview** on the node, then a bottom-right HUD injects `{ event, data }` into live listeners and logs the send. Editor-session only; not authored on the graph.
 - HTTP cache-reuse in Preview. Subscribe skip-unchanged. For Each + Switch + field interpolation.
 - Spawn Hotspot from For Each items (xyz or lat/lon; lat/lon projects through geo reference on PlayCanvas). Replace-on-rerun. Template drawer + click-actions editor.

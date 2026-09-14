@@ -1473,6 +1473,37 @@
   margin: 0 4px;
 }
 
+.editor-root .editor-viewport-anim-transport {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 280px;
+  padding: 0 2px;
+}
+
+.editor-root .editor-viewport-anim-select {
+  width: auto;
+  max-width: 148px;
+  min-width: 96px;
+  padding: 5px 8px;
+  font-size: 11px;
+  border-radius: 7px;
+}
+
+.editor-root .editor-viewport-anim-slider {
+  width: 140px;
+  min-width: 96px;
+  flex: 1;
+}
+
+.editor-root .editor-viewport-anim-time {
+  min-width: 4.8em;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--editor-muted);
+  white-space: nowrap;
+}
+
 .editor-root .editor-empty-state {
   text-align: center;
   padding: 32px 16px;
