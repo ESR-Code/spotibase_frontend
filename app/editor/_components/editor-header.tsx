@@ -3,11 +3,13 @@
 import { PenTool } from "lucide-react";
 import { EditorChip } from "@/app/editor/_components/ui/editor-chip";
 import { ModeToolbar } from "@/app/editor/_components/toolbar/mode-toolbar";
+import { getSceneType } from "@/lib/editor/scene-types/registry";
 import { useActiveScene } from "@/lib/editor/state/scenes-store";
 import { PROJECT_NAME } from "@/lib/editor/theme/tokens";
 
 export function EditorHeader() {
   const activeScene = useActiveScene();
+  const sceneTypeLabel = getSceneType(activeScene.type).label;
 
   return (
     <header
@@ -16,21 +18,13 @@ export function EditorHeader() {
     >
       <div className="flex items-center gap-3">
         <div
-          className="relative flex h-9 w-9 items-center justify-center rounded-lg"
+          className="flex h-9 w-9 items-center justify-center rounded-lg"
           style={{
             background: "linear-gradient(135deg,#e63946,#7a1622)",
             boxShadow: "0 6px 20px -6px rgba(230,57,70,0.7)",
           }}
         >
           <PenTool className="h-4 w-4 text-white" />
-          <div
-            className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full"
-            style={{
-              background: "var(--editor-teal)",
-              boxShadow: "0 0 8px var(--editor-teal)",
-              border: "2px solid var(--editor-bg)",
-            }}
-          />
         </div>
         <div className="font-display text-[15px] font-bold leading-none">
           VectorForge
@@ -40,30 +34,18 @@ export function EditorHeader() {
       <div className="editor-vsep" />
 
       <div className="hidden items-center gap-3 md:flex">
-        <div>
-          <div
-            className="text-[10px] uppercase tracking-wider"
-            style={{ color: "var(--editor-muted-2)" }}
+        <div className="flex items-center gap-2 text-[13px] font-semibold">
+          <span className="truncate">{PROJECT_NAME}</span>
+          <span style={{ color: "var(--editor-muted-2)" }}>›</span>
+          <span className="truncate">{activeScene.name}</span>
+          <EditorChip
+            style={{
+              color: "var(--editor-teal)",
+              borderColor: "rgba(63,184,175,0.3)",
+            }}
           >
-            Project
-          </div>
-          <div className="flex items-center gap-2 text-[13px] font-semibold">
-            <span className="truncate">{PROJECT_NAME}</span>
-            <span style={{ color: "var(--editor-muted-2)" }}>›</span>
-            <span className="truncate">{activeScene.name}</span>
-            <EditorChip
-              style={{
-                color: "var(--editor-teal)",
-                borderColor: "rgba(63,184,175,0.3)",
-              }}
-            >
-              <span
-                className="inline-block h-1.5 w-1.5 rounded-full"
-                style={{ background: "var(--editor-teal)" }}
-              />
-              Live
-            </EditorChip>
-          </div>
+            {sceneTypeLabel}
+          </EditorChip>
         </div>
       </div>
 
