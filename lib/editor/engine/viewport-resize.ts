@@ -3,6 +3,15 @@ import type { Application } from "playcanvas";
 /** Trailing delay so animated layout (outliner width) settles before reallocating GPU buffers. */
 const RESIZE_DEBOUNCE_MS = 80;
 
+/** Cap retina backbuffer cost. `graphicsDevice.resizeCanvas` multiplies by maxPixelRatio. */
+export const MAX_PIXEL_RATIO = 1.5;
+
+export function applyMaxPixelRatio(app: Application) {
+  const dpr =
+    typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+  app.graphicsDevice.maxPixelRatio = Math.min(dpr, MAX_PIXEL_RATIO);
+}
+
 /**
  * Keep the WebGL backbuffer in sync with the CSS-sized canvas parent.
  *
@@ -46,6 +55,7 @@ export function bindViewportResize(
   // CSS owns display size; clear any inline sizes PlayCanvas may have set.
   canvas.style.width = "";
   canvas.style.height = "";
+  applyMaxPixelRatio(app);
   syncBackbuffer();
 
   const parent = canvas.parentElement;

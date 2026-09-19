@@ -54,7 +54,7 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
     color: hexToColor(pcModule, env.keyColor),
     intensity: env.keyIntensity,
     castShadows: true,
-    shadowResolution: 4096,
+    shadowResolution: 2048,
     shadowDistance: 32,
     shadowIntensity: env.shadowIntensity,
     shadowBias: 0.04,
@@ -68,14 +68,16 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
   applyDirectionalSpherical(keyLight, env.keyPitch, env.keyYaw, 16);
   app.root.addChild(keyLight);
 
+  let lastShadowDistance = -1;
+
   const fitKeyLightShadows = (cameraDistance: number) => {
     if (!keyLight.light) return;
     // Cover a bit past the orbit so the hard shadowDistance cutoff never
     // appears as a seam on the ground, while staying tight for texel density.
-    keyLight.light.shadowDistance = Math.min(
-      70,
-      Math.max(16, cameraDistance * 2.15 + 8),
-    );
+    const next = Math.min(70, Math.max(16, cameraDistance * 2.15 + 8));
+    if (Math.abs(next - lastShadowDistance) < 0.5) return;
+    lastShadowDistance = next;
+    keyLight.light.shadowDistance = next;
   };
 
   // Fill — cool bounce so dark sides stay readable

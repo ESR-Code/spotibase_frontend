@@ -44,9 +44,12 @@ Only decisions that constrain how new work should be done.
 ## Rendering details
 
 - PlayCanvas uses `FILLMODE_NONE` + manual resize (`viewport-resize.ts`) so CSS owns canvas size.
-- `preserveDrawingBuffer: true` so reset-position thumbnails can use `toDataURL`.
+- Backbuffer pixel ratio is capped at 1.5 (`MAX_PIXEL_RATIO` in `viewport-resize.ts`).
+- Viewport thumbnails call `app.render()` then `toDataURL` in the same turn; do not leave `preserveDrawingBuffer` on.
 - MapLibre workers are copied into `public/` on `postinstall` and served with a JavaScript `Content-Type` (module workers).
-- On geo scenes the PlayCanvas layer stays mounted but hidden so the engine is not torn down every switch.
+- On geo scenes the PlayCanvas layer stays mounted but hidden, and `autoRender` is turned off so the 3D loop does not keep drawing.
+- Model-scene key-light shadows are 2048² with two cascades. Skip `shadowDistance` writes unless the orbit distance changed.
+- 3D hotspot drag moves the live entity only; the authored position is committed on pointerup.
 
 ## Hotspot content blocks
 

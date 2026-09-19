@@ -62,6 +62,17 @@ export function createModelManager(
   let materialBaselines: MaterialBaseline[] = [];
   let ownedTexture: Texture | null = null;
   let meshEntities: CollectedModelMesh[] = [];
+  let containerAsset: InstanceType<typeof pcModule.Asset> | null = null;
+
+  const releaseContainerAsset = () => {
+    if (!containerAsset) return;
+    const asset = containerAsset;
+    containerAsset = null;
+    if (app.assets.get(asset.id)) {
+      app.assets.remove(asset);
+    }
+    asset.unload();
+  };
 
   const applyTransform = (scale: number, rotation: ModelRotation) => {
     modelRoot.setLocalScale(scale, scale, scale);
@@ -194,6 +205,7 @@ export function createModelManager(
 
   const loadDefaultImagePlaceholder = () => {
     clearChildren(modelRoot);
+    releaseContainerAsset();
     destroyOwnedTexture();
     materialBaselines = [];
     clearAnimationBinding();
@@ -228,8 +240,10 @@ export function createModelManager(
       return loadDefaultImagePlaceholder();
     }
 
-    destroyOwnedTexture();
     clearAnimationBinding();
+    clearChildren(modelRoot);
+    releaseContainerAsset();
+    destroyOwnedTexture();
     const entity = buildDefaultBox(app, pcModule, modelRoot);
     const { modelScale, modelRotation } = useModelStore.getState();
     applyTransform(modelScale, modelRotation);
@@ -257,19 +271,21 @@ export function createModelManager(
   ): Promise<Entity | null> => {
     const blob = new Blob([buffer], { type: "model/gltf-binary" });
     const url = URL.createObjectURL(blob);
+    let incoming: InstanceType<typeof pcModule.Asset> | null = null;
 
     try {
-      const asset = new pcModule.Asset(fileName, "container", { url });
-      app.assets.add(asset);
+      incoming = new pcModule.Asset(fileName, "container", { url });
+      app.assets.add(incoming);
 
       await new Promise<void>((resolve, reject) => {
-        asset.ready(() => resolve());
-        asset.on("error", (err: string) => reject(new Error(err)));
-        app.assets.load(asset);
+        incoming!.ready(() => resolve());
+        incoming!.on("error", (err: string) => reject(new Error(err)));
+        app.assets.load(incoming!);
       });
 
       clearAnimationBinding();
       clearChildren(modelRoot);
+      releaseContainerAsset();
       destroyOwnedTexture();
       materialBaselines = [];
       if (options.resetTransform) {
@@ -278,10 +294,11 @@ export function createModelManager(
         applyTransform(1, { x: 0, y: 0, z: 0 });
       }
 
-      const resource = asset.resource as {
+      const resource = incoming.resource as {
         instantiateRenderEntity: () => Entity;
         animations?: unknown;
       };
+      containerAsset = incoming;
       const entity = resource.instantiateRenderEntity();
       const { sizeLabel, triangles } = normalizeEntity(entity, pcModule);
       prepareImportedModelMaterials(entity, pcModule);
@@ -304,6 +321,12 @@ export function createModelManager(
 
       syncMeshCatalog();
       return entity;
+    } catch (error) {
+      if (incoming && incoming !== containerAsset) {
+        if (app.assets.get(incoming.id)) app.assets.remove(incoming);
+        incoming.unload();
+      }
+      throw error;
     } finally {
       URL.revokeObjectURL(url);
     }
@@ -326,6 +349,7 @@ export function createModelManager(
       );
 
       clearChildren(modelRoot);
+      releaseContainerAsset();
       destroyOwnedTexture();
       ownedTexture = texture;
       materialBaselines = [];
@@ -433,6 +457,7 @@ export function createModelManager(
   const unloadCurrent = () => {
     clearAnimationBinding();
     clearChildren(modelRoot);
+    releaseContainerAsset();
     destroyOwnedTexture();
     materialBaselines = [];
     modelRoot.setLocalScale(1, 1, 1);

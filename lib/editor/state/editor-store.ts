@@ -212,15 +212,40 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }));
   },
 
-  selectHotspot: (id) => set({ selectedId: id }),
+  selectHotspot: (id) => {
+    if (get().selectedId === id) return;
+    set({ selectedId: id });
+  },
 
-  setHoveredHotspot: (id) => set({ hoveredId: id }),
+  setHoveredHotspot: (id) => {
+    if (get().hoveredId === id) return;
+    set({ hoveredId: id });
+  },
 
-  setDraggingId: (id) => set({ draggingId: id }),
+  setDraggingId: (id) => {
+    if (get().draggingId === id) return;
+    set({ draggingId: id });
+  },
 
-  setPreviewDown: (value) => set({ previewDown: value }),
+  setPreviewDown: (value) => {
+    const prev = get().previewDown;
+    if (prev === value) return;
+    if (
+      prev &&
+      value &&
+      prev.x === value.x &&
+      prev.y === value.y &&
+      prev.id === value.id
+    ) {
+      return;
+    }
+    set({ previewDown: value });
+  },
 
-  setPreviewDragged: (value) => set({ previewDragged: value }),
+  setPreviewDragged: (value) => {
+    if (get().previewDragged === value) return;
+    set({ previewDragged: value });
+  },
 
   duplicateHotspot: (id) => {
     const source = get().hotspots.find((h) => h.id === id);

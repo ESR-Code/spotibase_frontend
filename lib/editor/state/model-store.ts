@@ -96,7 +96,12 @@ export const useModelStore = create<ModelState>((set) => ({
       modelRotation: { ...DEFAULT_MODEL_ROTATION },
     }),
   setWireframe: (wireframe) => set({ wireframe }),
-  setStats: (fps, triangleCount) => set({ fps, triangleCount }),
+  setStats: (fps, triangleCount) =>
+    set((state) =>
+      state.fps === fps && state.triangleCount === triangleCount
+        ? state
+        : { fps, triangleCount },
+    ),
   setEngineReady: (engineReady) => set({ engineReady }),
   setEngineError: (engineError) => set({ engineError }),
   setMeshes: (meshes) => set({ meshes }),

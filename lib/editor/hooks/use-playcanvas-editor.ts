@@ -117,6 +117,12 @@ export function usePlayCanvasEditor() {
           ? initialSceneId
           : null;
         let subjectLoadToken = 0;
+        let activeSceneType = initialType;
+
+        const setEngineActive = (active: boolean) => {
+          app.autoRender = active;
+          if (active) app.renderNextFrame = true;
+        };
 
         const loadPlayCanvasSubject = async (
           sceneId: string,
@@ -148,8 +154,10 @@ export function usePlayCanvasEditor() {
         applyScenePresentation(initialType);
         if (isPlayCanvasSceneType(initialType)) {
           await loadPlayCanvasSubject(initialSceneId, initialType);
+          setEngineActive(true);
         } else {
           models.loadDefault(initialType);
+          setEngineActive(false);
         }
         if (destroyed) {
           destroy();
@@ -248,11 +256,12 @@ export function usePlayCanvasEditor() {
         };
 
         const onUpdate = (dt: number) => {
+          if (!isPlayCanvasSceneType(activeSceneType)) return;
           cameraCtrl.update(dt);
           hotspotMgr.update(dt);
           meshHighlight.frameUpdate();
           projectOverlayMarkers();
-          if (getActiveSceneType() === "model") {
+          if (activeSceneType === "model") {
             scene.fitKeyLightShadows(cameraCtrl.getOrbitPose().distance);
           }
           frameCount += 1;
@@ -288,7 +297,13 @@ export function usePlayCanvasEditor() {
             scene.applyGridVisibility();
           }
         });
-        const unsubEditor = useEditorStore.subscribe(() => {
+        const unsubEditor = useEditorStore.subscribe((state, prev) => {
+          if (
+            state.hotspots === prev.hotspots &&
+            state.isPreview === prev.isPreview
+          ) {
+            return;
+          }
           hotspotMgr.syncFromStore();
         });
         const unsubAppearance = usePreviewAppearanceStore.subscribe(() => {
@@ -429,13 +444,16 @@ export function usePlayCanvasEditor() {
             .getState()
             .scenes.find((s) => s.id === sceneId);
           const sceneType = targetScene?.type ?? "model";
+          activeSceneType = sceneType;
 
           // Geo uses a different viewport. Keep the current PlayCanvas subject
           // so returning to this 2D/3D scene does not reload a placeholder.
           if (!isPlayCanvasSceneType(sceneType)) {
+            setEngineActive(false);
             return;
           }
 
+          setEngineActive(true);
           applyScenePresentation(sceneType);
 
           const sameSubject = loadedPlayCanvasSceneId === sceneId;

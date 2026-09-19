@@ -1,4 +1,5 @@
 import type { Application } from "playcanvas";
+import { applyMaxPixelRatio } from "@/lib/editor/engine/viewport-resize";
 
 export type PlayCanvasApp = {
   app: Application;
@@ -18,8 +19,7 @@ export async function createPlayCanvasAppAsync(
       antialias: true,
       alpha: true,
       powerPreference: "high-performance",
-      // Needed so set-reset-position can read a screenshot via toDataURL.
-      preserveDrawingBuffer: true,
+      // Screenshots call app.render() then toDataURL in the same turn.
     },
   });
 
@@ -30,6 +30,7 @@ export async function createPlayCanvasAppAsync(
   canvas.style.width = "";
   canvas.style.height = "";
   app.setCanvasResolution(pc.RESOLUTION_AUTO);
+  applyMaxPixelRatio(app);
   app.start();
 
   const destroy = () => {

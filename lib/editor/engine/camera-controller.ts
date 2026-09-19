@@ -91,6 +91,19 @@ export function createCameraController(
     ready: false,
   };
 
+  const lastPose = {
+    yaw: Number.NaN,
+    pitch: Number.NaN,
+    distance: Number.NaN,
+    tx: Number.NaN,
+    ty: Number.NaN,
+    tz: Number.NaN,
+  };
+  const panRight = new pcModule.Vec3();
+  const panUp = new pcModule.Vec3();
+  const animPos = new pcModule.Vec3();
+  const animTarget = new pcModule.Vec3();
+
   const applyPose = () => {
     const s = settings();
     if (state.mode === "panZoom") {
@@ -101,6 +114,17 @@ export function createCameraController(
       state.yaw = clamp(state.yaw, s.minYaw, s.maxYaw);
     }
     state.distance = clamp(state.distance, s.minDistance, s.maxDistance);
+
+    if (
+      lastPose.yaw === state.yaw &&
+      lastPose.pitch === state.pitch &&
+      lastPose.distance === state.distance &&
+      lastPose.tx === state.target.x &&
+      lastPose.ty === state.target.y &&
+      lastPose.tz === state.target.z
+    ) {
+      return;
+    }
 
     const pitchRad = (state.pitch * Math.PI) / 180;
     const yawRad = (state.yaw * Math.PI) / 180;
@@ -113,6 +137,12 @@ export function createCameraController(
 
     camera.setPosition(x, y, z);
     camera.lookAt(state.target);
+    lastPose.yaw = state.yaw;
+    lastPose.pitch = state.pitch;
+    lastPose.distance = state.distance;
+    lastPose.tx = state.target.x;
+    lastPose.ty = state.target.y;
+    lastPose.tz = state.target.z;
   };
 
   const storeHome = () => {
@@ -252,9 +282,9 @@ export function createCameraController(
       state.mode === "panZoom" || state.panning || e.shiftKey;
     if (shouldPan) {
       const panScale = state.distance * 0.0018;
-      const right = new pcModule.Vec3().copy(camera.right).mulScalar(-dx * panScale);
-      const up = new pcModule.Vec3().copy(camera.up).mulScalar(dy * panScale);
-      state.target.add(right).add(up);
+      panRight.copy(camera.right).mulScalar(-dx * panScale);
+      panUp.copy(camera.up).mulScalar(dy * panScale);
+      state.target.add(panRight).add(panUp);
     } else if (state.dragging) {
       state.yaw -= dx * 0.35;
       state.pitch += dy * 0.3;
@@ -301,10 +331,10 @@ export function createCameraController(
       anim.t += dt;
       const k = Math.min(1, anim.t / anim.duration);
       const ease = 1 - Math.pow(1 - k, 3);
-      const pos = new pcModule.Vec3().lerp(anim.fromPos, anim.toPos, ease);
-      const target = new pcModule.Vec3().lerp(anim.fromTarget, anim.toTarget, ease);
-      camera.setPosition(pos);
-      state.target.copy(target);
+      animPos.lerp(anim.fromPos, anim.toPos, ease);
+      animTarget.lerp(anim.fromTarget, anim.toTarget, ease);
+      camera.setPosition(animPos);
+      state.target.copy(animTarget);
       camera.lookAt(state.target);
       syncOrbitFromPose();
       if (k >= 1) {

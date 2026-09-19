@@ -17,6 +17,35 @@ export type InfoBoxAnchorState = {
   visible: boolean;
 } | null;
 
+const SCREEN_EPS = 0.5;
+
+function sameHoverTooltip(
+  a: HoverTooltipState,
+  b: HoverTooltipState,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.title === b.title &&
+    a.pinned === b.pinned &&
+    Math.abs(a.x - b.x) <= SCREEN_EPS &&
+    Math.abs(a.y - b.y) <= SCREEN_EPS
+  );
+}
+
+function sameInfoBoxAnchor(
+  a: InfoBoxAnchorState,
+  b: InfoBoxAnchorState,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.visible === b.visible &&
+    Math.abs(a.x - b.x) <= SCREEN_EPS &&
+    Math.abs(a.y - b.y) <= SCREEN_EPS
+  );
+}
+
 export type OutlinerTab = "outliner" | "subject" | "layers";
 
 export type ActionsModalScope =
@@ -146,12 +175,22 @@ export const useUIStore = create<UIState>((set, get) => ({
     }
   },
   setPreviewModalIndex: (previewModalIndex) => set({ previewModalIndex }),
-  setPreviewActiveHotspotId: (previewActiveHotspotId) =>
-    set({ previewActiveHotspotId }),
-  setPreviewLabelPending: (previewLabelPending) =>
-    set({ previewLabelPending }),
-  setHoverTooltip: (hoverTooltip) => set({ hoverTooltip }),
-  setInfoBoxAnchor: (infoBoxAnchor) => set({ infoBoxAnchor }),
+  setPreviewActiveHotspotId: (previewActiveHotspotId) => {
+    if (get().previewActiveHotspotId === previewActiveHotspotId) return;
+    set({ previewActiveHotspotId });
+  },
+  setPreviewLabelPending: (previewLabelPending) => {
+    if (get().previewLabelPending === previewLabelPending) return;
+    set({ previewLabelPending });
+  },
+  setHoverTooltip: (hoverTooltip) => {
+    if (sameHoverTooltip(get().hoverTooltip, hoverTooltip)) return;
+    set({ hoverTooltip });
+  },
+  setInfoBoxAnchor: (infoBoxAnchor) => {
+    if (sameInfoBoxAnchor(get().infoBoxAnchor, infoBoxAnchor)) return;
+    set({ infoBoxAnchor });
+  },
   setScenesModalOpen: (scenesModalOpen) => set({ scenesModalOpen }),
   openActionsModal: (actionsModal) => set({ actionsModal }),
   closeActionsModal: () =>

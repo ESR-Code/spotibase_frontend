@@ -42,15 +42,24 @@ export function createPickingController(
   const groundPoint = new pcModule.Vec3();
   const groundNormal = new pcModule.Vec3();
   const groundHit = new pcModule.Vec3();
+  const pickRay = new pcModule.Ray();
+  const pickHit = new pcModule.Vec3();
+  const dragNext = new pcModule.Vec3();
   let dragStartX = 0;
   let dragStartY = 0;
   let didDragHotspot = false;
 
   const pickHotspotId = (clientX: number, clientY: number): number | null => {
-    const ray = screenRayFromEvent(pcModule, camera, canvas, clientX, clientY);
+    const ray = screenRayFromEvent(
+      pcModule,
+      camera,
+      canvas,
+      clientX,
+      clientY,
+      pickRay,
+    );
     let bestId: number | null = null;
     let bestDist = Infinity;
-    const hit = new pcModule.Vec3();
 
     const editor = useEditorStore.getState();
     for (const h of listPreviewHotspots()) {
@@ -60,8 +69,8 @@ export function createPickingController(
       if (editor.isPreview && appearance.style === "hidden") continue;
       const center = visual.root.getPosition();
       const radius = 0.28 * visual.root.getLocalScale().x;
-      if (raySphereHit(ray, center, radius, pcModule, hit)) {
-        const d = hit.distance(ray.origin);
+      if (raySphereHit(ray, center, radius, pcModule, pickHit)) {
+        const d = pickHit.distance(ray.origin);
         if (d < bestDist) {
           bestDist = d;
           bestId = h.id;
@@ -282,13 +291,20 @@ export function createPickingController(
       if (dx * dx + dy * dy > PREVIEW_CLICK_PX * PREVIEW_CLICK_PX) {
         didDragHotspot = true;
       }
-      const ray = screenRayFromEvent(pcModule, camera, canvas, e.clientX, e.clientY);
+      const ray = screenRayFromEvent(
+        pcModule,
+        camera,
+        canvas,
+        e.clientX,
+        e.clientY,
+        pickRay,
+      );
       if (dragPlane.intersectsRay(ray, planeHit)) {
-        const next = new pcModule.Vec3().copy(planeHit).add(dragOffset);
+        dragNext.copy(planeHit).add(dragOffset);
         hotspots.setWorldPosition(editor.draggingId, {
-          x: next.x,
-          y: next.y,
-          z: next.z,
+          x: dragNext.x,
+          y: dragNext.y,
+          z: dragNext.z,
         });
       }
       e.stopImmediatePropagation();
@@ -316,7 +332,10 @@ export function createPickingController(
     }
 
     if (editor.draggingId != null) {
-      if (!didDragHotspot) {
+      const draggedId = editor.draggingId;
+      if (didDragHotspot) {
+        hotspots.commitWorldPosition(draggedId);
+      } else {
         useUIStore.getState().setPropertiesDrawerOpen(true);
       }
       didDragHotspot = false;

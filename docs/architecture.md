@@ -107,7 +107,7 @@ XYFlow edits the graph; `flow-adapter.ts` maps domain nodes ↔ flow nodes. Name
 
 ## Rendering
 
-- **PlayCanvas:** `use-playcanvas-editor.ts` wires camera, picking, hotspots, model, effects, mesh highlight, and GLB clip playback. Default box when no GLB is imported. Image scenes use the same engine with pan/zoom.
+- **PlayCanvas:** `use-playcanvas-editor.ts` wires camera, picking, hotspots, model, effects, mesh highlight, and GLB clip playback. Default box when no GLB is imported. Image scenes use the same engine with pan/zoom. On geo scenes the app stays mounted with `autoRender` off.
 - **MapLibre:** `use-geo-map-editor.ts` + `geo/`. Markers, image/shape overlays, freehand draw, Nominatim search. Workers are copied to `public/` and served as JavaScript (`next.config.ts`).
 
 ## Geo alignment

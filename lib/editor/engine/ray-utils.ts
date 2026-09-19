@@ -7,6 +7,7 @@ export function screenRayFromEvent(
   canvas: HTMLCanvasElement,
   clientX: number,
   clientY: number,
+  out?: Ray,
 ): Ray {
   const rect = canvas.getBoundingClientRect();
   const x = clientX - rect.left;
@@ -14,6 +15,11 @@ export function screenRayFromEvent(
   const near = camera.camera!.screenToWorld(x, y, camera.camera!.nearClip);
   const far = camera.camera!.screenToWorld(x, y, camera.camera!.farClip);
   const direction = new pcModule.Vec3().sub2(far, near).normalize();
+  if (out) {
+    out.origin.copy(near);
+    out.direction.copy(direction);
+    return out;
+  }
   return new pcModule.Ray(near, direction);
 }
 

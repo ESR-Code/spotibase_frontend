@@ -27,7 +27,10 @@ export type HotspotManager = {
   syncFromStore: () => void;
   update: (dt: number) => void;
   getVisual: (id: number) => HotspotVisual | undefined;
+  /** Move the live entity only. Does not write the store (use during drag). */
   setWorldPosition: (id: number, position: Vec3) => void;
+  /** Persist the live entity position to the authored hotspot. */
+  commitWorldPosition: (id: number) => void;
   dispose: () => void;
 };
 
@@ -39,9 +42,13 @@ export function createHotspotManager(
 ): HotspotManager {
   const visuals = new Map<number, HotspotVisual>();
   let elapsed = 0;
+  const screenPos = new pcModule.Vec3();
+  const toHotspot = new pcModule.Vec3();
+  const OPACITY_EPS = 0.01;
+  const SCREEN_EPS = 0.5;
 
   const syncFromStore = () => {
-    const { isPreview } = useEditorStore.getState();
+    const { isPreview, draggingId } = useEditorStore.getState();
     const hotspots = listPreviewHotspots();
     const alive = new Set(hotspots.map((h) => h.id));
 
@@ -62,11 +69,21 @@ export function createHotspotManager(
         continue;
       }
 
-      existing.root.setPosition(
-        hotspot.position.x,
-        hotspot.position.y,
-        hotspot.position.z,
-      );
+      // Drag owns the live transform until pointerup commits it.
+      if (draggingId !== hotspot.id) {
+        const live = existing.root.getPosition();
+        if (
+          live.x !== hotspot.position.x ||
+          live.y !== hotspot.position.y ||
+          live.z !== hotspot.position.z
+        ) {
+          existing.root.setPosition(
+            hotspot.position.x,
+            hotspot.position.y,
+            hotspot.position.z,
+          );
+        }
+      }
 
       const nextKey = visualStyleKey(resolved);
       if (existing.styleKey !== nextKey) {
@@ -80,7 +97,21 @@ export function createHotspotManager(
     }
   };
 
-  const screenPos = new pcModule.Vec3();
+  const setMaterialOpacity = (
+    mat: { opacity: number; blendType: number; update: () => void },
+    opacity: number,
+    blendType: number,
+  ) => {
+    if (
+      Math.abs(mat.opacity - opacity) < OPACITY_EPS &&
+      mat.blendType === blendType
+    ) {
+      return;
+    }
+    mat.opacity = opacity;
+    mat.blendType = blendType;
+    mat.update();
+  };
 
   const update = (dt: number) => {
     elapsed += dt;
@@ -89,6 +120,7 @@ export function createHotspotManager(
     const editor = useEditorStore.getState();
     const ui = useUIStore.getState();
     const camPos = camera.getPosition();
+    const camRot = camera.getRotation();
     const refDist = settings.hotspotRefDist;
     const previewActiveId = ui.previewActiveHotspotId;
 
@@ -122,7 +154,7 @@ export function createHotspotManager(
       }
 
       const pos = visual.root.getPosition();
-      const dist = new pcModule.Vec3().copy(camPos).distance(pos);
+      const dist = pos.distance(camPos);
       const zoomScale = (dist / refDist) * settings.hotspotSize;
       let accent = 1;
       if (hotspot.id === editor.selectedId) accent = 1.25;
@@ -134,12 +166,13 @@ export function createHotspotManager(
       const isPreviewActive =
         editor.isPreview && hotspot.id === previewActiveId;
       if (hotspot.id === editor.selectedId || isPreviewActive) {
-        visual.haloMat.opacity = 0.15 + Math.sin(t * 4) * 0.08;
-        visual.haloMat.blendType = pcModule.BLEND_NORMAL;
-        visual.haloMat.update();
-      } else if (visual.haloMat.opacity !== 0) {
-        visual.haloMat.opacity = 0;
-        visual.haloMat.update();
+        setMaterialOpacity(
+          visual.haloMat,
+          0.15 + Math.sin(t * 4) * 0.08,
+          pcModule.BLEND_NORMAL,
+        );
+      } else {
+        setMaterialOpacity(visual.haloMat, 0, visual.haloMat.blendType);
       }
 
       if (visual.ring.enabled) {
@@ -152,15 +185,17 @@ export function createHotspotManager(
             ? PIN_SPRITE_SCALE
             : 1;
         visual.ring.setLocalScale(ringScale * pinBoost, 1, ringScale * pinBoost);
-        visual.ringMat.opacity = (1 - ease) * 0.78;
-        visual.ringMat.blendType = pcModule.BLEND_NORMAL;
-        visual.ringMat.update();
-        visual.ring.setRotation(camera.getRotation());
+        setMaterialOpacity(
+          visual.ringMat,
+          (1 - ease) * 0.78,
+          pcModule.BLEND_NORMAL,
+        );
+        visual.ring.setRotation(camRot);
         visual.ring.rotateLocal(-90, 0, 0);
       }
 
       if (visual.coreTexture && visual.core) {
-        visual.core.setRotation(camera.getRotation());
+        visual.core.setRotation(camRot);
         visual.core.rotateLocal(-90, 0, 0);
       }
 
@@ -188,16 +223,25 @@ export function createHotspotManager(
       const visual = visuals.get(previewActiveId);
       if (active && visual && isPreviewHotspotEnabled(editor.isPreview, active.id)) {
         const world = visual.root.getPosition();
-        const toHotspot = new pcModule.Vec3().sub2(world, camPos);
+        toHotspot.sub2(world, camPos);
         if (toHotspot.dot(camera.forward) > 0) {
           camera.camera.worldToScreen(world, screenPos);
           const resolved = resolveHotspotAppearance(active, true);
-          useUIStore.getState().setHoverTooltip({
-            x: screenPos.x,
-            y: screenPos.y,
-            title: resolved.title,
-            pinned: true,
-          });
+          const prevTip = ui.hoverTooltip;
+          if (
+            !prevTip ||
+            prevTip.pinned !== true ||
+            prevTip.title !== resolved.title ||
+            Math.abs(prevTip.x - screenPos.x) > SCREEN_EPS ||
+            Math.abs(prevTip.y - screenPos.y) > SCREEN_EPS
+          ) {
+            useUIStore.getState().setHoverTooltip({
+              x: screenPos.x,
+              y: screenPos.y,
+              title: resolved.title,
+              pinned: true,
+            });
+          }
         }
       }
     }
@@ -207,7 +251,7 @@ export function createHotspotManager(
       const visual = visuals.get(previewActiveId);
       if (visual) {
         const world = visual.root.getPosition();
-        const toHotspot = new pcModule.Vec3().sub2(world, camPos);
+        toHotspot.sub2(world, camPos);
         const inFront = toHotspot.dot(camera.forward) > 0;
         if (inFront) {
           camera.camera.worldToScreen(world, screenPos);
@@ -241,7 +285,24 @@ export function createHotspotManager(
     const visual = visuals.get(id);
     if (!visual) return;
     visual.root.setPosition(position.x, position.y, position.z);
-    useEditorStore.getState().updateHotspot(id, { position });
+  };
+
+  const commitWorldPosition = (id: number) => {
+    const visual = visuals.get(id);
+    if (!visual) return;
+    const live = visual.root.getPosition();
+    const current = findHotspot(id);
+    if (
+      current &&
+      current.position.x === live.x &&
+      current.position.y === live.y &&
+      current.position.z === live.z
+    ) {
+      return;
+    }
+    useEditorStore.getState().updateHotspot(id, {
+      position: { x: live.x, y: live.y, z: live.z },
+    });
   };
 
   syncFromStore();
@@ -251,6 +312,7 @@ export function createHotspotManager(
     update,
     getVisual: (id) => visuals.get(id),
     setWorldPosition,
+    commitWorldPosition,
     dispose: () => {
       for (const visual of visuals.values()) destroyHotspotVisual(visual);
       visuals.clear();
