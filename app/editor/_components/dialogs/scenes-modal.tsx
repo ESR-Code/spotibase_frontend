@@ -1,6 +1,12 @@
 "use client";
 
-import { Box, Globe, ImageIcon, Layers, Pencil, Plus, Star, Trash2, X } from "lucide-react";
+import { Box, Globe, ImageIcon, Layers, MoreHorizontal, Pencil, Plus, Star, Trash2, X } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { EditorChip } from "@/app/editor/_components/ui/editor-chip";
@@ -456,58 +462,58 @@ function SceneListItem({
       </div>
 
       {!editing ? (
-        <div className="flex items-center gap-0.5">
-          <button
-            type="button"
-            className="editor-btn-ghost rounded p-1"
-            title="Rename scene"
-            onClick={(e) => {
-              e.stopPropagation();
-              onStartEdit();
-            }}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="editor-btn-ghost rounded p-1"
+              title="Scene actions"
+              aria-label="Scene actions"
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="editor-dropdown-menu"
+            onClick={(e) => e.stopPropagation()}
           >
-            <Pencil className="h-3 w-3" />
-          </button>
-          <button
-            type="button"
-            className="editor-btn-ghost rounded p-1"
-            title={
-              scene.isPrimary ? "Primary scene" : "Set as primary scene"
-            }
-            disabled={scene.isPrimary}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!scene.isPrimary) onSetPrimary();
-            }}
-            style={
-              scene.isPrimary
-                ? { color: "var(--editor-amber)", opacity: 1 }
-                : undefined
-            }
-          >
-            <Star
-              className="h-3 w-3"
-              fill={scene.isPrimary ? "currentColor" : "none"}
-            />
-          </button>
-          <button
-            type="button"
-            className="editor-btn-ghost rounded p-1"
-            title={
-              canDelete
-                ? "Delete scene"
-                : "At least one scene is required"
-            }
-            disabled={!canDelete}
-            style={canDelete ? { color: "var(--editor-crimson-2)" } : undefined}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (canDelete) onDelete();
-            }}
-          >
-            <Trash2 className="h-3 w-3" />
-          </button>
-        </div>
+            <DropdownMenuItem
+              className="editor-dropdown-menu-item"
+              onSelect={() => onStartEdit()}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Rename
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="editor-dropdown-menu-item"
+              disabled={scene.isPrimary}
+              onSelect={() => {
+                if (!scene.isPrimary) onSetPrimary();
+              }}
+            >
+              <Star
+                className="h-3.5 w-3.5"
+                fill={scene.isPrimary ? "currentColor" : "none"}
+              />
+              {scene.isPrimary ? "Primary scene" : "Set as primary"}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="editor-dropdown-menu-item editor-dropdown-menu-item-danger"
+              disabled={!canDelete}
+              variant="destructive"
+              onSelect={() => {
+                if (canDelete) onDelete();
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ) : null}
     </div>
   );
