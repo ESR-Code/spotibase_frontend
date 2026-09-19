@@ -2160,15 +2160,16 @@
 .editor-root .editor-outliner-tab {
   position: absolute;
   left: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  bottom: 0;
   z-index: 15;
   width: 28px;
-  height: 64px;
   display: none;
   align-items: center;
   justify-content: center;
-  border-radius: 0 10px 10px 0;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 0;
   cursor: pointer;
   background: linear-gradient(
     180deg,
@@ -2178,22 +2179,78 @@
   border: 1px solid var(--editor-line);
   border-left: none;
   color: var(--editor-muted);
-  transition:
-    color 0.15s,
-    background 0.15s;
   box-shadow: 4px 0 18px -8px rgba(0, 0, 0, 0.5);
+  transition:
+    color 0.28s cubic-bezier(0.22, 0.61, 0.36, 1),
+    border-color 0.28s cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-.editor-root .editor-outliner-tab:hover:not(:disabled) {
-  color: var(--editor-fg);
-  background: rgba(230, 57, 70, 0.18);
-}
-
-.editor-root .editor-outliner-tab:disabled,
-.editor-root .editor-outliner-tab.disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.editor-root .editor-outliner-tab::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(230, 57, 70, 0.28),
+    rgba(230, 57, 70, 0.12)
+  );
+  opacity: 0;
+  transition: opacity 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.editor-root .editor-outliner-tab::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 2px;
+  pointer-events: none;
+  background: var(--editor-crimson);
+  opacity: 0;
+  transform: scaleY(0.35);
+  transform-origin: center;
+  transition:
+    opacity 0.28s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.editor-root .editor-outliner-tab svg {
+  position: relative;
+  z-index: 1;
+  transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.editor-root .editor-outliner-tab:hover {
+  color: var(--editor-fg);
+  border-color: rgba(230, 57, 70, 0.5);
+  box-shadow:
+    4px 0 18px -8px rgba(0, 0, 0, 0.5),
+    6px 0 22px -8px rgba(230, 57, 70, 0.4);
+}
+
+.editor-root .editor-outliner-tab:hover::before {
+  opacity: 1;
+}
+
+.editor-root .editor-outliner-tab:hover::after {
+  opacity: 0.9;
+  transform: scaleY(1);
+}
+
+.editor-root .editor-outliner-tab:hover svg {
+  transform: translateX(3px);
+}
+
+.editor-root .editor-outliner-tab:active::before {
+  background: linear-gradient(
+    180deg,
+    rgba(230, 57, 70, 0.38),
+    rgba(230, 57, 70, 0.18)
+  );
 }
 
 .editor-root.outliner-collapsed .editor-outliner-tab {
@@ -2224,6 +2281,11 @@
   min-width: 168px;
   max-width: min(240px, calc(100% - 2rem));
   transition: left 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Keep HUD clear of the full-height outliner expand tab */
+.editor-root.outliner-collapsed:not([data-preview="true"]) .editor-hud-panel {
+  left: calc(28px + 1rem);
 }
 
 /* Keep HUD clear of the left outliner overlay when it is open */

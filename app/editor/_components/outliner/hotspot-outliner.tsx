@@ -193,18 +193,14 @@ export function OutlinerExpandTab() {
   const collapsed = useUIStore((s) => s.outlinerCollapsed);
   const setCollapsed = useUIStore((s) => s.setOutlinerCollapsed);
 
-  if (!collapsed) return null;
+  if (!collapsed || isPreview) return null;
 
   return (
     <button
       type="button"
-      className={`editor-outliner-tab ${isPreview ? "disabled" : ""}`}
-      title={isPreview ? "Outliner unavailable in Preview" : "Show outliner"}
-      disabled={isPreview}
-      onClick={() => {
-        if (isPreview) return;
-        setCollapsed(false);
-      }}
+      className="editor-outliner-tab"
+      title="Show outliner"
+      onClick={() => setCollapsed(false)}
     >
       <ChevronRight className="h-3 w-3" />
     </button>
