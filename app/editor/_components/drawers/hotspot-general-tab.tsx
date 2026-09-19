@@ -9,7 +9,7 @@ import {
   Type,
 } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-image-field";
 import { HotspotMarkerImageField } from "@/app/editor/_components/drawers/hotspot-marker-image-field";
 import { PositionAxisInput } from "@/app/editor/_components/drawers/position-axis-input";

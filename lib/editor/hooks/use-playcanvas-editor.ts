@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 import { createCameraController } from "@/lib/editor/engine/camera-controller";
 import { captureViewportPreview } from "@/lib/editor/engine/capture-viewport-preview";
 import { createPlayCanvasAppAsync } from "@/lib/editor/engine/create-playcanvas-app";

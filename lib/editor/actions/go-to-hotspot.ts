@@ -11,7 +11,7 @@ import type {
   GoToHotspotActionNode,
   GoToHotspotOffset,
 } from "@/lib/editor/types/hotspot-action";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 
 /** Prevents infinite loops when destination graphs also Go To Hotspot + run actions. */
 const runningTargetActionIds = new Set<number>();

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 import { runHotspotActions } from "@/lib/editor/actions/run-hotspot-actions";
 import { captureViewportPreview } from "@/lib/editor/engine/capture-viewport-preview";
 import {

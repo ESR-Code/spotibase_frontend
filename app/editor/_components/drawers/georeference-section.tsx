@@ -1,7 +1,7 @@
 "use client";
 
 import { Globe, MapPinned } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { useAlignmentSessionStore } from "@/lib/editor/state/alignment-session-store";
 import { useScenesStore, useActiveScene } from "@/lib/editor/state/scenes-store";

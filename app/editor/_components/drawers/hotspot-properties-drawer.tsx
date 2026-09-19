@@ -2,7 +2,7 @@
 
 import { Copy, LayoutList, Settings2, Trash2, Workflow, X } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 import { HotspotActionsTab } from "@/app/editor/_components/actions/hotspot-actions-tab";
 import { HotspotBlocksTab } from "@/app/editor/_components/drawers/hotspot-blocks-tab";
 import { HotspotGeneralTab } from "@/app/editor/_components/drawers/hotspot-general-tab";

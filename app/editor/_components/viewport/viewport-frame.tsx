@@ -1,15 +1,16 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { PlayCanvasViewport } from "@/app/editor/_components/viewport/playcanvas-viewport";
+import { AlignmentMarkersOverlay } from "@/app/editor/_components/viewport/alignment-markers-overlay";
+import { AlignmentPickBanner } from "@/app/editor/_components/viewport/alignment-pick-banner";
 import { EngineErrorBanner } from "@/app/editor/_components/viewport/engine-error-banner";
+import { HotspotHoverTooltip } from "@/app/editor/_components/viewport/hotspot-hover-tooltip";
 import { ModelDropOverlay } from "@/app/editor/_components/viewport/model-drop-overlay";
+import { PlayCanvasViewport } from "@/app/editor/_components/viewport/playcanvas-viewport";
+import { PostMessageReceiveTestSuite } from "@/app/editor/_components/viewport/post-message-receive-test-suite";
 import { ViewportControls } from "@/app/editor/_components/viewport/viewport-controls";
 import { ViewportHud } from "@/app/editor/_components/viewport/viewport-hud";
 import { ViewportLogo } from "@/app/editor/_components/viewport/viewport-logo";
-import { HotspotHoverTooltip } from "@/app/editor/_components/viewport/hotspot-hover-tooltip";
-import { AlignmentMarkersOverlay } from "@/app/editor/_components/viewport/alignment-markers-overlay";
-import { AlignmentPickBanner } from "@/app/editor/_components/viewport/alignment-pick-banner";
 import { useAlignmentSessionStore } from "@/lib/editor/state/alignment-session-store";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useModelStore } from "@/lib/editor/state/model-store";
@@ -54,7 +55,10 @@ export function ViewportFrame() {
       <AlignmentPickBanner />
       {isGeo ? null : <ModelDropOverlay />}
       <ViewportLogo />
-      <ViewportHud />
+      <div className="editor-viewport-hud-stack">
+        <ViewportHud />
+        <PostMessageReceiveTestSuite />
+      </div>
       <ViewportControls />
     </div>
   );

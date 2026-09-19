@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 import { buildGeoReference } from "@/lib/editor/coords/build-geo-reference";
 import { useCoordsInspectorStore } from "@/lib/editor/state/coords-inspector-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";

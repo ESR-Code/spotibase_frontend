@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 import { cloneHotspotBlocks } from "@/lib/editor/blocks/content-buttons";
 import {
   cloneActionGraph,

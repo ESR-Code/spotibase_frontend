@@ -2273,24 +2273,34 @@
   user-select: none;
 }
 
-.editor-root .editor-hud-panel {
+.editor-root .editor-viewport-hud-stack {
   position: absolute;
   top: 1rem;
   left: 1rem;
   z-index: 10;
-  min-width: 168px;
-  max-width: min(240px, calc(100% - 2rem));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: min(300px, calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
   transition: left 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 /* Keep HUD clear of the full-height outliner expand tab */
-.editor-root.outliner-collapsed:not([data-preview="true"]) .editor-hud-panel {
+.editor-root.outliner-collapsed:not([data-preview="true"]) .editor-viewport-hud-stack {
   left: calc(28px + 1rem);
 }
 
 /* Keep HUD clear of the left outliner overlay when it is open */
-.editor-root:not(.outliner-collapsed) .editor-hud-panel {
+.editor-root:not(.outliner-collapsed) .editor-viewport-hud-stack {
   left: calc(18rem + 1rem);
+}
+
+.editor-root .editor-hud-panel {
+  flex-shrink: 0;
+  min-width: 168px;
+  max-width: min(240px, 100%);
 }
 
 .editor-root .editor-hud-panel.collapsed .editor-hud-body {
@@ -4217,6 +4227,11 @@
 }
 
 /* Editor-only Post Message receive tester (not product Preview chrome) */
+.editor-root .editor-pm-test-suite {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .editor-root .editor-pm-test-chip {
   display: flex;
   align-items: center;
@@ -4238,7 +4253,7 @@
   border: 1px solid color-mix(in srgb, var(--editor-amber) 40%, var(--editor-line));
   border-radius: 12px;
   overflow: hidden;
-  max-height: min(28rem, calc(100% - 0.5rem));
+  max-height: min(28rem, calc(100vh - 10rem));
 }
 
 .editor-root .editor-pm-test-header {
@@ -4361,6 +4376,137 @@
   font-weight: 400;
   line-height: 1.35;
   opacity: 0.88;
+}
+
+/* ---- Editor toasts (bottom-right; sits above the center viewport menu) ---- */
+
+.editor-root .editor-toaster {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 97;
+  display: flex;
+  width: min(360px, calc(100% - 32px));
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.editor-root .editor-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 10px 11px 12px;
+  border-radius: 10px;
+  color: var(--editor-fg);
+  animation: editor-toast-in 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.editor-root .editor-toast[data-leaving="true"] {
+  animation: editor-toast-out 0.2s ease forwards;
+}
+
+.editor-root .editor-toast-success {
+  border-color: rgba(63, 184, 175, 0.45);
+  box-shadow:
+    0 20px 60px -20px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    inset 3px 0 0 var(--editor-teal);
+}
+
+.editor-root .editor-toast-error {
+  border-color: rgba(230, 57, 70, 0.5);
+  box-shadow:
+    0 20px 60px -20px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    inset 3px 0 0 var(--editor-crimson);
+}
+
+.editor-root .editor-toast-info {
+  border-color: var(--editor-line);
+  box-shadow:
+    0 20px 60px -20px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    inset 3px 0 0 var(--editor-muted-2);
+}
+
+.editor-root .editor-toast-icon {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.editor-root .editor-toast-icon svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.25;
+}
+
+.editor-root .editor-toast-success .editor-toast-icon {
+  background: rgba(63, 184, 175, 0.16);
+  color: var(--editor-teal);
+}
+
+.editor-root .editor-toast-error .editor-toast-icon {
+  background: rgba(230, 57, 70, 0.16);
+  color: var(--editor-crimson-2);
+}
+
+.editor-root .editor-toast-info .editor-toast-icon {
+  background: rgba(138, 152, 184, 0.14);
+  color: var(--editor-muted);
+}
+
+.editor-root .editor-toast-body {
+  min-width: 0;
+  flex: 1;
+  padding-top: 3px;
+}
+
+.editor-root .editor-toast-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--editor-fg);
+}
+
+.editor-root .editor-toast-description {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--editor-muted);
+}
+
+.editor-root .editor-toast-close {
+  width: 28px;
+  height: 28px;
+  margin-top: -2px;
+}
+
+@keyframes editor-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(8px, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes editor-toast-out {
+  to {
+    opacity: 0;
+    transform: translate(6px, 8px);
+  }
 }
 
 

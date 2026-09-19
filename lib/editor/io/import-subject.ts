@@ -1,4 +1,4 @@
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 import {
   getSceneType,
   isValidSubjectExtension,

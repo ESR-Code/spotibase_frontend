@@ -82,7 +82,7 @@ export function PostMessageReceiveTestSuite() {
   };
 
   return (
-    <div className="editor-pm-test-suite absolute bottom-4 right-4 z-10">
+    <div className="editor-pm-test-suite">
       {panelOpen ? (
         <GlassPanel className="editor-pm-test-panel flex w-[300px] flex-col">
           <div className="editor-pm-test-header">
@@ -194,7 +194,7 @@ export function PostMessageReceiveTestSuite() {
         >
           <MessagesSquare className="h-3.5 w-3.5" />
           <span>Post Message test</span>
-          <ChevronDown className="h-3 w-3 rotate-180" />
+          <ChevronDown className="h-3 w-3" />
         </button>
       )}
     </div>

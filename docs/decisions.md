@@ -10,6 +10,7 @@ Only decisions that constrain how new work should be done.
 - **@xyflow/react** for action graphs. Domain graph stays `{ nodes, edges }`; `flow-adapter.ts` is the only UI mapping.
 - **PlayCanvas** for model/image scenes; **MapLibre** for geo. Scene type picks the engine — do not render both as the interactive viewport.
 - **Tailwind 4 + custom editor tokens** (`editor-theme.css`). shadcn (`components/ui`) for primitives; editor chrome in `app/editor/_components/ui`.
+- **Editor toasts** are custom (`lib/editor/toast.ts` + `EditorToaster`), not sonner. Mount the toaster inside `.editor-root` so glass tokens apply; keep them bottom-right so they don’t cover the center viewport menu.
 - **Devcontainer / WSL:** `WATCHPACK_POLLING` and webpack `watchOptions.poll` so file watching works. Keep that if changing `dev` or `next.config.ts`.
 
 ## Scene model

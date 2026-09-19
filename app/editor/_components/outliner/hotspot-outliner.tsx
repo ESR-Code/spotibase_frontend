@@ -9,7 +9,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { useEffect, useMemo } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { SceneModelRow } from "@/app/editor/_components/outliner/scene-model-row";
 import { HotspotListItem } from "@/app/editor/_components/outliner/hotspot-list-item";

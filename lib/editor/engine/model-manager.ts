@@ -1,6 +1,6 @@
 import type { Application, Entity, StandardMaterial, Texture } from "playcanvas";
 import type * as pc from "playcanvas";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 import { buildDefaultBox } from "@/lib/editor/engine/default-scene-builder";
 import { createImageTexture } from "@/lib/editor/engine/hotspot-text-texture";
 import {

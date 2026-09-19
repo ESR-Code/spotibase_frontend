@@ -2,7 +2,7 @@
 
 import { ImageIcon, Upload, X } from "lucide-react";
 import type { ReactNode } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import {
   HOTSPOT_IMAGE_ACCEPT,

@@ -83,7 +83,7 @@ import {
   normalizeExternalUrl,
   openExternalUrl,
 } from "@/lib/editor/utils/open-external-url";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 
 export type ActionRunContext = {
   /** Hotspot id when running from a hotspot click; null for start graphs. */

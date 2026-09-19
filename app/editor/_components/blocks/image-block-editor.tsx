@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronUp, ImageIcon, Trash2, Upload } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 import { TokenField } from "@/app/editor/_components/blocks/token-field";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";

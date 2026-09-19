@@ -1,7 +1,7 @@
 "use client";
 
 import { Camera, ClipboardPaste, Copy, Crosshair } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { cloneCameraResetPosition } from "@/lib/editor/constants/default-settings";

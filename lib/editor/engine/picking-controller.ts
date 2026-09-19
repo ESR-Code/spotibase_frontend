@@ -1,6 +1,6 @@
 import type { Entity } from "playcanvas";
 import type * as pc from "playcanvas";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 import type { CameraController } from "@/lib/editor/engine/camera-controller";
 import type { HotspotManager } from "@/lib/editor/engine/hotspot-manager";
 import {

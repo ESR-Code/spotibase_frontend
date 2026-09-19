@@ -1,6 +1,6 @@
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 
 const FADE_MS = 420;
 const HOLD_MS = 380;

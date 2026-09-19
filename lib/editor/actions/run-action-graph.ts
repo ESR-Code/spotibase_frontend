@@ -42,7 +42,7 @@ import {
   type HotspotActionGraph,
 } from "@/lib/editor/types/hotspot-action";
 import { focusHotspotCamera } from "@/lib/editor/preview/open-hotspot-in-preview";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 
 export type { ActionRunContext };
 

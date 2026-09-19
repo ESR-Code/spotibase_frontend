@@ -19,7 +19,7 @@ import {
   Sun,
   X,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/editor/toast";
 import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-image-field";
 import { GeoDetailsSection } from "@/app/editor/_components/drawers/geo-details-section";
 import { GeoreferenceSection } from "@/app/editor/_components/drawers/georeference-section";

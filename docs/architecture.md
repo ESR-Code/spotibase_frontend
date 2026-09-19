@@ -116,4 +116,4 @@ Model scenes: 3-point. Image scenes: 2-point. Control points are the source of t
 
 ## Forms and UI
 
-Settings drawers use react-hook-form + Zod (`lib/editor/forms/`). Editor chrome is custom (`editor-theme.css`, glass panels). `components/ui/` is shadcn (New York). Toasts: sonner.
+Settings drawers use react-hook-form + Zod (`lib/editor/forms/`). Editor chrome is custom (`editor-theme.css`, glass panels). `components/ui/` is shadcn (New York). Toasts: `lib/editor/toast.ts` + `EditorToaster` (bottom-right, editor glass), not a third-party toast library.
