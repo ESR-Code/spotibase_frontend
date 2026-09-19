@@ -116,6 +116,13 @@ function defaultNewSceneName(scenes: Scene[]): string {
 export type AddSceneInput = {
   name?: string;
   type: SceneTypeId;
+  description?: string;
+};
+
+export type SceneMetaPatch = {
+  name?: string;
+  description?: string;
+  thumbnailUrl?: string;
 };
 
 type ScenesState = {
@@ -129,6 +136,7 @@ type ScenesState = {
   addScene: (input: AddSceneInput) => string;
   removeScene: (id: string) => void;
   renameScene: (id: string, name: string) => void;
+  updateSceneMeta: (id: string, patch: SceneMetaPatch) => void;
   setPrimaryScene: (id: string) => void;
   switchScene: (id: string) => void;
   setSceneGeoReference: (sceneId: string, ref: GeoReference | null) => void;
@@ -206,6 +214,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
     const scene = createScene({
       id,
       name: input.name?.trim() || defaultNewSceneName(snapshotted),
+      description: input.description?.trim() ?? "",
       type: input.type,
       isPrimary: false,
       model: createEmptyModelState(input.type),
@@ -272,12 +281,27 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
   },
 
   renameScene: (id, name) => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
+    get().updateSceneMeta(id, { name });
+  },
+
+  updateSceneMeta: (id, patch) => {
     set((state) => ({
-      scenes: state.scenes.map((s) =>
-        s.id === id ? { ...s, name: trimmed } : s,
-      ),
+      scenes: state.scenes.map((s) => {
+        if (s.id !== id) return s;
+        const next = { ...s };
+        if (patch.name !== undefined) {
+          const trimmed = patch.name.trim();
+          if (!trimmed) return s;
+          next.name = trimmed;
+        }
+        if (patch.description !== undefined) {
+          next.description = patch.description;
+        }
+        if (patch.thumbnailUrl !== undefined) {
+          next.thumbnailUrl = patch.thumbnailUrl;
+        }
+        return next;
+      }),
     }));
   },
 

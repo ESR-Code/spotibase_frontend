@@ -18,6 +18,7 @@ Only decisions that constrain how new work should be done.
 - **Snapshot on switch.** Outgoing live stores are written back onto the `Scene`; incoming scene hydrates the live stores. New per-scene data must be cloned in `snapshotCurrentIntoScene` and restored in `switchScene`.
 - **New scenes** copy the primary scene’s settings/environment but start with empty `resetPosition` and `customMenuButtons`.
 - **At least one scene** is required. Deleting a geo scene referenced by a `geoReference` marks that reference `invalid`.
+- **Scene Explorer enable is project-wide** (`general-settings-store.sceneExplorerEnabled`), unlike per-scene `legendEnabled`. Description and thumbnail live on `Scene`, not `EditorSettings`.
 
 ## Actions
 

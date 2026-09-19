@@ -39,6 +39,7 @@ type UIState = {
   settingsDrawerOpen: boolean;
   generalSettingsDrawerOpen: boolean;
   legendDrawerOpen: boolean;
+  sceneExplorerDrawerOpen: boolean;
   /** Legend category filter in Preview (`LEGEND_CATEGORY_ALL` = show all). */
   legendFilterCategory: string;
   previewModalOpen: boolean;
@@ -66,6 +67,7 @@ type UIState = {
   setSettingsDrawerOpen: (value: boolean) => void;
   setGeneralSettingsDrawerOpen: (value: boolean) => void;
   setLegendDrawerOpen: (value: boolean) => void;
+  setSceneExplorerDrawerOpen: (value: boolean) => void;
   setLegendFilterCategory: (value: string) => void;
   setPreviewModalOpen: (value: boolean) => void;
   setPreviewModalIndex: (index: number) => void;
@@ -96,6 +98,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   settingsDrawerOpen: false,
   generalSettingsDrawerOpen: false,
   legendDrawerOpen: false,
+  sceneExplorerDrawerOpen: false,
   legendFilterCategory: LEGEND_CATEGORY_ALL,
   previewModalOpen: false,
   previewModalIndex: 0,
@@ -117,7 +120,18 @@ export const useUIStore = create<UIState>((set, get) => ({
   setSettingsDrawerOpen: (settingsDrawerOpen) => set({ settingsDrawerOpen }),
   setGeneralSettingsDrawerOpen: (generalSettingsDrawerOpen) =>
     set({ generalSettingsDrawerOpen }),
-  setLegendDrawerOpen: (legendDrawerOpen) => set({ legendDrawerOpen }),
+  setLegendDrawerOpen: (legendDrawerOpen) =>
+    set(
+      legendDrawerOpen
+        ? { legendDrawerOpen: true, sceneExplorerDrawerOpen: false }
+        : { legendDrawerOpen: false },
+    ),
+  setSceneExplorerDrawerOpen: (sceneExplorerDrawerOpen) =>
+    set(
+      sceneExplorerDrawerOpen
+        ? { sceneExplorerDrawerOpen: true, legendDrawerOpen: false }
+        : { sceneExplorerDrawerOpen: false },
+    ),
   setLegendFilterCategory: (legendFilterCategory) =>
     set({ legendFilterCategory }),
   setPreviewModalOpen: (previewModalOpen) => {
@@ -174,6 +188,7 @@ export const useUIStore = create<UIState>((set, get) => ({
       settingsDrawerOpen: false,
       generalSettingsDrawerOpen: false,
       legendDrawerOpen: false,
+      sceneExplorerDrawerOpen: false,
       legendFilterCategory: LEGEND_CATEGORY_ALL,
       previewModalOpen: false,
       propertiesDrawerOpen: false,

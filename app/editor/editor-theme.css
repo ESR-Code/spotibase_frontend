@@ -911,6 +911,7 @@
 
 /* Preview-only theming from General Settings → Style */
 .editor-root[data-preview="true"] .editor-legend-drawer.editor-glass,
+.editor-root[data-preview="true"] .editor-scene-explorer-drawer.editor-glass,
 .editor-root[data-preview="true"] .editor-marker-dialog.editor-dialog-surface {
   --editor-line: var(--preview-border);
   --editor-line-soft: var(--preview-border);
@@ -926,6 +927,16 @@
     transparent
   );
   color: var(--preview-surface-legend-drawer-fg);
+  border-color: var(--preview-border);
+}
+
+.editor-root[data-preview="true"] .editor-scene-explorer-drawer.editor-glass {
+  background: color-mix(
+    in srgb,
+    var(--preview-surface-scene-explorer-drawer-bg) var(--preview-surface-opacity),
+    transparent
+  );
+  color: var(--preview-surface-scene-explorer-drawer-fg);
   border-color: var(--preview-border);
 }
 
@@ -952,6 +963,8 @@
 .editor-root[data-preview="true"] .editor-legend-drawer .editor-textarea,
 .editor-root[data-preview="true"] .editor-legend-drawer .editor-select,
 .editor-root[data-preview="true"] .editor-legend-drawer .editor-category-select-trigger,
+.editor-root[data-preview="true"] .editor-scene-explorer-drawer .editor-input,
+.editor-root[data-preview="true"] .editor-scene-explorer-drawer .editor-textarea,
 .editor-root[data-preview="true"] .editor-marker-dialog .editor-input,
 .editor-root[data-preview="true"] .editor-marker-dialog .editor-textarea,
 .editor-root[data-preview="true"] .editor-marker-dialog .editor-select {
@@ -997,7 +1010,8 @@
   color: var(--preview-accent);
 }
 
-.editor-root[data-preview="true"][data-preview-borders="off"] .editor-legend-drawer.editor-glass {
+.editor-root[data-preview="true"][data-preview-borders="off"] .editor-legend-drawer.editor-glass,
+.editor-root[data-preview="true"][data-preview-borders="off"] .editor-scene-explorer-drawer.editor-glass {
   border-color: transparent;
 }
 
@@ -1023,6 +1037,7 @@
 }
 
 .editor-root[data-preview="true"] .editor-legend-drawer .editor-icon-btn:hover,
+.editor-root[data-preview="true"] .editor-scene-explorer-drawer .editor-icon-btn:hover,
 .editor-root[data-preview="true"] .editor-marker-dialog .editor-icon-btn:hover {
   color: var(--preview-accent);
   background: color-mix(in srgb, var(--preview-accent) 14%, transparent);
@@ -1047,9 +1062,9 @@
   );
 }
 
-/* Viewport bottom controls + legend button — Preview Bottom menu style */
+/* Viewport bottom controls + Preview rail — Preview Bottom menu style */
 .editor-root[data-preview="true"] .editor-viewport-controls.editor-glass,
-.editor-root[data-preview="true"] .editor-legend-btn .editor-glass,
+.editor-root[data-preview="true"] .editor-preview-rail-btns.editor-glass,
 .editor-root .editor-custom-menu-preview-wrap .editor-viewport-controls.editor-glass {
   background: color-mix(
     in srgb,
@@ -1062,15 +1077,15 @@
 }
 
 .editor-root[data-preview="true"] .editor-viewport-controls .editor-tool-btn,
-.editor-root[data-preview="true"] .editor-legend-btn .editor-tool-btn,
+.editor-root[data-preview="true"] .editor-preview-rail-btns .editor-tool-btn,
 .editor-root .editor-custom-menu-preview-wrap .editor-viewport-controls .editor-tool-btn {
   color: var(--preview-bottom-menu-icon);
 }
 
 .editor-root[data-preview="true"] .editor-viewport-controls .editor-tool-btn:hover,
 .editor-root[data-preview="true"] .editor-viewport-controls .editor-tool-btn.active,
-.editor-root[data-preview="true"] .editor-legend-btn .editor-tool-btn:hover,
-.editor-root[data-preview="true"] .editor-legend-btn .editor-tool-btn.active,
+.editor-root[data-preview="true"] .editor-preview-rail-btns .editor-tool-btn:hover,
+.editor-root[data-preview="true"] .editor-preview-rail-btns .editor-tool-btn.active,
 .editor-root .editor-custom-menu-preview-wrap .editor-viewport-controls .editor-tool-btn:hover,
 .editor-root .editor-custom-menu-preview-wrap .editor-viewport-controls .editor-tool-btn.active {
   color: color-mix(in srgb, var(--preview-bottom-menu-icon) 55%, #fff);
@@ -2013,8 +2028,9 @@
   transform: translateX(18px);
 }
 
-/* Legend drawer — left overlay in Preview when legend is enabled */
-.editor-root .editor-legend-drawer {
+/* Legend + Scene explorer drawers — left overlay in Preview */
+.editor-root .editor-legend-drawer,
+.editor-root .editor-scene-explorer-drawer {
   position: absolute;
   top: 0;
   left: 0;
@@ -2028,7 +2044,8 @@
   pointer-events: none;
 }
 
-.editor-root .editor-legend-drawer.open {
+.editor-root .editor-legend-drawer.open,
+.editor-root .editor-scene-explorer-drawer.open {
   transform: translateX(0);
   pointer-events: auto;
 }
@@ -2412,9 +2429,26 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   border-radius: 8px;
   border: 1px solid var(--editor-line-soft);
   background: rgba(244, 162, 89, 0.1);
+}
+
+.editor-root .editor-scene-item-icon img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+.editor-root .editor-scene-explorer-item {
+  align-items: flex-start;
+}
+
+.editor-root .editor-scene-explorer-thumb {
+  height: 64px;
+  width: 64px;
+  border-radius: 10px;
 }
 
 /* ---- Actions node editor (React Flow) ---- */

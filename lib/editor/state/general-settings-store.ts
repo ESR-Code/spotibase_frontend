@@ -14,6 +14,8 @@ import { GENERAL_STYLE_SURFACES } from "@/lib/editor/types/general-style";
 
 type GeneralSettingsState = {
   style: GeneralStyleSettings;
+  /** Project-wide Preview Scene Explorer control. Independent of Style Reset. */
+  sceneExplorerEnabled: boolean;
   setGlobalToken: <K extends keyof GeneralStyleGlobalTokens>(
     key: K,
     value: GeneralStyleGlobalTokens[K],
@@ -28,6 +30,7 @@ type GeneralSettingsState = {
   ) => void;
   setStyle: (patch: Partial<GeneralStyleSettings>) => void;
   resetStyle: () => void;
+  setSceneExplorerEnabled: (value: boolean) => void;
 };
 
 function mergeSurfaces(
@@ -47,6 +50,7 @@ function mergeSurfaces(
 
 export const useGeneralSettingsStore = create<GeneralSettingsState>((set) => ({
   style: cloneGeneralStyle(DEFAULT_GENERAL_STYLE),
+  sceneExplorerEnabled: false,
   setGlobalToken: (key, value) =>
     set((state) => ({
       style: { ...state.style, [key]: value },
@@ -86,6 +90,8 @@ export const useGeneralSettingsStore = create<GeneralSettingsState>((set) => ({
       },
     })),
   resetStyle: () => set({ style: cloneGeneralStyle(DEFAULT_GENERAL_STYLE) }),
+  setSceneExplorerEnabled: (sceneExplorerEnabled) =>
+    set({ sceneExplorerEnabled }),
 }));
 
 export function readGeneralStyleSnapshot(): GeneralStyleSettings {

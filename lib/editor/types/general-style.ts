@@ -22,6 +22,11 @@ export const GENERAL_STYLE_SURFACES = [
     description: "Browse panel opened from the Legend control in Preview",
   },
   {
+    id: "sceneExplorerDrawer",
+    label: "Scene explorer",
+    description: "Browse panel opened from the Scene Explorer control in Preview",
+  },
+  {
     id: "hotspotDialog",
     label: "Hotspot modal / drawer / info box",
     description: "Content surface shown when a hotspot is opened in Preview",

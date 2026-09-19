@@ -47,7 +47,19 @@ function pickSettings(state: SettingsState): EditorSettings {
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   ...cloneEditorSettings(DEFAULT_EDITOR_SETTINGS),
-  setSettings: (patch) => set((state) => ({ ...state, ...patch })),
+  setSettings: (patch) =>
+    set((state) => {
+      const next: Partial<EditorSettings> = {};
+      for (const [key, value] of Object.entries(patch) as [
+        keyof EditorSettings,
+        EditorSettings[keyof EditorSettings],
+      ][]) {
+        if (value !== undefined) {
+          (next as Record<string, unknown>)[key] = value;
+        }
+      }
+      return { ...state, ...next };
+    }),
   resetSettings: () => set({ ...cloneEditorSettings(DEFAULT_EDITOR_SETTINGS) }),
   hydrateSettings: (settings) => set({ ...cloneEditorSettings(settings) }),
 }));

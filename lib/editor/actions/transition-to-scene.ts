@@ -38,6 +38,7 @@ export function transitionToScene(sceneId: string): "stop" {
     latestUi.setHoverTooltip(null);
     latestUi.setInfoBoxAnchor(null);
     latestUi.setLegendDrawerOpen(false);
+    latestUi.setSceneExplorerDrawerOpen(false);
 
     useScenesStore.getState().switchScene(sceneId);
     latestUi.holdSceneTransition();

@@ -7,6 +7,7 @@ import {
   Info,
   LayoutGrid,
   ListTree,
+  Map,
   MapPin,
   MapPinned,
   Moon,
@@ -24,6 +25,7 @@ import { GeoDetailsSection } from "@/app/editor/_components/drawers/geo-details-
 import { GeoreferenceSection } from "@/app/editor/_components/drawers/georeference-section";
 import { MapStyleSection } from "@/app/editor/_components/drawers/map-style-section";
 import { CustomMenuSection } from "@/app/editor/_components/drawers/custom-menu-section";
+import { SceneMetadataSection } from "@/app/editor/_components/drawers/scene-metadata-section";
 import { CameraPoseCaptureField } from "@/app/editor/_components/ui/camera-pose-capture-field";
 import { CheckboxField } from "@/app/editor/_components/ui/checkbox-field";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
@@ -123,11 +125,14 @@ export function SettingsDrawer() {
       </div>
 
       <div className="editor-settings-sections min-h-0 flex-1 space-y-2.5 overflow-y-auto p-4">
+        <SettingsSection title="Scene" icon={<Map className="h-3.5 w-3.5" />}>
+          <SceneMetadataSection />
+        </SettingsSection>
+
         {sections.geoDetails ? (
           <SettingsSection
             title="Geo details"
             icon={<Globe className="h-3.5 w-3.5" />}
-            defaultOpen
           >
             <GeoDetailsSection />
           </SettingsSection>
@@ -146,7 +151,6 @@ export function SettingsDrawer() {
           <SettingsSection
             title="Georeference"
             icon={<MapPinned className="h-3.5 w-3.5" />}
-            defaultOpen
           >
             <GeoreferenceSection />
           </SettingsSection>

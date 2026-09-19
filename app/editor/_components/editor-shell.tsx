@@ -5,10 +5,11 @@ import { LoadingOverlay } from "@/app/editor/_components/loading-overlay";
 import { HotspotOutliner, OutlinerExpandTab } from "@/app/editor/_components/outliner/hotspot-outliner";
 import { ViewportFrame } from "@/app/editor/_components/viewport/viewport-frame";
 import { HotspotPropertiesDrawer } from "@/app/editor/_components/drawers/hotspot-properties-drawer";
+import { LegendDrawer } from "@/app/editor/_components/drawers/legend-drawer";
 import {
-  LegendButton,
-  LegendDrawer,
-} from "@/app/editor/_components/drawers/legend-drawer";
+  PreviewRailButtons,
+  SceneExplorerDrawer,
+} from "@/app/editor/_components/drawers/scene-explorer-drawer";
 import { GeneralSettingsDrawer } from "@/app/editor/_components/drawers/general-settings-drawer";
 import { SettingsDrawer } from "@/app/editor/_components/drawers/settings-drawer";
 import { ActionsModal } from "@/app/editor/_components/actions/actions-modal";
@@ -50,7 +51,8 @@ export function EditorShell() {
         <SettingsDrawer />
         <GeneralSettingsDrawer />
         <LegendDrawer />
-        <LegendButton />
+        <SceneExplorerDrawer />
+        <PreviewRailButtons />
         <PostMessageReceiveTestSuite />
         <PreviewModal />
         <ScenesModal />

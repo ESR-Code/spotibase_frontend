@@ -91,6 +91,7 @@ export function ScenesModal() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [draftName, setDraftName] = useState("");
+  const [draftDescription, setDraftDescription] = useState("");
   const [draftType, setDraftType] = useState<SceneTypeId>("model");
 
   useEffect(() => {
@@ -98,6 +99,7 @@ export function ScenesModal() {
       setEditingId(null);
       setCreating(false);
       setDraftName("");
+      setDraftDescription("");
       setDraftType("model");
       return;
     }
@@ -121,16 +123,19 @@ export function ScenesModal() {
   const handleStartCreate = () => {
     setCreating(true);
     setDraftName("");
+    setDraftDescription("");
     setDraftType("model");
   };
 
   const handleCreate = () => {
     addScene({
       name: draftName.trim() || undefined,
+      description: draftDescription.trim() || undefined,
       type: draftType,
     });
     setCreating(false);
     setDraftName("");
+    setDraftDescription("");
     setDraftType("model");
   };
 
@@ -203,6 +208,22 @@ export function ScenesModal() {
                     setCreating(false);
                   }
                 }}
+              />
+            </div>
+
+            <div>
+              <div
+                className="mb-1.5 text-[10px] font-bold uppercase tracking-wider"
+                style={{ color: "var(--editor-muted-2)" }}
+              >
+                Description
+              </div>
+              <textarea
+                className="editor-textarea"
+                rows={2}
+                placeholder="Optional"
+                value={draftDescription}
+                onChange={(e) => setDraftDescription(e.target.value)}
               />
             </div>
 
@@ -414,6 +435,14 @@ function SceneListItem({
                 </EditorChip>
               ) : null}
             </div>
+            {scene.description.trim() ? (
+              <div
+                className="mt-0.5 truncate text-[11px] leading-snug"
+                style={{ color: "var(--editor-muted)" }}
+              >
+                {scene.description.trim()}
+              </div>
+            ) : null}
             <div
               className="text-[10.5px]"
               style={{ color: "var(--editor-muted-2)" }}

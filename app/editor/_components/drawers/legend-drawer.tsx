@@ -31,26 +31,18 @@ export function LegendButton() {
   const legendEnabled = useSettingsStore((s) => s.legendEnabled);
   const open = useUIStore((s) => s.legendDrawerOpen);
   const setOpen = useUIStore((s) => s.setLegendDrawerOpen);
-  const outlinerCollapsed = useUIStore((s) => s.outlinerCollapsed);
 
   if (!isPreview || !legendEnabled) return null;
 
   return (
-    <div
-      className="editor-legend-btn absolute bottom-4 z-10"
-      style={{ left: outlinerCollapsed && !open ? "1rem" : "calc(18rem + 1rem)" }}
+    <button
+      type="button"
+      title="Legend"
+      className={`editor-tool-btn ${open ? "active" : ""}`}
+      onClick={() => setOpen(!open)}
     >
-      <div className="editor-glass editor-panel-shadow rounded-xl px-2 py-2">
-        <button
-          type="button"
-          title="Legend"
-          className={`editor-tool-btn ${open ? "active" : ""}`}
-          onClick={() => setOpen(!open)}
-        >
-          <ListTree className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    </div>
+      <ListTree className="h-3.5 w-3.5" />
+    </button>
   );
 }
 

@@ -52,7 +52,7 @@ EditorPageClient (ssr:false)
     EditorShell
       ViewportFrame ── PlayCanvas (model/image) or MapLibre (geo)
       HotspotOutliner / Layers / Subject
-      property + settings + legend drawers
+      property + settings + legend + scene-explorer drawers
       Scenes / Georeference / Actions / Preview dialogs
 ```
 
@@ -73,7 +73,7 @@ EditorPageClient (ssr:false)
 
 **Live stores** (active scene only): `editor-store` (hotspots, mode, preview), `model-store`, `settings-store`, `environment-store`, `effects-store`, `geo-store`, `layers-store`, plus UI/session stores.
 
-On scene switch / add, `scenes-store` snapshots live stores into the outgoing `Scene` and hydrates the incoming one (`hotspots`, model, settings, environment, effects, geo, layers, `geoReference`). New per-scene fields must join that path.
+On scene switch / add, `scenes-store` snapshots live stores into the outgoing `Scene` and hydrates the incoming one (`hotspots`, model, settings, environment, effects, geo, layers, `geoReference`). New per-scene fields must join that path. Scene identity (`name`, `description`, `thumbnailUrl`) lives on the `Scene` record and is not hydrated into a live store.
 
 **Preview overlays** (cleared when leaving Preview): `preview-appearance-store`, `preview-visibility-store`, `preview-spawned-hotspots-store`, `preview-mesh-highlight-store`, `preview-post-message-test-store`. Authored hotspots stay unchanged.
 
@@ -81,7 +81,7 @@ On scene switch / add, `scenes-store` snapshots live stores into the outgoing `S
 
 The Post Message receive tester HUD (`PostMessageReceiveTestSuite`) is editor chrome: opt-in keys live in the session store, not on the action node. It injects `{ event, data }` to the same window so live receive listeners run.
 
-**Project-wide chrome:** `general-settings-store` (Preview style tokens). Not per-scene.
+**Project-wide chrome:** `general-settings-store` (Preview style tokens + `sceneExplorerEnabled`). Not per-scene. Legend enable stays on per-scene `EditorSettings`.
 
 Hotspot vs layer selection is exclusive (`lib/editor/state/exclusive-selection.ts`).
 

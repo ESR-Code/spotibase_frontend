@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   ChevronDown,
   ListTree,
+  Map,
   Palette,
   PanelBottom,
   PanelRight,
@@ -30,6 +31,7 @@ const SURFACE_ICONS: Record<
   typeof ListTree
 > = {
   legendDrawer: ListTree,
+  sceneExplorerDrawer: Map,
   hotspotDialog: PanelRight,
 };
 
@@ -41,6 +43,12 @@ export function GeneralSettingsDrawer() {
   const setSurfaceColors = useGeneralSettingsStore((s) => s.setSurfaceColors);
   const setBottomMenuToken = useGeneralSettingsStore((s) => s.setBottomMenuToken);
   const resetStyle = useGeneralSettingsStore((s) => s.resetStyle);
+  const sceneExplorerEnabled = useGeneralSettingsStore(
+    (s) => s.sceneExplorerEnabled,
+  );
+  const setSceneExplorerEnabled = useGeneralSettingsStore(
+    (s) => s.setSceneExplorerEnabled,
+  );
 
   return (
     <GlassPanel
@@ -66,15 +74,24 @@ export function GeneralSettingsDrawer() {
 
       <div className="editor-settings-sections min-h-0 flex-1 space-y-2.5 overflow-y-auto p-4">
         <SettingsSection
+          title="Scene explorer"
+          icon={<Map className="h-3.5 w-3.5" />}
+        >
+          <SwitchField
+            label="Enable scene explorer"
+            description="Show a Scene Explorer control in Preview to browse and switch scenes"
+            checked={sceneExplorerEnabled}
+            onChange={setSceneExplorerEnabled}
+          />
+        </SettingsSection>
+        <SettingsSection
           title="Style"
           icon={<Palette className="h-3.5 w-3.5" />}
-          defaultOpen
         >
           <StyleGroup
             title="General"
             description="Shared Preview chrome: accents, inputs, borders, and glass"
             icon={<SlidersHorizontal className="h-3.5 w-3.5" />}
-            defaultOpen
           >
             {GENERAL_STYLE_GLOBAL_COLOR_FIELDS.map((field) => (
               <div key={field.key}>

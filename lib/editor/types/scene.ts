@@ -30,6 +30,10 @@ export type SceneModelState = {
 export type Scene = {
   id: string;
   name: string;
+  /** Shown in Scene Explorer and the Scenes list when non-empty. */
+  description: string;
+  /** Data URL for Scene Explorer; empty string means no thumbnail. */
+  thumbnailUrl: string;
   /** Immutable after creation — drives subject loader + camera mode. */
   type: SceneTypeId;
   isPrimary: boolean;

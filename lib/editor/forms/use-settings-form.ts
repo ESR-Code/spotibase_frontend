@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { DEFAULT_EDITOR_SETTINGS } from "@/lib/editor/constants/default-settings";
 import {
@@ -43,28 +43,47 @@ function toFormValues(
   };
 }
 
+function definedPatch(
+  values: Partial<SettingsFormValues>,
+): Partial<SettingsFormValues> {
+  const patch: Partial<SettingsFormValues> = {};
+  for (const key of Object.keys(values) as (keyof SettingsFormValues)[]) {
+    const value = values[key];
+    if (value !== undefined) {
+      (patch as Record<string, unknown>)[key] = value;
+    }
+  }
+  return patch;
+}
+
 export function useSettingsForm() {
-  const settings = useSettingsStore();
   const setSettings = useSettingsStore((s) => s.setSettings);
   const resetSettings = useSettingsStore((s) => s.resetSettings);
   const activeSceneId = useScenesStore((s) => s.activeSceneId);
+  const skipStoreWriteRef = useRef(false);
+  const prevSceneIdRef = useRef(activeSceneId);
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsFormSchema),
-    defaultValues: toFormValues(settings),
+    defaultValues: toFormValues(useSettingsStore.getState()),
   });
 
   useEffect(() => {
     const subscription = form.watch((values) => {
-      setSettings(values as Partial<SettingsFormValues>);
+      if (skipStoreWriteRef.current) return;
+      setSettings(definedPatch(values as Partial<SettingsFormValues>));
     });
     return () => subscription.unsubscribe();
   }, [form, setSettings]);
 
-  // Keep the drawer form in sync when switching scenes.
-  useEffect(() => {
+  // Reset during render (same tick as hydrate) so a stale watch cannot
+  // overwrite per-scene fields like legendEnabled after switchScene.
+  if (prevSceneIdRef.current !== activeSceneId) {
+    prevSceneIdRef.current = activeSceneId;
+    skipStoreWriteRef.current = true;
     form.reset(toFormValues(useSettingsStore.getState()));
-  }, [activeSceneId, form]);
+    skipStoreWriteRef.current = false;
+  }
 
   const reset = () => {
     resetSettings();

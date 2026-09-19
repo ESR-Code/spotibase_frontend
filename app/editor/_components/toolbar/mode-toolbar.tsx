@@ -49,6 +49,7 @@ export function ModeToolbar() {
         setHoverTooltip(null);
         useUIStore.getState().setInfoBoxAnchor(null);
         useUIStore.getState().setLegendDrawerOpen(false);
+        useUIStore.getState().setSceneExplorerDrawerOpen(false);
         useUIStore.getState().setLegendFilterCategory(LEGEND_CATEGORY_ALL);
         window.dispatchEvent(new CustomEvent("editor:reset-camera"));
       }

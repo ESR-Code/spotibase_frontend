@@ -186,6 +186,7 @@ export function cloneEditorSettings(settings: EditorSettings): EditorSettings {
       presentation === "infobox" ? false : settings.markerDialogBackdropBlur,
     resetPosition: cloneCameraResetPosition(settings.resetPosition ?? null),
     legendCategories: cloneLegendCategories(settings.legendCategories ?? []),
+    legendEnabled: settings.legendEnabled ?? false,
     customMenuButtons: cloneCustomMenuButtons(settings.customMenuButtons),
   };
 }

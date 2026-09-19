@@ -68,6 +68,8 @@ export function createScene(partial: {
   name: string;
   type: SceneTypeId;
   isPrimary?: boolean;
+  description?: string;
+  thumbnailUrl?: string;
   hotspots?: Hotspot[];
   nextHotspotId?: number;
   startActions?: HotspotActionGraph;
@@ -85,6 +87,8 @@ export function createScene(partial: {
   return {
     id: partial.id,
     name: partial.name,
+    description: partial.description ?? "",
+    thumbnailUrl: partial.thumbnailUrl ?? "",
     type: partial.type,
     isPrimary: partial.isPrimary ?? false,
     hotspots,
