@@ -40,7 +40,7 @@ export function LegendButton() {
       className="editor-legend-btn absolute bottom-4 z-10"
       style={{ left: outlinerCollapsed && !open ? "1rem" : "calc(18rem + 1rem)" }}
     >
-      <div className="editor-glass editor-panel-shadow rounded-xl p-1">
+      <div className="editor-glass editor-panel-shadow rounded-xl px-2 py-2">
         <button
           type="button"
           title="Legend"
