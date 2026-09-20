@@ -48,7 +48,7 @@ Only decisions that constrain how new work should be done.
 - Viewport thumbnails call `app.render()` then `toDataURL` in the same turn; do not leave `preserveDrawingBuffer` on.
 - MapLibre workers are copied into `public/` on `postinstall` and served with a JavaScript `Content-Type` (module workers).
 - On geo scenes the PlayCanvas layer stays mounted but hidden, and `autoRender` is turned off so the 3D loop does not keep drawing.
-- Model-scene key-light shadows are 2048² with two cascades. Skip `shadowDistance` writes unless the orbit distance changed.
+- Model-scene key-light shadows are 2048² with one cascade. If the loaded GLB has animation clips, `SHADOWUPDATE_REALTIME`; otherwise `SHADOWUPDATE_THISFRAME` (frozen map). Recapture after light or model-transform changes. Do not refit `shadowDistance` while frozen so orbiting stays cheap.
 - 3D hotspot drag moves the live entity only; the authored position is committed on pointerup.
 
 ## Hotspot content blocks

@@ -166,6 +166,14 @@ export function usePlayCanvasEditor() {
         applyStoredModelPose();
         cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
 
+        const syncKeyLightShadowMode = () => {
+          scene.applyShadowUpdateMode(
+            useModelStore.getState().animations.length > 0,
+            cameraCtrl.getOrbitPose().distance,
+          );
+        };
+        syncKeyLightShadowMode();
+
         const unbindResize = bindViewportResize(app, canvas);
 
         let frameCount = 0;
@@ -317,6 +325,7 @@ export function usePlayCanvasEditor() {
             if (state.disabledMeshIds === prev.disabledMeshIds) return;
             models.applyMeshVisibility(state.disabledMeshIds);
             meshHighlight.sync(usePreviewMeshHighlightStore.getState().byMeshId);
+            scene.invalidateStaticShadows();
           },
         );
         const unsubMeshHighlight = usePreviewMeshHighlightStore.subscribe(
@@ -335,6 +344,7 @@ export function usePlayCanvasEditor() {
             state.modelRotation.z !== prev.modelRotation.z
           ) {
             models.applyTransform(state.modelScale, state.modelRotation);
+            scene.invalidateStaticShadows();
           }
           if (state.modelReflection !== prev.modelReflection) {
             models.applyReflection(state.modelReflection);
@@ -347,6 +357,9 @@ export function usePlayCanvasEditor() {
               usePreviewMeshHighlightStore.getState().byMeshId,
             );
           }
+          if (state.animations !== prev.animations) {
+            syncKeyLightShadowMode();
+          }
         });
 
         const onImportSubject = async (event: Event) => {
@@ -358,6 +371,7 @@ export function usePlayCanvasEditor() {
           if (entity) {
             applyScenePresentation(type);
             cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
+            syncKeyLightShadowMode();
           }
         };
         const onResetCamera = () => {
@@ -488,6 +502,7 @@ export function usePlayCanvasEditor() {
           } else {
             cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
           }
+          syncKeyLightShadowMode();
         };
 
         window.addEventListener("editor:import-subject", onImportSubject);

@@ -18,8 +18,21 @@ export type SceneHandles = {
   rimLight: Entity;
   applyEnvironment: () => void;
   applyGridVisibility: () => void;
-  /** Keep shadow frustum tight to the orbit distance for texel density. */
+  /**
+   * Camera-fit the key-light shadow volume. No-op while the shadow map is
+   * frozen (static models) so orbiting does not invalidate the cached map.
+   */
   fitKeyLightShadows: (cameraDistance: number) => void;
+  /**
+   * Live clips → regenerate shadows every frame. No clips → capture this
+   * frame then freeze (`SHADOWUPDATE_THISFRAME` → `NONE`).
+   */
+  applyShadowUpdateMode: (
+    hasAnimations: boolean,
+    cameraDistance: number,
+  ) => void;
+  /** Recapture a frozen shadow map after casters or the key light moved. */
+  invalidateStaticShadows: () => void;
 };
 
 export function createScene(app: Application, pcModule: typeof pc): SceneHandles {
@@ -42,42 +55,59 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
   });
   app.root.addChild(camera);
 
-  // Key — warm studio key with detailed, stable shadows.
-  // PlayCanvas guidance:
-  // - cascades restore near-field resolution when orbiting large models
-  // - cascadeBlend dither-crossfades splits (PR #7233) so seams don't read as lines
-  // - smaller shadowDistance = crisper shadows; we refit it to the camera each frame
-  // - PCF3 keeps structure (trusses/pipes) sharper than the softer PCF5 kernel
+  // Key — warm studio key. One 2048 cascade; update mode is live only when
+  // the loaded GLB has animation clips (see applyShadowUpdateMode).
   const keyLight = new pcModule.Entity("KeyLight");
   keyLight.addComponent("light", {
     type: "directional",
     color: hexToColor(pcModule, env.keyColor),
     intensity: env.keyIntensity,
     castShadows: true,
-    shadowResolution: 2048,
+    shadowResolution: 4096,
     shadowDistance: 32,
     shadowIntensity: env.shadowIntensity,
     shadowBias: 0.04,
     // Prefer normal-offset over large constant bias (avoids acne bands / peter-panning).
     normalOffsetBias: 0.12,
     shadowType: pcModule.SHADOW_PCF3_32F,
-    numCascades: 2,
-    cascadeDistribution: 0.5,
-    cascadeBlend: 0.45,
+    numCascades: 1,
   });
   applyDirectionalSpherical(keyLight, env.keyPitch, env.keyYaw, 16);
   app.root.addChild(keyLight);
 
   let lastShadowDistance = -1;
+  let shadowsLive = true;
 
-  const fitKeyLightShadows = (cameraDistance: number) => {
+  const writeShadowDistance = (cameraDistance: number, force = false) => {
     if (!keyLight.light) return;
     // Cover a bit past the orbit so the hard shadowDistance cutoff never
     // appears as a seam on the ground, while staying tight for texel density.
     const next = Math.min(70, Math.max(16, cameraDistance * 2.15 + 8));
-    if (Math.abs(next - lastShadowDistance) < 0.5) return;
+    if (!force && Math.abs(next - lastShadowDistance) < 0.5) return;
     lastShadowDistance = next;
     keyLight.light.shadowDistance = next;
+  };
+
+  const fitKeyLightShadows = (cameraDistance: number) => {
+    if (!shadowsLive) return;
+    writeShadowDistance(cameraDistance);
+  };
+
+  const applyShadowUpdateMode = (
+    hasAnimations: boolean,
+    cameraDistance: number,
+  ) => {
+    if (!keyLight.light) return;
+    shadowsLive = hasAnimations;
+    writeShadowDistance(cameraDistance, true);
+    keyLight.light.shadowUpdateMode = hasAnimations
+      ? pcModule.SHADOWUPDATE_REALTIME
+      : pcModule.SHADOWUPDATE_THISFRAME;
+  };
+
+  const invalidateStaticShadows = () => {
+    if (!keyLight.light || shadowsLive) return;
+    keyLight.light.shadowUpdateMode = pcModule.SHADOWUPDATE_THISFRAME;
   };
 
   // Fill — cool bounce so dark sides stay readable
@@ -147,6 +177,7 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
       keyLight.light.color = hexToColor(pcModule, state.keyColor);
       keyLight.light.shadowIntensity = state.shadowIntensity;
       applyDirectionalSpherical(keyLight, state.keyPitch, state.keyYaw, 16);
+      invalidateStaticShadows();
     }
     if (shadowCatcher.render?.meshInstances?.[0]?.material) {
       applyShadowCatcherAppearance(
@@ -177,6 +208,8 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
     applyEnvironment,
     applyGridVisibility,
     fitKeyLightShadows,
+    applyShadowUpdateMode,
+    invalidateStaticShadows,
   };
 }
 
