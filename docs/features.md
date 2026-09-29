@@ -26,7 +26,9 @@ Status as of the current codebase. “Partial” means code exists but the featu
 ### SaaS data plane
 
 - Neon Managed Better Auth on the linked project; Organization plugin enabled (`owner` / `admin` / `member`). Invitation emails off until an accept route exists.
-- Drizzle types for `neon_auth` (`user`, `organization`, `member`, `invitation`, …) in `lib/db/`. No product UI.
+- Drizzle types for `neon_auth` (`user`, `organization`, `member`, `invitation`, …) in `lib/db/`.
+- Auth routes: sign-in, forgot password, reset password. Sign-up form exists but is disabled (Neon config `disable-sign-up` + no submit). Email verification is off.
+- `/` sends signed-in users to `/orgs` and everyone else to `/auth/sign-in`. `/orgs` is a signed-in placeholder only (no org/project lists yet).
 
 
 
@@ -85,9 +87,9 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 ## Partial
 
-- **No project persistence.** Scenes, graphs, and settings are in-memory. Refresh loses work. Neon Auth + org tables exist; there is no editor save/load or org UI yet.
+- **No project persistence.** Scenes, graphs, and settings are in-memory. Refresh loses work. Neon Auth + org tables exist; there is no editor save/load or org/project UI yet (`/orgs` is a placeholder).
 - **Hotspot JSON export** (`lib/editor/io/export-hotspots.ts`) exists but is not wired in the UI. It exports the current scene’s hotspots only, not the full project.
-- **Home** `/` is still the create-next-app starter. Product entry is `/editor`.
+- **Home** `/` gates to auth or `/orgs`. Product editor remains `/editor`.
 - **App metadata / README** still say “Create Next App”.
 - **Image overlay** `world` **pose** exists on the type; the layers UI and MapLibre path are geo-space. PlayCanvas world overlays are not a first-class editor flow.
 - **Scene.layers comment** still says “image overlays now; more kinds later” even though shape overlays shipped.
@@ -104,7 +106,7 @@ These are implied by gaps or comments, not a committed roadmap.
 - Additional overlay kinds beyond image + shape.
 - Additional hotspot block types beyond heading / text / link / image / video.
 - Wire or replace hotspot-only JSON export with a project-level format.
-- Replace the `/` starter page and default Next.js metadata with a product entry.
-- Auth / org UI, editor save/load, Cloudflare Workers + R2 (files, rate limits, queues).
+- Replace default Next.js metadata / README with product branding.
+- Org/project home (lists, switching), editor save/load, Cloudflare Workers + R2 (files, rate limits, queues). Re-enable signup and email verification when that UI ships.
 - A viewer route that will be used on prod once a persistent memory (db backend) existed. It will be a lightweight version of editor's preview mode
 

@@ -13,6 +13,7 @@ Only decisions that constrain how new work should be done.
 - **Editor toasts** are custom (`lib/editor/toast.ts` + `EditorToaster`), not sonner. Mount the toaster inside `.editor-root` so glass tokens apply; keep them bottom-right so they don’t cover the center viewport menu.
 - **Devcontainer / WSL:** `WATCHPACK_POLLING` and webpack `watchOptions.poll` so file watching works. Keep that if changing `dev` or `next.config.ts`.
 - **Neon Lakebase Postgres + Managed Better Auth** for identity and tenancy. Org is the tenant boundary (`neon_auth.organization` / `member`). Do not add parallel `users` / `organizations` tables in `public`. Auth DDL is Neon-managed; Drizzle only introspects `neon_auth`.
+- **Auth UI (Now):** Email/password via `@neondatabase/auth` (`lib/auth`, `app/api/auth/[...path]`, `proxy.ts`). Sign-up stays closed (UI + Neon `disable-sign-up`) and email verification stays off until product UI is ready. Post-login landing is `/orgs` (placeholder — do not design org/project lists yet). Browser talks only to same-origin `/api/auth`; never `DATABASE_URL` or the Data API.
 - **Object files (later):** Cloudflare R2, not Neon Object Storage. **HTTP edge / queues / rate limits (later):** Cloudflare Workers. Do not expose `DATABASE_URL` or the Data API to the browser.
 
 ## Scene model

@@ -6,8 +6,11 @@ VectorForge is a Next.js App Router app. Almost all product code is the client-s
 
 ```
 app/
-  page.tsx                          # leftover create-next-app home (not the product)
+  page.tsx                          # session gate → /orgs or /auth/sign-in
   layout.tsx                        # root fonts / metadata
+  auth/                             # sign-in, disabled sign-up, forgot/reset password
+  orgs/                             # post-login placeholder (org/project UI not designed)
+  api/auth/[...path]/route.ts       # Neon Auth handler (same-origin proxy)
   editor/                           # VectorForge
     page.tsx → editor-page-client   # dynamic import, ssr: false
     layout.tsx                      # editor fonts + theme
@@ -16,7 +19,9 @@ app/
   http_request_node_test/route.ts   # demo JSON for HTTP Request nodes
   subscribe_node_test/route.ts      # mutating JSON for Subscribe nodes
 lib/editor/                         # domain: types, stores, engines, actions
+lib/auth/                           # Neon Auth server + browser clients
 lib/db/                             # Drizzle client + introspected neon_auth schema
+proxy.ts                            # Next 16: protect /orgs
 neon.ts                             # Neon IaC (Auth enabled)
 drizzle.config.ts                   # drizzle-kit (pull / studio)
 components/ui/                      # shadcn primitives (button, input, …)
@@ -61,6 +66,8 @@ Linked Neon project (`neon.ts`, `auth: true`). Credentials live in `.env.local` 
 | invitations | `neon_auth.invitation` (`inviterId`, `expiresAt`, `status`) |
 
 Drizzle introspects those tables into `lib/db/schema.ts`. Use `createDb()` from `lib/db/index.ts` on the **server only**. Refresh types with `npm run db:pull` (do not migrate Auth tables). Org invitation emails stay off until an accept-invitation route exists.
+
+Auth UI: `/auth/sign-in`, `/auth/forgot-password`, `/auth/reset-password`, and a **disabled** `/auth/sign-up` (Neon email-password sign-up is also closed). Email verification is off until the rest of the product UI is ready. After login, `/orgs` is a placeholder — do not design org/project chrome there yet. `proxy.ts` requires a session for `/orgs`. `NEON_AUTH_COOKIE_SECRET` is app-generated (not injected by Neon).
 
 Editor Zustand stores are unchanged and still session-only.
 
