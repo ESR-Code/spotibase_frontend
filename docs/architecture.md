@@ -1,6 +1,6 @@
 # Architecture
 
-VectorForge is a Next.js App Router app. Almost all product code is the client-side editor at `/editor`. There is no database and no project persist layer; state lives in Zustand for the session.
+VectorForge is a Next.js App Router app. Almost all product code is the client-side editor at `/editor`. Editor state is still session-only Zustand (no save/load UI yet). The SaaS data plane is Neon Lakebase Postgres with Managed Better Auth; the tenant boundary is an **organization**.
 
 ## Layout
 
@@ -16,6 +16,9 @@ app/
   http_request_node_test/route.ts   # demo JSON for HTTP Request nodes
   subscribe_node_test/route.ts      # mutating JSON for Subscribe nodes
 lib/editor/                         # domain: types, stores, engines, actions
+lib/db/                             # Drizzle client + introspected neon_auth schema
+neon.ts                             # Neon IaC (Auth enabled)
+drizzle.config.ts                   # drizzle-kit (pull / studio)
 components/ui/                      # shadcn primitives (button, input, …)
 scripts/copy-maplibre-workers.mjs   # postinstall → public/
 public/                             # static assets + copied MapLibre workers
@@ -43,6 +46,23 @@ reference_editor_html/              # legacy HTML reference (not runtime)
 | `constants/` | Seed scene, defaults, demo hotspots |
 
 UI mirrors that split: `app/editor/_components/{viewport,outliner,drawers,actions,blocks,dialogs,toolbar,ui}`.
+
+## Backend and tenancy
+
+Linked Neon project (`neon.ts`, `auth: true`). Credentials live in `.env.local` via `neon link` / `neon checkout` — never in git.
+
+**Tenant = organization.** Identity and membership are Managed Better Auth tables in schema `neon_auth` (Neon owns DDL). Do not recreate them in `public`. Later `projects` / `scenes` will FK to `neon_auth.organization.id`.
+
+| Concept | Table |
+| --- | --- |
+| users | `neon_auth.user` |
+| organizations | `neon_auth.organization` |
+| memberships | `neon_auth.member` (`role`: owner / admin / member) |
+| invitations | `neon_auth.invitation` (`inviterId`, `expiresAt`, `status`) |
+
+Drizzle introspects those tables into `lib/db/schema.ts`. Use `createDb()` from `lib/db/index.ts` on the **server only**. Refresh types with `npm run db:pull` (do not migrate Auth tables). Org invitation emails stay off until an accept-invitation route exists.
+
+Editor Zustand stores are unchanged and still session-only.
 
 ## Runtime shape
 

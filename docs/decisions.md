@@ -12,6 +12,8 @@ Only decisions that constrain how new work should be done.
 - **Tailwind 4 + custom editor tokens** (`editor-theme.css`). shadcn (`components/ui`) for primitives; editor chrome in `app/editor/_components/ui`.
 - **Editor toasts** are custom (`lib/editor/toast.ts` + `EditorToaster`), not sonner. Mount the toaster inside `.editor-root` so glass tokens apply; keep them bottom-right so they don’t cover the center viewport menu.
 - **Devcontainer / WSL:** `WATCHPACK_POLLING` and webpack `watchOptions.poll` so file watching works. Keep that if changing `dev` or `next.config.ts`.
+- **Neon Lakebase Postgres + Managed Better Auth** for identity and tenancy. Org is the tenant boundary (`neon_auth.organization` / `member`). Do not add parallel `users` / `organizations` tables in `public`. Auth DDL is Neon-managed; Drizzle only introspects `neon_auth`.
+- **Object files (later):** Cloudflare R2, not Neon Object Storage. **HTTP edge / queues / rate limits (later):** Cloudflare Workers. Do not expose `DATABASE_URL` or the Data API to the browser.
 
 ## Scene model
 
@@ -60,7 +62,7 @@ Only decisions that constrain how new work should be done.
 
 ## Persistence and IO
 
-- **Session-only.** No localStorage/IndexedDB project save. Do not assume refresh keeps work.
+- **Session-only editor.** No localStorage/IndexedDB project save. Do not assume refresh keeps work. Neon/Auth is provisioned; product persist (projects/scenes) is not wired yet.
 - Subject files stay in memory (`scene-subject-cache`). Import is a window event (`editor:import-subject`), not a direct engine call from the file picker.
 - Existing `exportHotspots()` is a hotspot-list dump, not a project format. Do not treat it as the save system.
 

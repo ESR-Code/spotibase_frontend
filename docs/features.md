@@ -23,6 +23,13 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 
 
+### SaaS data plane
+
+- Neon Managed Better Auth on the linked project; Organization plugin enabled (`owner` / `admin` / `member`). Invitation emails off until an accept route exists.
+- Drizzle types for `neon_auth` (`user`, `organization`, `member`, `invitation`, …) in `lib/db/`. No product UI.
+
+
+
 ### Hotspots
 
 - Place, select, drag, duplicate, delete. Types, colors, styles (dot / number / icon / image / hidden), shapes (circle / square / rounded / diamond / pin), pulse, wick, enable flag.
@@ -78,7 +85,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 ## Partial
 
-- **No project persistence.** Scenes, graphs, and settings are in-memory. Refresh loses work.
+- **No project persistence.** Scenes, graphs, and settings are in-memory. Refresh loses work. Neon Auth + org tables exist; there is no editor save/load or org UI yet.
 - **Hotspot JSON export** (`lib/editor/io/export-hotspots.ts`) exists but is not wired in the UI. It exports the current scene’s hotspots only, not the full project.
 - **Home** `/` is still the create-next-app starter. Product entry is `/editor`.
 - **App metadata / README** still say “Create Next App”.
@@ -98,6 +105,6 @@ These are implied by gaps or comments, not a committed roadmap.
 - Additional hotspot block types beyond heading / text / link / image / video.
 - Wire or replace hotspot-only JSON export with a project-level format.
 - Replace the `/` starter page and default Next.js metadata with a product entry.
-- Backend, auth, or multi-user hosting (none present).
+- Auth / org UI, editor save/load, Cloudflare Workers + R2 (files, rate limits, queues).
 - A viewer route that will be used on prod once a persistent memory (db backend) existed. It will be a lightweight version of editor's preview mode
 
