@@ -1,16 +1,6 @@
-import { auth } from "@/lib/auth/server";
-import { redirect } from "next/navigation";
+import { SessionGate } from "@/lib/auth/session-gate";
+import type { ReactNode } from "react";
 
-export const dynamic = "force-dynamic";
-
-export default async function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { data: session } = await auth.getSession();
-  if (session?.user) {
-    redirect("/orgs");
-  }
-  return children;
+export default function AuthLayout({ children }: { children: ReactNode }) {
+  return <SessionGate mode="guest">{children}</SessionGate>;
 }

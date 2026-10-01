@@ -2,6 +2,7 @@ import { defineConfig } from "@neon/config/v1";
 
 export default defineConfig({
   auth: true,
+  dataApi: true,
   // Branch policy: per-branch tuning
   branch: (branch) => {
     if (branch.isDefault) {

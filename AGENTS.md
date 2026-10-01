@@ -36,7 +36,7 @@ This is a Next.js 16 / React 19 app. The product is **VectorForge** (“3D Hotsp
 | PlayCanvas viewport                       | `lib/editor/hooks/use-playcanvas-editor.ts`, `lib/editor/engine/`                   |
 | MapLibre viewport                         | `lib/editor/hooks/use-geo-map-editor.ts`, `lib/editor/geo/`                         |
 | Geo alignment                             | `lib/editor/coords/`, `lib/editor/types/geo-reference.ts`                           |
-| Neon Auth / orgs / Drizzle                | `lib/auth/`, `app/auth/`, `app/orgs/`, `proxy.ts`, `lib/db/`, `docs/architecture.md` |
+| Neon Auth / orgs / Drizzle                | `worker/`, `lib/auth/`, `app/auth/`, `app/orgs/`, `lib/db/`, `docs/architecture.md` |
 | Feature status                            | `docs/features.md`                                                                  |
 
 
@@ -51,7 +51,7 @@ This is a Next.js 16 / React 19 app. The product is **VectorForge** (“3D Hotsp
 - **Preview vs authored data.** Preview-only visibility, appearance, spawned hotspots, and mesh highlights belong in the `preview-`* stores. Do not mutate authored hotspots for temporary Preview effects.
 - **Scene switch.** Changing scenes snapshots the live stores into the outgoing `Scene`, then hydrates the incoming one. If you add per-scene state, include it in that snapshot/hydrate path.
 - **Path alias.** Import via `@/` (see `tsconfig.json`).
-- **Server-only DB.** `lib/db/` and `DATABASE_URL` stay off Client Components. The editor tree remains `ssr: false`.
+- **Server-only DB.** `lib/db/` and `DATABASE_URL` stay off Client Components and off the Worker. The editor tree remains `ssr: false`. The browser calls same-origin `/gateway/*`; Next rewrites that to the Worker.
 - **Deprecated aliases.** Prefer `import-subject`, `scene-subject-cache`, and `replaceFromFile`. Do not add new callers of the deprecated GLB/model-cache names.
 
 

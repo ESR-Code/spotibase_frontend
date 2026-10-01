@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "WATCHPACK_POLLING=true next dev --webpack -H 0.0.0.0 -p 3000",
+    "dev:api": "npm run dev --prefix worker",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -28,6 +29,7 @@
     "@radix-ui/react-slot": "^1.3.3",
     "@radix-ui/react-switch": "^1.3.7",
     "@radix-ui/react-tooltip": "^1.2.16",
+    "@tanstack/react-query": "^5.104.0",
     "@xyflow/react": "^12.11.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

@@ -26,9 +26,10 @@ Status as of the current codebase. “Partial” means code exists but the featu
 ### SaaS data plane
 
 - Neon Managed Better Auth on the linked project; Organization plugin enabled (`owner` / `admin` / `member`). Invitation emails off until an accept route exists.
-- Drizzle types for `neon_auth` (`user`, `organization`, `member`, `invitation`, …) in `lib/db/`.
-- Auth routes: sign-in, forgot password, reset password. Sign-up form exists but is disabled (Neon config `disable-sign-up` + no submit). Email verification is off.
-- `/` sends signed-in users to `/orgs` and everyone else to `/auth/sign-in`. `/orgs` is a signed-in placeholder only (no org/project lists yet).
+- Drizzle types for `neon_auth` (`user`, `organization`, `member`, `invitation`, …) in `lib/db/`. Drizzle is not the request path for login or browser CRUD.
+- Cloudflare Worker gateway: `/auth` → Neon Auth, `/data` → Neon Data API (user JWT + RLS), `/fn` → 501 until a Neon Function URL is set. Rate limits on auth writes and `/data`.
+- Auth UI: sign-in, forgot password, reset password. Sign-up form exists but is disabled (Neon config `disable-sign-up` + no submit). Email verification is off.
+- `/` sends signed-in users to `/orgs` and everyone else to `/auth/sign-in` (client session check). `/orgs` is a signed-in placeholder only (no org/project lists yet).
 
 
 
@@ -107,6 +108,6 @@ These are implied by gaps or comments, not a committed roadmap.
 - Additional hotspot block types beyond heading / text / link / image / video.
 - Wire or replace hotspot-only JSON export with a project-level format.
 - Replace default Next.js metadata / README with product branding.
-- Org/project home (lists, switching), editor save/load, Cloudflare Workers + R2 (files, rate limits, queues). Re-enable signup and email verification when that UI ships.
+- Org/project home (lists, switching), editor save/load, Cloudflare R2 (files, queues). Re-enable signup and email verification when that UI ships. Neon Function for complex server-side work.
 - A viewer route that will be used on prod once a persistent memory (db backend) existed. It will be a lightweight version of editor's preview mode
 

@@ -1,0 +1,17 @@
+{
+	"name": "worker",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "npx -y node@22 ./node_modules/cf/bin/cf dev",
+		"build": "npx -y node@22 ./node_modules/cf/bin/cf build",
+		"deploy": "npx -y node@22 ./node_modules/cf/bin/cf deploy",
+		"typecheck": "npx -y node@22 ./node_modules/cf/bin/cf workers types && npx -y node@22 ./node_modules/typescript/bin/tsc"
+	},
+	"devDependencies": {
+		"@cloudflare/vite-plugin": "beta",
+		"cf": "^1.0.0-beta.10",
+		"typescript": "^7.0.2",
+		"vite": "^8.3.0"
+	}
+}

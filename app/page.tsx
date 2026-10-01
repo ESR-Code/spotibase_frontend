@@ -1,9 +1,26 @@
-import { auth } from "@/lib/auth/server";
-import { redirect } from "next/navigation";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { authClient } from "@/lib/auth/client";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-export default async function Home() {
-  const { data: session } = await auth.getSession();
-  redirect(session?.user ? "/orgs" : "/auth/sign-in");
+export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    authClient
+      .getSession()
+      .then((result) => {
+        router.replace(result.data?.user ? "/orgs" : "/auth/sign-in");
+      })
+      .catch(() => {
+        router.replace("/auth/sign-in");
+      });
+  }, [router]);
+
+  return (
+    <p className="flex min-h-dvh items-center justify-center text-sm text-zinc-500">
+      Loading…
+    </p>
+  );
 }
