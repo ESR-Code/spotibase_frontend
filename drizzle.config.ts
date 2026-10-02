@@ -10,10 +10,12 @@ if (!url) {
   );
 }
 
+/** Product tables only — never generate/push Managed Auth (`neon_auth`) DDL. */
 export default defineConfig({
-  schema: "./lib/db/schema.ts",
+  schema: "./lib/db/app-schema.ts",
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: { url },
-  schemaFilter: ["public", "neon_auth"],
+  schemaFilter: ["public"],
+  tablesFilter: ["project_folders", "projects"],
 });

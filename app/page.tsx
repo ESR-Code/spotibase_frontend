@@ -11,7 +11,7 @@ export default function Home() {
     authClient
       .getSession()
       .then((result) => {
-        router.replace(result.data?.user ? "/orgs" : "/auth/sign-in");
+        router.replace(result.data?.user ? "/projects" : "/auth/sign-in");
       })
       .catch(() => {
         router.replace("/auth/sign-in");

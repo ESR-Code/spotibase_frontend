@@ -34,7 +34,7 @@ export default function SignInPage() {
         setError(signInError.message || "Failed to sign in.");
         return;
       }
-      router.push("/orgs");
+      router.push("/projects");
     } catch {
       setError("Could not reach the API.");
     } finally {

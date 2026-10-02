@@ -10,7 +10,9 @@
     "lint": "eslint",
     "postinstall": "node scripts/copy-maplibre-workers.mjs",
     "db:pull": "drizzle-kit pull",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.5.7",

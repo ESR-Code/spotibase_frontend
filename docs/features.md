@@ -29,7 +29,8 @@ Status as of the current codebase. “Partial” means code exists but the featu
 - Drizzle types for `neon_auth` (`user`, `organization`, `member`, `invitation`, …) in `lib/db/`. Drizzle is not the request path for login or browser CRUD.
 - Cloudflare Worker gateway: `/auth` → Neon Auth, `/data` → Neon Data API (user JWT + RLS), `/fn` → 501 until a Neon Function URL is set. Rate limits on auth writes and `/data`.
 - Auth UI: sign-in, forgot password, reset password. Sign-up form exists but is disabled (Neon config `disable-sign-up` + no submit). Email verification is off.
-- `/` sends signed-in users to `/orgs` and everyone else to `/auth/sign-in` (client session check). `/orgs` is a signed-in placeholder only (no org/project lists yet).
+- `/projects` studio dashboard (client-only): org create/switch, folder CRUD (name + color), project CRUD (name, description, move between folders), search (⌘K / Ctrl K), sort, tabs (All / Recent / In Folders / Root), grid/list view, workspace overview. Animated dialogs (bottom sheet on mobile), responsive layout. Project detail route is a stub.
+- `/` sends signed-in users to `/projects` and everyone else to `/auth/sign-in` (client session check). `/orgs` redirects to `/projects`. `/projects/[id]` is a stub for the future project workspace.
 
 
 
@@ -88,9 +89,9 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 ## Partial
 
-- **No project persistence.** Scenes, graphs, and settings are in-memory. Refresh loses work. Neon Auth + org tables exist; there is no editor save/load or org/project UI yet (`/orgs` is a placeholder).
+- **No editor project persistence.** Scenes, graphs, and settings in `/editor` are still in-memory. Refresh loses editor work. Studio `/projects` persists folders and projects (metadata only; no scene save yet).
 - **Hotspot JSON export** (`lib/editor/io/export-hotspots.ts`) exists but is not wired in the UI. It exports the current scene’s hotspots only, not the full project.
-- **Home** `/` gates to auth or `/orgs`. Product editor remains `/editor`.
+- **Home** `/` gates to auth or `/projects`. Product editor remains `/editor`.
 - **App metadata / README** still say “Create Next App”.
 - **Image overlay** `world` **pose** exists on the type; the layers UI and MapLibre path are geo-space. PlayCanvas world overlays are not a first-class editor flow.
 - **Scene.layers comment** still says “image overlays now; more kinds later” even though shape overlays shipped.
@@ -103,11 +104,12 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 These are implied by gaps or comments, not a committed roadmap.
 
-- Save / load (or full project import-export) covering scenes, graphs, subjects, layers, and geo references.
+- Dedicated project workspace (open a project into the editor with save/load).
+- Editor save / load (or full project import-export) covering scenes, graphs, subjects, layers, and geo references.
 - Additional overlay kinds beyond image + shape.
 - Additional hotspot block types beyond heading / text / link / image / video.
 - Wire or replace hotspot-only JSON export with a project-level format.
 - Replace default Next.js metadata / README with product branding.
-- Org/project home (lists, switching), editor save/load, Cloudflare R2 (files, queues). Re-enable signup and email verification when that UI ships. Neon Function for complex server-side work.
+- Org admin (invites, roles UI), Cloudflare R2 (files, queues). Re-enable signup and email verification when that UI ships. Neon Function for complex server-side work.
 - A viewer route that will be used on prod once a persistent memory (db backend) existed. It will be a lightweight version of editor's preview mode
 

@@ -6,10 +6,11 @@ VectorForge is a Next.js App Router app. Almost all product code is the client-s
 
 ```
 app/
-  page.tsx                          # client session gate → /orgs or /auth/sign-in
+  page.tsx                          # client session gate → /projects or /auth/sign-in
   layout.tsx                        # root fonts / metadata
   auth/                             # sign-in, disabled sign-up, forgot/reset password
-  orgs/                             # post-login placeholder (org/project UI not designed)
+  projects/                         # studio dashboard (orgs, folders, projects)
+  orgs/                             # legacy redirect → /projects
   editor/                           # VectorForge
     page.tsx → editor-page-client   # dynamic import, ssr: false
     layout.tsx                      # editor fonts + theme
@@ -20,10 +21,11 @@ app/
 lib/editor/                         # domain: types, stores, engines, actions
 lib/auth/                           # browser Neon Auth client (calls the Worker)
 lib/api/                            # TanStack Query provider + Data API fetch helper
-lib/db/                             # Drizzle client + introspected neon_auth schema
+lib/projects/                       # folder/project Data API helpers + hooks
+lib/db/                             # Drizzle: neon_auth introspect + public app schema
 worker/                             # Cloudflare Worker API gateway (`cf`)
 neon.ts                             # Neon IaC (Auth + Data API)
-drizzle.config.ts                   # drizzle-kit (pull / studio)
+drizzle.config.ts                   # drizzle-kit (generate / migrate / pull / studio)
 components/ui/                      # shadcn primitives (button, input, …)
 scripts/copy-maplibre-workers.mjs   # postinstall → public/
 public/                             # static assets + copied MapLibre workers
@@ -56,7 +58,7 @@ UI mirrors that split: `app/editor/_components/{viewport,outliner,drawers,action
 
 Linked Neon project (`neon.ts`, `auth: true`). Credentials live in `.env.local` via `neon link` / `neon checkout` — never in git.
 
-**Tenant = organization.** Identity and membership are Managed Better Auth tables in schema `neon_auth` (Neon owns DDL). Do not recreate them in `public`. Later `projects` / `scenes` will FK to `neon_auth.organization.id`.
+**Tenant = organization.** Identity and membership are Managed Better Auth tables in schema `neon_auth` (Neon owns DDL). Do not recreate them in `public`. Product tables `project_folders` and `projects` FK to `neon_auth.organization.id`.
 
 | Concept | Table |
 | --- | --- |
@@ -64,12 +66,16 @@ Linked Neon project (`neon.ts`, `auth: true`). Credentials live in `.env.local` 
 | organizations | `neon_auth.organization` |
 | memberships | `neon_auth.member` (`role`: owner / admin / member) |
 | invitations | `neon_auth.invitation` (`inviterId`, `expiresAt`, `status`) |
+| folders | `public.project_folders` |
+| projects | `public.projects` |
 
-Drizzle introspects those tables into `lib/db/schema.ts`. Use `createDb()` from `lib/db/index.ts` on the **server only** for migrations and later Neon Function work. Refresh types with `npm run db:pull` (do not migrate Auth tables). Org invitation emails stay off until an accept-invitation route exists. Do not use Drizzle as the login or browser CRUD path.
+Drizzle introspects Auth tables into `lib/db/schema.ts`. Product tables live in `lib/db/app-schema.ts` and are migrated with `npm run db:generate` / `db:migrate` (do not migrate Auth tables). Refresh Auth types with `npm run db:pull`. Use `createDb()` from `lib/db/index.ts` on the **server only**. Org invitation emails stay off until an accept-invitation route exists. Do not use Drizzle as the login or browser CRUD path.
+
+RLS on `project_folders` / `projects` allows rows only when `public.is_org_member(organization_id)` is true (SECURITY DEFINER check against `neon_auth.member` + `auth.uid()`). Browser CRUD goes through `/gateway/data/*` (Worker → Neon Data API).
 
 The browser calls same-origin `/gateway/*`. Next proxies that to the Worker (`WORKER_URL`, default `http://127.0.0.1:8787`) so the session cookie stays on the app origin. If the Worker is not running, `GET /gateway/auth/get-session` returns an empty session instead of a 500. The browser never sees Neon URLs or `DATABASE_URL`. `/auth/*` proxies Neon Auth. `/data/*` exchanges the session cookie for the user JWT and forwards to the Neon Data API (RLS is the authorization layer; `neon_auth` is not exposed). `/fn/*` is reserved for a future Neon Function and returns 501 until `NEON_FUNCTION_URL` is set. Run the Worker with `npm run dev:api` beside `npm run dev`.
 
-Auth UI: `/auth/sign-in`, `/auth/forgot-password`, `/auth/reset-password`, and a **disabled** `/auth/sign-up` (Neon email-password sign-up is also closed). Email verification is off until the rest of the product UI is ready. After login, `/orgs` is a placeholder — do not design org/project chrome there yet. Session redirects are client-side.
+Auth UI: `/auth/sign-in`, `/auth/forgot-password`, `/auth/reset-password`, and a **disabled** `/auth/sign-up` (Neon email-password sign-up is also closed). Email verification is off until the rest of the product UI is ready. After login, `/projects` is the studio dashboard (org selector, folders, projects). `/orgs` redirects there. Session redirects are client-side.
 
 Editor Zustand stores are unchanged and still session-only.
 

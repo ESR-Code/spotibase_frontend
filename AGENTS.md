@@ -36,7 +36,7 @@ This is a Next.js 16 / React 19 app. The product is **VectorForge** (“3D Hotsp
 | PlayCanvas viewport                       | `lib/editor/hooks/use-playcanvas-editor.ts`, `lib/editor/engine/`                   |
 | MapLibre viewport                         | `lib/editor/hooks/use-geo-map-editor.ts`, `lib/editor/geo/`                         |
 | Geo alignment                             | `lib/editor/coords/`, `lib/editor/types/geo-reference.ts`                           |
-| Neon Auth / orgs / Drizzle                | `worker/`, `lib/auth/`, `app/auth/`, `app/orgs/`, `lib/db/`, `docs/architecture.md` |
+| Neon Auth / projects / Drizzle            | `worker/`, `lib/auth/`, `app/auth/`, `app/projects/`, `lib/projects/`, `lib/db/`, `docs/architecture.md` |
 | Feature status                            | `docs/features.md`                                                                  |
 
 

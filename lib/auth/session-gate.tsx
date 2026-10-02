@@ -30,7 +30,7 @@ export function SessionGate({
           return;
         }
         if (mode === "guest" && signedIn) {
-          router.replace("/orgs");
+          router.replace("/projects");
           return;
         }
         setState("ready");

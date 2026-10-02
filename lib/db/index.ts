@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
+import * as appSchema from "./app-schema";
 import * as relations from "./relations";
 import * as schema from "./schema";
 
@@ -12,7 +13,9 @@ export function createDb() {
   if (!url) {
     throw new Error("DATABASE_URL is not set");
   }
-  return drizzle(neon(url), { schema: { ...schema, ...relations } });
+  return drizzle(neon(url), {
+    schema: { ...schema, ...appSchema, ...relations },
+  });
 }
 
 export type Db = ReturnType<typeof createDb>;

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="960" y2="540" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0c1730"/>
+      <stop offset="0.55" stop-color="#132445"/>
+      <stop offset="1" stop-color="#1a1030"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="180" y1="80" x2="780" y2="460" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e63946" stop-opacity="0.45"/>
+      <stop offset="0.5" stop-color="#3fb8af" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#9b8cff" stop-opacity="0.35"/>
+    </linearGradient>
+    <radialGradient id="orb" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(620 210) rotate(90) scale(180 180)">
+      <stop stop-color="#ff5a6a" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ff5a6a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="960" height="540" fill="url(#bg)"/>
+  <rect width="960" height="540" fill="url(#glow)" opacity="0.55"/>
+  <circle cx="620" cy="210" r="180" fill="url(#orb)"/>
+  <g opacity="0.35" stroke="#8a98b8" stroke-width="1">
+    <path d="M0 120H960M0 240H960M0 360H960M0 480H960"/>
+    <path d="M120 0V540M240 0V540M360 0V540M480 0V540M600 0V540M720 0V540M840 0V540"/>
+  </g>
+  <g transform="translate(280 145)">
+    <rect x="40" y="80" width="320" height="190" rx="18" fill="#111e36" stroke="#1f3358" stroke-width="2"/>
+    <rect x="70" y="30" width="180" height="70" rx="14" fill="#15243f" stroke="#1f3358" stroke-width="2"/>
+    <path d="M90 100H310" stroke="#e63946" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+    <circle cx="110" cy="150" r="10" fill="#3fb8af"/>
+    <circle cx="145" cy="150" r="10" fill="#f4a259"/>
+    <circle cx="180" cy="150" r="10" fill="#9b8cff"/>
+    <rect x="90" y="190" width="160" height="10" rx="5" fill="#1f3358"/>
+    <rect x="90" y="214" width="110" height="10" rx="5" fill="#1a2b4a"/>
+    <rect x="280" y="188" width="54" height="54" rx="12" fill="url(#glow)" opacity="0.9"/>
+  </g>
+</svg>
