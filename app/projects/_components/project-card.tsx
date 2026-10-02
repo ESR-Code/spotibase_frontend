@@ -22,7 +22,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 
-const THUMBNAIL = "/projects/preview-placeholder.svg";
+export const PROJECT_THUMBNAIL = "/projects/preview-placeholder.svg";
 
 type ProjectItemProps = {
   project: ProjectRow;
@@ -31,7 +31,7 @@ type ProjectItemProps = {
   onDelete: () => void;
 };
 
-function FolderTag({ folder }: { folder?: ProjectFolderRow | null }) {
+export function FolderTag({ folder }: { folder?: ProjectFolderRow | null }) {
   if (!folder) {
     return (
       <span className="studio-tag bg-[var(--studio-chip)] text-[var(--studio-muted)]">
@@ -99,7 +99,7 @@ export function ProjectCard(props: ProjectItemProps) {
     <article className="studio-card studio-lift studio-project-card flex flex-col">
       <Link href={href} className="studio-thumb" aria-label={`Open ${project.name}`}>
         <Image
-          src={THUMBNAIL}
+          src={PROJECT_THUMBNAIL}
           alt=""
           fill
           unoptimized
@@ -152,7 +152,7 @@ export function ProjectListRow(props: ProjectItemProps) {
   return (
     <article className="studio-card studio-project-card flex items-center gap-3 p-2.5 pr-3 sm:gap-4">
       <Link href={href} className="studio-thumb w-24 shrink-0 rounded-lg sm:w-32" aria-label={`Open ${project.name}`}>
-        <Image src={THUMBNAIL} alt="" fill unoptimized sizes="128px" className="object-cover" />
+        <Image src={PROJECT_THUMBNAIL} alt="" fill unoptimized sizes="128px" className="object-cover" />
       </Link>
       <div className="min-w-0 flex-1">
         <Link href={href}>

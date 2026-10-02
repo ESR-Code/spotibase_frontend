@@ -29,8 +29,9 @@ Status as of the current codebase. “Partial” means code exists but the featu
 - Drizzle types for `neon_auth` (`user`, `organization`, `member`, `invitation`, …) in `lib/db/`. Drizzle is not the request path for login or browser CRUD.
 - Cloudflare Worker gateway: `/auth` → Neon Auth, `/data` → Neon Data API (user JWT + RLS), `/fn` → 501 until a Neon Function URL is set. Rate limits on auth writes and `/data`.
 - Auth UI: sign-in, forgot password, reset password. Sign-up form exists but is disabled (Neon config `disable-sign-up` + no submit). Email verification is off.
-- `/projects` studio dashboard (client-only): org create/switch, folder CRUD (name + color), project CRUD (name, description, move between folders), search (⌘K / Ctrl K), sort, tabs (All / Recent / In Folders / Root), grid/list view, workspace overview. Animated dialogs (bottom sheet on mobile), responsive layout. Project detail route is a stub.
-- `/` sends signed-in users to `/projects` and everyone else to `/auth/sign-in` (client session check). `/orgs` redirects to `/projects`. `/projects/[id]` is a stub for the future project workspace.
+- `/projects` studio dashboard (client-only): org create/switch, folder CRUD (name + color), project CRUD (name, description, move between folders), search (⌘K / Ctrl K), sort, tabs (All / Recent / In Folders / Root), grid/list view, workspace overview. Animated dialogs (bottom sheet on mobile), responsive layout.
+- `/projects/[id]` project detail (client-only): breadcrumb, hero (thumbnail, title, folder · org, description, "Open in Studio Editor" CTA → `/editor?project=<id>`), URL-synced tabs (`?tab=details|analytics|settings`). Details shows metadata (dates, folder, scenes, org, copyable id). Settings edits name / description / folder and deletes the project. **Partial:** Analytics is visual-only sample data seeded from the project id (`app/projects/_lib/analytics-preview.ts`); the thumbnail manager is display-only; the editor ignores `?project=` until save/load exists.
+- `/` sends signed-in users to `/projects` and everyone else to `/auth/sign-in` (client session check). `/orgs` redirects to `/projects`.
 
 
 

@@ -10,6 +10,7 @@ app/
   layout.tsx                        # root fonts / metadata
   auth/                             # sign-in, disabled sign-up, forgot/reset password
   projects/                         # studio dashboard (orgs, folders, projects)
+    [id]/                           # project detail; tabs registered in _components/project-detail/project-tabs.tsx
   orgs/                             # legacy redirect → /projects
   editor/                           # VectorForge
     page.tsx → editor-page-client   # dynamic import, ssr: false

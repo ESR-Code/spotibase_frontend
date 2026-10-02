@@ -10,6 +10,7 @@ import {
   createProject,
   deleteFolder,
   deleteProject,
+  getProject,
   listFolders,
   listProjects,
   updateFolder,
@@ -37,6 +38,7 @@ export const folderKeys = {
 export const projectKeys = {
   all: (orgId: string, folderId?: string | null) =>
     ["projects", orgId, folderId ?? "all"] as const,
+  detail: (id: string) => ["project", id] as const,
 };
 
 export function useOrganizations() {
@@ -104,6 +106,14 @@ export function useProjects(
   });
 }
 
+export function useProject(id: string | null | undefined) {
+  return useQuery({
+    queryKey: projectKeys.detail(id ?? ""),
+    queryFn: () => getProject(id!),
+    enabled: Boolean(id),
+  });
+}
+
 export function useCreateFolder(organizationId: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -165,8 +175,9 @@ export function useUpdateProject(organizationId: string) {
       description?: string | null;
       folderId?: string | null;
     }) => updateProject(input.id, input),
-    onSuccess: async () => {
+    onSuccess: async (_data, input) => {
       await qc.invalidateQueries({ queryKey: ["projects", organizationId] });
+      await qc.invalidateQueries({ queryKey: projectKeys.detail(input.id) });
     },
   });
 }

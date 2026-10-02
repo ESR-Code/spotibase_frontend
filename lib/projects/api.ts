@@ -72,6 +72,12 @@ export async function listProjects(
   return dataJson<ProjectRow[]>(`projects?${q}`);
 }
 
+export async function getProject(id: string) {
+  const q = new URLSearchParams({ id: `eq.${id}`, select: "*", limit: "1" });
+  const rows = await dataJson<ProjectRow[]>(`projects?${q}`);
+  return rows[0] ?? null;
+}
+
 export async function createProject(input: {
   organizationId: string;
   name: string;

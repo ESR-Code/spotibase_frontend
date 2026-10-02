@@ -34,6 +34,27 @@ export function formatRelative(iso: string) {
   return "just now";
 }
 
+const utcTimeFormat = new Intl.DateTimeFormat(undefined, {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: "UTC",
+});
+
+const compactFormat = new Intl.NumberFormat(undefined, {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+export function formatTimeUtc(iso: string) {
+  const time = Date.parse(iso);
+  return Number.isNaN(time) ? "" : `${utcTimeFormat.format(time)} UTC`;
+}
+
+export function formatCompact(value: number) {
+  return compactFormat.format(value);
+}
+
 export function plural(count: number, one: string, many = `${one}s`) {
   return `${count} ${count === 1 ? one : many}`;
 }

@@ -265,7 +265,7 @@ function ProjectForm({
 
 const ROOT_VALUE = "__root__";
 
-function FolderPicker({
+export function FolderPicker({
   folders,
   value,
   onChange,
