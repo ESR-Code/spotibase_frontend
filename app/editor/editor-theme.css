@@ -2475,24 +2475,6 @@
   cursor: crosshair !important;
 }
 
-.editor-root ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.editor-root ::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.editor-root ::-webkit-scrollbar-thumb {
-  background: #243a5e;
-  border-radius: 4px;
-}
-
-.editor-root ::-webkit-scrollbar-thumb:hover {
-  background: #2f4d7a;
-}
-
 .editor-root input[type="range"] {
   -webkit-appearance: none;
   appearance: none;

@@ -371,7 +371,7 @@ export function ProjectsDashboard() {
             {/* Projects */}
             <section
               ref={projectsRef}
-              className="studio-enter flex scroll-mt-24 flex-col gap-4"
+              className="studio-enter flex scroll-mt-24 flex-col gap-7"
               style={{ animationDelay: "120ms" }}
             >
               <div className="studio-subpanel flex items-center justify-between gap-2 p-1.5">
