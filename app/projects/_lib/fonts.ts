@@ -1,15 +1,6 @@
-import { Manrope, Newsreader } from "next/font/google";
-
-const body = Manrope({
-  subsets: ["latin"],
-  variable: "--font-studio-body",
-});
-
-const display = Newsreader({
-  subsets: ["latin"],
-  variable: "--font-studio-display",
-  weight: ["500", "600"],
-});
-
-/** Apply to `.studio-root` and to portaled menus/dialogs (they render outside it). */
-export const studioFontClass = `${body.variable} ${display.variable}`;
+/**
+ * Studio uses the root Geist sans (`--font-geist-sans` on <html>).
+ * Portals still need this class name next to `.studio-portal` for tokens,
+ * but they inherit the typeface from the document.
+ */
+export const studioFontClass = "";

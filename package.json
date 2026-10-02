@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "WATCHPACK_POLLING=true next dev --webpack -H 0.0.0.0 -p 3000",
+    "dev": "WATCHPACK_POLLING=true NODE_OPTIONS=--max-old-space-size=8192 next dev --webpack -H 0.0.0.0 -p 3000",
     "dev:api": "npm run dev --prefix worker",
     "build": "next build",
     "start": "next start",

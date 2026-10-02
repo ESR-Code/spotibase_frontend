@@ -17,9 +17,19 @@ const nextConfig: NextConfig = {
   },
   webpack: (config, { dev }) => {
     if (dev) {
+      // WSL / bind-mount inotify is unreliable, so we poll — but only the
+      // source tree. Polling node_modules (PlayCanvas is transpiled) and
+      // .next every second stalls the event loop and drops localhost:3000.
       config.watchOptions = {
-        poll: 1000,
-        aggregateTimeout: 300,
+        poll: 2000,
+        aggregateTimeout: 600,
+        ignored: [
+          "**/node_modules/**",
+          "**/.git/**",
+          "**/.next/**",
+          "**/worker/**",
+          "**/.cursor/**",
+        ],
       };
     }
     return config;

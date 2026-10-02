@@ -3,10 +3,21 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
-  "forwardPorts": [3000],
+  "forwardPorts": [3000, 8787],
+  "portsAttributes": {
+    "3000": {
+      "label": "Next.js",
+      "onAutoForward": "notify"
+    },
+    "8787": {
+      "label": "Worker API",
+      "onAutoForward": "silent"
+    }
+  },
   "containerEnv": {
     "WATCHPACK_POLLING": "true",
-    "CHOKIDAR_USEPOLLING": "true"
+    "CHOKIDAR_USEPOLLING": "true",
+    "NODE_OPTIONS": "--max-old-space-size=8192"
   },
   "shutdownAction": "stopContainer",
   "remoteUser": "node"
