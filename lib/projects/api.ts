@@ -20,7 +20,7 @@ export async function createFolder(input: {
   name: string;
   color: FolderColor;
 }) {
-  const rows = await dataJson<ProjectFolderRow[]>("project_folders", {
+  const rows = await dataJson<ProjectFolderRow[] | undefined>("project_folders", {
     method: "POST",
     body: JSON.stringify({
       organization_id: input.organizationId,
@@ -28,7 +28,7 @@ export async function createFolder(input: {
       color: input.color,
     }),
   });
-  return rows[0];
+  return rows?.[0];
 }
 
 export async function updateFolder(
@@ -41,11 +41,11 @@ export async function updateFolder(
   if (patch.name !== undefined) body.name = patch.name.trim();
   if (patch.color !== undefined) body.color = patch.color;
 
-  const rows = await dataJson<ProjectFolderRow[]>(
+  const rows = await dataJson<ProjectFolderRow[] | undefined>(
     `project_folders?id=eq.${encode(id)}`,
     { method: "PATCH", body: JSON.stringify(body) },
   );
-  return rows[0];
+  return rows?.[0];
 }
 
 export async function deleteFolder(id: string) {
@@ -78,17 +78,16 @@ export async function createProject(input: {
   description?: string;
   folderId?: string | null;
 }) {
-  const rows = await dataJson<ProjectRow[]>("projects", {
+  const rows = await dataJson<ProjectRow[] | undefined>("projects", {
     method: "POST",
     body: JSON.stringify({
       organization_id: input.organizationId,
       name: input.name.trim(),
       description: input.description?.trim() || null,
       folder_id: input.folderId ?? null,
-      scene_count: 0,
     }),
   });
-  return rows[0];
+  return rows?.[0];
 }
 
 export async function updateProject(
@@ -108,11 +107,11 @@ export async function updateProject(
   }
   if (patch.folderId !== undefined) body.folder_id = patch.folderId;
 
-  const rows = await dataJson<ProjectRow[]>(`projects?id=eq.${encode(id)}`, {
+  const rows = await dataJson<ProjectRow[] | undefined>(`projects?id=eq.${encode(id)}`, {
     method: "PATCH",
     body: JSON.stringify(body),
   });
-  return rows[0];
+  return rows?.[0];
 }
 
 export async function deleteProject(id: string) {

@@ -20,7 +20,9 @@ import type { FolderColor } from "@/lib/projects/folder-colors";
 export type { FolderColor };
 
 function isOrgMember(organizationIdColumn: AnyPgColumn): SQL {
-  return sql`public.is_org_member(${organizationIdColumn})`;
+  // plpgsql (not inlined) so the membership lookup keeps SECURITY DEFINER
+  // and does not run as the Data API role, which cannot read neon_auth.
+  return sql`(SELECT public.is_org_member(${organizationIdColumn}))`;
 }
 
 export const projectFolders = pgTable(

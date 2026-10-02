@@ -8,10 +8,19 @@ import {
   StudioMenuTrigger,
 } from "@/app/projects/_components/studio-menu";
 import { authClient } from "@/lib/auth/client";
+import {
+  useActiveMemberRole,
+  useActiveOrganizationId,
+  useOrganizations,
+} from "@/lib/projects/hooks";
 import { Bell, ChevronDown, LogOut, Settings } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+function formatRole(role: string) {
+  return role.charAt(0).toUpperCase() + role.slice(1);
+}
 
 export function BrandMark() {
   return (
@@ -30,6 +39,14 @@ export function BrandMark() {
 export function ProjectsTopbar() {
   const router = useRouter();
   const [user, setUser] = useState<{ name?: string | null; email?: string | null } | null>(null);
+  const orgsQuery = useOrganizations();
+  const activeQuery = useActiveOrganizationId();
+  const orgId = activeQuery.data ?? orgsQuery.data?.[0]?.id ?? null;
+  const roleQuery = useActiveMemberRole(orgId);
+  const roleLabel = useMemo(() => {
+    const role = roleQuery.data?.trim();
+    return role ? formatRole(role) : null;
+  }, [roleQuery.data]);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,6 +104,11 @@ export function ProjectsTopbar() {
                   <p className="truncate text-sm font-bold text-[var(--studio-fg)]">{user?.name || "Signed in"}</p>
                   {user?.email ? (
                     <p className="truncate text-xs text-[var(--studio-muted)]">{user.email}</p>
+                  ) : null}
+                  {roleLabel ? (
+                    <span className="mt-1.5 inline-flex rounded-md bg-[rgba(253,79,106,0.16)] px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[var(--studio-accent-2)]">
+                      {roleLabel}
+                    </span>
                   ) : null}
                 </div>
               </div>

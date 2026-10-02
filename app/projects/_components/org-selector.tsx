@@ -19,7 +19,7 @@ import {
 } from "@/lib/projects/hooks";
 import type { OrganizationSummary } from "@/lib/projects/types";
 import { Building2, ChevronDown, Plus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 function OrgAvatar({ name, size = 40 }: { name: string; size?: number }) {
   return (
@@ -45,21 +45,34 @@ export function OrgSelector({
   const [createError, setCreateError] = useState<string | null>(null);
 
   const orgs = useMemo(() => orgsQuery.data ?? [], [orgsQuery.data]);
-  const activeId = activeQuery.data ?? null;
-  const activeOrg = useMemo(
-    () => orgs.find((o) => o.id === activeId) ?? orgs[0] ?? null,
-    [orgs, activeId],
-  );
+  const sessionOrgId = activeQuery.data ?? null;
+  const [chosenId, setChosenId] = useState<string | null>(null);
+  const activatedId = useRef<string | null>(null);
+
+  const activeOrg = useMemo(() => {
+    const preferred = chosenId ?? sessionOrgId;
+    return orgs.find((o) => o.id === preferred) ?? orgs[0] ?? null;
+  }, [orgs, chosenId, sessionOrgId]);
 
   useEffect(() => {
     onActiveOrg(activeOrg);
   }, [activeOrg, onActiveOrg]);
 
+  // Activate once per organization. Repeating this while the session still
+  // reports no active org refetches the page continuously.
   useEffect(() => {
-    if (!orgs.length || activeId || setActive.isPending) return;
-    void setActive.mutateAsync(orgs[0].id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orgs, activeId, setActive.isPending]);
+    const id = activeOrg?.id;
+    if (!id || sessionOrgId === id || activatedId.current === id) return;
+    activatedId.current = id;
+    setActive.mutate(id);
+  }, [activeOrg?.id, sessionOrgId, setActive]);
+
+  function selectOrg(id: string) {
+    if (id === activeOrg?.id) return;
+    activatedId.current = id;
+    setChosenId(id);
+    setActive.mutate(id);
+  }
 
   function openCreate() {
     setCreateError(null);
@@ -139,9 +152,7 @@ export function OrgSelector({
           <StudioMenuLabel>Organizations</StudioMenuLabel>
           <StudioMenuRadioGroup
             value={activeOrg?.id}
-            onValueChange={(id) => {
-              if (id !== activeId) void setActive.mutateAsync(id);
-            }}
+            onValueChange={selectOrg}
           >
             {orgs.map((org) => (
               <StudioMenuRadioItem key={org.id} value={org.id} className="py-1.5">

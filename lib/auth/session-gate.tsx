@@ -45,7 +45,7 @@ export function SessionGate({
 
   if (state === "loading") {
     return (
-      <p className="flex min-h-dvh items-center justify-center text-sm text-zinc-500">
+      <p className="flex min-h-dvh flex-1 items-center justify-center text-sm text-[var(--studio-muted,#8a98b8)]">
         Loading…
       </p>
     );

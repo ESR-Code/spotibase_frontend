@@ -27,7 +27,15 @@
   -webkit-font-smoothing: antialiased;
 }
 
+html:has(.studio-root),
+html:has(.studio-root) body {
+  background: #0d1323;
+}
+
 .studio-root {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   min-height: 100dvh;
   background: var(--studio-bg);
 }

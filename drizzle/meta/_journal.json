@@ -15,6 +15,13 @@
       "when": 1790949000000,
       "tag": "0001_org_member_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790952000000,
+      "tag": "0002_relax_force_rls",
+      "breakpoints": true
     }
   ]
 }

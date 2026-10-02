@@ -10,7 +10,7 @@ export function ProjectDetailStub() {
   const { id } = useParams<{ id: string }>();
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex flex-1 flex-col">
       <ProjectsTopbar />
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-5 px-4 py-16 text-center sm:px-6">
         <span className="studio-dialog-icon h-14 w-14 rounded-2xl">

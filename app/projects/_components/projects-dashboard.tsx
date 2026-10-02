@@ -45,7 +45,6 @@ import type {
 import {
   ArrowDownWideNarrow,
   ChevronDown,
-  CirclePlus,
   FolderPlus,
   LayoutGrid,
   List,
@@ -127,7 +126,7 @@ export function ProjectsDashboard() {
   const createFolder = useCreateFolder(orgId ?? "");
   const updateFolder = useUpdateFolder(orgId ?? "");
   const deleteFolder = useDeleteFolder(orgId ?? "");
-  const createProject = useCreateProject(orgId ?? "");
+  const createProject = useCreateProject();
   const updateProject = useUpdateProject(orgId ?? "");
   const deleteProject = useDeleteProject(orgId ?? "");
 
@@ -238,9 +237,16 @@ export function ProjectsDashboard() {
         "Failed to update project",
       );
     } else {
+      const organizationId =
+        (values.folderId ? folderById.get(values.folderId)?.organization_id : null) ?? orgId;
+      if (!organizationId) {
+        setError("Select an organization first.");
+        return;
+      }
       void run(
         () =>
           createProject.mutateAsync({
+            organizationId,
             name: values.name,
             description: values.description || undefined,
             folderId: values.folderId,
@@ -255,51 +261,61 @@ export function ProjectsDashboard() {
   const loadError = foldersQuery.error ?? projectsQuery.error;
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex flex-1 flex-col">
       <ProjectsTopbar />
 
       <main className="mx-auto flex w-full max-w-[1320px] flex-1 flex-col gap-8 px-4 py-5 sm:gap-10 sm:px-6 sm:py-8 lg:px-8">
         {/* Workspace bar */}
-        <section className="studio-panel studio-enter flex flex-col gap-3 p-3 sm:p-4 lg:flex-row lg:items-center lg:gap-5">
-          <OrgSelector onActiveOrg={onActiveOrg} />
+        <section className="studio-panel studio-enter flex flex-col gap-3 p-3 sm:p-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-5">
+            <OrgSelector onActiveOrg={onActiveOrg} />
 
-          <div className="hidden h-8 w-px bg-[var(--studio-line-strong)] lg:block" />
+            <div className="hidden h-8 w-px bg-[var(--studio-line-strong)] lg:block" />
 
-          <label className="studio-search min-w-0 flex-1">
-            <Search />
-            <input
-              ref={searchRef}
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search folders and projects…"
-              className="studio-input"
-              aria-label="Search folders and projects"
-              disabled={!orgId}
-            />
-            <span className="studio-kbd hidden sm:inline-flex">{isMac ? "⌘K" : "Ctrl K"}</span>
-          </label>
+            <label className="studio-search min-w-0 flex-1">
+              <Search />
+              <input
+                ref={searchRef}
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search folders and projects…"
+                className="studio-input"
+                aria-label="Search folders and projects"
+                disabled={!orgId}
+              />
+              <span className="studio-kbd hidden sm:inline-flex">{isMac ? "⌘K" : "Ctrl K"}</span>
+            </label>
 
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
-            <button
-              type="button"
-              className="studio-btn studio-btn-ghost"
-              disabled={!orgId}
-              onClick={() => openDialog({ type: "create-folder" })}
-            >
-              <FolderPlus />
-              New Folder
-            </button>
-            <button
-              type="button"
-              className="studio-btn studio-btn-primary"
-              disabled={!orgId}
-              onClick={() => openDialog({ type: "create-project", folderId: folderFilter })}
-            >
-              <Plus />
-              New Project
-            </button>
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+              <button
+                type="button"
+                className="studio-btn studio-btn-ghost"
+                disabled={!orgId}
+                onClick={() => openDialog({ type: "create-folder" })}
+              >
+                <FolderPlus />
+                New Folder
+              </button>
+              <button
+                type="button"
+                className="studio-btn studio-btn-primary"
+                disabled={!orgId}
+                onClick={() => openDialog({ type: "create-project", folderId: folderFilter })}
+              >
+                <Plus />
+                New Project
+              </button>
+            </div>
           </div>
+          {orgId ? (
+            <WorkspaceSummary
+              projectCount={projects.length}
+              folderCount={folders.length}
+              foldered={stats.foldered}
+              sceneCount={stats.scenes}
+            />
+          ) : null}
         </section>
 
         {!orgId ? (
@@ -349,17 +365,6 @@ export function ProjectsDashboard() {
                 </div>
               ) : needle && folders.length ? (
                 <p className="text-sm text-[var(--studio-muted)]">No folders match “{query.trim()}”.</p>
-              ) : null}
-
-              {!loadingFolders ? (
-                <button
-                  type="button"
-                  onClick={() => openDialog({ type: "create-folder" })}
-                  className="group flex items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--studio-line-strong)] bg-[var(--studio-sub)] px-4 py-3 text-xs font-semibold text-[var(--studio-muted)] transition-colors hover:border-[rgba(253,79,106,0.45)] hover:text-[var(--studio-fg)]"
-                >
-                  <CirclePlus className="h-4 w-4 transition-transform duration-300 group-hover:rotate-90" />
-                  {folders.length ? "Create another folder to bundle projects" : "Create your first folder to bundle projects"}
-                </button>
               ) : null}
             </section>
 
@@ -470,16 +475,6 @@ export function ProjectsDashboard() {
                 </div>
               )}
             </section>
-
-            {org && projects.length ? (
-              <WorkspaceSummary
-                orgName={org.name}
-                projectCount={projects.length}
-                folderCount={folders.length}
-                foldered={stats.foldered}
-                sceneCount={stats.scenes}
-              />
-            ) : null}
           </>
         )}
       </main>

@@ -88,8 +88,9 @@ export async function proxy(request: Request, target: string) {
 		method: request.method,
 		headers,
 		body: request.method === "GET" || request.method === "HEAD" ? undefined : request.body,
+		duplex: "half",
 		redirect: "manual",
-	});
+	} as RequestInit);
 
 	const headersOut = new Headers();
 	upstream.headers.forEach((value, key) => {

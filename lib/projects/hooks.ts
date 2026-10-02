@@ -18,6 +18,7 @@ import {
 import type { FolderColor } from "@/lib/projects/folder-colors";
 import {
   createOrganization,
+  getActiveMemberRole,
   getActiveOrganizationId,
   listOrganizations,
   setActiveOrganization,
@@ -26,6 +27,7 @@ import {
 export const orgKeys = {
   all: ["organizations"] as const,
   active: ["active-organization"] as const,
+  role: (orgId: string | null) => ["organization-role", orgId] as const,
 };
 
 export const folderKeys = {
@@ -51,14 +53,23 @@ export function useActiveOrganizationId() {
   });
 }
 
+export function useActiveMemberRole(organizationId: string | null | undefined) {
+  return useQuery({
+    queryKey: orgKeys.role(organizationId ?? null),
+    queryFn: () => getActiveMemberRole(organizationId),
+    enabled: Boolean(organizationId),
+  });
+}
+
 export function useSetActiveOrganization() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: setActiveOrganization,
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: orgKeys.active });
-      await qc.invalidateQueries({ queryKey: ["folders"] });
-      await qc.invalidateQueries({ queryKey: ["projects"] });
+    onSuccess: (_data, organizationId) => {
+      // Trust the id we just activated. Refetching the session here comes back
+      // empty and would retrigger activation in a loop.
+      qc.setQueryData(orgKeys.active, organizationId);
+      void qc.invalidateQueries({ queryKey: orgKeys.role(organizationId) });
     },
   });
 }
@@ -129,17 +140,18 @@ export function useDeleteFolder(organizationId: string) {
   });
 }
 
-export function useCreateProject(organizationId: string) {
+export function useCreateProject() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: {
+      organizationId: string;
       name: string;
       description?: string;
       folderId?: string | null;
-    }) => createProject({ organizationId, ...input }),
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["projects", organizationId] });
-      await qc.invalidateQueries({ queryKey: folderKeys.all(organizationId) });
+    }) => createProject(input),
+    onSuccess: async (_data, input) => {
+      await qc.invalidateQueries({ queryKey: ["projects", input.organizationId] });
+      await qc.invalidateQueries({ queryKey: folderKeys.all(input.organizationId) });
     },
   });
 }

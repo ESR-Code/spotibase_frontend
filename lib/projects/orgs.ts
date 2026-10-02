@@ -63,3 +63,46 @@ export async function getActiveOrganizationId(): Promise<string | null> {
     | undefined;
   return session?.activeOrganizationId ?? null;
 }
+
+export async function getActiveMemberRole(
+  organizationId?: string | null,
+): Promise<string | null> {
+  const active = await authClient.organization.getActiveMemberRole();
+  const fromActive = roleFromUnknown(active.data);
+  if (fromActive) return fromActive;
+
+  if (!organizationId) return null;
+  const [session, members] = await Promise.all([
+    authClient.getSession(),
+    authClient.organization.listMembers({
+      query: { organizationId },
+    }),
+  ]);
+  if (members.error) return null;
+  const userId = session.data?.user?.id;
+  const list = memberListFromUnknown(members.data);
+  const me = list.find((row) => row.userId === userId);
+  return me?.role ?? null;
+}
+
+function roleFromUnknown(data: unknown): string | null {
+  if (typeof data === "string" && data.trim()) return data;
+  if (data && typeof data === "object" && "role" in data) {
+    const role = (data as { role?: unknown }).role;
+    return typeof role === "string" && role.trim() ? role : null;
+  }
+  return null;
+}
+
+function memberListFromUnknown(
+  data: unknown,
+): { userId?: string; role?: string }[] {
+  if (Array.isArray(data)) return data as { userId?: string; role?: string }[];
+  if (data && typeof data === "object" && "members" in data) {
+    const members = (data as { members?: unknown }).members;
+    return Array.isArray(members)
+      ? (members as { userId?: string; role?: string }[])
+      : [];
+  }
+  return [];
+}

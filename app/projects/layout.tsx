@@ -9,7 +9,9 @@ export default function ProjectsLayout({
 }) {
   return (
     <div className={`${studioFontClass} studio-root`}>
-      <SessionGate mode="require">{children}</SessionGate>
+      <SessionGate mode="require">
+        <div className="flex min-h-dvh flex-1 flex-col">{children}</div>
+      </SessionGate>
     </div>
   );
 }

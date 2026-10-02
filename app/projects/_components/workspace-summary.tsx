@@ -1,14 +1,12 @@
 import { plural } from "@/app/projects/_lib/format";
-import { Layers } from "lucide-react";
+import { Folder, Layers, LayoutGrid } from "lucide-react";
 
 export function WorkspaceSummary({
-  orgName,
   projectCount,
   folderCount,
   foldered,
   sceneCount,
 }: {
-  orgName: string;
   projectCount: number;
   folderCount: number;
   foldered: number;
@@ -17,24 +15,17 @@ export function WorkspaceSummary({
   const organizedPct = projectCount ? Math.round((foldered / projectCount) * 100) : 0;
 
   return (
-    <section className="studio-panel flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-      <div className="flex items-center gap-4">
-        <span className="studio-dialog-icon">
-          <Layers />
-        </span>
-        <div className="min-w-0">
-          <h2 className="studio-heading text-lg leading-tight">Workspace overview</h2>
-          <p className="mt-0.5 text-xs font-semibold text-[var(--studio-muted)]">
-            {plural(projectCount, "project")} · {plural(folderCount, "folder")} · {plural(sceneCount, "scene")} in{" "}
-            <span className="text-[var(--studio-fg-2)]">{orgName}</span>
-          </p>
-        </div>
+    <div className="flex flex-col gap-3 border-t border-[var(--studio-line)] pt-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+      <div className="flex flex-wrap items-center gap-2">
+        <StatChip icon={<LayoutGrid />} label={plural(projectCount, "project")} />
+        <StatChip icon={<Folder />} label={plural(folderCount, "folder")} />
+        <StatChip icon={<Layers />} label={plural(sceneCount, "scene")} />
       </div>
-      <div className="w-full sm:w-64">
-        <div className="mb-2 flex items-center justify-between text-[11px] font-bold">
-          <span className="text-[var(--studio-muted)]">Organized in folders</span>
+      <div className="min-w-0 sm:w-56 lg:w-64">
+        <div className="mb-1.5 flex items-center justify-between text-[11px] font-bold">
+          <span className="text-[var(--studio-muted)]">In folders</span>
           <span className="font-mono text-[var(--studio-fg-2)]">
-            {foldered} / {projectCount} ({organizedPct}%)
+            {foldered}/{projectCount} · {organizedPct}%
           </span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-[var(--studio-chip)]">
@@ -44,6 +35,15 @@ export function WorkspaceSummary({
           />
         </div>
       </div>
-    </section>
+    </div>
+  );
+}
+
+function StatChip({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--studio-chip)] px-2.5 py-1 text-[11px] font-bold text-[var(--studio-fg-2)]">
+      <span className="text-[var(--studio-muted)] [&_svg]:h-3.5 [&_svg]:w-3.5">{icon}</span>
+      {label}
+    </span>
   );
 }
