@@ -289,18 +289,29 @@ html:has(.studio-root) body {
 }
 
 .studio-btn-primary {
+  --cta: #fa0753;
   color: #fff;
-  background: linear-gradient(180deg, var(--studio-accent-2), var(--studio-accent) 45%, var(--studio-accent-deep));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cta) 82%, white) 0%,
+    var(--cta) 48%,
+    color-mix(in srgb, var(--cta) 88%, black) 100%
+  );
   box-shadow:
-    0 8px 22px -8px rgba(253, 79, 106, 0.7),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    0 8px 20px -8px color-mix(in srgb, var(--cta) 70%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 .studio-btn-primary:hover:not(:disabled) {
-  background: linear-gradient(180deg, #ff8597, var(--studio-accent-2) 45%, var(--studio-accent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cta) 72%, white) 0%,
+    var(--cta) 42%,
+    color-mix(in srgb, var(--cta) 92%, black) 100%
+  );
   box-shadow:
-    0 10px 28px -8px rgba(253, 79, 106, 0.85),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    0 10px 24px -8px color-mix(in srgb, var(--cta) 80%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 .studio-btn-ghost {
@@ -757,13 +768,18 @@ textarea.studio-input {
   font-weight: 700;
   letter-spacing: 0.01em;
   white-space: nowrap;
+  --cta: #fa0753;
   color: #fff;
-  background: linear-gradient(180deg, #ff5a74 0%, #f43d5d 52%, #dc2b4c 100%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cta) 82%, white) 0%,
+    var(--cta) 48%,
+    color-mix(in srgb, var(--cta) 88%, black) 100%
+  );
   box-shadow:
-    inset 0 0 0 1px rgba(255, 140, 158, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    0 14px 34px -12px rgba(253, 79, 106, 0.85),
-    0 0 46px -10px rgba(253, 79, 106, 0.55);
+    inset 0 0 0 1px color-mix(in srgb, var(--cta) 35%, white),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 14px 34px -12px color-mix(in srgb, var(--cta) 72%, transparent);
   transition:
     transform 0.25s var(--studio-ease),
     box-shadow 0.25s ease,
@@ -782,12 +798,11 @@ textarea.studio-input {
 
 .studio-launch-btn:hover {
   transform: translateY(-1px);
-  filter: brightness(1.06);
+  filter: brightness(1.05);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 160, 175, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.32),
-    0 18px 40px -12px rgba(253, 79, 106, 0.95),
-    0 0 60px -8px rgba(253, 79, 106, 0.65);
+    inset 0 0 0 1px color-mix(in srgb, var(--cta) 45%, white),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    0 16px 36px -12px color-mix(in srgb, var(--cta) 80%, transparent);
 }
 
 .studio-launch-btn:hover::before {
