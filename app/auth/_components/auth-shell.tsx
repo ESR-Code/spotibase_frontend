@@ -12,7 +12,7 @@ export function AuthShell({
     <div className="flex min-h-dvh flex-col items-center justify-center bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
       <div className="w-full max-w-sm rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <p className="mb-1 text-center text-xs font-medium tracking-wide text-zinc-500 uppercase">
-          VectorForge
+          Spotibase
         </p>
         <h1 className="mb-6 text-center text-xl font-semibold text-zinc-900 dark:text-zinc-50">
           {title}

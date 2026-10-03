@@ -27,7 +27,7 @@ export function EditorHeader() {
           <PenTool className="h-4 w-4 text-white" />
         </div>
         <div className="font-display text-[15px] font-bold leading-none">
-          VectorForge
+          Spotibase
         </div>
       </div>
 

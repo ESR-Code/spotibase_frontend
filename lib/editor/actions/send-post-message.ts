@@ -4,7 +4,7 @@ import type {
 } from "@/lib/editor/types/hotspot-action";
 
 export type PostMessageEnvelope = {
-  source: "vectorforge";
+  source: "spotibase";
   event: string;
   data: unknown;
   hotspotId: number | null;
@@ -66,7 +66,7 @@ export function sendPostMessage(
   }
 
   const envelope: PostMessageEnvelope = {
-    source: "vectorforge",
+    source: "spotibase",
     event: eventName,
     data: parsed.value,
     hotspotId,

@@ -23,7 +23,7 @@ export async function searchNominatimPlaces(
     signal,
     headers: {
       Accept: "application/json",
-      "User-Agent": "VectorForge-editor/1.0 (geo-map scene)",
+      "User-Agent": "Spotibase-editor/1.0 (geo-map scene)",
     },
   });
   if (!response.ok) {

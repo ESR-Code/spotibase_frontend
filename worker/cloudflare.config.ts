@@ -3,7 +3,7 @@ import * as entrypoint from "./src/index.ts" with { type: "cf-worker" };
 
 export default defineConfig({
 	worker: {
-		name: "vectorforge-api",
+		name: "spotibase-api",
 		compatibilityDate: "2026-09-30",
 		entrypoint,
 		env: {

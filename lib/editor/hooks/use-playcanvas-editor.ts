@@ -523,7 +523,7 @@ export function usePlayCanvasEditor() {
           useEditorStore.getState().initDemoHotspots();
         }
         hotspotMgr.syncFromStore();
-        toast.success("Welcome to VectorForge — try Preview mode");
+        toast.success("Welcome to Spotibase — try Preview mode");
 
         cleanup = () => {
           window.removeEventListener("editor:import-subject", onImportSubject);

@@ -6,9 +6,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 
 
-# VectorForge — agent instructions
+# Spotibase — agent instructions
 
-This is a Next.js 16 / React 19 app. The product is **VectorForge** (“3D Hotspot Studio”) at `/editor`: a client-side editor for placing hotspots on 3D models, 2D images, and geo maps, then wiring Preview behavior with action graphs. By the way , "**VectorForge**" project name will be changed in the future.
+This is a Next.js 16 / React 19 app. The product is **Spotibase** (“3D Hotspot Studio”) at `/editor`: a client-side editor for placing hotspots on 3D models, 2D images, and geo maps, then wiring Preview behavior with action graphs.
 
 ## Every coding task
 

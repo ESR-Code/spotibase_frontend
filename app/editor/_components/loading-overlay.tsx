@@ -14,7 +14,7 @@ export function LoadingOverlay() {
     >
       <div className="text-center">
         <div className="editor-spinner mx-auto mb-4" />
-        <div className="font-display text-lg font-bold">VectorForge</div>
+        <div className="font-display text-lg font-bold">Spotibase</div>
         <div className="text-sm" style={{ color: "var(--editor-muted)" }}>
           Loading 3D engine...
         </div>

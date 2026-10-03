@@ -1,6 +1,6 @@
 # Architecture
 
-VectorForge is a Next.js App Router app. Almost all product code is the client-side editor at `/editor`. Editor state is still session-only Zustand (no save/load UI yet). The SaaS data plane is Neon Lakebase Postgres with Managed Better Auth; the tenant boundary is an **organization**.
+Spotibase is a Next.js App Router app. Almost all product code is the client-side editor at `/editor`. Editor state is still session-only Zustand (no save/load UI yet). The SaaS data plane is Neon Lakebase Postgres with Managed Better Auth; the tenant boundary is an **organization**.
 
 ## Layout
 
@@ -12,7 +12,7 @@ app/
   projects/                         # studio dashboard (orgs, folders, projects)
     [id]/                           # project detail; tabs registered in _components/project-detail/project-tabs.tsx
   orgs/                             # legacy redirect → /projects
-  editor/                           # VectorForge
+  editor/                           # Spotibase
     page.tsx → editor-page-client   # dynamic import, ssr: false
     layout.tsx                      # editor fonts + theme
     editor-theme.css

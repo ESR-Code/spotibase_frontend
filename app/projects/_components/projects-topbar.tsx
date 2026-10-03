@@ -24,14 +24,14 @@ function formatRole(role: string) {
 
 export function BrandMark() {
   return (
-    <Link href="/projects" className="flex items-center gap-2.5" aria-label="VectorForge home">
+    <Link href="/projects" className="flex items-center gap-2.5" aria-label="Spotibase home">
       <span className="relative flex h-8 w-8 items-center justify-center rounded-[9px] bg-gradient-to-br from-[#ff7186] via-[#fd4f6a] to-[#b8253f] shadow-[0_6px_18px_-6px_rgba(253,79,106,0.8)]">
         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
           <path d="M4 5l8 14 8-14" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
           <circle cx="12" cy="9" r="1.8" fill="#fff" />
         </svg>
       </span>
-      <span className="studio-heading text-xl leading-none">VectorForge</span>
+      <span className="studio-heading text-xl leading-none">Spotibase</span>
     </Link>
   );
 }
