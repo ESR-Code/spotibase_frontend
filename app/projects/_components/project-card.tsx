@@ -10,6 +10,7 @@ import {
 } from "@/app/projects/_components/studio-menu";
 import { formatDate, plural } from "@/app/projects/_lib/format";
 import { folderHex } from "@/lib/projects/folder-colors";
+import { projectThumbnailSrc } from "@/lib/projects/storage";
 import type { ProjectFolderRow, ProjectRow } from "@/lib/projects/types";
 import {
   ArrowUpRight,
@@ -21,8 +22,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-
-export const PROJECT_THUMBNAIL = "/projects/preview-placeholder.svg";
 
 type ProjectItemProps = {
   project: ProjectRow;
@@ -99,7 +98,7 @@ export function ProjectCard(props: ProjectItemProps) {
     <article className="studio-card studio-lift studio-project-card flex flex-col">
       <Link href={href} className="studio-thumb" aria-label={`Open ${project.name}`}>
         <Image
-          src={PROJECT_THUMBNAIL}
+          src={projectThumbnailSrc(project)}
           alt=""
           fill
           unoptimized
@@ -152,7 +151,7 @@ export function ProjectListRow(props: ProjectItemProps) {
   return (
     <article className="studio-card studio-project-card flex items-center gap-3 p-2.5 pr-3 sm:gap-4">
       <Link href={href} className="studio-thumb w-24 shrink-0 rounded-lg sm:w-32" aria-label={`Open ${project.name}`}>
-        <Image src={PROJECT_THUMBNAIL} alt="" fill unoptimized sizes="128px" className="object-cover" />
+        <Image src={projectThumbnailSrc(project)} alt="" fill unoptimized sizes="128px" className="object-cover" />
       </Link>
       <div className="min-w-0 flex-1">
         <Link href={href}>

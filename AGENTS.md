@@ -37,6 +37,7 @@ This is a Next.js 16 / React 19 app. The product is **Spotibase** (“3D Hotspot
 | MapLibre viewport                         | `lib/editor/hooks/use-geo-map-editor.ts`, `lib/editor/geo/`                         |
 | Geo alignment                             | `lib/editor/coords/`, `lib/editor/types/geo-reference.ts`                           |
 | Neon Auth / projects / Drizzle            | `worker/`, `lib/auth/`, `app/auth/`, `app/projects/`, `lib/projects/`, `lib/db/`, `docs/architecture.md` |
+| R2 file storage (uploads / reads)         | `worker/src/storage.ts`, `lib/projects/storage.ts`, `docs/architecture.md` |
 | Feature status                            | `docs/features.md`                                                                  |
 
 
@@ -52,6 +53,7 @@ This is a Next.js 16 / React 19 app. The product is **Spotibase** (“3D Hotspot
 - **Scene switch.** Changing scenes snapshots the live stores into the outgoing `Scene`, then hydrates the incoming one. If you add per-scene state, include it in that snapshot/hydrate path.
 - **Path alias.** Import via `@/` (see `tsconfig.json`).
 - **Server-only DB.** `lib/db/` and `DATABASE_URL` stay off Client Components and off the Worker. The editor tree remains `ssr: false`. The browser calls same-origin `/gateway/*`; Next proxies that to the Worker.
+- **Files live in R2.** Store R2 keys (not URLs) in Postgres under `orgs/{orgId}/projects/{projectId}/…`. Upload via Worker-presigned `PUT` + commit; read via `/gateway/files/<key>`.
 - **Deprecated aliases.** Prefer `import-subject`, `scene-subject-cache`, and `replaceFromFile`. Do not add new callers of the deprecated GLB/model-cache names.
 
 

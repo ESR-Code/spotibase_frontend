@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "WATCHPACK_POLLING=true NODE_OPTIONS=--max-old-space-size=8192 next dev --webpack -H 0.0.0.0 -p 3000",
     "dev:api": "npm run dev --prefix worker",
+    "dev:api:r2": "npm run dev:r2 --prefix worker",
+    "dev:local": "concurrently -k -n web,api -c cyan,magenta \"npm run dev\" \"npm run dev:api\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -53,6 +55,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^10.0.5",
     "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.2.12",

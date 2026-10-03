@@ -59,6 +59,8 @@ export const projects = pgTable(
     name: text("name").notNull(),
     description: text("description"),
     sceneCount: integer("scene_count").notNull().default(0),
+    /** R2 object key (not a URL); served via `/gateway/files/<key>`. */
+    thumbnailR2Key: text("thumbnail_r2_key"),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),

@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { clientIp, corsHeaders, joinUrl, json, proxy, withCors } from "./http";
+import { handleFiles, handleStorage } from "./storage";
 
 const AUTH_WRITES = [
 	"/sign-in/email",
@@ -30,6 +31,12 @@ export default {
 			}
 			if (pathname === "/data" || pathname.startsWith("/data/")) {
 				return await handleData(request, url);
+			}
+			if (pathname.startsWith("/storage/")) {
+				return await handleStorageRequest(request, url);
+			}
+			if (pathname.startsWith("/files/")) {
+				return await handleFilesRequest(request, url);
 			}
 			if (pathname === "/fn" || pathname.startsWith("/fn/")) {
 				return await handleFunction(request, url);
@@ -106,6 +113,28 @@ async function handleData(request: Request, url: URL) {
 	const proxied = new Request(request, { headers });
 	const target = joinUrl(env.NEON_DATA_API_URL, path, url.search);
 	return withCors(proxied, env.APP_ORIGIN, await proxy(proxied, target));
+}
+
+async function handleStorageRequest(request: Request, url: URL) {
+	const allowed = await limited(env.STORAGE_RATE_LIMIT, clientIp(request));
+	if (!allowed) {
+		return withCors(request, env.APP_ORIGIN, json(429, { error: "Too many requests." }));
+	}
+	const token = await userJwt(request);
+	if (!token) {
+		return withCors(request, env.APP_ORIGIN, json(401, { error: "Unauthorized." }));
+	}
+	const path = url.pathname.slice("/storage".length);
+	return withCors(request, env.APP_ORIGIN, await handleStorage(request, path, token));
+}
+
+async function handleFilesRequest(request: Request, url: URL) {
+	const token = await userJwt(request);
+	if (!token) {
+		return withCors(request, env.APP_ORIGIN, json(401, { error: "Unauthorized." }));
+	}
+	const path = url.pathname.slice("/files".length);
+	return withCors(request, env.APP_ORIGIN, await handleFiles(request, path, token));
 }
 
 async function userJwt(request: Request) {

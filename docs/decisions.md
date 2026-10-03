@@ -71,6 +71,16 @@ Only decisions that constrain how new work should be done.
 - Subject files stay in memory (`scene-subject-cache`). Import is a window event (`editor:import-subject`), not a direct engine call from the file picker.
 - Existing `exportHotspots()` is a hotspot-list dump, not a project format. Do not treat it as the save system.
 
+## File storage (R2)
+
+- **Worker is the storage gateway**, not a Neon Function. It already holds the user JWT, so authorization is "can this user read the project row under RLS". No R2 credentials or bucket URLs reach the browser except a short-lived presigned URL.
+- **Uploads are presigned S3 `PUT`s** (5 min, `content-type` signed) straight to R2, so file bytes never pass through Next or the Worker. A separate **commit** step validates the object (`head`: type, size) before the DB references it; rejected uploads are deleted.
+- **Reads are streamed by the Worker** through the `ASSETS` binding at `/gateway/files/<key>` (private bucket, session cookie works with plain `<img>`). No public bucket or `r2.dev` URL.
+- **DB columns hold R2 keys, never URLs** (e.g. `projects.thumbnail_r2_key`). Keys start with `orgs/{orgId}/projects/{projectId}/` and the Worker checks that prefix against the project row.
+- **Unique key per upload** (`thumbnails/{uuid}.webp`, not a fixed `cover.webp`) so responses can be cached `immutable` and the old object is deleted only after the swap commits.
+- **Client normalizes images** (16:9 center crop, ≤ 1920×1080 WebP) so stored thumbnails stay small and uniform.
+- **Local-first dev storage.** Without R2 S3 credentials the Worker accepts the upload itself (`/thumbnail/upload`, same auth/key/type/size checks) into the Miniflare bucket, so storage works offline. The remote binding is opt-in (`npm run dev:api:r2`) for testing real presigned uploads; plain `dev:api` must not require a Cloudflare login. Production must have the S3 credentials set so bytes bypass the Worker.
+
 ## Documentation
 
 - Agent docs live in `AGENTS.md` and `docs/`. Update them when architecture, features, or decisions change; not for trivial edits.

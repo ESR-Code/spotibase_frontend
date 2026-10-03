@@ -18,6 +18,10 @@ import {
 } from "@/lib/projects/api";
 import type { FolderColor } from "@/lib/projects/folder-colors";
 import {
+  removeProjectThumbnail,
+  uploadProjectThumbnail,
+} from "@/lib/projects/storage";
+import {
   createOrganization,
   getActiveMemberRole,
   getActiveOrganizationId,
@@ -182,10 +186,37 @@ export function useUpdateProject(organizationId: string) {
   });
 }
 
+export function useUploadProjectThumbnail(organizationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { id: string; file: File }) =>
+      uploadProjectThumbnail(input.id, input.file),
+    onSuccess: async (_data, input) => {
+      await qc.invalidateQueries({ queryKey: ["projects", organizationId] });
+      await qc.invalidateQueries({ queryKey: projectKeys.detail(input.id) });
+    },
+  });
+}
+
+export function useRemoveProjectThumbnail(organizationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: removeProjectThumbnail,
+    onSuccess: async (_data, id) => {
+      await qc.invalidateQueries({ queryKey: ["projects", organizationId] });
+      await qc.invalidateQueries({ queryKey: projectKeys.detail(id) });
+    },
+  });
+}
+
 export function useDeleteProject(organizationId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: deleteProject,
+    mutationFn: async (id: string) => {
+      // Best-effort: once the row is gone, RLS can no longer authorize the delete.
+      await removeProjectThumbnail(id).catch(() => undefined);
+      await deleteProject(id);
+    },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["projects", organizationId] });
     },

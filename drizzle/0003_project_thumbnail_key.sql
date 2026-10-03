@@ -1,0 +1,3 @@
+ALTER TABLE "projects" ADD COLUMN "thumbnail_r2_key" text;--> statement-breakpoint
+ALTER POLICY "project_folders_org_member" ON "project_folders" TO authenticated USING ((SELECT public.is_org_member("project_folders"."organization_id"))) WITH CHECK ((SELECT public.is_org_member("project_folders"."organization_id")));--> statement-breakpoint
+ALTER POLICY "projects_org_member" ON "projects" TO authenticated USING ((SELECT public.is_org_member("projects"."organization_id"))) WITH CHECK ((SELECT public.is_org_member("projects"."organization_id")));

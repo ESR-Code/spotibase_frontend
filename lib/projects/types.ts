@@ -18,6 +18,7 @@ export type ProjectRow = {
   name: string;
   description: string | null;
   scene_count: number;
+  thumbnail_r2_key: string | null;
   created_at: string;
   updated_at: string;
 };

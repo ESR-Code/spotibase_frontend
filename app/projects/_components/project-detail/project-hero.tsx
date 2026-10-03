@@ -1,8 +1,9 @@
 import { EditorLaunchButton } from "@/app/projects/_components/editor-launch-button";
 import { FolderIcon } from "@/app/projects/_components/folder-icon";
-import { FolderTag, PROJECT_THUMBNAIL } from "@/app/projects/_components/project-card";
+import { FolderTag } from "@/app/projects/_components/project-card";
 import { formatRelative, plural } from "@/app/projects/_lib/format";
 import { folderHex } from "@/lib/projects/folder-colors";
+import { projectThumbnailSrc } from "@/lib/projects/storage";
 import type {
   OrganizationSummary,
   ProjectFolderRow,
@@ -69,7 +70,7 @@ export function ProjectHero({
     <section className="studio-panel studio-hero studio-enter p-4 sm:p-5">
       <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:gap-7">
         <div className="studio-thumb w-full shrink-0 rounded-[10px] after:hidden lg:w-[280px]">
-          <Image src={PROJECT_THUMBNAIL} alt="" fill unoptimized priority sizes="(max-width: 1024px) 100vw, 280px" className="object-cover" />
+          <Image src={projectThumbnailSrc(project)} alt="" fill unoptimized priority sizes="(max-width: 1024px) 100vw, 280px" className="object-cover" />
           <div className="absolute inset-x-2.5 top-2.5 flex gap-1.5">
             <span className="studio-media-chip">
               <Layers />

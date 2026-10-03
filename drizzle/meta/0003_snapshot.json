@@ -1,6 +1,6 @@
 {
-  "id": "ede8abdb-993c-488a-9d73-c7bb80694d1a",
-  "prevId": "9e8f49c6-bbc4-4367-b660-c27fd25f4f3c",
+  "id": "4314b8d9-3039-476b-b01d-db452cf810c8",
+  "prevId": "ede8abdb-993c-488a-9d73-c7bb80694d1a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -76,8 +76,8 @@
           "to": [
             "authenticated"
           ],
-          "using": "EXISTS (\n    SELECT 1 FROM neon_auth.member AS m\n    WHERE m.\"organizationId\" = \"project_folders\".\"organization_id\"\n      AND m.\"userId\" = auth.uid()\n  )",
-          "withCheck": "EXISTS (\n    SELECT 1 FROM neon_auth.member AS m\n    WHERE m.\"organizationId\" = \"project_folders\".\"organization_id\"\n      AND m.\"userId\" = auth.uid()\n  )"
+          "using": "(SELECT public.is_org_member(\"project_folders\".\"organization_id\"))",
+          "withCheck": "(SELECT public.is_org_member(\"project_folders\".\"organization_id\"))"
         }
       },
       "checkConstraints": {},
@@ -124,6 +124,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
+        },
+        "thumbnail_r2_key": {
+          "name": "thumbnail_r2_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -197,8 +203,8 @@
           "to": [
             "authenticated"
           ],
-          "using": "EXISTS (\n    SELECT 1 FROM neon_auth.member AS m\n    WHERE m.\"organizationId\" = \"projects\".\"organization_id\"\n      AND m.\"userId\" = auth.uid()\n  )",
-          "withCheck": "EXISTS (\n    SELECT 1 FROM neon_auth.member AS m\n    WHERE m.\"organizationId\" = \"projects\".\"organization_id\"\n      AND m.\"userId\" = auth.uid()\n  )"
+          "using": "(SELECT public.is_org_member(\"projects\".\"organization_id\"))",
+          "withCheck": "(SELECT public.is_org_member(\"projects\".\"organization_id\"))"
         }
       },
       "checkConstraints": {},

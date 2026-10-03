@@ -74,7 +74,29 @@ Drizzle introspects Auth tables into `lib/db/schema.ts`. Product tables live in 
 
 RLS on `project_folders` / `projects` allows rows only when `public.is_org_member(organization_id)` is true (SECURITY DEFINER check against `neon_auth.member` + `auth.uid()`). Browser CRUD goes through `/gateway/data/*` (Worker → Neon Data API).
 
-The browser calls same-origin `/gateway/*`. Next proxies that to the Worker (`WORKER_URL`, default `http://127.0.0.1:8787`) so the session cookie stays on the app origin. If the Worker is not running, `GET /gateway/auth/get-session` returns an empty session instead of a 500. The browser never sees Neon URLs or `DATABASE_URL`. `/auth/*` proxies Neon Auth. `/data/*` exchanges the session cookie for the user JWT and forwards to the Neon Data API (RLS is the authorization layer; `neon_auth` is not exposed). `/fn/*` is reserved for a future Neon Function and returns 501 until `NEON_FUNCTION_URL` is set. Run the Worker with `npm run dev:api` beside `npm run dev`.
+The browser calls same-origin `/gateway/*`. Next proxies that to the Worker (`WORKER_URL`, default `http://127.0.0.1:8787`) so the session cookie stays on the app origin. If the Worker is not running, `GET /gateway/auth/get-session` returns an empty session instead of a 500. The browser never sees Neon URLs or `DATABASE_URL`. `/auth/*` proxies Neon Auth. `/data/*` exchanges the session cookie for the user JWT and forwards to the Neon Data API (RLS is the authorization layer; `neon_auth` is not exposed). `/fn/*` is reserved for a future Neon Function and returns 501 until `NEON_FUNCTION_URL` is set. Run the Worker with `npm run dev:api` beside `npm run dev`, or both at once with `npm run dev:local` (local Worker + simulated R2; Auth, Data API, and Postgres are the linked cloud Neon branch).
+
+### File storage (Cloudflare R2)
+
+Private bucket `spotibase-assets`, bound to the Worker as `ASSETS`. Keys are tenant-scoped:
+
+```
+orgs/{orgId}/projects/{projectId}/thumbnails/{uuid}.webp
+orgs/{orgId}/projects/{projectId}/models/…      # planned (editor phase)
+```
+
+Postgres stores the **R2 key, never a URL** (`projects.thumbnail_r2_key`). The browser derives `/gateway/files/<key>` (`lib/projects/storage.ts`).
+
+Worker routes (`worker/src/storage.ts`), all authorized by reading the project row with the user JWT under RLS:
+
+| Route | Purpose |
+| --- | --- |
+| `POST /storage/projects/:id/thumbnail/upload-url` | Mint a key + 5-minute presigned S3 `PUT` (aws4fetch, R2 S3 token) |
+| `POST /storage/projects/:id/thumbnail/commit` | `head` the object (WebP, ≤ 5 MB), PATCH the key via Data API, delete the previous object |
+| `DELETE /storage/projects/:id/thumbnail` | Clear the key and delete the object |
+| `GET /files/<key>` | Stream from R2 after checking membership; `private, immutable` cache |
+
+Upload flow: browser crops/encodes 16:9 WebP → upload-url → `PUT` straight to R2 → commit. Bucket CORS (`worker/r2-cors.json`) allows `PUT` from the app origin. Deleting a project first clears its thumbnail (best-effort). Local dev: with `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` empty, `upload-url` returns a same-origin `PUT /gateway/storage/projects/:id/thumbnail/upload?key=…` and the Worker writes into the simulated bucket (plain `npm run dev:api`, no Cloudflare account needed; inspect with `e` in the dev terminal). With credentials set, uploads are presigned; use `npm run dev:api:r2` (remote `ASSETS` binding) so reads hit the same real bucket. Worker secrets: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`.
 
 Auth UI: `/auth/sign-in`, `/auth/forgot-password`, `/auth/reset-password`, and a **disabled** `/auth/sign-up` (Neon email-password sign-up is also closed). Email verification is off until the rest of the product UI is ready. After login, `/projects` is the studio dashboard (org selector, folders, projects). `/orgs` redirects there. Session redirects are client-side.
 
