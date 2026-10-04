@@ -36,6 +36,13 @@
       "when": 1791117755507,
       "tag": "0004_editor_scenes_assets",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791121199635,
+      "tag": "0005_jwt_first_call_identity",
+      "breakpoints": true
     }
   ]
 }

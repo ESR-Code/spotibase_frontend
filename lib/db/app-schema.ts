@@ -126,7 +126,7 @@ export const assets = pgTable(
     height: integer("height"),
     sha256: text("sha256"),
     metadata: jsonb("metadata").notNull().default({}),
-    createdBy: uuid("created_by").default(sql`(auth.user_id())::uuid`),
+    createdBy: uuid("created_by").default(sql`(public.current_user_id())::uuid`),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
