@@ -1,6 +1,6 @@
 # Architecture
 
-Spotibase is a Next.js App Router app. Almost all product code is the client-side editor at `/editor`. Editor state is still session-only Zustand (no save/load UI yet). The SaaS data plane is Neon Lakebase Postgres with Managed Better Auth; the tenant boundary is an **organization**.
+Spotibase is a Next.js App Router app. Almost all product code is the client-side editor at `/projects/[id]/editor`. Editor state is still session-only Zustand (no save/load UI yet). The SaaS data plane is Neon Lakebase Postgres with Managed Better Auth; the tenant boundary is an **organization**.
 
 ## Layout
 
@@ -11,10 +11,11 @@ app/
   auth/                             # sign-in, disabled sign-up, forgot/reset password
   projects/                         # studio dashboard (orgs, folders, projects)
     [id]/                           # project detail; tabs registered in _components/project-detail/project-tabs.tsx
+      editor/                       # Spotibase (`/projects/[id]/editor`)
+        page.tsx → editor-page-client  # dynamic import, ssr: false
+        layout.tsx                  # editor fonts + theme
   orgs/                             # legacy redirect → /projects
-  editor/                           # Spotibase
-    page.tsx → editor-page-client   # dynamic import, ssr: false
-    layout.tsx                      # editor fonts + theme
+  editor/                           # editor UI modules; page.tsx redirects legacy `/editor`
     editor-theme.css
     _components/                    # editor UI (shell, viewport, drawers, actions)
   http_request_node_test/route.ts   # demo JSON for HTTP Request nodes

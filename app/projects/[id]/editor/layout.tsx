@@ -1,5 +1,5 @@
 import { Manrope, Sora } from "next/font/google";
-import "./editor-theme.css";
+import "@/app/editor/editor-theme.css";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -11,7 +11,7 @@ const sora = Sora({
   variable: "--font-editor-display",
 });
 
-export default function EditorLayout({
+export default function ProjectEditorLayout({
   children,
 }: {
   children: React.ReactNode;

@@ -8,7 +8,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Spotibase — agent instructions
 
-This is a Next.js 16 / React 19 app. The product is **Spotibase** (“3D Hotspot Studio”) at `/editor`: a client-side editor for placing hotspots on 3D models, 2D images, and geo maps, then wiring Preview behavior with action graphs.
+This is a Next.js 16 / React 19 app. The product is **Spotibase** (“3D Hotspot Studio”) at `/projects/[id]/editor`: a client-side editor for placing hotspots on 3D models, 2D images, and geo maps, then wiring Preview behavior with action graphs.
 
 ## Every coding task
 

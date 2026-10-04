@@ -3,7 +3,7 @@ import { ArrowRight, Clapperboard } from "lucide-react";
 import Link from "next/link";
 
 export function editorHref(projectId: string) {
-  return `/editor?project=${encodeURIComponent(projectId)}`;
+  return `/projects/${encodeURIComponent(projectId)}/editor`;
 }
 
 export function EditorLaunchButton({

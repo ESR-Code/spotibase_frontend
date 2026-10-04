@@ -6,7 +6,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 ### Editor shell
 
-- `/editor` client app: header, mode toolbar (select / add / preview), outliner, viewport HUD, drawers, dialogs.
+- `/projects/[id]/editor` client app: header, mode toolbar (select / add / preview), outliner, viewport HUD, drawers, dialogs. Legacy `/editor` (and `/editor?project=<id>`) redirects here.
 - Keyboard: `V` select, `A` add, `P` preview, `Escape` / `Delete` for selection (ignored in text fields).
 - Loading overlay, engine error banner, scene-transition splash.
 - Model scenes with GLB clips: viewport clip transport (play / pause / scrub / reset) so authors can freeze a pose in Select/Add. Hidden in Preview; does not run the action graph.
@@ -30,7 +30,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 - Cloudflare Worker gateway: `/auth` → Neon Auth, `/data` → Neon Data API (user JWT + RLS), `/fn` → 501 until a Neon Function URL is set, `/storage` + `/files` → R2 (presigned uploads, authorized streaming reads). Rate limits on auth writes, `/data`, and `/storage`. **Planned:** editor/scene assets (GLB, images) in R2.
 - Auth UI: sign-in, forgot password, reset password. Sign-up form exists but is disabled (Neon config `disable-sign-up` + no submit). Email verification is off.
 - `/projects` studio dashboard (client-only): org create/switch, folder CRUD (name + color), project CRUD (name, description, move between folders), search (⌘K / Ctrl K), sort, tabs (All / Recent / In Folders / Root), grid/list view, workspace overview. Animated dialogs (bottom sheet on mobile), responsive layout.
-- `/projects/[id]` project detail (client-only): breadcrumb, hero (thumbnail, title, folder · org, description, "Open in Studio Editor" CTA → `/editor?project=<id>`), URL-synced tabs (`?tab=details|analytics|settings`). Details shows metadata (dates, folder, scenes, org, copyable id). Settings edits name / description / folder, uploads / removes the project thumbnail (drag-and-drop or browse; cropped to 16:9 WebP, stored in R2, shown on cards and hero), and deletes the project. **Partial:** Analytics is visual-only sample data seeded from the project id (`app/projects/_lib/analytics-preview.ts`); the editor ignores `?project=` until save/load exists.
+- `/projects/[id]` project detail (client-only): breadcrumb, hero (thumbnail, title, folder · org, description, "Open in Studio Editor" CTA → `/projects/[id]/editor`), URL-synced tabs (`?tab=details|analytics|settings`). Details shows metadata (dates, folder, scenes, org, copyable id). Settings edits name / description / folder, uploads / removes the project thumbnail (drag-and-drop or browse; cropped to 16:9 WebP, stored in R2, shown on cards and hero), and deletes the project. **Partial:** Analytics is visual-only sample data seeded from the project id (`app/projects/_lib/analytics-preview.ts`); the editor is scoped to the project id in the URL but still ignores it for save/load until persistence exists.
 - `/` sends signed-in users to `/projects` and everyone else to `/auth/sign-in` (client session check). `/orgs` redirects to `/projects`.
 
 
@@ -90,9 +90,9 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 ## Partial
 
-- **No editor project persistence.** Scenes, graphs, and settings in `/editor` are still in-memory. Refresh loses editor work. Studio `/projects` persists folders and projects (metadata only; no scene save yet).
+- **No editor project persistence.** Scenes, graphs, and settings in `/projects/[id]/editor` are still in-memory. Refresh loses editor work. Studio `/projects` persists folders and projects (metadata only; no scene save yet).
 - **Hotspot JSON export** (`lib/editor/io/export-hotspots.ts`) exists but is not wired in the UI. It exports the current scene’s hotspots only, not the full project.
-- **Home** `/` gates to auth or `/projects`. Product editor remains `/editor`.
+- **Home** `/` gates to auth or `/projects`. Product editor is `/projects/[id]/editor`.
 - **App metadata / README** still say “Create Next App”.
 - **Image overlay** `world` **pose** exists on the type; the layers UI and MapLibre path are geo-space. PlayCanvas world overlays are not a first-class editor flow.
 - **Scene.layers comment** still says “image overlays now; more kinds later” even though shape overlays shipped.
