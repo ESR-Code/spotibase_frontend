@@ -25,14 +25,19 @@ export type SceneModelState = {
   rotation: ModelRotation;
   /** 0 = matte, 1 = full original material reflection/gloss. */
   reflection: number;
+  /** Project asset holding the imported GLB / image; null = default subject. */
+  subjectAssetId: string | null;
 };
 
 export type Scene = {
+  /** uuid; also the `public.scenes` row id. */
   id: string;
   name: string;
+  /** Set once on first save, unique per project; empty until then. */
+  slug: string;
   /** Shown in Scene Explorer and the Scenes list when non-empty. */
   description: string;
-  /** Data URL for Scene Explorer; empty string means no thumbnail. */
+  /** `asset:<id>` (or legacy URL) for Scene Explorer; empty means no thumbnail. */
   thumbnailUrl: string;
   /** Immutable after creation — drives subject loader + camera mode. */
   type: SceneTypeId;

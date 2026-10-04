@@ -1,5 +1,6 @@
 "use client";
 
+import { resolveAssetSrc } from "@/lib/editor/assets";
 import { Focus, Trash2 } from "lucide-react";
 import { HotspotMarkerIcon } from "@/app/editor/_components/ui/hotspot-marker-icon";
 import { hotspotShapeClass } from "@/lib/editor/theme/hotspot-shape";
@@ -102,7 +103,7 @@ function MarkerVisual({ hotspot }: { hotspot: Hotspot }) {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={hotspot.markerImage}
+          src={resolveAssetSrc(hotspot.markerImage)}
           alt=""
           className="h-full w-full object-cover"
         />

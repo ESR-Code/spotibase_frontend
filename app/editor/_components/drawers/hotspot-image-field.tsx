@@ -1,25 +1,30 @@
 "use client";
 
-import { ImageIcon, Upload, X } from "lucide-react";
-import type { ReactNode } from "react";
+import { ImageIcon, ImageOff, Loader2, Upload, X } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { toast } from "@/lib/editor/toast";
+import { AssetPickerButton } from "@/app/editor/_components/assets/asset-picker-button";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import {
-  HOTSPOT_IMAGE_ACCEPT,
-  ImageFileReadError,
-  readImageFileAsDataUrl,
-} from "@/lib/editor/io/read-image-data-url";
+  assetRef,
+  IMAGE_ASSET_ACCEPT,
+  isAssetRef,
+  uploadAsset,
+  useAssetSrc,
+  useIsMissingAssetRef,
+} from "@/lib/editor/assets";
+import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { cn } from "@/lib/utils";
 
 type HotspotImageFieldProps = {
+  /** `asset:<id>`, a URL / token, or empty. */
   value: string;
-  onChange: (dataUrl: string) => void;
+  onChange: (value: string) => void;
   uploadLabel?: string;
   emptyLabel?: string;
   hint?: string;
   clearTitle?: string;
   successMessage?: string;
-  sizeErrorMessage?: string;
   className?: string;
   /** `split` = controls left, preview right. */
   layout?: "stack" | "split";
@@ -32,49 +37,68 @@ export function HotspotImageField({
   onChange,
   uploadLabel = "Upload image",
   emptyLabel = "No image",
-  hint = "PNG / JPG / WebP / SVG, up to 2.5 MB.",
+  hint = "PNG / JPG / WebP / SVG / GIF, up to 25 MB.",
   clearTitle = "Clear image",
   successMessage = "Image applied",
-  sizeErrorMessage = "Image must be under 2.5 MB",
   className,
   layout = "stack",
   urlInput,
 }: HotspotImageFieldProps) {
-  const isUploaded = value.startsWith("data:");
+  const [uploading, setUploading] = useState(false);
+  const src = useAssetSrc(value);
+  const missing = useIsMissingAssetRef(value);
+  const isUploaded = value.startsWith("data:") || isAssetRef(value);
   const showUrlInput = Boolean(urlInput) && !isUploaded;
+
+  const handleFile = (file: File) => {
+    setUploading(true);
+    const sceneId = useScenesStore.getState().activeSceneId;
+    void uploadAsset(file, { kind: "image", sceneId })
+      .then((asset) => {
+        onChange(assetRef(asset.id));
+        toast.success(successMessage);
+      })
+      .catch((error: unknown) => {
+        toast.error(error instanceof Error ? error.message : "Could not upload image");
+      })
+      .finally(() => setUploading(false));
+  };
 
   const controls = (
     <div className="min-w-0">
       {showUrlInput ? <div className="mb-2">{urlInput}</div> : null}
       <div className="flex gap-2">
-        <label className="editor-btn mb-0 flex-1 cursor-pointer justify-center">
-          <Upload className="h-4 w-4" />
-          {uploadLabel}
+        <label
+          className={cn(
+            "editor-btn mb-0 flex-1 cursor-pointer justify-center",
+            uploading && "pointer-events-none opacity-60",
+          )}
+        >
+          {uploading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
+          {uploading ? "Uploading…" : uploadLabel}
           <input
             type="file"
-            accept={HOTSPOT_IMAGE_ACCEPT}
+            accept={IMAGE_ASSET_ACCEPT}
             className="hidden"
+            disabled={uploading}
             onChange={(e) => {
               const file = e.target.files?.[0];
               e.target.value = "";
-              if (!file) return;
-              void readImageFileAsDataUrl(file)
-                .then((dataUrl) => {
-                  onChange(dataUrl);
-                  toast.success(successMessage);
-                })
-                .catch((error) => {
-                  const fallback =
-                    error instanceof ImageFileReadError
-                      ? error.message
-                      : "Could not read image file";
-                  toast.error(
-                    fallback.includes("2.5 MB") ? sizeErrorMessage : fallback,
-                  );
-                });
+              if (file) handleFile(file);
             }}
           />
         </label>
+        <AssetPickerButton
+          kind="image"
+          onPick={(asset) => {
+            onChange(assetRef(asset.id));
+            toast.success(successMessage);
+          }}
+        />
         <IconButton title={clearTitle} onClick={() => onChange("")} disabled={!value}>
           <X />
         </IconButton>
@@ -99,13 +123,17 @@ export function HotspotImageField({
         color: "var(--editor-muted-2)",
       }}
     >
-      {value ? (
+      {missing ? (
+        <span
+          className="inline-flex items-center gap-2 px-2 text-center"
+          style={{ color: "var(--editor-crimson)" }}
+        >
+          <ImageOff className="h-3.5 w-3.5" />
+          Missing asset
+        </span>
+      ) : src ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={value}
-          alt="Preview"
-          className="h-full w-full object-cover"
-        />
+        <img src={src} alt="Preview" className="h-full w-full object-cover" />
       ) : (
         <span className="inline-flex items-center gap-2 px-2 text-center">
           <ImageIcon className="h-3.5 w-3.5" />

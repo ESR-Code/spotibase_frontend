@@ -13,7 +13,10 @@ import { createModelManager } from "@/lib/editor/engine/model-manager";
 import { createPickingController } from "@/lib/editor/engine/picking-controller";
 import { createScene } from "@/lib/editor/engine/scene-manager";
 import { bindViewportResize } from "@/lib/editor/engine/viewport-resize";
-import type { ImportSubjectDetail } from "@/lib/editor/io/import-subject";
+import {
+  type ImportSubjectDetail,
+  uploadSubjectAsset,
+} from "@/lib/editor/io/import-subject";
 import {
   getCameraModeForSceneType,
   getSceneType,
@@ -39,7 +42,10 @@ import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance
 import { usePreviewMeshHighlightStore } from "@/lib/editor/state/preview-mesh-highlight-store";
 import { usePreviewSpawnedHotspotsStore } from "@/lib/editor/state/preview-spawned-hotspots-store";
 import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
-import { sceneSubjectCache } from "@/lib/editor/state/scene-subject-cache";
+import {
+  fetchSubjectBlob,
+  sceneSubjectCache,
+} from "@/lib/editor/state/scene-subject-cache";
 import {
   syncActiveSceneSettings,
   useScenesStore,
@@ -129,8 +135,16 @@ export function usePlayCanvasEditor() {
           sceneType: SceneTypeId,
         ) => {
           const token = ++subjectLoadToken;
+          const record = useScenesStore
+            .getState()
+            .scenes.find((s) => s.id === sceneId);
+          const assetId = record?.model.subjectAssetId ?? null;
           const cached = sceneSubjectCache.get(sceneId);
-          if (cached && cached.kind === sceneType) {
+          if (
+            cached &&
+            cached.kind === sceneType &&
+            (cached.assetId === null || cached.assetId === assetId)
+          ) {
             const entity = await models.restoreFromCache(
               cached.kind,
               cached.fileName,
@@ -138,6 +152,34 @@ export function usePlayCanvasEditor() {
             );
             if (token !== subjectLoadToken) return;
             if (!entity) models.loadDefault(sceneType);
+          } else if (assetId) {
+            const fileName = record?.model.name ?? "subject";
+            try {
+              const blob = await fetchSubjectBlob(assetId);
+              if (token !== subjectLoadToken) return;
+              sceneSubjectCache.set(sceneId, {
+                kind: sceneType,
+                fileName,
+                blob,
+                assetId,
+              });
+              const entity = await models.restoreFromCache(
+                sceneType,
+                fileName,
+                blob,
+              );
+              if (token !== subjectLoadToken) return;
+              if (!entity) models.loadDefault(sceneType);
+            } catch (error) {
+              console.error(error);
+              if (token !== subjectLoadToken) return;
+              toast.error(`Could not load ${fileName}`, {
+                description: error instanceof Error ? error.message : undefined,
+              });
+              models.loadDefault(sceneType);
+            }
+            // The default loader resets meta; keep the authored reference.
+            useModelStore.getState().setSubjectAssetId(assetId);
           } else {
             models.loadDefault(sceneType);
           }
@@ -367,11 +409,13 @@ export function usePlayCanvasEditor() {
             .detail;
           if (!detail?.file) return;
           const type = detail.type ?? getActiveSceneType();
+          const sceneId = useScenesStore.getState().activeSceneId;
           const entity = await models.replaceFromFile(detail.file, type);
           if (entity) {
             applyScenePresentation(type);
             cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
             syncKeyLightShadowMode();
+            void uploadSubjectAsset(detail.file, type, sceneId);
           }
         };
         const onResetCamera = () => {
@@ -519,9 +563,6 @@ export function usePlayCanvasEditor() {
         useModelStore.getState().setEngineError(null);
         useUIStore.getState().setLoading(false);
 
-        if (useEditorStore.getState().hotspots.length === 0) {
-          useEditorStore.getState().initDemoHotspots();
-        }
         hotspotMgr.syncFromStore();
         toast.success("Welcome to Spotibase — try Preview mode");
 

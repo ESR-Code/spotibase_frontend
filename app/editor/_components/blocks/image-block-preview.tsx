@@ -1,5 +1,6 @@
 "use client";
 
+import { resolveAssetSrc } from "@/lib/editor/assets";
 import { ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
@@ -52,7 +53,7 @@ export function ImageBlockPreview({ block }: ImageBlockPreviewProps) {
   useLiveFieldInterpolation();
 
   const items = block.items.flatMap((item) => {
-    const src = interpolatePlainText(item.src).trim();
+    const src = resolveAssetSrc(interpolatePlainText(item.src).trim());
     const caption = interpolatePlainText(item.caption);
     if (!isDisplayableSrc(src)) return [];
     return [{ id: item.id, src, caption }];

@@ -17,6 +17,7 @@ import {
   createEmptyModelState,
   createScene,
   INITIAL_SCENE_ID,
+  newSceneId,
   SEED_SCENE,
 } from "@/lib/editor/constants/seed-scene";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -57,7 +58,7 @@ import { cloneLayers } from "@/lib/editor/types/scene-layer";
 import type { Scene } from "@/lib/editor/types/scene";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 
-function snapshotCurrentIntoScene(scene: Scene): Scene {
+export function snapshotCurrentIntoScene(scene: Scene): Scene {
   const editor = useEditorStore.getState();
   const model = useModelStore.getState();
   return {
@@ -90,6 +91,7 @@ function snapshotCurrentIntoScene(scene: Scene): Scene {
       scale: model.modelScale,
       rotation: { ...model.modelRotation },
       reflection: model.modelReflection,
+      subjectAssetId: model.subjectAssetId,
     },
     settings: readEditorSettingsSnapshot(),
     environment: readEnvironmentSnapshot(),
@@ -98,15 +100,6 @@ function snapshotCurrentIntoScene(scene: Scene): Scene {
     layers: readLayersSnapshot(),
     geoReference: cloneGeoReference(scene.geoReference),
   };
-}
-
-function nextSceneId(scenes: Scene[]): string {
-  let max = 0;
-  for (const scene of scenes) {
-    const match = /^scene-(\d+)$/.exec(scene.id);
-    if (match) max = Math.max(max, Number(match[1]));
-  }
-  return `scene-${max + 1}`;
 }
 
 function defaultNewSceneName(scenes: Scene[]): string {
@@ -210,7 +203,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
     );
     const primary =
       snapshotted.find((s) => s.isPrimary) ?? snapshotted[0]!;
-    const id = nextSceneId(snapshotted);
+    const id = newSceneId();
     const scene = createScene({
       id,
       name: input.name?.trim() || defaultNewSceneName(snapshotted),
@@ -430,4 +423,12 @@ export function syncActiveSceneLayers() {
         : scene,
     ),
   });
+}
+
+/** All scenes with the active one read from the live stores (no store write). */
+export function readLiveScenes(): Scene[] {
+  const state = useScenesStore.getState();
+  return state.scenes.map((scene) =>
+    scene.id === state.activeSceneId ? snapshotCurrentIntoScene(scene) : scene,
+  );
 }

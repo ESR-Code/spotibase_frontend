@@ -22,15 +22,19 @@ import { ColorSwatch } from "@/app/editor/_components/ui/color-swatch";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
+import { resolveAssetSrc } from "@/lib/editor/assets";
 import { defaultOverlayWidthMeters } from "@/lib/editor/geo/overlay-quad";
 import {
   OVERLAY_ACCEPT,
-  readOverlayImageFile,
+  importOverlayImageFile,
 } from "@/lib/editor/io/import-overlay-image";
 import { selectLayerExclusive } from "@/lib/editor/state/exclusive-selection";
 import { useLayersStore } from "@/lib/editor/state/layers-store";
 import { useMapViewportStore } from "@/lib/editor/state/map-viewport-store";
-import { syncActiveSceneLayers } from "@/lib/editor/state/scenes-store";
+import {
+  syncActiveSceneLayers,
+  useScenesStore,
+} from "@/lib/editor/state/scenes-store";
 import { useShapeDrawStore } from "@/lib/editor/state/shape-draw-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import { markerColorSwatches } from "@/lib/editor/theme/tokens";
@@ -123,7 +127,10 @@ export function LayersPanel() {
   const addFromFile = async (file: File | undefined) => {
     if (!file) return;
     try {
-      const image = await readOverlayImageFile(file);
+      const image = await importOverlayImageFile(
+        file,
+        useScenesStore.getState().activeSceneId,
+      );
       const layer = useLayersStore.getState().addLayer({
         kind: "image-overlay",
         name: image.name,
@@ -131,7 +138,7 @@ export function LayersPanel() {
         locked: false,
         opacity: 1,
         blend: 0,
-        imageDataUrl: image.dataUrl,
+        imageSrc: image.src,
         naturalWidth: image.naturalWidth,
         naturalHeight: image.naturalHeight,
         pose: defaultGeoPose(),
@@ -250,7 +257,7 @@ export function LayersPanel() {
               subtitle="Overlay"
               thumb={
                 <span className="editor-layer-thumb">
-                  <img src={layer.imageDataUrl} alt="" draggable={false} />
+                  <img src={resolveAssetSrc(layer.imageSrc)} alt="" draggable={false} />
                 </span>
               }
             />

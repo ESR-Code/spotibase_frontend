@@ -1,5 +1,6 @@
 "use client";
 
+import { AssetLibraryDialog } from "@/app/editor/_components/assets/asset-library-dialog";
 import { EditorHeader } from "@/app/editor/_components/editor-header";
 import { LoadingOverlay } from "@/app/editor/_components/loading-overlay";
 import { HotspotOutliner, OutlinerExpandTab } from "@/app/editor/_components/outliner/hotspot-outliner";
@@ -20,6 +21,7 @@ import { GeoreferenceModal } from "@/app/editor/_components/dialogs/georeference
 import { EditorToaster } from "@/app/editor/_components/ui/editor-toaster";
 import { SceneTransitionOverlay } from "@/app/editor/_components/viewport/scene-transition-overlay";
 import { useEditorKeyboard } from "@/lib/editor/hooks/use-editor-keyboard";
+import { useProjectSaveShortcuts } from "@/lib/editor/hooks/use-project-save-shortcuts";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useGeneralSettingsStore } from "@/lib/editor/state/general-settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
@@ -27,6 +29,7 @@ import { generalStyleToCssVars } from "@/lib/editor/theme/preview-style-vars";
 
 export function EditorShell() {
   useEditorKeyboard();
+  useProjectSaveShortcuts();
   const outlinerCollapsed = useUIStore((s) => s.outlinerCollapsed);
   const isPreview = useEditorStore((s) => s.isPreview);
   const generalStyle = useGeneralSettingsStore((s) => s.style);
@@ -55,6 +58,7 @@ export function EditorShell() {
         <PreviewRailButtons />
         <PreviewModal />
         <ScenesModal />
+        <AssetLibraryDialog />
         <GeoreferenceModal />
         <ActionsModal />
         <SpawnClickActionsModal />

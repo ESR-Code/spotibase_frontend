@@ -1,3 +1,4 @@
+import { resolveAssetSrc } from "@/lib/editor/assets";
 import type { Application, Entity, StandardMaterial, Texture } from "playcanvas";
 import type * as pc from "playcanvas";
 import {
@@ -176,7 +177,7 @@ export async function rebuildCore(
       const { texture, aspect } = await createImageTexture(
         pcModule,
         app.graphicsDevice,
-        hotspot.markerImage,
+        resolveAssetSrc(hotspot.markerImage),
       );
       // Another rebuild may have started while the image loaded
       if (visual.styleKey !== requestKey) {

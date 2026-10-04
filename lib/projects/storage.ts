@@ -9,7 +9,7 @@ const THUMBNAIL_HEIGHT = 1080;
 const THUMBNAIL_TYPE = "image/webp";
 const THUMBNAIL_QUALITY = 0.86;
 
-type UploadTicket = {
+export type UploadTicket = {
   key: string;
   url: string;
   method: "PUT";
@@ -22,7 +22,7 @@ export function projectThumbnailSrc(project: Pick<ProjectRow, "thumbnail_r2_key"
     : PROJECT_THUMBNAIL_PLACEHOLDER;
 }
 
-async function storageJson<T>(path: string, init?: RequestInit): Promise<T> {
+export async function storageJson<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   if (init?.body) headers.set("Content-Type", "application/json");
   headers.set("Accept", "application/json");
@@ -99,6 +99,14 @@ export async function uploadProjectThumbnail(projectId: string, file: File) {
 export async function removeProjectThumbnail(projectId: string) {
   return storageJson<ProjectRow | { ok: true }>(
     `projects/${encodeURIComponent(projectId)}/thumbnail`,
+    { method: "DELETE" },
+  );
+}
+
+/** Deletes every editor asset object of a project (rows cascade with the project). */
+export async function removeProjectAssets(projectId: string) {
+  return storageJson<{ ok: true }>(
+    `projects/${encodeURIComponent(projectId)}/assets`,
     { method: "DELETE" },
   );
 }

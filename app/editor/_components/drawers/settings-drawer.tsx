@@ -160,13 +160,12 @@ export function SettingsDrawer() {
           <HotspotImageField
             layout="split"
             value={values.logoUrl ?? ""}
-            onChange={(dataUrl) => form.setValue("logoUrl", dataUrl)}
+            onChange={(value) => form.setValue("logoUrl", value)}
             uploadLabel="Upload logo"
             emptyLabel="No logo"
-            hint="Shown at the top center of the viewport. PNG / JPG / WebP / SVG, up to 2.5 MB."
+            hint="Shown at the top center of the viewport. PNG / JPG / WebP / SVG / GIF, up to 25 MB."
             clearTitle="Remove logo"
             successMessage="Logo applied"
-            sizeErrorMessage="Logo must be under 2.5 MB"
           />
           {values.logoUrl ? (
             <SliderField

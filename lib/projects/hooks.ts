@@ -18,6 +18,7 @@ import {
 } from "@/lib/projects/api";
 import type { FolderColor } from "@/lib/projects/folder-colors";
 import {
+  removeProjectAssets,
   removeProjectThumbnail,
   uploadProjectThumbnail,
 } from "@/lib/projects/storage";
@@ -259,6 +260,7 @@ export function useDeleteProject(organizationId: string) {
     mutationFn: async (id: string) => {
       // Best-effort: once the row is gone, RLS can no longer authorize the delete.
       await removeProjectThumbnail(id).catch(() => undefined);
+      await removeProjectAssets(id).catch(() => undefined);
       await deleteProject(id);
     },
     onSuccess: async (_data, id) => {

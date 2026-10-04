@@ -1,5 +1,6 @@
 "use client";
 
+import { resolveAssetSrc } from "@/lib/editor/assets";
 import { Layers, Map, X } from "lucide-react";
 import { LegendButton } from "@/app/editor/_components/drawers/legend-drawer";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
@@ -135,7 +136,7 @@ function SceneExplorerListItem({
         <span className="editor-scene-item-icon editor-scene-explorer-thumb">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={scene.thumbnailUrl}
+            src={resolveAssetSrc(scene.thumbnailUrl)}
             alt=""
             className="h-full w-full object-cover"
           />

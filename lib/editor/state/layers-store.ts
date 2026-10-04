@@ -75,7 +75,7 @@ export const useLayersStore = create<LayersState>((set, get) => ({
             locked: patch.locked ?? layer.locked,
             opacity: patch.opacity ?? layer.opacity,
             blend: patch.blend ?? layer.blend,
-            imageDataUrl: patch.imageDataUrl ?? layer.imageDataUrl,
+            imageSrc: patch.imageSrc ?? layer.imageSrc,
             naturalWidth: patch.naturalWidth ?? layer.naturalWidth,
             naturalHeight: patch.naturalHeight ?? layer.naturalHeight,
             pose:

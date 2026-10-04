@@ -17,5 +17,5 @@ export default defineConfig({
   dialect: "postgresql",
   dbCredentials: { url },
   schemaFilter: ["public"],
-  tablesFilter: ["project_folders", "projects"],
+  tablesFilter: ["project_folders", "projects", "scenes", "assets"],
 });

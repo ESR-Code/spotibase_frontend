@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { GeoJSONSource, ImageSource, Map as MapLibreMap } from "maplibre-gl";
 import { useMap } from "@/components/ui/map";
+import { resolveAssetSrc } from "@/lib/editor/assets";
 import {
   geoOverlayQuad,
   geographicBearing,
@@ -201,7 +202,7 @@ export function GeoOverlayLayers() {
         );
         const hitPolygon = overlayQuadPolygon(quad);
         const contentKey = overlayContentKey(
-          layer.imageDataUrl,
+          layer.imageSrc,
           layer.blend ?? 0,
         );
         const source = map.getSource(rasterSrc) as ImageSource | undefined;
@@ -217,7 +218,7 @@ export function GeoOverlayLayers() {
         }
 
         const image = await overlaySourceImage(
-          layer.imageDataUrl,
+          resolveAssetSrc(layer.imageSrc),
           layer.blend ?? 0,
         );
         if (cancelled) return;
@@ -240,7 +241,7 @@ export function GeoOverlayLayers() {
         } else {
           map.addSource(rasterSrc, {
             type: "image",
-            url: layer.imageDataUrl,
+            url: resolveAssetSrc(layer.imageSrc),
             coordinates: quad,
           });
           const created = map.getSource(rasterSrc) as ImageSource | undefined;

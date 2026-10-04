@@ -37,7 +37,9 @@ This is a Next.js 16 / React 19 app. The product is **Spotibase** (“3D Hotspot
 | MapLibre viewport                         | `lib/editor/hooks/use-geo-map-editor.ts`, `lib/editor/geo/`                         |
 | Geo alignment                             | `lib/editor/coords/`, `lib/editor/types/geo-reference.ts`                           |
 | Neon Auth / projects / Drizzle            | `worker/`, `lib/auth/`, `app/auth/`, `app/projects/`, `lib/projects/`, `lib/db/`, `docs/architecture.md` |
-| R2 file storage (uploads / reads)         | `worker/src/storage.ts`, `lib/projects/storage.ts`, `docs/architecture.md` |
+| R2 file storage (uploads / reads)         | `worker/src/storage.ts`, `worker/src/assets.ts`, `lib/projects/storage.ts`, `docs/architecture.md` |
+| Editor media library (`asset:<id>` refs)  | `lib/editor/assets/`, `app/editor/_components/assets/` |
+| Editor load / save (scenes, editor_data)  | `lib/editor/persist/`, `app/editor/_components/editor-project-loader.tsx`, `drizzle/0004_*.sql` |
 | Feature status                            | `docs/features.md`                                                                  |
 
 
@@ -54,6 +56,7 @@ This is a Next.js 16 / React 19 app. The product is **Spotibase** (“3D Hotspot
 - **Path alias.** Import via `@/` (see `tsconfig.json`).
 - **Server-only DB.** `lib/db/` and `DATABASE_URL` stay off Client Components and off the Worker. The editor tree remains `ssr: false`. The browser calls same-origin `/gateway/*`; Next proxies that to the Worker.
 - **Files live in R2.** Store R2 keys (not URLs) in Postgres under `orgs/{orgId}/projects/{projectId}/…`. Upload via Worker-presigned `PUT` + commit; read via `/gateway/files/<key>`.
+- **Media is assets, not data URLs.** Uploaded images / models go through `uploadAsset` and are stored as `asset:<id>`; render through `resolveAssetSrc` / `useAssetSrc`. New authored fields must be covered by `serializeProject` / `hydrateProject`.
 - **Deprecated aliases.** Prefer `import-subject`, `scene-subject-cache`, and `replaceFromFile`. Do not add new callers of the deprecated GLB/model-cache names.
 
 

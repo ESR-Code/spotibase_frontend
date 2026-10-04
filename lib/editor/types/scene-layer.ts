@@ -32,7 +32,8 @@ export type ImageOverlayLayer = {
    * so the overlay blends into the basemap at the edges.
    */
   blend: number;
-  imageDataUrl: string;
+  /** `asset:<id>` of the overlay image (legacy: data URL). */
+  imageSrc: string;
   naturalWidth: number;
   naturalHeight: number;
   pose: ImageOverlayPose;

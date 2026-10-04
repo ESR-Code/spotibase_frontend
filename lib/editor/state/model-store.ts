@@ -38,6 +38,8 @@ type ModelState = {
   modelScale: number;
   modelRotation: ModelRotation;
   modelReflection: number;
+  /** Library asset of the loaded subject; null until the upload commits. */
+  subjectAssetId: string | null;
   wireframe: boolean;
   fps: number;
   triangleCount: number;
@@ -49,6 +51,7 @@ type ModelState = {
   setModelScale: (scale: number) => void;
   setModelRotation: (axis: keyof ModelRotation, value: number) => void;
   setModelReflection: (reflection: number) => void;
+  setSubjectAssetId: (assetId: string | null) => void;
   resetModelTransform: () => void;
   setWireframe: (value: boolean) => void;
   setStats: (fps: number, triangleCount: number) => void;
@@ -67,6 +70,7 @@ export const useModelStore = create<ModelState>((set) => ({
   modelScale: DEFAULT_MODEL_SCALE,
   modelRotation: { ...DEFAULT_MODEL_ROTATION },
   modelReflection: DEFAULT_MODEL_REFLECTION,
+  subjectAssetId: null,
   wireframe: false,
   fps: 60,
   triangleCount: 0,
@@ -90,6 +94,7 @@ export const useModelStore = create<ModelState>((set) => ({
     set({
       modelReflection: Math.min(1, Math.max(0, modelReflection)),
     }),
+  setSubjectAssetId: (subjectAssetId) => set({ subjectAssetId }),
   resetModelTransform: () =>
     set({
       modelScale: DEFAULT_MODEL_SCALE,
@@ -114,6 +119,7 @@ export const useModelStore = create<ModelState>((set) => ({
       modelScale: DEFAULT_MODEL_SCALE,
       modelRotation: { ...DEFAULT_MODEL_ROTATION },
       modelReflection: DEFAULT_MODEL_REFLECTION,
+      subjectAssetId: null,
       triangleCount: 0,
       meshes: [],
       animations: [],
@@ -126,5 +132,6 @@ export const useModelStore = create<ModelState>((set) => ({
       modelScale: model.scale,
       modelRotation: { ...model.rotation },
       modelReflection: model.reflection ?? DEFAULT_MODEL_REFLECTION,
+      subjectAssetId: model.subjectAssetId ?? null,
     }),
 }));

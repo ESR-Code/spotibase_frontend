@@ -3,6 +3,8 @@
 import { PenTool } from "lucide-react";
 import { EditorChip } from "@/app/editor/_components/ui/editor-chip";
 import { ModeToolbar } from "@/app/editor/_components/toolbar/mode-toolbar";
+import { SaveButton } from "@/app/editor/_components/toolbar/save-button";
+import { useProjectPersistStore } from "@/lib/editor/persist/persist-store";
 import { getSceneType } from "@/lib/editor/scene-types/registry";
 import { useActiveScene } from "@/lib/editor/state/scenes-store";
 import { PROJECT_NAME } from "@/lib/editor/theme/tokens";
@@ -10,6 +12,7 @@ import { PROJECT_NAME } from "@/lib/editor/theme/tokens";
 export function EditorHeader() {
   const activeScene = useActiveScene();
   const sceneTypeLabel = getSceneType(activeScene.type).label;
+  const projectName = useProjectPersistStore((s) => s.projectName) || PROJECT_NAME;
 
   return (
     <header
@@ -35,7 +38,7 @@ export function EditorHeader() {
 
       <div className="hidden items-center gap-3 md:flex">
         <div className="flex items-center gap-2 text-[13px] font-semibold">
-          <span className="truncate">{PROJECT_NAME}</span>
+          <span className="truncate">{projectName}</span>
           <span style={{ color: "var(--editor-muted-2)" }}>›</span>
           <span className="truncate">{activeScene.name}</span>
           <EditorChip
@@ -52,6 +55,8 @@ export function EditorHeader() {
       <div className="flex flex-1 justify-center">
         <ModeToolbar />
       </div>
+
+      <SaveButton />
 
       <div className="editor-vsep" />
 

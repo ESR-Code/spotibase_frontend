@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Layers, Menu, Settings2 } from "lucide-react";
+import { FolderOpen, Layers, Menu, Settings2 } from "lucide-react";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 
@@ -16,8 +16,10 @@ export function HeaderNavMenu() {
     (s) => s.setGeneralSettingsDrawerOpen,
   );
   const setSettingsDrawerOpen = useUIStore((s) => s.setSettingsDrawerOpen);
+  const assetLibraryOpen = useUIStore((s) => s.assetLibraryOpen);
+  const setAssetLibraryOpen = useUIStore((s) => s.setAssetLibraryOpen);
 
-  const active = scenesModalOpen || generalSettingsOpen;
+  const active = scenesModalOpen || generalSettingsOpen || assetLibraryOpen;
 
   useEffect(() => {
     if (!open) return;
@@ -68,6 +70,21 @@ export function HeaderNavMenu() {
           >
             <Layers className="h-3.5 w-3.5" />
             Scenes
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            disabled={isPreview}
+            className={`editor-header-nav-menu-item ${assetLibraryOpen ? "active" : ""} ${isPreview ? "disabled" : ""}`}
+            onClick={() => {
+              if (isPreview) return;
+              setScenesModalOpen(false);
+              setAssetLibraryOpen(true);
+              setOpen(false);
+            }}
+          >
+            <FolderOpen className="h-3.5 w-3.5" />
+            Assets
           </button>
           <button
             type="button"

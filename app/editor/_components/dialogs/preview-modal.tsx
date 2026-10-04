@@ -1,5 +1,6 @@
 "use client";
 
+import { resolveAssetSrc } from "@/lib/editor/assets";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useCallback, useEffect } from "react";
 import { HotspotBlocksPreview } from "@/app/editor/_components/blocks/hotspot-blocks-preview";
@@ -178,7 +179,7 @@ export function PreviewModal() {
   if (!hotspot) return null;
 
   const displayHotspot = resolveHotspotAppearance(hotspot, isPreview);
-  const headerImage = hotspot.image.trim();
+  const headerImage = resolveAssetSrc(hotspot.image.trim());
   const hasHeaderImage = headerImage.length > 0;
 
   const showTypeChip = hotspot.type !== "none";

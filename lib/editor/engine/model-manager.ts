@@ -411,6 +411,7 @@ export function createModelManager(
           kind: type,
           fileName: file.name,
           blob: file.slice(0, file.size, file.type || mimeFromFileName(file.name)),
+          assetId: null,
         });
       }
       return entity;

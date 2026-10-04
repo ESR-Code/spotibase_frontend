@@ -2,6 +2,10 @@ import { dataJson } from "@/lib/api/data";
 import type { FolderColor } from "@/lib/projects/folder-colors";
 import type { ProjectFolderRow, ProjectRow } from "@/lib/projects/types";
 
+/** Excludes `editor_data`, which only the editor loads. */
+const PROJECT_COLUMNS =
+  "id,organization_id,folder_id,name,description,scene_count,thumbnail_r2_key,editor_revision,created_at,updated_at";
+
 function encode(value: string) {
   return encodeURIComponent(value);
 }
@@ -62,7 +66,7 @@ export async function listProjects(
   const q = new URLSearchParams({
     organization_id: `eq.${organizationId}`,
     order: "updated_at.desc",
-    select: "*",
+    select: PROJECT_COLUMNS,
   });
   if (folderId === null) {
     q.set("folder_id", "is.null");
@@ -73,7 +77,11 @@ export async function listProjects(
 }
 
 export async function getProject(id: string) {
-  const q = new URLSearchParams({ id: `eq.${id}`, select: "*", limit: "1" });
+  const q = new URLSearchParams({
+    id: `eq.${id}`,
+    select: PROJECT_COLUMNS,
+    limit: "1",
+  });
   const rows = await dataJson<ProjectRow[]>(`projects?${q}`);
   return rows[0] ?? null;
 }

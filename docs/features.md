@@ -27,10 +27,15 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 - Neon Managed Better Auth on the linked project; Organization plugin enabled (`owner` / `admin` / `member`). Invitation emails off until an accept route exists.
 - Drizzle types for `neon_auth` (`user`, `organization`, `member`, `invitation`, …) in `lib/db/`. Drizzle is not the request path for login or browser CRUD.
-- Cloudflare Worker gateway: `/auth` → Neon Auth, `/data` → Neon Data API (user JWT + RLS), `/fn` → 501 until a Neon Function URL is set, `/storage` + `/files` → R2 (presigned uploads, authorized streaming reads). Rate limits on auth writes, `/data`, and `/storage`. **Planned:** editor/scene assets (GLB, images) in R2.
+- Cloudflare Worker gateway: `/auth` → Neon Auth, `/data` → Neon Data API (user JWT + RLS), `/fn` → 501 until a Neon Function URL is set, `/storage` + `/files` → R2 (presigned uploads, authorized streaming reads, editor assets). Rate limits on auth writes, `/data`, and `/storage`.
 - Auth UI: sign-in, forgot password, reset password. Sign-up form exists but is disabled (Neon config `disable-sign-up` + no submit). Email verification is off.
 - `/projects` studio dashboard (client-only): org create/switch, folder CRUD (name + color), project CRUD (name, description, move between folders), search (⌘K / Ctrl K), sort, tabs (All / Recent / In Folders / Root), grid/list view, workspace overview. Animated dialogs (bottom sheet on mobile), responsive layout.
-- `/projects/[id]` project detail (client-only): breadcrumb, hero (thumbnail, title, folder · org, description, "Open in Studio Editor" CTA → `/projects/[id]/editor`), URL-synced tabs (`?tab=details|analytics|settings`). Details shows metadata (dates, folder, scenes, org, copyable id). Settings edits name / description / folder, uploads / removes the project thumbnail (drag-and-drop or browse; cropped to 16:9 WebP, stored in R2, shown on cards and hero), and deletes the project. **Partial:** Analytics is visual-only sample data seeded from the project id (`app/projects/_lib/analytics-preview.ts`); the editor is scoped to the project id in the URL but still ignores it for save/load until persistence exists.
+- `/projects/[id]` project detail (client-only): breadcrumb, hero (thumbnail, title, folder · org, description, "Open in Studio Editor" CTA → `/projects/[id]/editor`), URL-synced tabs (`?tab=details|analytics|settings`). Details shows metadata (dates, folder, scenes, org, copyable id). Settings edits name / description / folder, uploads / removes the project thumbnail (drag-and-drop or browse; cropped to 16:9 WebP, stored in R2, shown on cards and hero), and deletes the project. **Partial:** Analytics is visual-only sample data seeded from the project id (`app/projects/_lib/analytics-preview.ts`).
+
+### Editor persistence and assets
+
+- `/projects/[id]/editor` loads the project's scenes, project-wide editor data, and asset library from Postgres; a project with no scenes starts from the seed scene. Header Save button (Saved / Save / Saving / Uploading / Conflict), Ctrl/Cmd+S, unsaved-changes warning on unload. Stale saves are rejected (revision conflict → reload).
+- Project asset library (project menu → Assets): upload images / GLB, search, filter by kind, rename, delete (blocked while referenced, with usage list), missing-asset report. Image fields (marker image, header image, image blocks, logo, scene thumbnail) upload into the library or pick from it; geo image overlays and 2D/3D subjects are library assets too. Identical files are deduped.
 - `/` sends signed-in users to `/projects` and everyone else to `/auth/sign-in` (client session check). `/orgs` redirects to `/projects`.
 
 
@@ -90,7 +95,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 ## Partial
 
-- **No editor project persistence.** Scenes, graphs, and settings in `/projects/[id]/editor` are still in-memory. Refresh loses editor work. Studio `/projects` persists folders and projects (metadata only; no scene save yet).
+- **Editor save is manual.** No autosave, no version history (`project_versions` planned), no merge on conflict. Unreferenced assets are not garbage-collected.
 - **Hotspot JSON export** (`lib/editor/io/export-hotspots.ts`) exists but is not wired in the UI. It exports the current scene’s hotspots only, not the full project.
 - **Home** `/` gates to auth or `/projects`. Product editor is `/projects/[id]/editor`.
 - **App metadata / README** still say “Create Next App”.
@@ -105,8 +110,8 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 These are implied by gaps or comments, not a committed roadmap.
 
-- Dedicated project workspace (open a project into the editor with save/load).
-- Editor save / load (or full project import-export) covering scenes, graphs, subjects, layers, and geo references.
+- `project_versions` snapshots, autosave, and asset garbage collection.
+- Full project import / export file format.
 - Additional overlay kinds beyond image + shape.
 - Additional hotspot block types beyond heading / text / link / image / video.
 - Wire or replace hotspot-only JSON export with a project-level format.

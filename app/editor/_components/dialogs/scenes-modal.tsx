@@ -70,6 +70,7 @@ function syncActiveSceneSnapshot() {
               scale: model.modelScale,
               rotation: { ...model.modelRotation },
               reflection: model.modelReflection,
+              subjectAssetId: model.subjectAssetId,
             },
             settings: readEditorSettingsSnapshot(),
             environment: readEnvironmentSnapshot(),

@@ -2,16 +2,20 @@
 
 import { ChevronDown, ChevronUp, ImageIcon, Trash2, Upload } from "lucide-react";
 import { toast } from "@/lib/editor/toast";
+import { AssetPickerButton } from "@/app/editor/_components/assets/asset-picker-button";
 import { TokenField } from "@/app/editor/_components/blocks/token-field";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import type { HttpFieldSource } from "@/lib/editor/blocks/http-field-sources";
 import { createBlockId } from "@/lib/editor/blocks/create-block";
 import {
-  HOTSPOT_IMAGE_ACCEPT,
-  ImageFileReadError,
-  readImageFilesAsDataUrls,
-} from "@/lib/editor/io/read-image-data-url";
+  assetRef,
+  IMAGE_ASSET_ACCEPT,
+  isAssetRef,
+  resolveAssetSrc,
+  uploadAsset,
+} from "@/lib/editor/assets";
+import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import type { ImageBlock, ImageBlockItem } from "@/lib/editor/types/hotspot-block";
 
 type ImageBlockEditorProps = {
@@ -21,13 +25,14 @@ type ImageBlockEditorProps = {
 };
 
 function isUploadedSrc(src: string): boolean {
-  return src.startsWith("data:image/");
+  return src.startsWith("data:image/") || isAssetRef(src);
 }
 
 function isPreviewableSrc(src: string): boolean {
   const value = src.trim();
   if (!value || value.includes("{{")) return false;
   return (
+    isAssetRef(value) ||
     value.startsWith("data:image/") ||
     value.startsWith("blob:") ||
     /^https?:\/\//i.test(value)
@@ -40,21 +45,19 @@ function emptyUrlItem(): ImageBlockItem {
 
 async function filesToItems(files: FileList | null): Promise<ImageBlockItem[]> {
   if (!files || files.length === 0) return [];
-  try {
-    const read = await readImageFilesAsDataUrls(files);
-    return read.map((item) => ({
-      id: createBlockId(),
-      src: item.dataUrl,
-      caption: "",
-    }));
-  } catch (error) {
-    const message =
-      error instanceof ImageFileReadError
-        ? error.message
-        : "Could not read image file";
-    toast.error(message);
-    return [];
+  const sceneId = useScenesStore.getState().activeSceneId;
+  const items: ImageBlockItem[] = [];
+  for (const file of Array.from(files)) {
+    try {
+      const asset = await uploadAsset(file, { kind: "image", sceneId });
+      items.push({ id: createBlockId(), src: assetRef(asset.id), caption: "" });
+    } catch (error) {
+      toast.error(
+        `${file.name}: ${error instanceof Error ? error.message : "Could not upload image"}`,
+      );
+    }
   }
+  return items;
 }
 
 export function ImageBlockEditor({
@@ -127,12 +130,12 @@ export function ImageBlockEditor({
               className="text-[11px]"
               style={{ color: "var(--editor-muted)" }}
             >
-              PNG / JPG / WebP / SVG / GIF, up to 2.5 MB each. Select more than
+              PNG / JPG / WebP / SVG / GIF, up to 25 MB each. Select more than
               one for a carousel.
             </span>
             <input
               type="file"
-              accept={HOTSPOT_IMAGE_ACCEPT}
+              accept={IMAGE_ASSET_ACCEPT}
               multiple
               className="hidden"
               onChange={(e) => {
@@ -141,6 +144,12 @@ export function ImageBlockEditor({
               }}
             />
           </label>
+          <div className="flex justify-end">
+            <AssetPickerButton
+              kind="image"
+              onPick={(asset) => setFirstUrl(assetRef(asset.id))}
+            />
+          </div>
           <label className="block">
             <FieldLabel className="mb-1">Image URL</FieldLabel>
             <TokenField
@@ -174,7 +183,7 @@ export function ImageBlockEditor({
                     {isPreviewableSrc(item.src) ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={item.src.trim()}
+                        src={resolveAssetSrc(item.src.trim())}
                         alt=""
                         className="h-full w-full object-cover"
                       />
@@ -242,7 +251,7 @@ export function ImageBlockEditor({
               Add images
               <input
                 type="file"
-                accept={HOTSPOT_IMAGE_ACCEPT}
+                accept={IMAGE_ASSET_ACCEPT}
                 multiple
                 className="hidden"
                 onChange={(e) => {
@@ -258,6 +267,15 @@ export function ImageBlockEditor({
             >
               Add image URL
             </button>
+            <AssetPickerButton
+              kind="image"
+              onPick={(asset) =>
+                setItems([
+                  ...block.items,
+                  { id: createBlockId(), src: assetRef(asset.id), caption: "" },
+                ])
+              }
+            />
           </div>
         </>
       )}

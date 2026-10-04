@@ -154,8 +154,8 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
           {values.style === "image" && (
             <HotspotMarkerImageField
               value={values.markerImage ?? ""}
-              onChange={(dataUrl) => {
-                form.setValue("markerImage", dataUrl);
+              onChange={(value) => {
+                form.setValue("markerImage", value);
                 form.setValue("style", "image");
               }}
             />
@@ -228,13 +228,12 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
         <HotspotImageField
           layout="split"
           value={values.image ?? ""}
-          onChange={(dataUrl) => form.setValue("image", dataUrl)}
+          onChange={(value) => form.setValue("image", value)}
           uploadLabel="Upload image"
           emptyLabel="No header image"
           hint="Optional. Shown at the top of the preview dialog."
           clearTitle="Clear header image"
           successMessage="Header image applied"
-          sizeErrorMessage="Header image must be under 2.5 MB"
           urlInput={
             <input
               className="editor-input"

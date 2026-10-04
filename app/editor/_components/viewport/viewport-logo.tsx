@@ -1,9 +1,10 @@
 "use client";
 
+import { useAssetSrc } from "@/lib/editor/assets";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 
 export function ViewportLogo() {
-  const logoUrl = useSettingsStore((s) => s.logoUrl);
+  const logoUrl = useAssetSrc(useSettingsStore((s) => s.logoUrl));
   const logoScale = useSettingsStore((s) => s.logoScale);
 
   if (!logoUrl.trim()) return null;

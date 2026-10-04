@@ -81,6 +81,8 @@ type UIState = {
   /** Screen position of the active hotspot for info box presentation. */
   infoBoxAnchor: InfoBoxAnchorState;
   scenesModalOpen: boolean;
+  /** Project asset library (images, models). */
+  assetLibraryOpen: boolean;
   actionsModal: ActionsModalScope | null;
   /** Spawn Hotspot template drawer (owner + node) while the Actions canvas is open. */
   spawnTemplateEditor: { ownerId: number; nodeId: string } | null;
@@ -105,6 +107,7 @@ type UIState = {
   setHoverTooltip: (value: HoverTooltipState) => void;
   setInfoBoxAnchor: (value: InfoBoxAnchorState) => void;
   setScenesModalOpen: (value: boolean) => void;
+  setAssetLibraryOpen: (value: boolean) => void;
   openActionsModal: (scope: ActionsModalScope) => void;
   closeActionsModal: () => void;
   openSpawnTemplateEditor: (ownerId: number, nodeId: string) => void;
@@ -136,6 +139,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   hoverTooltip: null,
   infoBoxAnchor: null,
   scenesModalOpen: false,
+  assetLibraryOpen: false,
   actionsModal: null,
   spawnTemplateEditor: null,
   spawnClickActionsEditor: null,
@@ -192,6 +196,7 @@ export const useUIStore = create<UIState>((set, get) => ({
     set({ infoBoxAnchor });
   },
   setScenesModalOpen: (scenesModalOpen) => set({ scenesModalOpen }),
+  setAssetLibraryOpen: (assetLibraryOpen) => set({ assetLibraryOpen }),
   openActionsModal: (actionsModal) => set({ actionsModal }),
   closeActionsModal: () =>
     set({
@@ -232,6 +237,7 @@ export const useUIStore = create<UIState>((set, get) => ({
       previewModalOpen: false,
       propertiesDrawerOpen: false,
       scenesModalOpen: false,
+      assetLibraryOpen: false,
       actionsModal: null,
       spawnTemplateEditor: null,
       spawnClickActionsEditor: null,

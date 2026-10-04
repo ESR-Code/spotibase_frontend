@@ -4,7 +4,7 @@ import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-imag
 
 type HotspotMarkerImageFieldProps = {
   value: string;
-  onChange: (dataUrl: string) => void;
+  onChange: (value: string) => void;
 };
 
 export function HotspotMarkerImageField({
@@ -21,7 +21,6 @@ export function HotspotMarkerImageField({
       hint="PNG / SVG / WebP with transparency works best (pins, landmarks, custom icons)."
       clearTitle="Clear marker image"
       successMessage="Marker image applied"
-      sizeErrorMessage="Marker image must be under 2.5 MB"
     />
   );
 }

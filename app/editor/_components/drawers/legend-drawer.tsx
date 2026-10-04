@@ -1,5 +1,6 @@
 "use client";
 
+import { resolveAssetSrc } from "@/lib/editor/assets";
 import { ListTree, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CategorySelect } from "@/app/editor/_components/ui/category-select";
@@ -235,7 +236,7 @@ function LegendMarkerVisual({ hotspot }: { hotspot: Hotspot }) {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={resolved.markerImage}
+          src={resolveAssetSrc(resolved.markerImage)}
           alt=""
           className="h-full w-full object-cover"
         />

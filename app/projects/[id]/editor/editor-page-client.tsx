@@ -1,10 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useParams } from "next/navigation";
 
-const EditorApp = dynamic(
+const EditorProjectLoader = dynamic(
   () =>
-    import("@/app/editor/_components/editor-app").then((mod) => mod.EditorApp),
+    import("@/app/editor/_components/editor-project-loader").then(
+      (mod) => mod.EditorProjectLoader,
+    ),
   {
     ssr: false,
     loading: () => (
@@ -19,5 +22,6 @@ const EditorApp = dynamic(
 );
 
 export function EditorPageClient() {
-  return <EditorApp />;
+  const { id } = useParams<{ id: string }>();
+  return <EditorProjectLoader key={id} projectId={id} />;
 }

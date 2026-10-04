@@ -256,7 +256,6 @@ export function SpawnHotspotGeneralTab({
           hint="Optional. Shown at the top of the preview dialog."
           clearTitle="Clear header image"
           successMessage="Header image applied"
-          sizeErrorMessage="Header image must be under 2.5 MB"
           urlInput={
             <TokenInput
               value={template.image}

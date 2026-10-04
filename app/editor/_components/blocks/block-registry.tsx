@@ -1,5 +1,6 @@
 "use client";
 
+import { isAssetRef } from "@/lib/editor/assets";
 import {
   ExternalLink,
   Film,
@@ -169,7 +170,7 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
       if (count === 0) return "No images";
       if (count === 1) {
         const src = block.items[0]?.src.trim() ?? "";
-        if (!src || src.startsWith("data:")) return "1 image";
+        if (!src || src.startsWith("data:") || isAssetRef(src)) return "1 image";
         return src;
       }
       return `${count} images`;

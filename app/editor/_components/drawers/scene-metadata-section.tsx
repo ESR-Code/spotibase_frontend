@@ -68,12 +68,12 @@ export function SceneMetadataSection() {
         <HotspotImageField
           layout="split"
           value={scene.thumbnailUrl}
-          onChange={(dataUrl) =>
-            updateSceneMeta(scene.id, { thumbnailUrl: dataUrl })
+          onChange={(value) =>
+            updateSceneMeta(scene.id, { thumbnailUrl: value })
           }
           uploadLabel="Upload thumbnail"
           emptyLabel="No thumbnail"
-          hint="Shown in Scene Explorer. PNG / JPG / WebP / SVG, up to 2.5 MB."
+          hint="Shown in Scene Explorer. PNG / JPG / WebP / SVG / GIF, up to 25 MB."
           clearTitle="Remove thumbnail"
           successMessage="Thumbnail applied"
         />

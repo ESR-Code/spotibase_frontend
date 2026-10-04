@@ -39,8 +39,14 @@ import { cloneActionFences } from "@/lib/editor/types/action-fence";
 import { cloneLayers, type SceneLayer } from "@/lib/editor/types/scene-layer";
 import type { Scene, SceneModelState } from "@/lib/editor/types/scene";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
+import { createUuid } from "@/lib/editor/utils/uuid";
 
-export const INITIAL_SCENE_ID = "scene-1";
+/** Scene ids are uuids so the editor id is the `public.scenes` row id. */
+export function newSceneId(): string {
+  return createUuid();
+}
+
+export const INITIAL_SCENE_ID = newSceneId();
 
 export function createEmptyModelState(
   type: SceneTypeId = "model",
@@ -53,6 +59,7 @@ export function createEmptyModelState(
     scale: DEFAULT_MODEL_SCALE,
     rotation: { ...DEFAULT_MODEL_ROTATION },
     reflection: DEFAULT_MODEL_REFLECTION,
+    subjectAssetId: null,
   };
 }
 
@@ -66,6 +73,7 @@ export function buildDemoHotspots(): Hotspot[] {
 export function createScene(partial: {
   id: string;
   name: string;
+  slug?: string;
   type: SceneTypeId;
   isPrimary?: boolean;
   description?: string;
@@ -87,6 +95,7 @@ export function createScene(partial: {
   return {
     id: partial.id,
     name: partial.name,
+    slug: partial.slug ?? "",
     description: partial.description ?? "",
     thumbnailUrl: partial.thumbnailUrl ?? "",
     type: partial.type,

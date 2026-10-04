@@ -1,6 +1,6 @@
 # Architecture
 
-Spotibase is a Next.js App Router app. Almost all product code is the client-side editor at `/projects/[id]/editor`. Editor state is still session-only Zustand (no save/load UI yet). The SaaS data plane is Neon Lakebase Postgres with Managed Better Auth; the tenant boundary is an **organization**.
+Spotibase is a Next.js App Router app. Almost all product code is the client-side editor at `/projects/[id]/editor`. Editor state lives in Zustand while editing and is loaded from / saved to Postgres per project (scenes + project editor data), with media in R2 as project assets. The SaaS data plane is Neon Lakebase Postgres with Managed Better Auth; the tenant boundary is an **organization**.
 
 ## Layout
 
@@ -69,11 +69,13 @@ Linked Neon project (`neon.ts`, `auth: true`). Credentials live in `.env.local` 
 | memberships | `neon_auth.member` (`role`: owner / admin / member) |
 | invitations | `neon_auth.invitation` (`inviterId`, `expiresAt`, `status`) |
 | folders | `public.project_folders` |
-| projects | `public.projects` |
+| projects | `public.projects` (+ `editor_data` JSONB, `editor_revision`) |
+| scenes | `public.scenes` (lifted columns + `data` JSONB) |
+| assets | `public.assets` (file metadata + `r2_key`) |
 
 Drizzle introspects Auth tables into `lib/db/schema.ts`. Product tables live in `lib/db/app-schema.ts` and are migrated with `npm run db:generate` / `db:migrate` (do not migrate Auth tables). Refresh Auth types with `npm run db:pull`. Use `createDb()` from `lib/db/index.ts` on the **server only**. Org invitation emails stay off until an accept-invitation route exists. Do not use Drizzle as the login or browser CRUD path.
 
-RLS on `project_folders` / `projects` allows rows only when `public.is_org_member(organization_id)` is true (SECURITY DEFINER check against `neon_auth.member` + `auth.uid()`). Browser CRUD goes through `/gateway/data/*` (Worker → Neon Data API).
+RLS on `project_folders` / `projects` / `scenes` / `assets` allows rows only when `public.is_org_member(organization_id)` is true (SECURITY DEFINER check against `neon_auth.member` + `auth.uid()`). Browser CRUD goes through `/gateway/data/*` (Worker → Neon Data API).
 
 The browser calls same-origin `/gateway/*`. Next proxies that to the Worker (`WORKER_URL`, default `http://127.0.0.1:8787`) so the session cookie stays on the app origin. If the Worker is not running, `GET /gateway/auth/get-session` returns an empty session instead of a 500. The browser never sees Neon URLs or `DATABASE_URL`. `/auth/*` proxies Neon Auth. `/data/*` exchanges the session cookie for the user JWT and forwards to the Neon Data API (RLS is the authorization layer; `neon_auth` is not exposed). `/fn/*` is reserved for a future Neon Function and returns 501 until `NEON_FUNCTION_URL` is set. Run the Worker with `npm run dev:api` beside `npm run dev`, or both at once with `npm run dev:local` (local Worker + simulated R2; Auth, Data API, and Postgres are the linked cloud Neon branch).
 
@@ -83,30 +85,51 @@ Private bucket `spotibase-assets`, bound to the Worker as `ASSETS`. Keys are ten
 
 ```
 orgs/{orgId}/projects/{projectId}/thumbnails/{uuid}.webp
-orgs/{orgId}/projects/{projectId}/models/…      # planned (editor phase)
+orgs/{orgId}/projects/{projectId}/assets/{assetId}.{ext}   # editor media (immutable)
 ```
 
-Postgres stores the **R2 key, never a URL** (`projects.thumbnail_r2_key`). The browser derives `/gateway/files/<key>` (`lib/projects/storage.ts`).
+Postgres stores the **R2 key, never a URL** (`projects.thumbnail_r2_key`, `assets.r2_key`). The browser derives `/gateway/files/<key>` (`lib/projects/storage.ts`, `lib/editor/assets/resolve.ts`).
 
-Worker routes (`worker/src/storage.ts`), all authorized by reading the project row with the user JWT under RLS:
+Worker routes (`worker/src/storage.ts`, `worker/src/assets.ts`, shared helpers in `storage-common.ts`), all authorized by reading the project row with the user JWT under RLS:
 
 | Route | Purpose |
 | --- | --- |
 | `POST /storage/projects/:id/thumbnail/upload-url` | Mint a key + 5-minute presigned S3 `PUT` (aws4fetch, R2 S3 token) |
 | `POST /storage/projects/:id/thumbnail/commit` | `head` the object (WebP, ≤ 5 MB), PATCH the key via Data API, delete the previous object |
 | `DELETE /storage/projects/:id/thumbnail` | Clear the key and delete the object |
+| `POST /storage/projects/:id/assets/upload-url` | Validate kind / type / size, reserve a `pending` asset row (or return the existing one with the same `sha256`), mint the upload URL |
+| `PUT /storage/projects/:id/assets/upload?key=` | Local dev only: write into the simulated bucket |
+| `POST /storage/projects/:id/assets/:assetId/commit` | `head` the object, mark the row `ready` |
+| `DELETE /storage/projects/:id/assets/:assetId` | Delete the row and the object |
+| `DELETE /storage/projects/:id/assets` | Delete every asset object (project delete; rows cascade) |
 | `GET /files/<key>` | Stream from R2 after checking membership; `private, immutable` cache |
 
 Upload flow: browser crops/encodes 16:9 WebP → upload-url → `PUT` straight to R2 → commit. Bucket CORS (`worker/r2-cors.json`) allows `PUT` from the app origin. Deleting a project first clears its thumbnail (best-effort). Local dev: with `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` empty, `upload-url` returns a same-origin `PUT /gateway/storage/projects/:id/thumbnail/upload?key=…` and the Worker writes into the simulated bucket (plain `npm run dev:api`, no Cloudflare account needed; inspect with `e` in the dev terminal). With credentials set, uploads are presigned; use `npm run dev:api:r2` (remote `ASSETS` binding) so reads hit the same real bucket. Worker secrets: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`.
 
 Auth UI: `/auth/sign-in`, `/auth/forgot-password`, `/auth/reset-password`, and a **disabled** `/auth/sign-up` (Neon email-password sign-up is also closed). Email verification is off until the rest of the product UI is ready. After login, `/projects` is the studio dashboard (org selector, folders, projects). `/orgs` redirects there. Session redirects are client-side.
 
-Editor Zustand stores are unchanged and still session-only.
+### Editor persistence
+
+```
+EditorPageClient (ssr:false) → EditorProjectLoader
+  loadEditorProject: projects(editor_data, editor_revision) + scenes + assets(ready)
+  hydrateProject → scenes / live stores / general settings / assets store
+  bindPersistedProject → dirty baseline
+  EditorApp
+Save (header button, Ctrl/Cmd+S) → serializeProject → POST /gateway/data/rpc/save_editor_project
+```
+
+- `lib/editor/persist/`: `schema.ts` (format version + Zod), `serialize.ts`, `hydrate.ts`, `api.ts`, `persist-store.ts` (dirty / save / conflict).
+- `scenes` lifts `id` (editor uuid), `name`, `slug` (set on first save, never changes), `sort_order`, `type`, `thumbnail_asset_id`; `data` is the rest of `Scene` plus `schemaVersion`. `projects.editor_data` holds `primarySceneId`, `appStartActions`, `generalStyle`, `sceneExplorerEnabled`.
+- `save_editor_project(project, expected_revision, editor_data, scenes)` is a `SECURITY INVOKER` plpgsql function (migration `0004`): one transaction upserts / deletes scenes, writes `editor_data` and `scene_count`, bumps `editor_revision`. A stale revision raises `PT409` / hint `revision_conflict`.
+- Dirty tracking: authored-store subscriptions trigger a debounced fingerprint (`serializeProject` JSON) against the last loaded / saved baseline.
+- Media: `lib/editor/assets/` (`useAssetsStore` project library, `uploadAsset`, `resolveAssetSrc`, `collectAssetRefs`). Asset Library dialog: project menu → Assets.
 
 ## Runtime shape
 
 ```
 EditorPageClient (ssr:false)
+  EditorProjectLoader
   EditorApp
     EditorShell
       ViewportFrame ── PlayCanvas (model/image) or MapLibre (geo)
@@ -132,7 +155,9 @@ EditorPageClient (ssr:false)
 
 **Live stores** (active scene only): `editor-store` (hotspots, mode, preview), `model-store`, `settings-store`, `environment-store`, `effects-store`, `geo-store`, `layers-store`, plus UI/session stores.
 
-On scene switch / add, `scenes-store` snapshots live stores into the outgoing `Scene` and hydrates the incoming one (`hotspots`, model, settings, environment, effects, geo, layers, `geoReference`). New per-scene fields must join that path. Scene identity (`name`, `description`, `thumbnailUrl`) lives on the `Scene` record and is not hydrated into a live store.
+On scene switch / add, `scenes-store` snapshots live stores into the outgoing `Scene` and hydrates the incoming one (`hotspots`, model, settings, environment, effects, geo, layers, `geoReference`). New per-scene fields must join that path. Scene identity (`name`, `slug`, `description`, `thumbnailUrl`) lives on the `Scene` record and is not hydrated into a live store. The subject reference (`model.subjectAssetId`) is part of the model snapshot.
+
+**Project library:** `useAssetsStore` (project id, ready assets, pending upload count). Project-level; not snapshotted per scene. `useProjectPersistStore` holds the DB binding (revision, dirty, save status).
 
 **Preview overlays** (cleared when leaving Preview): `preview-appearance-store`, `preview-visibility-store`, `preview-spawned-hotspots-store`, `preview-mesh-highlight-store`, `preview-post-message-test-store`. Authored hotspots stay unchanged.
 

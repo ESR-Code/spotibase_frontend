@@ -61,14 +61,20 @@ Only decisions that constrain how new work should be done.
 ## Hotspot content blocks
 
 - **Registry-driven blocks.** Add a type to `hotspot-block.ts`, defaults in `create-block.ts`, non-UI meta in `blocks/registry.ts`, and Editor / Preview / `collapsedPreview` in `block-registry.tsx`. Do not add one-off `if (type === …)` checks in the blocks tab.
-- **Image blocks** store slides in `items[]` (uploaded data URL or a URL / `{{token}}`) with an optional per-slide caption. Caption and URL fields persist tokens immediately (same insert control as other blocks). Preview and Spawn interpolate both `src` and `caption`. One slide is a still; two or more render a Preview carousel (buttons only — do not bind ArrowLeft/Right, those switch hotspots in the marker dialog).
+- **Image blocks** store slides in `items[]` (`asset:<id>` or a URL / `{{token}}`) with an optional per-slide caption. Caption and URL fields persist tokens immediately (same insert control as other blocks). Preview and Spawn interpolate both `src` and `caption`. One slide is a still; two or more render a Preview carousel (buttons only — do not bind ArrowLeft/Right, those switch hotspots in the marker dialog).
 - **Video blocks** accept YouTube or Vimeo URLs only. Parse to a privacy-aware embed (`youtube-nocookie` / `player.vimeo.com`). No file upload or direct `.mp4`. Token URLs are interpolated, then checked as YouTube/Vimeo (editor hint + Preview iframe).
 - **Action button blocks** store icon, label, optional italic description, a synthetic graph owner (`−5000…−9999`), and an action graph. Preview interpolates label and description. They appear as first-class canvas lanes after hotspot click lanes (so fence Y for hotspots does not shift). Same allow-list as custom menu buttons (no Open Modal). Remint `ownerId` when duplicating a hotspot or spawning from a template; keep it on scene load.
 
 ## Persistence and IO
 
-- **Session-only editor.** No localStorage/IndexedDB project save. Do not assume refresh keeps work. Product persist (projects/scenes) is not wired yet. When it is, simple CRUD goes through the Worker to the Data API under RLS; complex jobs go through a Neon Function using Drizzle.
-- Subject files stay in memory (`scene-subject-cache`). Import is a window event (`editor:import-subject`), not a direct engine call from the file picker.
+- **DB-backed editor, explicit save.** The editor loads `projects.editor_data` + `scenes` + `assets` before mounting and saves on Save / Ctrl+S (no autosave yet; same path can be debounced later). No localStorage/IndexedDB.
+- **`scenes.data` is the editor `Scene`**, minus lifted columns, plus `schemaVersion`. Action graphs stay where the editor owns them (per hotspot, scene start / legend, menu and action buttons); do not flatten them into scene-level `actions` / `nodes` lists. Bump `EDITOR_SCHEMA_VERSION` and migrate in `hydrate.ts` when the shape changes; Zod rejects malformed rows with a readable error.
+- **One transactional save RPC** (`save_editor_project`, `SECURITY INVOKER`, called through the Data API). Per-scene PostgREST calls would not be atomic. Optimistic concurrency: `projects.editor_revision` must match or the save fails with `revision_conflict`; the user reloads (no merge).
+- **Scene ids are uuids** generated in the browser so the editor id is the row id (Go To Scene nodes reference them). Slugs are assigned on first save and never change. Hotspot ids stay numeric per scene.
+- **Project-level media library.** Every imported image / model is an `assets` row; authored fields keep strings and reference it as `asset:<uuid>` (URLs and `{{tokens}}` still work). Subjects use `model.subjectAssetId`. Resolve with `resolveAssetSrc`; missing assets render a placeholder. Do not add new data-URL fields.
+- **Assets belong to the project, not a scene.** `assets.scene_id` is informational (no FK, no cascade). Uploads are deduped per project by `sha256`. Deleting a referenced asset is blocked in the library (`collectAssetRefs`). Unreferenced assets are not garbage-collected yet.
+- **Subjects** load locally first, then upload in the background; Save waits for pending uploads. `scene-subject-cache` keeps the in-session blob per scene and fetches subject assets once per session. Import is a window event (`editor:import-subject`), not a direct engine call from the file picker.
+- **Camera pose previews** (`CameraResetPosition.previewUrl`) stay small inline JPEG data URLs: generated, ~20 KB, editor-only.
 - Existing `exportHotspots()` is a hotspot-list dump, not a project format. Do not treat it as the save system.
 
 ## File storage (R2)
@@ -77,6 +83,8 @@ Only decisions that constrain how new work should be done.
 - **Uploads are presigned S3 `PUT`s** (5 min, `content-type` signed) straight to R2, so file bytes never pass through Next or the Worker. A separate **commit** step validates the object (`head`: type, size) before the DB references it; rejected uploads are deleted.
 - **Reads are streamed by the Worker** through the `ASSETS` binding at `/gateway/files/<key>` (private bucket, session cookie works with plain `<img>`). No public bucket or `r2.dev` URL.
 - **DB columns hold R2 keys, never URLs** (e.g. `projects.thumbnail_r2_key`). Keys start with `orgs/{orgId}/projects/{projectId}/` and the Worker checks that prefix against the project row.
+- **Asset keys** are `assets/{assetId}.{ext}` under the project prefix: no scene folder and no filename, so reuse across scenes and renames never move bytes.
+- **Files are served with `nosniff` + a sandbox CSP**, since they come from the app origin and the library accepts SVG.
 - **Unique key per upload** (`thumbnails/{uuid}.webp`, not a fixed `cover.webp`) so responses can be cached `immutable` and the old object is deleted only after the swap commits.
 - **Client normalizes images** (16:9 center crop, ≤ 1920×1080 WebP) so stored thumbnails stay small and uniform.
 - **Local-first dev storage.** Without R2 S3 credentials the Worker accepts the upload itself (`/thumbnail/upload`, same auth/key/type/size checks) into the Miniflare bucket, so storage works offline. The remote binding is opt-in (`npm run dev:api:r2`) for testing real presigned uploads; plain `dev:api` must not require a Cloudflare login. Production must have the S3 credentials set so bytes bypass the Worker.

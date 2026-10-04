@@ -1,5 +1,6 @@
 "use client";
 
+import { resolveAssetSrc } from "@/lib/editor/assets";
 import { MapMarker, MarkerContent } from "@/components/ui/map";
 import { HotspotMarkerIcon } from "@/app/editor/_components/ui/hotspot-marker-icon";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -150,7 +151,7 @@ export function GeoHotspotMarker({
               </span>
             ) : resolved.style === "image" && resolved.markerImage ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={resolved.markerImage} alt="" />
+              <img src={resolveAssetSrc(resolved.markerImage)} alt="" />
             ) : null}
           </span>
         </div>
