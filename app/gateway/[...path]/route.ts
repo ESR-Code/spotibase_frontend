@@ -28,6 +28,7 @@ async function proxyToWorker(request: NextRequest, context: RouteContext) {
     method: request.method,
     headers,
     redirect: "manual",
+    cache: "no-store",
   };
   if (request.method !== "GET" && request.method !== "HEAD") {
     init.body = await request.arrayBuffer();

@@ -1,5 +1,14 @@
 import { env } from "cloudflare:workers";
-import { clientIp, corsHeaders, joinUrl, json, proxy, withCors } from "./http";
+import {
+	clientIp,
+	corsHeaders,
+	joinUrl,
+	json,
+	jwtUsable,
+	proxy,
+	wait,
+	withCors,
+} from "./http";
 import { handleFiles, handleStorage } from "./storage";
 
 const AUTH_WRITES = [
@@ -140,6 +149,15 @@ async function handleFilesRequest(request: Request, url: URL) {
 async function userJwt(request: Request) {
 	const cookie = request.headers.get("cookie");
 	if (!cookie) return null;
+	let token = await fetchUserJwt(request, cookie);
+	if (!token) {
+		await wait(300);
+		token = await fetchUserJwt(request, cookie);
+	}
+	return token;
+}
+
+async function fetchUserJwt(request: Request, cookie: string) {
 	const response = await fetch(joinUrl(env.NEON_AUTH_BASE_URL, "/token"), {
 		headers: {
 			cookie,
@@ -148,7 +166,8 @@ async function userJwt(request: Request) {
 	});
 	if (!response.ok) return null;
 	const body = (await response.json()) as { token?: string };
-	return body.token || null;
+	const token = body.token || null;
+	return token && jwtUsable(token) ? token : null;
 }
 
 async function handleFunction(request: Request, url: URL) {

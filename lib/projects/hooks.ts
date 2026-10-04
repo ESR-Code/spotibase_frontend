@@ -28,6 +28,15 @@ import {
   listOrganizations,
   setActiveOrganization,
 } from "@/lib/projects/orgs";
+import type {
+  OrganizationSummary,
+  ProjectFolderRow,
+  ProjectRow,
+} from "@/lib/projects/types";
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export const orgKeys = {
   all: ["organizations"] as const,
@@ -46,16 +55,35 @@ export const projectKeys = {
 };
 
 export function useOrganizations() {
+  const qc = useQueryClient();
   return useQuery({
     queryKey: orgKeys.all,
-    queryFn: listOrganizations,
+    queryFn: async () => {
+      const orgs = await listOrganizations();
+      if (orgs.length > 0) return orgs;
+      const previous = qc.getQueryData<OrganizationSummary[]>(orgKeys.all);
+      if (!previous?.length) return orgs;
+      await wait(400);
+      const retry = await listOrganizations();
+      return retry.length > 0 ? retry : previous;
+    },
   });
 }
 
 export function useActiveOrganizationId() {
+  const qc = useQueryClient();
   return useQuery({
     queryKey: orgKeys.active,
-    queryFn: getActiveOrganizationId,
+    queryFn: async () => {
+      const id = await getActiveOrganizationId();
+      if (id) return id;
+      await wait(400);
+      const retry = await getActiveOrganizationId();
+      if (retry) return retry;
+      // getSession() sometimes comes back empty after a tab switch. Keep the
+      // org we already activated instead of clearing the workspace.
+      return qc.getQueryData<string | null>(orgKeys.active) ?? null;
+    },
   });
 }
 
@@ -92,9 +120,15 @@ export function useCreateOrganization() {
 }
 
 export function useFolders(organizationId: string | null | undefined) {
+  const qc = useQueryClient();
+  const key = folderKeys.all(organizationId ?? "");
   return useQuery({
-    queryKey: folderKeys.all(organizationId ?? ""),
-    queryFn: () => listFolders(organizationId!),
+    queryKey: key,
+    queryFn: async () => {
+      const rows = await listFolders(organizationId!);
+      if (rows.length > 0) return rows;
+      return qc.getQueryData<ProjectFolderRow[]>(key) ?? rows;
+    },
     enabled: Boolean(organizationId),
   });
 }
@@ -103,9 +137,15 @@ export function useProjects(
   organizationId: string | null | undefined,
   folderId?: string | null,
 ) {
+  const qc = useQueryClient();
+  const key = projectKeys.all(organizationId ?? "", folderId);
   return useQuery({
-    queryKey: projectKeys.all(organizationId ?? "", folderId),
-    queryFn: () => listProjects(organizationId!, folderId),
+    queryKey: key,
+    queryFn: async () => {
+      const rows = await listProjects(organizationId!, folderId);
+      if (rows.length > 0) return rows;
+      return qc.getQueryData<ProjectRow[]>(key) ?? rows;
+    },
     enabled: Boolean(organizationId),
   });
 }
@@ -147,7 +187,11 @@ export function useDeleteFolder(organizationId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: deleteFolder,
-    onSuccess: async () => {
+    onSuccess: async (_data, id) => {
+      qc.setQueryData(
+        folderKeys.all(organizationId),
+        (old: ProjectFolderRow[] | undefined) => old?.filter((row) => row.id !== id) ?? old,
+      );
       await qc.invalidateQueries({ queryKey: folderKeys.all(organizationId) });
       await qc.invalidateQueries({ queryKey: ["projects", organizationId] });
     },
@@ -217,7 +261,11 @@ export function useDeleteProject(organizationId: string) {
       await removeProjectThumbnail(id).catch(() => undefined);
       await deleteProject(id);
     },
-    onSuccess: async () => {
+    onSuccess: async (_data, id) => {
+      qc.setQueriesData<ProjectRow[]>(
+        { queryKey: ["projects", organizationId] },
+        (old) => old?.filter((row) => row.id !== id) ?? old,
+      );
       await qc.invalidateQueries({ queryKey: ["projects", organizationId] });
     },
   });

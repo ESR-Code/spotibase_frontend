@@ -4,6 +4,29 @@ export function joinUrl(base: string, path: string, search = "") {
 	return `${root}${suffix}${search}`;
 }
 
+export function wait(ms: number) {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Reject expired JWTs. Opaque / undecodable tokens are left for the Data API. */
+export function jwtUsable(token: string) {
+	const payload = decodeJwtPayload(token);
+	if (!payload) return true;
+	return typeof payload.exp !== "number" || payload.exp * 1000 > Date.now();
+}
+
+function decodeJwtPayload(token: string) {
+	const parts = token.split(".");
+	if (parts.length < 2) return null;
+	try {
+		const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+		const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+		return JSON.parse(atob(padded)) as { exp?: unknown };
+	} catch {
+		return null;
+	}
+}
+
 export function clientIp(request: Request) {
 	return (
 		request.headers.get("cf-connecting-ip") ??
