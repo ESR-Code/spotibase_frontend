@@ -1,6 +1,7 @@
 "use client";
 
-import { PenTool } from "lucide-react";
+import { AccountMenu } from "@/app/projects/_components/account-menu";
+import { BrandMark } from "@/app/projects/_components/projects-topbar";
 import { EditorChip } from "@/app/editor/_components/ui/editor-chip";
 import { ModeToolbar } from "@/app/editor/_components/toolbar/mode-toolbar";
 import { SaveButton } from "@/app/editor/_components/toolbar/save-button";
@@ -15,24 +16,8 @@ export function EditorHeader() {
   const projectName = useProjectPersistStore((s) => s.projectName) || PROJECT_NAME;
 
   return (
-    <header
-      className="editor-glass editor-panel-shadow z-20 flex items-center gap-4 px-5 py-3"
-      style={{ borderBottom: "1px solid var(--editor-line)" }}
-    >
-      <div className="flex items-center gap-3">
-        <div
-          className="flex h-9 w-9 items-center justify-center rounded-lg"
-          style={{
-            background: "linear-gradient(135deg,#e63946,#7a1622)",
-            boxShadow: "0 6px 20px -6px rgba(230,57,70,0.7)",
-          }}
-        >
-          <PenTool className="h-4 w-4 text-white" />
-        </div>
-        <div className="font-display text-[15px] font-bold leading-none">
-          Spotibase
-        </div>
-      </div>
+    <header className="z-20 flex items-center gap-4 border-b border-[var(--studio-line)] bg-[rgba(9,15,31,0.86)] px-5 py-3 backdrop-blur-xl">
+      <BrandMark />
 
       <div className="editor-vsep" />
 
@@ -60,15 +45,7 @@ export function EditorHeader() {
 
       <div className="editor-vsep" />
 
-      <div
-        className="flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-bold"
-        style={{
-          background: "linear-gradient(135deg,#3fb8af,#1d6b66)",
-          color: "#0b1424",
-        }}
-      >
-        MK
-      </div>
+      <AccountMenu />
     </header>
   );
 }

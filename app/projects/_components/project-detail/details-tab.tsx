@@ -6,6 +6,7 @@ import { editorHref } from "@/app/projects/_components/editor-launch-button";
 import { formatBytes, formatDate, formatRelative, formatTimeUtc, plural } from "@/app/projects/_lib/format";
 import { useProjectAssetStats } from "@/lib/projects/hooks";
 import type { ProjectAssetStats } from "@/lib/projects/types";
+import { cn } from "@/lib/utils";
 import { Box, Check, Copy, File, FileText, ImageIcon, Info, Lock, Pencil, Play } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
@@ -14,13 +15,15 @@ function MetaTile({
   label,
   caption,
   children,
+  className,
 }: {
   label: string;
   caption?: ReactNode;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="studio-tile flex min-w-0 flex-col gap-2">
+    <div className={cn("studio-tile flex min-w-0 flex-col gap-2", className)}>
       <p className="studio-eyebrow">{label}</p>
       <div className="min-w-0 text-[15px] font-bold text-[var(--studio-fg)]">{children}</div>
       {caption ? <div className="text-[11px] font-semibold text-[var(--studio-muted)]">{caption}</div> : null}
@@ -74,7 +77,7 @@ function KindChip({
   );
 }
 
-function LibrarySizeTile({
+function AssetsTile({
   stats,
   loading,
   failed,
@@ -85,33 +88,6 @@ function LibrarySizeTile({
 }) {
   const total =
     (stats?.image_count ?? 0) + (stats?.model_count ?? 0) + (stats?.other_count ?? 0);
-  return (
-    <MetaTile
-      label="Library size"
-      caption={
-        loading ? "Reading ready files…" : failed ? "Couldn’t load library size" : plural(total, "ready file")
-      }
-    >
-      {loading ? (
-        <span className="studio-skeleton inline-block h-5 w-20 rounded-md" />
-      ) : failed ? (
-        <span className="text-[var(--studio-muted)]">—</span>
-      ) : (
-        formatBytes(stats?.total_bytes ?? 0)
-      )}
-    </MetaTile>
-  );
-}
-
-function AssetKindsTile({
-  stats,
-  loading,
-  failed,
-}: {
-  stats: ProjectAssetStats | undefined;
-  loading: boolean;
-  failed: boolean;
-}) {
   const kinds = [
     { id: "image", label: "Image", count: stats?.image_count ?? 0, icon: <ImageIcon />, color: "#4cd7f6" },
     { id: "glb", label: "GLB", count: stats?.model_count ?? 0, icon: <Box />, color: "#fd4f6a" },
@@ -119,27 +95,41 @@ function AssetKindsTile({
   ].filter((kind) => kind.count > 0);
 
   return (
-    <MetaTile label="Assets" caption="Ready files in the project library">
+    <MetaTile
+      label="Assets"
+      className="sm:col-span-2"
+      caption={
+        loading ? "Reading ready files…" : failed ? "Couldn’t load the project library" : plural(total, "ready file")
+      }
+    >
       {loading ? (
-        <span className="flex gap-2">
-          <span className="studio-skeleton inline-block h-7 w-20 rounded-lg" />
-          <span className="studio-skeleton inline-block h-7 w-16 rounded-lg" />
+        <span className="flex flex-wrap items-center justify-between gap-3">
+          <span className="studio-skeleton inline-block h-5 w-20 rounded-md" />
+          <span className="flex gap-2">
+            <span className="studio-skeleton inline-block h-7 w-20 rounded-lg" />
+            <span className="studio-skeleton inline-block h-7 w-16 rounded-lg" />
+          </span>
         </span>
       ) : failed ? (
-        <span className="text-[var(--studio-muted)]">Couldn’t load assets</span>
-      ) : kinds.length === 0 ? (
-        <span className="text-[var(--studio-muted)]">No assets yet</span>
+        <span className="text-[var(--studio-muted)]">—</span>
       ) : (
-        <span className="flex flex-wrap gap-2">
-          {kinds.map((kind) => (
-            <KindChip
-              key={kind.id}
-              icon={kind.icon}
-              label={kind.label}
-              count={kind.count}
-              color={kind.color}
-            />
-          ))}
+        <span className="flex flex-wrap items-center justify-between gap-3">
+          <span>{formatBytes(stats?.total_bytes ?? 0)}</span>
+          {kinds.length === 0 ? (
+            <span className="text-[13px] font-semibold text-[var(--studio-muted)]">No assets yet</span>
+          ) : (
+            <span className="flex flex-wrap gap-2">
+              {kinds.map((kind) => (
+                <KindChip
+                  key={kind.id}
+                  icon={kind.icon}
+                  label={kind.label}
+                  count={kind.count}
+                  color={kind.color}
+                />
+              ))}
+            </span>
+          )}
         </span>
       )}
     </MetaTile>
@@ -180,24 +170,18 @@ export function DetailsTab({ project, onTabChange }: ProjectTabProps) {
             {plural(project.scene_count, "Scene")}
           </MetaTile>
 
-          <LibrarySizeTile
-            stats={statsQuery.data}
-            loading={statsQuery.isLoading}
-            failed={statsQuery.isError}
-          />
-
-          <AssetKindsTile
-            stats={statsQuery.data}
-            loading={statsQuery.isLoading}
-            failed={statsQuery.isError}
-          />
-
           <MetaTile label="Project ID" caption="Use this when referencing the project in APIs">
             <span className="flex min-w-0 items-center gap-1">
               <code className="min-w-0 truncate font-mono text-xs text-[var(--studio-fg-2)]">{project.id}</code>
               <CopyButton value={project.id} label="Copy project ID" />
             </span>
           </MetaTile>
+
+          <AssetsTile
+            stats={statsQuery.data}
+            loading={statsQuery.isLoading}
+            failed={statsQuery.isError}
+          />
         </div>
       </section>
 
