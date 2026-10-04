@@ -1,12 +1,12 @@
 "use client";
 
-import { FolderIcon } from "@/app/projects/_components/folder-icon";
 import { PanelBadge, PanelHeader } from "@/app/projects/_components/panel-header";
 import type { ProjectTabProps } from "@/app/projects/_components/project-detail/types";
 import { editorHref } from "@/app/projects/_components/editor-launch-button";
-import { formatDate, formatRelative, formatTimeUtc, plural } from "@/app/projects/_lib/format";
-import { folderHex } from "@/lib/projects/folder-colors";
-import { Check, Copy, FileText, Info, Inbox, Lock, Pencil, Play } from "lucide-react";
+import { formatBytes, formatDate, formatRelative, formatTimeUtc, plural } from "@/app/projects/_lib/format";
+import { useProjectAssetStats } from "@/lib/projects/hooks";
+import type { ProjectAssetStats } from "@/lib/projects/types";
+import { Box, Check, Copy, File, FileText, ImageIcon, Info, Lock, Pencil, Play } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -52,7 +52,103 @@ function CopyButton({ value, label }: { value: string; label: string }) {
   );
 }
 
-export function DetailsTab({ project, folder, organization, onTabChange }: ProjectTabProps) {
+function KindChip({
+  icon,
+  label,
+  count,
+  color,
+}: {
+  icon: ReactNode;
+  label: string;
+  count: number;
+  color: string;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--studio-chip)] px-2.5 py-1 text-[11px] font-bold text-[var(--studio-fg-2)]">
+      <span className="[&_svg]:h-3.5 [&_svg]:w-3.5" style={{ color }}>
+        {icon}
+      </span>
+      <span>{label}</span>
+      <span className="font-mono text-[var(--studio-fg)]">{count}</span>
+    </span>
+  );
+}
+
+function LibrarySizeTile({
+  stats,
+  loading,
+  failed,
+}: {
+  stats: ProjectAssetStats | undefined;
+  loading: boolean;
+  failed: boolean;
+}) {
+  const total =
+    (stats?.image_count ?? 0) + (stats?.model_count ?? 0) + (stats?.other_count ?? 0);
+  return (
+    <MetaTile
+      label="Library size"
+      caption={
+        loading ? "Reading ready files…" : failed ? "Couldn’t load library size" : plural(total, "ready file")
+      }
+    >
+      {loading ? (
+        <span className="studio-skeleton inline-block h-5 w-20 rounded-md" />
+      ) : failed ? (
+        <span className="text-[var(--studio-muted)]">—</span>
+      ) : (
+        formatBytes(stats?.total_bytes ?? 0)
+      )}
+    </MetaTile>
+  );
+}
+
+function AssetKindsTile({
+  stats,
+  loading,
+  failed,
+}: {
+  stats: ProjectAssetStats | undefined;
+  loading: boolean;
+  failed: boolean;
+}) {
+  const kinds = [
+    { id: "image", label: "Image", count: stats?.image_count ?? 0, icon: <ImageIcon />, color: "#4cd7f6" },
+    { id: "glb", label: "GLB", count: stats?.model_count ?? 0, icon: <Box />, color: "#fd4f6a" },
+    { id: "other", label: "Other", count: stats?.other_count ?? 0, icon: <File />, color: "#f4a740" },
+  ].filter((kind) => kind.count > 0);
+
+  return (
+    <MetaTile label="Assets" caption="Ready files in the project library">
+      {loading ? (
+        <span className="flex gap-2">
+          <span className="studio-skeleton inline-block h-7 w-20 rounded-lg" />
+          <span className="studio-skeleton inline-block h-7 w-16 rounded-lg" />
+        </span>
+      ) : failed ? (
+        <span className="text-[var(--studio-muted)]">Couldn’t load assets</span>
+      ) : kinds.length === 0 ? (
+        <span className="text-[var(--studio-muted)]">No assets yet</span>
+      ) : (
+        <span className="flex flex-wrap gap-2">
+          {kinds.map((kind) => (
+            <KindChip
+              key={kind.id}
+              icon={kind.icon}
+              label={kind.label}
+              count={kind.count}
+              color={kind.color}
+            />
+          ))}
+        </span>
+      )}
+    </MetaTile>
+  );
+}
+
+export function DetailsTab({ project, onTabChange }: ProjectTabProps) {
+  const statsQuery = useProjectAssetStats(project.id);
+
   return (
     <div className="grid gap-5 lg:grid-cols-3">
       <section className="studio-panel p-5 sm:p-6 lg:col-span-2">
@@ -80,24 +176,21 @@ export function DetailsTab({ project, folder, organization, onTabChange }: Proje
             </time>
           </MetaTile>
 
-          <MetaTile label="Parent folder" caption={`Workspace: ${organization?.name ?? "—"}`}>
-            <span className="flex min-w-0 items-center gap-2">
-              {folder ? (
-                <FolderIcon color={folderHex(folder.color)} size={18} />
-              ) : (
-                <Inbox className="h-4 w-4 shrink-0 text-[var(--studio-muted)]" />
-              )}
-              <span className="truncate">{folder?.name ?? "No folder (root)"}</span>
-            </span>
-          </MetaTile>
-
           <MetaTile label="Total scene count" caption="3D models, 2D images, and geo maps">
             {plural(project.scene_count, "Scene")}
           </MetaTile>
 
-          <MetaTile label="Organization" caption={organization?.slug ? `/${organization.slug}` : undefined}>
-            <span className="block truncate">{organization?.name ?? "—"}</span>
-          </MetaTile>
+          <LibrarySizeTile
+            stats={statsQuery.data}
+            loading={statsQuery.isLoading}
+            failed={statsQuery.isError}
+          />
+
+          <AssetKindsTile
+            stats={statsQuery.data}
+            loading={statsQuery.isLoading}
+            failed={statsQuery.isError}
+          />
 
           <MetaTile label="Project ID" caption="Use this when referencing the project in APIs">
             <span className="flex min-w-0 items-center gap-1">

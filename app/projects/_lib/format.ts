@@ -58,3 +58,15 @@ export function formatCompact(value: number) {
 export function plural(count: number, one: string, many = `${one}s`) {
   return `${count} ${count === 1 ? one : many}`;
 }
+
+const MB = 1024 * 1024;
+
+export function formatBytes(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 MB";
+  if (bytes >= MB) {
+    const mb = bytes / MB;
+    return `${mb.toFixed(mb >= 10 ? 0 : 1)} MB`;
+  }
+  if (bytes >= 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${bytes} B`;
+}

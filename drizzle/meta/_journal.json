@@ -43,6 +43,13 @@
       "when": 1791121199635,
       "tag": "0005_jwt_first_call_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791130000000,
+      "tag": "0006_project_asset_stats",
+      "breakpoints": true
     }
   ]
 }

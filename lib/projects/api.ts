@@ -1,6 +1,10 @@
 import { dataJson } from "@/lib/api/data";
 import type { FolderColor } from "@/lib/projects/folder-colors";
-import type { ProjectFolderRow, ProjectRow } from "@/lib/projects/types";
+import type {
+  ProjectAssetStats,
+  ProjectFolderRow,
+  ProjectRow,
+} from "@/lib/projects/types";
 
 /** Excludes `editor_data`, which only the editor loads. */
 const PROJECT_COLUMNS =
@@ -133,4 +137,30 @@ export async function deleteProject(id: string) {
     method: "DELETE",
     headers: { Prefer: "return=minimal" },
   });
+}
+
+function asCount(value: unknown) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+function parseAssetStats(raw: unknown): ProjectAssetStats {
+  const value = typeof raw === "string" ? (JSON.parse(raw) as unknown) : raw;
+  const row = (Array.isArray(value) ? value[0] : value) as Partial<ProjectAssetStats> | null;
+  return {
+    total_bytes: asCount(row?.total_bytes),
+    image_count: asCount(row?.image_count),
+    model_count: asCount(row?.model_count),
+    other_count: asCount(row?.other_count),
+  };
+}
+
+/** Ready-file kind counts + total bytes. Does not load asset rows. */
+export async function getProjectAssetStats(projectId: string): Promise<ProjectAssetStats> {
+  const raw = await dataJson<unknown>("rpc/project_asset_stats", {
+    method: "POST",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({ p_project_id: projectId }),
+  });
+  return parseAssetStats(raw);
 }

@@ -32,3 +32,11 @@ export type OrganizationSummary = {
   createdAt?: string | Date;
   metadata?: unknown;
 };
+
+/** Rollup from `public.project_asset_stats` — ready files only. */
+export type ProjectAssetStats = {
+  total_bytes: number;
+  image_count: number;
+  model_count: number;
+  other_count: number;
+};

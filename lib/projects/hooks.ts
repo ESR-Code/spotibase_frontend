@@ -11,6 +11,7 @@ import {
   deleteFolder,
   deleteProject,
   getProject,
+  getProjectAssetStats,
   listFolders,
   listProjects,
   updateFolder,
@@ -31,6 +32,7 @@ import {
 } from "@/lib/projects/orgs";
 import type {
   OrganizationSummary,
+  ProjectAssetStats,
   ProjectFolderRow,
   ProjectRow,
 } from "@/lib/projects/types";
@@ -53,6 +55,7 @@ export const projectKeys = {
   all: (orgId: string, folderId?: string | null) =>
     ["projects", orgId, folderId ?? "all"] as const,
   detail: (id: string) => ["project", id] as const,
+  assetStats: (id: string) => ["project", id, "asset-stats"] as const,
 };
 
 export function useOrganizations() {
@@ -155,6 +158,14 @@ export function useProject(id: string | null | undefined) {
   return useQuery({
     queryKey: projectKeys.detail(id ?? ""),
     queryFn: () => getProject(id!),
+    enabled: Boolean(id),
+  });
+}
+
+export function useProjectAssetStats(id: string | null | undefined) {
+  return useQuery<ProjectAssetStats>({
+    queryKey: projectKeys.assetStats(id ?? ""),
+    queryFn: () => getProjectAssetStats(id!),
     enabled: Boolean(id),
   });
 }
