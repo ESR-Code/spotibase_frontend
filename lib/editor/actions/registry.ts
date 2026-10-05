@@ -1,4 +1,4 @@
-import { patchOwnedActionNodeData, findOwnedActionNode } from "@/lib/editor/actions/action-owners";
+import { findOwnedActionNode } from "@/lib/editor/actions/action-owners";
 import { createActionNode, getActionGraph } from "@/lib/editor/actions/create-action-graph";
 import {
   applyChangeHotspotColor,
@@ -289,9 +289,6 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
       if (result.error && result.status == null) {
         toast.error(`HTTP Request: ${result.error}`);
         clearHttpRequestCached(key);
-        patchOwnedActionNodeData(ctx.ownerId, node.id, {
-          lastResponseJson: "",
-        });
         return;
       }
       if (!result.ok) {
@@ -299,22 +296,14 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
           `HTTP Request: ${result.status ?? "—"} ${result.statusText}`.trim(),
         );
         clearHttpRequestCached(key);
-        patchOwnedActionNodeData(ctx.ownerId, node.id, {
-          lastResponseJson: "",
-        });
         return;
       }
 
       if (result.json !== undefined) {
+        // Session cache only. The node Test action stores lastResponseJson.
         markHttpRequestCached(key, result.json);
-        patchOwnedActionNodeData(ctx.ownerId, node.id, {
-          lastResponseJson: JSON.stringify(result.json),
-        });
       } else {
         clearHttpRequestCached(key);
-        patchOwnedActionNodeData(ctx.ownerId, node.id, {
-          lastResponseJson: "",
-        });
         if (node.data.cacheReuse && isPreview) {
           // Mark the attempt so cache-reuse skips a second network call.
           markHttpRequestCached(key, null);
@@ -369,9 +358,6 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
         },
         onPayload: async (json) => {
           markHttpRequestCached(key, json);
-          patchOwnedActionNodeData(ctx.ownerId, node.id, {
-            lastResponseJson: JSON.stringify(json),
-          });
           const { getOwnedActionGraph } = await import(
             "@/lib/editor/actions/action-owners"
           );

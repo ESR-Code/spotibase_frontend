@@ -8,7 +8,7 @@ import {
   resolveHttpFieldsInHtml,
   unwrapHttpFieldChips,
 } from "@/lib/editor/blocks/http-field-chip";
-import { getHttpRequestCached, httpRequestCacheKey } from "@/lib/editor/actions/http-request";
+import { getHttpRequestCachedForNode } from "@/lib/editor/actions/http-request";
 import {
   listAllFieldSources,
   type HttpFieldSource,
@@ -112,26 +112,35 @@ export function resolveActionFieldValue(
     return resolveFromNode(nodeId, path);
   }
 
-  // Unique-path tokens: pick the first node that has this field.
-  // Prefer a live preview/session value when present.
-  for (const source of listAllFieldSources()) {
-    if (source.path !== path) continue;
+  const matches = listAllFieldSources().filter((source) => source.path === path);
+  for (const source of matches) {
+    const live = liveValueAt(source.nodeId, path);
+    if (live !== undefined) return live;
+  }
+  for (const source of matches) {
     const value = resolveFromNode(source.nodeId, path);
     if (value !== undefined) return value;
   }
   return undefined;
 }
 
-function resolveFromNode(nodeId: string, path: string): unknown {
+function liveValueAt(nodeId: string, path: string): unknown {
   const found = findHttpRequestNodeById(nodeId);
   if (!found) return undefined;
+  const runtime = getHttpRequestCachedForNode(
+    ownerKeyFor(found.ownerId),
+    found.node.id,
+  );
+  if (runtime == null) return undefined;
+  return getValueByPath(runtime, path);
+}
 
-  const key = httpRequestCacheKey(ownerKeyFor(found.ownerId), found.node.id);
-  const runtime = getHttpRequestCached(key);
-  if (runtime !== undefined) {
-    return getValueByPath(runtime, path);
-  }
+function resolveFromNode(nodeId: string, path: string): unknown {
+  const live = liveValueAt(nodeId, path);
+  if (live !== undefined) return live;
 
+  const found = findHttpRequestNodeById(nodeId);
+  if (!found) return undefined;
   const sample = tryParseJson(found.sampleJson);
   if (sample === undefined) return undefined;
   return getValueByPath(sample, path);

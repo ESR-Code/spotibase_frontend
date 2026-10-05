@@ -3,7 +3,6 @@ import {
   getOwnedActionGraph,
   isStartOwnerId,
   ownerKeyFor,
-  patchOwnedActionNodeData,
   SCENE_START_OWNER_ID,
 } from "@/lib/editor/actions/action-owners";
 import { isButtonBlock } from "@/lib/editor/blocks/content-buttons";
@@ -92,33 +91,11 @@ export async function runActionNodeList(
           listenerKey,
           eventName: event.eventName,
           onPayload: (payload) => {
-            const payloadJson = JSON.stringify(payload);
             markHttpRequestCached(
               httpRequestCacheKey(ctx.ownerKey, node.id),
               payload,
             );
             markHttpRequestCached(listenerKey, payload);
-            try {
-              const latestGraph = getOwnedActionGraph(ctx.ownerId);
-              const latestNode = latestGraph?.nodes.find(
-                (item) => item.id === node.id,
-              );
-              const latestEvents =
-                latestNode?.type === "sendPostMessage"
-                  ? normalizeReceiveEvents(latestNode.data)
-                  : events;
-              const nextEvents = latestEvents.map((item) =>
-                item.id === event.id
-                  ? { ...item, lastPayloadJson: payloadJson }
-                  : item,
-              );
-              patchOwnedActionNodeData(ctx.ownerId, node.id, {
-                lastPayloadJson: payloadJson,
-                receiveEvents: nextEvents,
-              });
-            } catch {
-              // Ignore persistence failures; runtime store still has the value.
-            }
 
             const latestGraph = getOwnedActionGraph(ctx.ownerId);
             if (!latestGraph) return;

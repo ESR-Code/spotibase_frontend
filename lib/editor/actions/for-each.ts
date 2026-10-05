@@ -3,7 +3,7 @@ import {
   findHttpRequestNodeById,
   ownerKeyFor,
 } from "@/lib/editor/actions/action-owners";
-import { getHttpRequestCached, httpRequestCacheKey } from "@/lib/editor/actions/http-request";
+import { getHttpRequestCachedForNode } from "@/lib/editor/actions/http-request";
 import {
   resolveActionFieldValue,
   unwrapFieldPath,
@@ -109,24 +109,30 @@ export function canConnectToForEach(
   return isForEachSourceType(sourceType);
 }
 
+function cachedSourceJson(sourceId: string): unknown | undefined {
+  const found = findHttpRequestNodeById(sourceId);
+  if (!found) return undefined;
+  const runtime = getHttpRequestCachedForNode(
+    ownerKeyFor(found.ownerId),
+    found.node.id,
+  );
+  if (runtime == null) return undefined;
+  return runtime;
+}
+
 function predecessorJsonValue(
   graph: HotspotActionGraph,
   nodeId: string,
 ): unknown {
   for (const source of incomingSources(graph, nodeId)) {
     if (source.type === "httpRequest" || source.type === "subscribe") {
-      const found = findHttpRequestNodeById(source.id);
-      if (found) {
-        const key = httpRequestCacheKey(
-          ownerKeyFor(found.ownerId),
-          found.node.id,
-        );
-        const runtime = getHttpRequestCached(key);
-        if (runtime !== undefined) return runtime;
-      }
+      const runtime = cachedSourceJson(source.id);
+      if (runtime !== undefined) return runtime;
       return tryParseJson(source.data.lastResponseJson ?? "");
     }
     if (source.type === "sendPostMessage") {
+      const runtime = cachedSourceJson(source.id);
+      if (runtime !== undefined) return runtime;
       return tryParseJson(source.data.lastPayloadJson ?? "");
     }
   }
@@ -143,6 +149,23 @@ export function resolveItemsPathValue(itemsPath: string): unknown {
   return resolveActionFieldValue(path, nodeId);
 }
 
+function itemsFromPredecessor(
+  predecessor: unknown,
+  path: string,
+): unknown[] | null {
+  if (predecessor === undefined) return null;
+  if (!path || isJsonRootPath(path)) return asItemArray(predecessor);
+  const nested = asItemArray(getValueByPath(predecessor, path));
+  if (nested) return nested;
+  if (
+    Array.isArray(predecessor) &&
+    (path === "items" || path === "data")
+  ) {
+    return predecessor;
+  }
+  return null;
+}
+
 export function resolveForEachItems(
   itemsPath: string,
   graph?: HotspotActionGraph,
@@ -156,29 +179,18 @@ export function resolveForEachItems(
       ? predecessorJsonValue(ownerGraph, nodeId)
       : undefined;
 
-  if (!path || isJsonRootPath(path)) {
-    if (path) {
-      const fromToken = asItemArray(
-        resolveActionFieldValue(path, tokenNodeId),
-      );
-      if (fromToken) return fromToken;
-    }
-    return asItemArray(predecessor);
-  }
+  // The node wired into For Each owns `{{$}}` / `{{items}}`. Another node's
+  // saved sample must not shadow that live payload.
+  const fromPredecessor = itemsFromPredecessor(predecessor, path);
+  if (!tokenNodeId && fromPredecessor) return fromPredecessor;
 
-  const fromPath = asItemArray(resolveActionFieldValue(path, tokenNodeId));
-  if (fromPath) return fromPath;
-  if (predecessor !== undefined) {
-    const nested = asItemArray(getValueByPath(predecessor, path));
-    if (nested) return nested;
-    if (
-      Array.isArray(predecessor) &&
-      (path === "items" || path === "data")
-    ) {
-      return predecessor;
-    }
+  if (path) {
+    const fromToken = asItemArray(
+      resolveActionFieldValue(path, tokenNodeId),
+    );
+    if (fromToken) return fromToken;
   }
-  return null;
+  return fromPredecessor;
 }
 
 /** Sample array from the upstream HTTP / Post Message JSON (editor preview). */

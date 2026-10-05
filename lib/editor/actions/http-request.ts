@@ -209,6 +209,30 @@ export function getHttpRequestCached(key: string): unknown | undefined {
   return useHttpResponseStore.getState().getResponse(key);
 }
 
+/**
+ * Live preview JSON for one node. Prefers `ownerKey:nodeId`, then any other
+ * session entry for that node. `null` means a non-JSON response and is ignored
+ * when another entry has a real payload.
+ */
+export function getHttpRequestCachedForNode(
+  ownerKey: string,
+  nodeId: string,
+): unknown | undefined {
+  const primary = getHttpRequestCached(httpRequestCacheKey(ownerKey, nodeId));
+  const suffix = `:${nodeId}`;
+  let fallback: unknown;
+  let foundFallback = false;
+  for (const [key, value] of Object.entries(useHttpResponseStore.getState().byKey)) {
+    if (!key.endsWith(suffix) || value == null) continue;
+    fallback = value;
+    foundFallback = true;
+    break;
+  }
+  if (primary != null) return primary;
+  if (foundFallback) return fallback;
+  return primary;
+}
+
 export function clearHttpRequestCached(key: string): void {
   useHttpResponseStore.getState().clearResponse(key);
 }
