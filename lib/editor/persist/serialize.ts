@@ -90,7 +90,24 @@ export function serializeProject(): SerializedProject {
   };
 }
 
-/** Stable string for dirty tracking (same input → same string). */
+/**
+ * Dirty tracking compares authored data, not object key insertion order.
+ * `{ lat, lng }` and `{ lng, lat }` are the same point.
+ */
+function canonicalize(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (value !== null && typeof value === "object") {
+    const source = value as Record<string, unknown>;
+    const sorted: Record<string, unknown> = {};
+    for (const key of Object.keys(source).sort()) {
+      sorted[key] = canonicalize(source[key]);
+    }
+    return sorted;
+  }
+  return value;
+}
+
+/** Stable string for dirty tracking (same authored data → same string). */
 export function fingerprintProject(project: SerializedProject): string {
-  return JSON.stringify(project);
+  return JSON.stringify(canonicalize(project));
 }

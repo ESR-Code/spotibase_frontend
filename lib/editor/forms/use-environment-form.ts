@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { DEFAULT_ENVIRONMENT_SETTINGS } from "@/lib/editor/constants/default-settings";
+import { useSceneFormReset } from "@/lib/editor/forms/use-scene-form-reset";
 import {
   environmentFormSchema,
   type EnvironmentFormValues,
@@ -40,18 +41,17 @@ export function useEnvironmentForm() {
     resolver: zodResolver(environmentFormSchema),
     defaultValues: toFormValues(environment),
   });
+  const skipStoreWriteRef = useSceneFormReset(form, activeSceneId, () =>
+    toFormValues(useEnvironmentStore.getState()),
+  );
 
   useEffect(() => {
     const subscription = form.watch((values) => {
+      if (skipStoreWriteRef.current) return;
       setEnvironment(values as Partial<EnvironmentFormValues>);
     });
     return () => subscription.unsubscribe();
-  }, [form, setEnvironment]);
-
-  // Keep the drawer form in sync when switching scenes.
-  useEffect(() => {
-    form.reset(toFormValues(useEnvironmentStore.getState()));
-  }, [activeSceneId, form]);
+  }, [form, setEnvironment, skipStoreWriteRef]);
 
   const reset = () => {
     resetEnvironment();

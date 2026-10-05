@@ -216,10 +216,6 @@ export function createModelManager(
     const { modelScale, modelRotation } = useModelStore.getState();
     applyTransform(modelScale, modelRotation);
 
-    const descriptor = getSceneType("image");
-    useModelStore
-      .getState()
-      .setModelMeta(descriptor.emptySubjectName, descriptor.emptySubjectInfo, false);
     useModelStore.getState().setStats(useModelStore.getState().fps, 2);
     syncMeshCatalog();
     return plane;
@@ -229,10 +225,6 @@ export function createModelManager(
     const sceneType = type ?? activeSceneType();
     if (getSceneType(sceneType).engine !== "playcanvas") {
       unloadCurrent();
-      const descriptor = getSceneType(sceneType);
-      useModelStore
-        .getState()
-        .setModelMeta(descriptor.emptySubjectName, descriptor.emptySubjectInfo, false);
       syncMeshCatalog();
       return modelRoot;
     }
@@ -267,7 +259,12 @@ export function createModelManager(
   const instantiateModelFromBuffer = async (
     fileName: string,
     buffer: ArrayBuffer,
-    options: { resetTransform: boolean; toastOnSuccess: boolean },
+    options: {
+      resetTransform: boolean;
+      toastOnSuccess: boolean;
+      /** User import only. Restore must not rewrite authored name / size text. */
+      updateAuthoredMeta: boolean;
+    },
   ): Promise<Entity | null> => {
     const blob = new Blob([buffer], { type: "model/gltf-binary" });
     const url = URL.createObjectURL(blob);
@@ -310,7 +307,9 @@ export function createModelManager(
 
       syncAppearanceFromStore();
 
-      useModelStore.getState().setModelMeta(fileName, sizeLabel, true);
+      if (options.updateAuthoredMeta) {
+        useModelStore.getState().setModelMeta(fileName, sizeLabel, true);
+      }
       useModelStore
         .getState()
         .setStats(useModelStore.getState().fps, triangles);
@@ -335,7 +334,11 @@ export function createModelManager(
   const instantiateImageFromBuffer = async (
     fileName: string,
     buffer: ArrayBuffer,
-    options: { resetTransform: boolean; toastOnSuccess: boolean },
+    options: {
+      resetTransform: boolean;
+      toastOnSuccess: boolean;
+      updateAuthoredMeta: boolean;
+    },
   ): Promise<Entity | null> => {
     const mime = mimeFromFileName(fileName);
     const blob = new Blob([buffer], { type: mime });
@@ -368,7 +371,9 @@ export function createModelManager(
 
       const width = IMAGE_PLANE_HEIGHT * aspect;
       const sizeLabel = `${width.toFixed(1)} × ${IMAGE_PLANE_HEIGHT.toFixed(1)} units`;
-      useModelStore.getState().setModelMeta(fileName, sizeLabel, true);
+      if (options.updateAuthoredMeta) {
+        useModelStore.getState().setModelMeta(fileName, sizeLabel, true);
+      }
       useModelStore.getState().setStats(useModelStore.getState().fps, 2);
 
       if (options.toastOnSuccess) {
@@ -399,10 +404,12 @@ export function createModelManager(
           ? await instantiateImageFromBuffer(file.name, buffer, {
               resetTransform: true,
               toastOnSuccess: true,
+              updateAuthoredMeta: true,
             })
           : await instantiateModelFromBuffer(file.name, buffer, {
               resetTransform: true,
               toastOnSuccess: true,
+              updateAuthoredMeta: true,
             });
 
       if (entity) {
@@ -437,11 +444,13 @@ export function createModelManager(
         return await instantiateImageFromBuffer(fileName, buffer, {
           resetTransform: false,
           toastOnSuccess: false,
+          updateAuthoredMeta: false,
         });
       }
       return await instantiateModelFromBuffer(fileName, buffer, {
         resetTransform: false,
         toastOnSuccess: false,
+        updateAuthoredMeta: false,
       });
     } catch (error) {
       console.error(error);
@@ -463,7 +472,8 @@ export function createModelManager(
     materialBaselines = [];
     modelRoot.setLocalScale(1, 1, 1);
     modelRoot.setLocalEulerAngles(0, 0, 0);
-    useModelStore.getState().unload();
+    // Viewport-only. Name, size text, and transform stay authored until hydrate.
+    useModelStore.setState({ triangleCount: 0, meshes: [], animations: [] });
     syncMeshCatalog();
   };
 

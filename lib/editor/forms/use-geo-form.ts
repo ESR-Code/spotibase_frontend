@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { DEFAULT_GEO_SETTINGS } from "@/lib/editor/constants/default-settings";
+import { useSceneFormReset } from "@/lib/editor/forms/use-scene-form-reset";
 import {
   geoFormSchema,
   type GeoFormValues,
@@ -42,9 +43,13 @@ export function useGeoForm() {
     resolver: zodResolver(geoFormSchema),
     defaultValues: toFormValues(geo),
   });
+  const skipStoreWriteRef = useSceneFormReset(form, activeSceneId, () =>
+    toFormValues(useGeoStore.getState()),
+  );
 
   useEffect(() => {
     const subscription = form.watch((values) => {
+      if (skipStoreWriteRef.current) return;
       if (
         values.startZoom == null ||
         (values.startLng == null) !== (values.startLat == null)
@@ -54,11 +59,7 @@ export function useGeoForm() {
       setGeo(toGeoSettings(values as GeoFormValues));
     });
     return () => subscription.unsubscribe();
-  }, [form, setGeo]);
-
-  useEffect(() => {
-    form.reset(toFormValues(useGeoStore.getState()));
-  }, [activeSceneId, form]);
+  }, [form, setGeo, skipStoreWriteRef]);
 
   const reset = () => {
     resetGeo();

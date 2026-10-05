@@ -1,9 +1,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { DEFAULT_EDITOR_SETTINGS } from "@/lib/editor/constants/default-settings";
+import { useSceneFormReset } from "@/lib/editor/forms/use-scene-form-reset";
 import {
   settingsFormSchema,
   type SettingsFormValues,
@@ -60,13 +61,14 @@ export function useSettingsForm() {
   const setSettings = useSettingsStore((s) => s.setSettings);
   const resetSettings = useSettingsStore((s) => s.resetSettings);
   const activeSceneId = useScenesStore((s) => s.activeSceneId);
-  const skipStoreWriteRef = useRef(false);
-  const prevSceneIdRef = useRef(activeSceneId);
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsFormSchema),
     defaultValues: toFormValues(useSettingsStore.getState()),
   });
+  const skipStoreWriteRef = useSceneFormReset(form, activeSceneId, () =>
+    toFormValues(useSettingsStore.getState()),
+  );
 
   useEffect(() => {
     const subscription = form.watch((values) => {
@@ -74,16 +76,7 @@ export function useSettingsForm() {
       setSettings(definedPatch(values as Partial<SettingsFormValues>));
     });
     return () => subscription.unsubscribe();
-  }, [form, setSettings]);
-
-  // Reset during render (same tick as hydrate) so a stale watch cannot
-  // overwrite per-scene fields like legendEnabled after switchScene.
-  if (prevSceneIdRef.current !== activeSceneId) {
-    prevSceneIdRef.current = activeSceneId;
-    skipStoreWriteRef.current = true;
-    form.reset(toFormValues(useSettingsStore.getState()));
-    skipStoreWriteRef.current = false;
-  }
+  }, [form, setSettings, skipStoreWriteRef]);
 
   const reset = () => {
     resetSettings();

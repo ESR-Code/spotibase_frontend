@@ -236,6 +236,7 @@ export function createCameraController(
     };
   };
 
+  /** Session camera only. Do not write computed zoom extents into authored settings. */
   const applyFramePose = (
     pose: ReturnType<typeof computeFramePose>,
     storeAsHome: boolean,
@@ -246,10 +247,6 @@ export function createCameraController(
     state.yaw = pose.yaw;
     state.pitch = pose.pitch;
     state.distance = pose.distance;
-    useSettingsStore.getState().setSettings({
-      minDistance: pose.minDistance,
-      maxDistance: pose.maxDistance,
-    });
     applyPose();
     if (storeAsHome) storeHome();
   };
@@ -400,10 +397,6 @@ export function createCameraController(
       home.distance = pose.distance;
       home.target.copy(pose.target);
       home.ready = true;
-      useSettingsStore.getState().setSettings({
-        minDistance: pose.minDistance,
-        maxDistance: pose.maxDistance,
-      });
     }
 
     if (!home.ready) {

@@ -67,7 +67,8 @@ Only decisions that constrain how new work should be done.
 
 ## Persistence and IO
 
-- **DB-backed editor, explicit save.** The editor loads `projects.editor_data` + `scenes` + `assets` before mounting and saves on Save / Ctrl+S (no autosave yet; same path can be debounced later). No localStorage/IndexedDB.
+- **DB-backed editor, explicit save.** The editor loads `projects.editor_data` + `scenes` + `assets` before mounting and saves on Save / Ctrl+S (no autosave yet; same path can be debounced later). No localStorage/IndexedDB. Dirty means the canonical fingerprint changed. Do not retake the baseline to hide a write, and do not persist a scene switch.
+- **Scene-scoped forms do not author on sync.** Settings, environment, effects, and geo forms catch up to the hydrated store in the same render as the scene change (`useSceneFormReset`) and ignore that `watch` notification. A later effect reset can overwrite the incoming scene. User edits and the explicit Reset action still write the store.
 - **`scenes.data` is the editor `Scene`**, minus lifted columns, plus `schemaVersion`. Action graphs stay where the editor owns them (per hotspot, scene start / legend, menu and action buttons); do not flatten them into scene-level `actions` / `nodes` lists. Bump `EDITOR_SCHEMA_VERSION` and migrate in `hydrate.ts` when the shape changes; Zod rejects malformed rows with a readable error.
 - **One transactional save RPC** (`save_editor_project`, `SECURITY INVOKER`, called through the Data API). Per-scene PostgREST calls would not be atomic. Optimistic concurrency: `projects.editor_revision` must match or the save fails with `revision_conflict`; the user reloads (no merge).
 - **Scene ids are uuids** generated in the browser so the editor id is the row id (Go To Scene nodes reference them). Slugs are assigned on first save and never change. Hotspot ids stay numeric per scene.

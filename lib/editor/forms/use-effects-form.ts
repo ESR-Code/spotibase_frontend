@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { DEFAULT_EFFECTS_SETTINGS } from "@/lib/editor/constants/default-settings";
+import { useSceneFormReset } from "@/lib/editor/forms/use-scene-form-reset";
 import {
   effectsFormSchema,
   type EffectsFormValues,
@@ -34,17 +35,17 @@ export function useEffectsForm() {
     resolver: zodResolver(effectsFormSchema),
     defaultValues: toFormValues(effects),
   });
+  const skipStoreWriteRef = useSceneFormReset(form, activeSceneId, () =>
+    toFormValues(useEffectsStore.getState()),
+  );
 
   useEffect(() => {
     const subscription = form.watch((values) => {
+      if (skipStoreWriteRef.current) return;
       setEffects(values as Partial<EffectsFormValues>);
     });
     return () => subscription.unsubscribe();
-  }, [form, setEffects]);
-
-  useEffect(() => {
-    form.reset(toFormValues(useEffectsStore.getState()));
-  }, [activeSceneId, form]);
+  }, [form, setEffects, skipStoreWriteRef]);
 
   const reset = () => {
     resetEffects();

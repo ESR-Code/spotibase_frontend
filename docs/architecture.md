@@ -123,7 +123,7 @@ Save (header button, Ctrl/Cmd+S) → serializeProject → POST /gateway/data/rpc
 - `scenes` lifts `id` (editor uuid), `name`, `slug` (set on first save, never changes), `sort_order`, `type`, `thumbnail_asset_id`; `data` is the rest of `Scene` plus `schemaVersion`. `projects.editor_data` holds `primarySceneId`, `appStartActions`, `generalStyle`, `sceneExplorerEnabled`.
 - `save_editor_project(project, expected_revision, editor_data, scenes)` is a `SECURITY INVOKER` plpgsql function (migration `0004`): one transaction upserts / deletes scenes, writes `editor_data` and `scene_count`, bumps `editor_revision`. A stale revision raises `PT409` / hint `revision_conflict`.
 - `project_asset_stats(project_id)` (migration `0006`) returns ready-file kind counts + total bytes for the studio Details tab. One aggregate; no asset rows.
-- Dirty tracking: authored-store subscriptions trigger a debounced fingerprint (`serializeProject` JSON) against the last loaded / saved baseline.
+- Dirty tracking: authored-store subscriptions trigger a debounced fingerprint of `serializeProject` against the last loaded / saved baseline. Object key order is ignored. Scene-scoped forms sync on switch without writing the stores (`useSceneFormReset`).
 - Media: `lib/editor/assets/` (`useAssetsStore` project library, `uploadAsset`, `resolveAssetSrc`, `collectAssetRefs`). Asset Library dialog: project menu → Assets.
 
 ## Runtime shape
