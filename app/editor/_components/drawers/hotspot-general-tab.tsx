@@ -44,6 +44,7 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
   const values = form.watch();
   const scene = useActiveScene();
   const isGeo = scene.type === "geo";
+  const isModel = scene.type === "model";
   const isCustomColor = !markerColorSwatches.includes(
     values.color as (typeof markerColorSwatches)[number],
   );
@@ -338,7 +339,10 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
                 value={selected.position.y}
                 onChange={(y) =>
                   updateHotspot(selected.id, {
-                    position: { ...selected.position, y },
+                    position: {
+                      ...selected.position,
+                      y: isModel ? Math.max(0, y) : y,
+                    },
                   })
                 }
               />

@@ -49,6 +49,17 @@ export function createPickingController(
   let dragStartY = 0;
   let didDragHotspot = false;
 
+  const activeSceneType = () => {
+    const scenes = useScenesStore.getState();
+    return (
+      scenes.scenes.find((s) => s.id === scenes.activeSceneId)?.type ?? "model"
+    );
+  };
+
+  // Model grid is the XZ plane at y = 0. Markers stay on or above it.
+  const clampModelFloor = (y: number) =>
+    activeSceneType() === "model" ? Math.max(0, y) : y;
+
   const pickHotspotId = (clientX: number, clientY: number): number | null => {
     const ray = screenRayFromEvent(
       pcModule,
@@ -95,9 +106,7 @@ export function createPickingController(
   ): { x: number; y: number; z: number } | null => {
     const ray = screenRayFromEvent(pcModule, camera, canvas, clientX, clientY);
     const meshHit = raycastMeshes(pcModule, modelRoot, ray);
-    const scenes = useScenesStore.getState();
-    const type =
-      scenes.scenes.find((s) => s.id === scenes.activeSceneId)?.type ?? "model";
+    const type = activeSceneType();
 
     if (type === "image") {
       groundPoint.set(0, 0, 0);
@@ -189,7 +198,7 @@ export function createPickingController(
       if (hit) {
         const position = {
           x: hit.point.x,
-          y: hit.point.y + 0.3,
+          y: clampModelFloor(hit.point.y + 0.3),
           z: hit.point.z,
         };
         const created = useEditorStore.getState().addHotspot(position);
@@ -303,7 +312,7 @@ export function createPickingController(
         dragNext.copy(planeHit).add(dragOffset);
         hotspots.setWorldPosition(editor.draggingId, {
           x: dragNext.x,
-          y: dragNext.y,
+          y: clampModelFloor(dragNext.y),
           z: dragNext.z,
         });
       }
