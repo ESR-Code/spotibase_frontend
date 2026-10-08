@@ -18,6 +18,7 @@ import { SpawnClickActionsModal } from "@/app/editor/_components/actions/spawn-c
 import { PreviewModal } from "@/app/editor/_components/dialogs/preview-modal";
 import { ScenesModal } from "@/app/editor/_components/dialogs/scenes-modal";
 import { GeoreferenceModal } from "@/app/editor/_components/dialogs/georeference-modal";
+import { ConfirmDialogHost } from "@/app/editor/_components/ui/confirm-dialog-host";
 import { EditorToaster } from "@/app/editor/_components/ui/editor-toaster";
 import { SceneTransitionOverlay } from "@/app/editor/_components/viewport/scene-transition-overlay";
 import { useEditorKeyboard } from "@/lib/editor/hooks/use-editor-keyboard";
@@ -66,6 +67,7 @@ export function EditorShell() {
 
       <SceneTransitionOverlay />
       <EditorToaster />
+      <ConfirmDialogHost />
     </div>
   );
 }

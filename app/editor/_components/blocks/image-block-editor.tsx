@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronUp, ImageIcon, Trash2, Upload } from "lucide-react";
+import { confirmDelete } from "@/lib/editor/confirm";
 import { toast } from "@/lib/editor/toast";
 import { AssetPickerButton } from "@/app/editor/_components/assets/asset-picker-button";
 import { TokenField } from "@/app/editor/_components/blocks/token-field";
@@ -97,7 +98,10 @@ export function ImageBlockEditor({
   };
 
   const removeItem = (id: string) => {
-    setItems(block.items.filter((item) => item.id !== id));
+    void confirmDelete("image").then((ok) => {
+      if (!ok) return;
+      setItems(block.items.filter((item) => item.id !== id));
+    });
   };
 
   const moveItem = (id: string, delta: number) => {

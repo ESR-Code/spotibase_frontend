@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { confirmDelete } from "@/lib/editor/confirm";
 import { toast } from "@/lib/editor/toast";
 import { clearEditorSelection } from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -73,9 +74,13 @@ export function useEditorKeyboard() {
         (e.key === "Delete" || e.key === "Backspace") &&
         selectedId != null
       ) {
-        removeHotspot(selectedId);
-        setPropertiesDrawerOpen(false);
-        toast.success("Hotspot deleted");
+        const id = selectedId;
+        void confirmDelete("hotspot").then((ok) => {
+          if (!ok) return;
+          removeHotspot(id);
+          setPropertiesDrawerOpen(false);
+          toast.success("Hotspot deleted");
+        });
       } else if (
         !isPreview &&
         !actionsOpen &&
@@ -84,9 +89,12 @@ export function useEditorKeyboard() {
       ) {
         const layerId = useLayersStore.getState().selectedId;
         if (layerId) {
-          useLayersStore.getState().removeLayer(layerId);
-          syncActiveSceneLayers();
-          toast.success("Overlay deleted");
+          void confirmDelete("layer").then((ok) => {
+            if (!ok) return;
+            useLayersStore.getState().removeLayer(layerId);
+            syncActiveSceneLayers();
+            toast.success("Overlay deleted");
+          });
         }
       }
     };

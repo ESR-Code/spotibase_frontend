@@ -20,6 +20,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { confirmDelete, confirmDeleteMany } from "@/lib/editor/confirm";
 import { toast } from "@/lib/editor/toast";
 import {
   attachNodesToFences,
@@ -572,10 +573,16 @@ function ActionsFlowCanvas({
     () => ({
       updateGraph,
       deleteNode: (ownerId, nodeId) => {
-        updateGraph(ownerId, (graph) => removeNode(graph, nodeId));
+        void confirmDelete("action").then((ok) => {
+          if (!ok) return;
+          updateGraph(ownerId, (graph) => removeNode(graph, nodeId));
+        });
       },
       deleteEdge: (ownerId, edgeId) => {
-        updateGraph(ownerId, (graph) => removeEdge(graph, edgeId));
+        void confirmDelete("connection").then((ok) => {
+          if (!ok) return;
+          updateGraph(ownerId, (graph) => removeEdge(graph, edgeId));
+        });
       },
       updateNodeData: (ownerId, nodeId, patch) => {
         updateGraph(ownerId, (graph) => updateNodeData(graph, nodeId, patch));
@@ -787,6 +794,48 @@ function ActionsFlowCanvas({
       }
     },
     [updateGraph],
+  );
+
+  const onBeforeDelete = useCallback(
+    async ({
+      nodes: nodesToDelete,
+      edges: edgesToDelete,
+    }: {
+      nodes: ActionsCanvasNode[];
+      edges: Edge[];
+    }) => {
+      const fenceIds = new Set(
+        nodesToDelete
+          .filter((node) => isActionFenceId(node.id))
+          .map((node) => node.id),
+      );
+      const actions = nodesToDelete.filter((node) => {
+        if (isActionFenceId(node.id)) return false;
+        if (node.parentId && fenceIds.has(node.parentId)) return false;
+        const parsed = parseFlowNodeId(node.id);
+        return Boolean(parsed && parsed.nodeId !== TRIGGER_NODE_ID);
+      });
+      const nodeIds = new Set(nodesToDelete.map((node) => node.id));
+      const extraEdges = edgesToDelete.filter(
+        (edge) => !nodeIds.has(edge.source) && !nodeIds.has(edge.target),
+      );
+      const fenceCount = fenceIds.size;
+      const actionCount = actions.length;
+      const edgeCount = extraEdges.length;
+      const total = fenceCount + actionCount + edgeCount;
+      if (total === 0) return false;
+      if (actionCount === total) return confirmDeleteMany(actionCount, "action");
+      if (fenceCount === total) return confirmDeleteMany(fenceCount, "fence");
+      if (edgeCount === total) {
+        return confirmDeleteMany(edgeCount, "connection");
+      }
+      return confirmDelete({
+        subject: "item",
+        title: "Delete items",
+        description: `Are you sure you want to delete these ${total} items?`,
+      });
+    },
+    [],
   );
 
   const onConnect: OnConnect = useCallback(
@@ -1208,6 +1257,7 @@ function ActionsFlowCanvas({
           edgeTypes={ACTION_EDGE_TYPES}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
+          onBeforeDelete={onBeforeDelete}
           onEdgesDelete={onEdgesDelete}
           onConnect={onConnect}
           onConnectEnd={onConnectEnd}

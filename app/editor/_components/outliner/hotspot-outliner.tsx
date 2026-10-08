@@ -9,6 +9,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { useEffect, useMemo } from "react";
+import { confirmDelete } from "@/lib/editor/confirm";
 import { toast } from "@/lib/editor/toast";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { SceneModelRow } from "@/app/editor/_components/outliner/scene-model-row";
@@ -60,9 +61,14 @@ export function HotspotOutliner() {
   };
 
   const handleDelete = (id: number) => {
-    removeHotspot(id);
-    if (selectedId === id) setPropertiesDrawerOpen(false);
-    toast.success("Hotspot deleted");
+    void confirmDelete("hotspot").then((ok) => {
+      if (!ok) return;
+      removeHotspot(id);
+      if (useEditorStore.getState().selectedId === id) {
+        setPropertiesDrawerOpen(false);
+      }
+      toast.success("Hotspot deleted");
+    });
   };
 
   const heading =

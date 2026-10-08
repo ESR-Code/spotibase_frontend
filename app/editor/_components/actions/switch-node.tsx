@@ -7,6 +7,7 @@ import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-car
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
 import { VariableInsertButton } from "@/app/editor/_components/actions/variable-insert-button";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import { confirmDelete } from "@/lib/editor/confirm";
 import { getOwnedActionGraph } from "@/lib/editor/actions/action-owners";
 import type { ActionFlowNodeData } from "@/lib/editor/actions/flow-adapter";
 import {
@@ -267,7 +268,9 @@ function SwitchCaseRow({
             style={{ width: 22, height: 22, marginRight: 8 }}
             onClick={(e) => {
               e.stopPropagation();
-              onRemove();
+              void confirmDelete("case").then((ok) => {
+                if (ok) onRemove();
+              });
             }}
             onPointerDown={(e) => e.stopPropagation()}
           >

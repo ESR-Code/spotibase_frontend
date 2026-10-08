@@ -3,6 +3,7 @@
 import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { Frame, Trash2 } from "lucide-react";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import { confirmDelete } from "@/lib/editor/confirm";
 import { useActionFencesStore } from "@/lib/editor/state/action-fences-store";
 import {
   ACTION_FENCE_COLORS,
@@ -86,7 +87,10 @@ export function ActionFenceNode({
           style={{ width: 24, height: 24, color: "#ff8a95" }}
           onClick={(event) => {
             event.stopPropagation();
-            removeFence(data.scopeKey, id);
+            void confirmDelete("fence").then((ok) => {
+              if (!ok) return;
+              removeFence(data.scopeKey, id);
+            });
           }}
           onPointerDown={(event) => event.stopPropagation()}
         >

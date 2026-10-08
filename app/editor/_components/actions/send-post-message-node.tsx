@@ -13,6 +13,7 @@ import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-car
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
 import { VariableInsertButton } from "@/app/editor/_components/actions/variable-insert-button";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import { confirmDelete } from "@/lib/editor/confirm";
 import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import {
   isStartOwnerId,
@@ -554,7 +555,9 @@ export function SendPostMessageNode({
                           style={{ width: 24, height: 24 }}
                           onClick={(e) => {
                             e.stopPropagation();
-                            removeReceiveEvent(event.id);
+                            void confirmDelete("event").then((ok) => {
+                              if (ok) removeReceiveEvent(event.id);
+                            });
                           }}
                           onPointerDown={(e) => e.stopPropagation()}
                         >
@@ -619,15 +622,18 @@ export function SendPostMessageNode({
                                 style={{ width: 28, height: 28 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  const next = rows.filter(
-                                    (item) => item.id !== row.id,
-                                  );
-                                  commitEventFieldRows(
-                                    event.id,
-                                    next.length > 0
-                                      ? next
-                                      : [createEmptyFieldRow()],
-                                  );
+                                  void confirmDelete("field").then((ok) => {
+                                    if (!ok) return;
+                                    const next = rows.filter(
+                                      (item) => item.id !== row.id,
+                                    );
+                                    commitEventFieldRows(
+                                      event.id,
+                                      next.length > 0
+                                        ? next
+                                        : [createEmptyFieldRow()],
+                                    );
+                                  });
                                 }}
                                 onPointerDown={(e) => e.stopPropagation()}
                               >

@@ -106,6 +106,18 @@
   color: var(--editor-fg);
 }
 
+.editor-root .editor-btn-danger {
+  color: #ffb4ba;
+  border-color: rgba(230, 57, 70, 0.45);
+  background: rgba(230, 57, 70, 0.16);
+}
+
+.editor-root .editor-btn-danger:hover {
+  color: #fff;
+  border-color: rgba(230, 57, 70, 0.7);
+  background: rgba(230, 57, 70, 0.32);
+}
+
 .editor-root .editor-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -657,6 +669,168 @@
   border-radius: 14px;
   border: 1px solid var(--editor-line);
   overflow: hidden;
+}
+
+.editor-root .editor-confirm-dialog-root {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  animation: editor-confirm-fade 0.22s ease;
+}
+
+.editor-root .editor-confirm-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(230, 57, 70, 0.16), transparent 46%),
+    rgba(4, 8, 16, 0.68);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+}
+
+.editor-root .editor-confirm-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(400px, 100%);
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(230, 57, 70, 0.32);
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(230, 57, 70, 0.28), transparent 52%),
+    linear-gradient(180deg, rgba(28, 40, 68, 0.97), rgba(12, 20, 36, 0.98));
+  box-shadow:
+    0 32px 80px -28px rgba(0, 0, 0, 0.85),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 0 56px -18px rgba(230, 57, 70, 0.55);
+  animation: editor-confirm-in 0.34s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.editor-root .editor-confirm-dialog::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 18%;
+  right: 18%;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--editor-crimson-2), transparent);
+}
+
+.editor-root .editor-confirm-dialog-body {
+  padding: 28px 24px 8px;
+  text-align: center;
+}
+
+.editor-root .editor-confirm-dialog-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 16px;
+  border-radius: 18px;
+  color: #ffd0d4;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255, 120, 132, 0.35), rgba(230, 57, 70, 0.12) 70%);
+  border: 1px solid rgba(255, 138, 149, 0.45);
+  box-shadow:
+    0 0 0 7px rgba(230, 57, 70, 0.1),
+    0 14px 28px -16px rgba(230, 57, 70, 0.9);
+}
+
+.editor-root .editor-confirm-dialog-icon::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 138, 149, 0.55);
+  animation: editor-confirm-ring 0.85s ease-out;
+  pointer-events: none;
+}
+
+.editor-root .editor-confirm-dialog-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.editor-root .editor-confirm-dialog-title {
+  font-family: var(--font-editor-display), sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.editor-root .editor-confirm-dialog-copy {
+  margin: 8px auto 0;
+  max-width: 32ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--editor-muted);
+}
+
+.editor-root .editor-confirm-dialog-actions {
+  display: flex;
+  gap: 8px;
+  padding: 18px;
+}
+
+.editor-root .editor-confirm-dialog-actions .editor-btn {
+  justify-content: center;
+}
+
+.editor-root .editor-confirm-dialog-actions .editor-btn-danger {
+  color: #fff;
+  border-color: #8a1622;
+  background: linear-gradient(135deg, var(--editor-crimson) 0%, #b51e2c 100%);
+  box-shadow: 0 10px 22px -10px rgba(230, 57, 70, 0.85);
+}
+
+.editor-root .editor-confirm-dialog-actions .editor-btn-danger:hover {
+  color: #fff;
+  border-color: #8a1622;
+  background: linear-gradient(135deg, var(--editor-crimson-2) 0%, #c92635 100%);
+}
+
+@keyframes editor-confirm-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes editor-confirm-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes editor-confirm-ring {
+  from {
+    opacity: 0.7;
+    transform: scale(0.86);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.28);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editor-root .editor-confirm-dialog-root,
+  .editor-root .editor-confirm-dialog,
+  .editor-root .editor-confirm-dialog-icon::after {
+    animation: none;
+  }
 }
 
 .editor-root .editor-category-icon-picker-menu {

@@ -12,6 +12,7 @@ import { useMemo, useState } from "react";
 import { getBlockDefinition } from "@/app/editor/_components/blocks/block-registry";
 import { AddBlockMenu } from "@/app/editor/_components/drawers/add-block-menu";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import { confirmDelete } from "@/lib/editor/confirm";
 import { createBlock } from "@/lib/editor/blocks/create-block";
 import {
   listHttpFieldSources,
@@ -150,11 +151,17 @@ export function HotspotBlocksTab({
   };
 
   const handleDelete = (id: string) => {
-    setBlocks(blocks.filter((block) => block.id !== id));
-    setCollapsedIds((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
+    void confirmDelete("block").then((ok) => {
+      if (!ok) return;
+      const current =
+        useEditorStore.getState().hotspots.find((hotspot) => hotspot.id === selected.id)
+          ?.blocks ?? blocks;
+      setBlocks(current.filter((block) => block.id !== id));
+      setCollapsedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     });
   };
 

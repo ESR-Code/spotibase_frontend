@@ -8,6 +8,7 @@ import { useActionsEditor } from "@/app/editor/_components/actions/actions-edito
 import { VariableInsertButton } from "@/app/editor/_components/actions/variable-insert-button";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import { confirmDelete } from "@/lib/editor/confirm";
 import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import {
   findOwnedActionNode,
@@ -430,7 +431,9 @@ export function SubscribeNode({
                     style={{ width: 28, height: 28 }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      removeHeaderRow(row.id);
+                      void confirmDelete("header").then((ok) => {
+                        if (ok) removeHeaderRow(row.id);
+                      });
                     }}
                     onPointerDown={(e) => e.stopPropagation()}
                   >

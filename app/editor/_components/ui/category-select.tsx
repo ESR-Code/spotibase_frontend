@@ -10,6 +10,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { CategoryDialog } from "@/app/editor/_components/ui/category-dialog";
+import { confirmDelete } from "@/lib/editor/confirm";
 import { CategoryOption } from "@/app/editor/_components/ui/category-option";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import {
@@ -127,8 +128,11 @@ export function CategorySelect({
 
   const handleDelete = (category: LegendCategory) => {
     if (!onCategoriesChange) return;
-    onCategoriesChange(categories.filter((c) => c.id !== category.id));
-    if (value === category.id) onChange("");
+    void confirmDelete("category").then((ok) => {
+      if (!ok) return;
+      onCategoriesChange(categories.filter((c) => c.id !== category.id));
+      if (value === category.id) onChange("");
+    });
   };
 
   const handleSave = (category: LegendCategory) => {

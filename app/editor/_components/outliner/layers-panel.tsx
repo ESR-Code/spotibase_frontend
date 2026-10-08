@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
+import { confirmDelete } from "@/lib/editor/confirm";
 import { toast } from "@/lib/editor/toast";
 import { ColorSwatch } from "@/app/editor/_components/ui/color-swatch";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
@@ -481,9 +482,12 @@ function LayerAccordionItem({
           style={{ color: "var(--editor-crimson-2)" }}
           onClick={(event) => {
             event.stopPropagation();
-            useLayersStore.getState().removeLayer(layer.id);
-            persistLayers();
-            toast.success("Layer deleted");
+            void confirmDelete("layer").then((ok) => {
+              if (!ok) return;
+              useLayersStore.getState().removeLayer(layer.id);
+              persistLayers();
+              toast.success("Layer deleted");
+            });
           }}
         >
           <Trash2 className="h-3 w-3" />

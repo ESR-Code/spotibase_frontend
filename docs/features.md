@@ -7,6 +7,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 ### Editor shell
 
 - `/projects/[id]/editor` client app: header, mode toolbar (select / add / preview), outliner, viewport HUD, drawers, dialogs. Legacy `/editor` (and `/editor?project=<id>`) redirects here.
+- Editor deletes (hotspot, block, action, scene, layer, asset, and the other trash actions) ask “Are you sure you want to delete this …?” before they run. Same dialog for the Delete / Backspace key.
 - Keyboard: `V` select, `A` add, `P` preview, `Escape` / `Delete` for selection (ignored in text fields).
 - Loading overlay, engine error banner, scene-transition splash.
 - Model scenes with GLB clips: viewport clip transport (play / pause / scrub / reset) so authors can freeze a pose in Select/Add. Hidden in Preview; does not run the action graph.
@@ -42,7 +43,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 ### Hotspots
 
-- Place, select, drag, duplicate, delete. Types, colors, styles (dot / number / icon / image / hidden), shapes (circle / square / rounded / diamond / pin), pulse, wick, enable flag.
+- Place, select, drag, duplicate, delete (confirmation dialog). Types, colors, styles (dot / number / icon / image / hidden), shapes (circle / square / rounded / diamond / pin), pulse, wick, enable flag.
 - 2D/3D: click a marker to open the Hotspot Editor; drag repositions without opening it.
 - Per-hotspot custom camera pose. Category + legend name.
 - Content blocks: heading, text, link, image (upload or URL / token; optional per-slide caption; 2+ images become a Preview carousel), video (YouTube / Vimeo embed), action button (icon + label + optional italic description; Preview accent). Token fields can insert HTTP / Post Message / For Each paths.

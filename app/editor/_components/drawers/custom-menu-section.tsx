@@ -4,6 +4,7 @@ import type { CSSProperties, ReactNode } from "react";
 import * as Switch from "@radix-ui/react-switch";
 import { Home, Minus, Plus, Trash2 } from "lucide-react";
 import { CategoryIconPicker } from "@/app/editor/_components/ui/category-icon-picker";
+import { confirmDelete } from "@/lib/editor/confirm";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { createCustomMenuButton } from "@/lib/editor/actions/custom-menu-buttons";
@@ -52,7 +53,11 @@ export function CustomMenuSection() {
   };
 
   const removeButton = (id: string) => {
-    persist(buttons.filter((button) => button.id !== id));
+    void confirmDelete("button").then((ok) => {
+      if (!ok) return;
+      const current = useSettingsStore.getState().customMenuButtons;
+      persist(current.filter((button) => button.id !== id));
+    });
   };
 
   return (

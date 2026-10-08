@@ -2,6 +2,7 @@
 
 import { Copy, LayoutList, Settings2, Trash2, Workflow, X } from "lucide-react";
 import { useState } from "react";
+import { confirmDelete } from "@/lib/editor/confirm";
 import { toast } from "@/lib/editor/toast";
 import { HotspotActionsTab } from "@/app/editor/_components/actions/hotspot-actions-tab";
 import { HotspotBlocksTab } from "@/app/editor/_components/drawers/hotspot-blocks-tab";
@@ -144,11 +145,14 @@ export function HotspotPropertiesDrawer() {
           className="flex-1"
           style={{ color: "#ff8a95", borderColor: "rgba(230,57,70,0.4)" }}
           onClick={() => {
-            if (selectedId != null) {
-              removeHotspot(selectedId);
+            if (selectedId == null) return;
+            const id = selectedId;
+            void confirmDelete("hotspot").then((ok) => {
+              if (!ok) return;
+              removeHotspot(id);
               setOpen(false);
               toast.success("Hotspot deleted");
-            }
+            });
           }}
         >
           <Trash2 className="h-4 w-4" />

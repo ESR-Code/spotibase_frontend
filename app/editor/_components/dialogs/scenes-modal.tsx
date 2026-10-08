@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
+import { confirmDelete } from "@/lib/editor/confirm";
 import { EditorChip } from "@/app/editor/_components/ui/editor-chip";
 import { EditorDialog } from "@/app/editor/_components/ui/editor-dialog";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
@@ -507,7 +508,10 @@ function SceneListItem({
               disabled={!canDelete}
               variant="destructive"
               onSelect={() => {
-                if (canDelete) onDelete();
+                if (!canDelete) return;
+                void confirmDelete("scene").then((ok) => {
+                  if (ok) onDelete();
+                });
               }}
             >
               <Trash2 className="h-3.5 w-3.5" />

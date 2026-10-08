@@ -1,23 +1,24 @@
+import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
 type EditorButtonProps = React.ComponentProps<"button"> & {
-  variant?: "default" | "primary" | "ghost";
+  variant?: "default" | "primary" | "ghost" | "danger";
 };
 
-export function EditorButton({
-  className,
-  variant = "default",
-  ...props
-}: EditorButtonProps) {
-  return (
-    <button
-      className={cn(
-        "editor-btn",
-        variant === "primary" && "editor-btn-primary",
-        variant === "ghost" && "editor-btn-ghost",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+export const EditorButton = forwardRef<HTMLButtonElement, EditorButtonProps>(
+  function EditorButton({ className, variant = "default", ...props }, ref) {
+    return (
+      <button
+        ref={ref}
+        className={cn(
+          "editor-btn",
+          variant === "primary" && "editor-btn-primary",
+          variant === "ghost" && "editor-btn-ghost",
+          variant === "danger" && "editor-btn-danger",
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
+);

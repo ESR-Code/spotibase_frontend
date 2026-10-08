@@ -3,8 +3,8 @@
 import { AlertTriangle, Loader2, Pencil, Trash2, Upload, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AssetThumb } from "@/app/editor/_components/assets/asset-thumb";
-import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { EditorChip } from "@/app/editor/_components/ui/editor-chip";
+import { confirmDelete } from "@/lib/editor/confirm";
 import { EditorDialog } from "@/app/editor/_components/ui/editor-dialog";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
@@ -176,7 +176,6 @@ function AssetCard({ asset, usages }: { asset: EditorAsset; usages: AssetUsage[]
   const projectId = useAssetsStore((s) => s.projectId);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(asset.name);
-  const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const inUse = usages.length > 0;
 
@@ -200,7 +199,6 @@ function AssetCard({ asset, usages }: { asset: EditorAsset; usages: AssetUsage[]
     // Re-check against the live project: the card may be stale.
     const live = readProjectRefs().get(asset.id) ?? [];
     if (live.length > 0) {
-      setConfirming(false);
       toast.error(`${asset.name} is still in use`, {
         description: live.map((u) => `${u.sceneName}: ${u.where}`).slice(0, 4).join("\n"),
       });
@@ -259,27 +257,22 @@ function AssetCard({ asset, usages }: { asset: EditorAsset; usages: AssetUsage[]
           <Pencil className="h-3.5 w-3.5" />
         </IconButton>
         <span className="flex-1" />
-        {confirming ? (
-          <EditorButton
-            className="h-[26px] px-2 text-[11px]"
-            disabled={busy}
-            onClick={() => void remove()}
-            onBlur={() => setConfirming(false)}
-            autoFocus
-          >
-            {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-            Delete?
-          </EditorButton>
-        ) : (
-          <IconButton
-            title={inUse ? "In use — remove it from the project first" : "Delete asset"}
-            onClick={() => setConfirming(true)}
-            disabled={inUse}
-            style={{ width: 26, height: 26, color: "#ff8a95" }}
-          >
+        <IconButton
+          title={inUse ? "In use — remove it from the project first" : "Delete asset"}
+          onClick={() => {
+            void confirmDelete("asset").then((ok) => {
+              if (ok) void remove();
+            });
+          }}
+          disabled={inUse || busy}
+          style={{ width: 26, height: 26, color: "#ff8a95" }}
+        >
+          {busy ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
             <Trash2 className="h-3.5 w-3.5" />
-          </IconButton>
-        )}
+          )}
+        </IconButton>
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import { ActionNodeCard } from "@/app/editor/_components/actions/action-node-car
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import { confirmDelete } from "@/lib/editor/confirm";
 import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import { VariableInsertButton } from "@/app/editor/_components/actions/variable-insert-button";
 import {
@@ -459,7 +460,9 @@ export function HttpRequestNode({
                     style={{ width: 28, height: 28 }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      removeHeaderRow(row.id);
+                      void confirmDelete("header").then((ok) => {
+                        if (ok) removeHeaderRow(row.id);
+                      });
                     }}
                     onPointerDown={(e) => e.stopPropagation()}
                   >
