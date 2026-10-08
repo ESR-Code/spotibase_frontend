@@ -1,21 +1,28 @@
 "use client";
 
-import { AlertTriangle, Loader2, Pencil, Trash2, Upload, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Box,
+  FolderOpen,
+  ImageIcon,
+  LayoutGrid,
+  Loader2,
+  Pencil,
+  Trash2,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { AssetThumb } from "@/app/editor/_components/assets/asset-thumb";
 import { EditorChip } from "@/app/editor/_components/ui/editor-chip";
 import { confirmDelete } from "@/lib/editor/confirm";
 import { EditorDialog } from "@/app/editor/_components/ui/editor-dialog";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
-import { TypePill } from "@/app/editor/_components/ui/type-pill";
 import {
-  ASSET_LIMITS,
-  assetContentType,
   collectAssetRefs,
   deleteProjectAsset,
   formatAssetSize,
   renameProjectAsset,
-  uploadAsset,
   useAssetsStore,
   type AssetUsage,
   type EditorAsset,
@@ -28,20 +35,11 @@ import { toast } from "@/lib/editor/toast";
 
 type KindFilter = "all" | EditorAssetKind;
 
-const KIND_FILTERS: { id: KindFilter; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "image", label: "Images" },
-  { id: "model", label: "Models" },
+const KIND_FILTERS: { id: KindFilter; label: string; Icon: LucideIcon }[] = [
+  { id: "all", label: "All", Icon: LayoutGrid },
+  { id: "image", label: "Images", Icon: ImageIcon },
+  { id: "model", label: "Models", Icon: Box },
 ];
-
-const LIBRARY_ACCEPT = [...ASSET_LIMITS.image.types, ".glb"].join(",");
-
-function kindForFile(file: File): EditorAssetKind | null {
-  const type = assetContentType(file);
-  if (ASSET_LIMITS.model.types.includes(type)) return "model";
-  if (ASSET_LIMITS.image.types.includes(type)) return "image";
-  return null;
-}
 
 function readProjectRefs() {
   return collectAssetRefs({
@@ -64,7 +62,6 @@ function AssetLibrary({ onClose }: { onClose: () => void }) {
   const assets = useAssetsStore((s) => s.assets);
   const [filter, setFilter] = useState<KindFilter>("all");
   const [query, setQuery] = useState("");
-  const [uploading, setUploading] = useState(0);
   // Re-read references whenever the library changes (upload, delete).
   const refs = useMemo(() => {
     void assets;
@@ -84,29 +81,6 @@ function AssetLibrary({ onClose }: { onClose: () => void }) {
     [refs, assets],
   );
 
-  const handleFiles = async (files: FileList | null) => {
-    if (!files) return;
-    const sceneId = useScenesStore.getState().activeSceneId;
-    for (const file of Array.from(files)) {
-      const kind = kindForFile(file);
-      if (!kind) {
-        toast.error(`${file.name}: unsupported file type`);
-        continue;
-      }
-      setUploading((n) => n + 1);
-      try {
-        await uploadAsset(file, { kind, sceneId });
-        toast.success(`${file.name} added to the library`);
-      } catch (error) {
-        toast.error(
-          `${file.name}: ${error instanceof Error ? error.message : "upload failed"}`,
-        );
-      } finally {
-        setUploading((n) => n - 1);
-      }
-    }
-  };
-
   return (
     <EditorDialog open onClose={onClose} presentation="modal" backdrop size="large">
       <EditorDialog.Header
@@ -119,11 +93,17 @@ function AssetLibrary({ onClose }: { onClose: () => void }) {
       </EditorDialog.Header>
       <EditorDialog.Body className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="editor-pill-row">
-            {KIND_FILTERS.map((f) => (
-              <TypePill key={f.id} active={filter === f.id} onClick={() => setFilter(f.id)}>
-                {f.label}
-              </TypePill>
+          <div className="editor-segmented" role="group" aria-label="Filter assets">
+            {KIND_FILTERS.map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={filter === id}
+                onClick={() => setFilter(id)}
+              >
+                <Icon />
+                {label}
+              </button>
             ))}
           </div>
           <input
@@ -132,33 +112,23 @@ function AssetLibrary({ onClose }: { onClose: () => void }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          <label className="editor-btn editor-btn-primary mb-0 cursor-pointer">
-            {uploading > 0 ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Upload className="h-4 w-4" />
-            )}
-            Upload
-            <input
-              type="file"
-              multiple
-              accept={LIBRARY_ACCEPT}
-              className="hidden"
-              onChange={(e) => {
-                void handleFiles(e.target.files);
-                e.target.value = "";
-              }}
-            />
-          </label>
         </div>
 
         {missing.length > 0 ? <MissingAssets entries={missing} /> : null}
 
         {list.length === 0 ? (
-          <div className="py-10 text-center text-[12px]" style={{ color: "var(--editor-muted)" }}>
+          <div
+            className="flex flex-col items-center gap-3 py-10 text-center text-[12px]"
+            style={{ color: "var(--editor-muted)" }}
+          >
+            <FolderOpen
+              className="h-11 w-11 opacity-30"
+              strokeWidth={1.25}
+              aria-hidden
+            />
             {query || filter !== "all"
               ? "No matching assets."
-              : "No assets yet. Upload images or GLB models, or add them from any image field."}
+              : "No assets yet. Import a subject, or add files from any image field."}
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">

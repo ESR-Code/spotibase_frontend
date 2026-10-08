@@ -36,7 +36,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 ### Editor persistence and assets
 
 - `/projects/[id]/editor` loads the project's scenes, project-wide editor data, and asset library from Postgres; a project with no scenes starts from the seed scene. Header Save button (Saved / Save / Saving / Uploading / Conflict), Ctrl/Cmd+S, unsaved-changes warning on unload. Stale saves are rejected (revision conflict → reload).
-- Project asset library (project menu → Assets): upload images / GLB, search, filter by kind, rename, delete (blocked while referenced, with usage list), missing-asset report. Image fields (marker image, header image, image blocks, logo, scene thumbnail) upload into the library or pick from it; geo image overlays and 2D/3D subjects are library assets too. Identical files are deduped. Opening the editor and a successful save sweep unreferenced ready assets (`POST /storage/projects/:id/assets/gc`). Pending uploads younger than 15 minutes stay. Referenced files stay.
+- Project asset library (project menu → Assets): search, filter by kind, rename, delete (blocked while referenced, with usage list), missing-asset report. Image fields (marker image, header image, image blocks, logo, scene thumbnail) upload into the library or pick from it; geo image overlays and 2D/3D subjects are library assets too. Identical files are deduped. Opening the editor and a successful save sweep unreferenced ready assets (`POST /storage/projects/:id/assets/gc`). Pending uploads younger than 15 minutes stay. Referenced files stay.
 - `/` sends signed-in users to `/projects` and everyone else to `/auth/sign-in` (client session check). `/orgs` redirects to `/projects`.
 
 
