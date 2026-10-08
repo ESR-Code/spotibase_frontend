@@ -124,10 +124,29 @@ function assetIdFromKey(project: ProjectAccess, key: unknown) {
 	return key.slice(prefix.length).match(ASSET_FILE_RE)?.[1] ?? null;
 }
 
+/** Pending rows younger than this may still be inside the 5-minute upload window. */
+const PENDING_GRACE_MS = 15 * 60 * 1000;
+const GC_PAGE_SIZE = 500;
+const ASSET_REF_RE = new RegExp(`asset:(${UUID})`, "gi");
+const RAW_ID_FIELDS = new Set(["subjectAssetId"]);
+
+type GcAssetRow = {
+	id: string;
+	status: "pending" | "ready";
+	r2_key: string;
+	created_at: string;
+};
+
+type GcSceneRow = {
+	data: unknown;
+	thumbnail_asset_id: string | null;
+};
+
 /**
  * `/storage/projects/:id/assets` sub-routes:
  * - `POST /upload-url` reserve a pending row (or reuse one with the same sha256)
  * - `PUT /upload?key=` local-dev direct upload into the simulated bucket
+ * - `POST /gc` delete unreferenced ready assets; pending rows wait out the upload window
  * - `POST /:assetId/commit` validate the object and mark the row ready
  * - `DELETE /:assetId` drop the row and the object
  * - `DELETE ""` remove every asset object (project delete; rows cascade)
@@ -158,6 +177,10 @@ export async function handleAssets(
 		}
 		await env.ASSETS.put(key, body, { httpMetadata: { contentType: row.content_type } });
 		return json(200, { ok: true });
+	}
+
+	if (path === "/gc" && request.method === "POST") {
+		return collectUnreferencedAssets(project, token);
 	}
 
 	if (path === "" && request.method === "DELETE") {
@@ -266,6 +289,115 @@ async function createUpload(request: Request, project: ProjectAccess, token: str
 	const asset = rows[0];
 	if (!asset) return json(403, { error: "Could not create the asset." });
 	return json(200, { asset, upload: await uploadTicket(project, r2Key, contentType) });
+}
+
+function addAssetRefs(value: string, into: Set<string>) {
+	ASSET_REF_RE.lastIndex = 0;
+	let match: RegExpExecArray | null;
+	while ((match = ASSET_REF_RE.exec(value))) {
+		const id = match[1];
+		if (id) into.add(id.toLowerCase());
+	}
+}
+
+/** Ids the saved project points at. Client input is not consulted. */
+function collectReferencedIds(value: unknown, into: Set<string>) {
+	if (typeof value === "string") {
+		addAssetRefs(value, into);
+		return;
+	}
+	if (Array.isArray(value)) {
+		for (const item of value) collectReferencedIds(item, into);
+		return;
+	}
+	if (!value || typeof value !== "object") return;
+	for (const [key, child] of Object.entries(value)) {
+		if (RAW_ID_FIELDS.has(key) && typeof child === "string" && UUID_RE.test(child)) {
+			into.add(child.toLowerCase());
+		}
+		collectReferencedIds(child, into);
+	}
+}
+
+async function listPages<T>(token: string, path: string): Promise<T[] | null> {
+	const rows: T[] = [];
+	for (let offset = 0; ; offset += GC_PAGE_SIZE) {
+		const join = path.includes("?") ? "&" : "?";
+		const response = await dataApi(
+			token,
+			`${path}${join}limit=${GC_PAGE_SIZE}&offset=${offset}`,
+		);
+		if (!response.ok) return null;
+		const page = (await response.json()) as T[];
+		rows.push(...page);
+		if (page.length < GC_PAGE_SIZE) return rows;
+	}
+}
+
+function isCollectable(row: GcAssetRow, now: number) {
+	if (row.status !== "pending") return true;
+	const created = Date.parse(row.created_at);
+	if (!Number.isFinite(created)) return false;
+	return now - created >= PENDING_GRACE_MS;
+}
+
+/**
+ * Deletes asset rows the saved project does not reference, then their objects.
+ * A failed row delete leaves the object in place for the next sweep. A failed
+ * object delete is logged; the row is already gone.
+ */
+async function collectUnreferencedAssets(project: ProjectAccess, token: string) {
+	const sceneQuery = new URLSearchParams({
+		project_id: `eq.${project.id}`,
+		select: "data,thumbnail_asset_id",
+		order: "id.asc",
+	});
+	const projectQuery = new URLSearchParams({
+		id: `eq.${project.id}`,
+		select: "editor_data",
+	});
+	const assetQuery = new URLSearchParams({
+		project_id: `eq.${project.id}`,
+		select: "id,status,r2_key,created_at",
+		order: "id.asc",
+	});
+
+	const [scenes, projects, assets] = await Promise.all([
+		listPages<GcSceneRow>(token, `/scenes?${sceneQuery}`),
+		listPages<{ editor_data: unknown }>(token, `/projects?${projectQuery}`),
+		listPages<GcAssetRow>(token, `/assets?${assetQuery}`),
+	]);
+	if (!scenes || !projects || !assets) {
+		return json(403, { error: "Could not read the project." });
+	}
+
+	const keep = new Set<string>();
+	for (const scene of scenes) {
+		collectReferencedIds(scene.data, keep);
+		if (scene.thumbnail_asset_id && UUID_RE.test(scene.thumbnail_asset_id)) {
+			keep.add(scene.thumbnail_asset_id.toLowerCase());
+		}
+	}
+	collectReferencedIds(projects[0]?.editor_data, keep);
+
+	const now = Date.now();
+	let deleted = 0;
+	for (const row of assets) {
+		if (keep.has(row.id.toLowerCase())) continue;
+		if (!isCollectable(row, now)) continue;
+		const response = await dataApi(
+			token,
+			`/assets?id=eq.${row.id}&project_id=eq.${project.id}`,
+			{ method: "DELETE" },
+		);
+		if (!response.ok) {
+			console.error("asset gc row delete failed", row.id, response.status);
+			continue;
+		}
+		await deleteObject(row.r2_key);
+		deleted += 1;
+	}
+	return json(200, { deleted });
 }
 
 async function commitUpload(request: Request, row: AssetRow, token: string) {

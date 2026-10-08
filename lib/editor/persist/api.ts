@@ -1,5 +1,5 @@
 import { DataApiError, dataJson } from "@/lib/api/data";
-import { listProjectAssets } from "@/lib/editor/assets/api";
+import { collectOrphanAssets, listProjectAssets } from "@/lib/editor/assets/api";
 import type { EditorAsset } from "@/lib/editor/assets/types";
 import {
   sceneRowSchema,
@@ -40,13 +40,15 @@ export async function loadEditorProject(projectId: string): Promise<LoadedEditor
     select: "id,name,slug,sort_order,type,thumbnail_asset_id,data",
     order: "sort_order.asc",
   });
-  const [projects, rawScenes, assets] = await Promise.all([
+  const [projects, rawScenes] = await Promise.all([
     dataJson<EditorProjectRecord[]>(`projects?${projectQuery}`),
     dataJson<unknown[]>(`scenes?${sceneQuery}`),
-    listProjectAssets(projectId),
   ]);
   const project = projects[0];
   if (!project) return null;
+  // Sweep before the library query so an abandoned upload is not shown.
+  await collectOrphanAssets(projectId);
+  const assets = await listProjectAssets(projectId);
   const sceneRows = rawScenes.map((row) => sceneRowSchema.parse(row));
   return { project, sceneRows, assets };
 }

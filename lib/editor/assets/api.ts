@@ -70,6 +70,18 @@ export async function deleteProjectAsset(projectId: string, assetId: string) {
   );
 }
 
+/** Drops ready assets the saved project does not reference. Failure is ignored. */
+export async function collectOrphanAssets(projectId: string): Promise<void> {
+  try {
+    await storageJson<{ deleted: number }>(
+      `projects/${encodeURIComponent(projectId)}/assets/gc`,
+      { method: "POST" },
+    );
+  } catch (error) {
+    console.error("Asset sweep failed", error);
+  }
+}
+
 type UploadUrlResponse =
   | { asset: AssetRow; existing: true }
   | { asset: AssetRow; upload: UploadTicket };

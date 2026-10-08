@@ -35,7 +35,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 ### Editor persistence and assets
 
 - `/projects/[id]/editor` loads the project's scenes, project-wide editor data, and asset library from Postgres; a project with no scenes starts from the seed scene. Header Save button (Saved / Save / Saving / Uploading / Conflict), Ctrl/Cmd+S, unsaved-changes warning on unload. Stale saves are rejected (revision conflict → reload).
-- Project asset library (project menu → Assets): upload images / GLB, search, filter by kind, rename, delete (blocked while referenced, with usage list), missing-asset report. Image fields (marker image, header image, image blocks, logo, scene thumbnail) upload into the library or pick from it; geo image overlays and 2D/3D subjects are library assets too. Identical files are deduped.
+- Project asset library (project menu → Assets): upload images / GLB, search, filter by kind, rename, delete (blocked while referenced, with usage list), missing-asset report. Image fields (marker image, header image, image blocks, logo, scene thumbnail) upload into the library or pick from it; geo image overlays and 2D/3D subjects are library assets too. Identical files are deduped. Opening the editor and a successful save sweep unreferenced ready assets (`POST /storage/projects/:id/assets/gc`). Pending uploads younger than 15 minutes stay. Referenced files stay.
 - `/` sends signed-in users to `/projects` and everyone else to `/auth/sign-in` (client session check). `/orgs` redirects to `/projects`.
 
 
@@ -95,7 +95,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 ## Partial
 
-- **Editor save is manual.** No autosave, no version history (`project_versions` planned), no merge on conflict. Unreferenced assets are not garbage-collected.
+- **Editor save is manual.** No autosave, no version history (`project_versions` planned), no merge on conflict.
 - **Hotspot JSON export** (`lib/editor/io/export-hotspots.ts`) exists but is not wired in the UI. It exports the current scene’s hotspots only, not the full project.
 - **Home** `/` gates to auth or `/projects`. Product editor is `/projects/[id]/editor`.
 - **App metadata / README** still say “Create Next App”.
@@ -110,7 +110,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 These are implied by gaps or comments, not a committed roadmap.
 
-- `project_versions` snapshots, autosave, and asset garbage collection.
+- `project_versions` snapshots and autosave.
 - Full project import / export file format.
 - Additional overlay kinds beyond image + shape.
 - Additional hotspot block types beyond heading / text / link / image / video.

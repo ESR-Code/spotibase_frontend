@@ -100,6 +100,7 @@ Worker routes (`worker/src/storage.ts`, `worker/src/assets.ts`, shared helpers i
 | `POST /storage/projects/:id/assets/upload-url` | Validate kind / type / size, reserve a `pending` asset row (or return the existing one with the same `sha256`), mint the upload URL |
 | `PUT /storage/projects/:id/assets/upload?key=` | Local dev only: write into the simulated bucket |
 | `POST /storage/projects/:id/assets/:assetId/commit` | `head` the object, mark the row `ready` |
+| `POST /storage/projects/:id/assets/gc` | Delete unreferenced ready assets and their objects; pending uploads wait 15 minutes |
 | `DELETE /storage/projects/:id/assets/:assetId` | Delete the row and the object |
 | `DELETE /storage/projects/:id/assets` | Delete every asset object (project delete; rows cascade) |
 | `GET /files/<key>` | Stream from R2 after checking membership; `private, immutable` cache |
@@ -112,11 +113,11 @@ Auth UI: `/auth/sign-in`, `/auth/forgot-password`, `/auth/reset-password`, and a
 
 ```
 EditorPageClient (ssr:false) → EditorProjectLoader
-  loadEditorProject: projects(editor_data, editor_revision) + scenes + assets(ready)
+  loadEditorProject: projects(editor_data, editor_revision) + scenes, then assets/gc, then assets(ready)
   hydrateProject → scenes / live stores / general settings / assets store
   bindPersistedProject → dirty baseline
   EditorApp
-Save (header button, Ctrl/Cmd+S) → serializeProject → POST /gateway/data/rpc/save_editor_project
+Save (header button, Ctrl/Cmd+S) → serializeProject → POST /gateway/data/rpc/save_editor_project → assets/gc
 ```
 
 - `lib/editor/persist/`: `schema.ts` (format version + Zod), `serialize.ts`, `hydrate.ts`, `api.ts`, `persist-store.ts` (dirty / save / conflict).
