@@ -982,9 +982,11 @@
 
 .editor-root .editor-tool-btn {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 6px;
   padding: 7px 12px;
+  white-space: nowrap;
   border-radius: 7px;
   font-size: 12px;
   font-weight: 600;
