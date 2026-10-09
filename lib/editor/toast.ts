@@ -2,8 +2,15 @@ import { create } from "zustand";
 
 export type ToastVariant = "success" | "error" | "info";
 
+export type ToastAction = {
+  label: string;
+  onClick: () => void;
+};
+
 export type ToastOptions = {
   description?: string;
+  /** Inline button, e.g. "Undo". The toast dismisses after it runs. */
+  action?: ToastAction;
   /** Milliseconds. `0` keeps the toast until dismissed. */
   duration?: number;
 };
@@ -13,6 +20,7 @@ export type EditorToast = {
   variant: ToastVariant;
   title: string;
   description?: string;
+  action?: ToastAction;
   duration: number;
   leaving: boolean;
 };
@@ -60,6 +68,7 @@ export const useToastStore = create<ToastState>((set, get) => ({
       variant: input.variant,
       title: input.title,
       description: input.description,
+      action: input.action,
       duration: input.duration,
       leaving: false,
     };
@@ -109,6 +118,7 @@ function show(
     variant,
     title,
     description: options?.description,
+    action: options?.action,
     duration: defaultDuration(variant, options?.duration),
   });
 }

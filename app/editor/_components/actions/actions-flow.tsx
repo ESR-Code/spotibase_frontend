@@ -19,15 +19,21 @@ import {
   type OnNodesChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Plus } from "lucide-react";
+import { Plus, Redo2, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { confirmDelete, confirmDeleteMany } from "@/lib/editor/confirm";
+import {
+  history,
+  useCanRedo,
+  useCanUndo,
+} from "@/lib/editor/history/history-store";
+import { recordSnapshotChange } from "@/lib/editor/history/snapshot";
 import { toast } from "@/lib/editor/toast";
 import {
   attachNodesToFences,
   fenceNodeStyle,
   fencesVisibleOnCanvas,
   isFenceNode,
+  mergeFenceSnapshot,
   nodeAbsolutePosition,
   nodeCenter,
   nodesByIdMap,
@@ -41,6 +47,11 @@ import {
   ACTION_UI_MENU_ITEMS,
 } from "@/app/editor/_components/actions/action-node-registry";
 import { SpawnHotspotTemplateDrawer } from "@/app/editor/_components/actions/spawn-hotspot-template-drawer";
+import {
+  shortcutLabel,
+  useActionsShortcuts,
+} from "@/app/editor/_components/actions/use-actions-shortcuts";
+import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { ActionsCanvasSearch } from "@/app/editor/_components/actions/actions-canvas-search";
 import {
   ActionsContextMenu,
@@ -109,6 +120,7 @@ import type {
 import {
   actionFencesScopeKey,
   isActionFenceId,
+  type ActionFence,
 } from "@/lib/editor/types/action-fence";
 import { TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
@@ -212,6 +224,11 @@ function triggerHasDefaultOutput(entry: ActionFlowEntry): boolean {
   if (entry.triggerKind === "menuButton" && entry.toggleEnabled) return false;
   return true;
 }
+
+type CanvasSnapshot = {
+  graphs: Array<[number, HotspotActionGraph]>;
+  fences: ActionFence[];
+};
 
 type AutoConnect = {
   pendingConnect: ActionsPendingConnect;
@@ -631,6 +648,76 @@ function ActionsFlowCanvas({
     [readGraph, writeGraph],
   );
 
+  //#region: Undo / redo
+  // Graph edits are recorded as before/after snapshots of the touched owners'
+  // graphs plus this canvas's fences. Scope = the fence scope key.
+  const captureCanvas = useCallback(
+    (ownerIds: number[]): CanvasSnapshot => ({
+      graphs: [...new Set(ownerIds)].flatMap((ownerId) => {
+        const graph = getOwnedActionGraph(ownerId);
+        return graph
+          ? [[ownerId, structuredClone(graph)] as [number, HotspotActionGraph]]
+          : [];
+      }),
+      fences: structuredClone(useActionFencesStore.getState().getFences(scopeKey)),
+    }),
+    [scopeKey],
+  );
+
+  const restoreCanvas = useCallback(
+    (target: CanvasSnapshot, other: CanvasSnapshot) => {
+      const fenceStore = useActionFencesStore.getState();
+      fenceStore.setFences(
+        scopeKey,
+        mergeFenceSnapshot(
+          fenceStore.getFences(scopeKey),
+          target.fences,
+          other.fences,
+        ),
+      );
+      for (const [ownerId, graph] of target.graphs) {
+        writeGraph(ownerId, structuredClone(graph));
+      }
+    },
+    [scopeKey, writeGraph],
+  );
+
+  const recordCanvasChange = useCallback(
+    (label: string, before: CanvasSnapshot, undoToast?: string) => {
+      recordSnapshotChange({
+        scope: scopeKey,
+        label,
+        before,
+        after: captureCanvas(before.graphs.map(([ownerId]) => ownerId)),
+        restore: restoreCanvas,
+        toast: undoToast,
+      });
+    },
+    [captureCanvas, restoreCanvas, scopeKey],
+  );
+
+  const runCanvasChange = useCallback(
+    (
+      label: string,
+      ownerIds: number[],
+      apply: () => void,
+      undoToast?: string,
+    ) => {
+      const before = captureCanvas(ownerIds);
+      apply();
+      recordCanvasChange(label, before, undoToast);
+    },
+    [captureCanvas, recordCanvasChange],
+  );
+
+  // Spawn-click lane history writes through this instance's props; drop it on close.
+  const isolatedScope = isolatedLane?.fenceScopeKey;
+  useEffect(() => {
+    if (!isolatedScope) return;
+    return () => history.clear(isolatedScope);
+  }, [isolatedScope]);
+  //#endregion
+
   /** Lane whose trigger row is closest to a flow-space point. */
   const pickLaneEntry = useCallback(
     (flowPos: { x: number; y: number }): ActionFlowEntry => {
@@ -840,16 +927,28 @@ function ActionsFlowCanvas({
       updateGraph,
       openAddMenu,
       deleteNode: (ownerId, nodeId) => {
-        void confirmDelete("action").then((ok) => {
-          if (!ok) return;
-          updateGraph(ownerId, (graph) => removeNode(graph, nodeId));
-        });
+        runCanvasChange(
+          "Delete action",
+          [ownerId],
+          () => updateGraph(ownerId, (graph) => removeNode(graph, nodeId)),
+          "Action deleted",
+        );
       },
       deleteEdge: (ownerId, edgeId) => {
-        void confirmDelete("connection").then((ok) => {
-          if (!ok) return;
-          updateGraph(ownerId, (graph) => removeEdge(graph, edgeId));
-        });
+        runCanvasChange(
+          "Delete connection",
+          [ownerId],
+          () => updateGraph(ownerId, (graph) => removeEdge(graph, edgeId)),
+          "Connection deleted",
+        );
+      },
+      deleteFence: (fenceId) => {
+        runCanvasChange(
+          "Delete fence",
+          [],
+          () => removeFence(scopeKey, fenceId),
+          "Fence deleted",
+        );
       },
       updateNodeData: (ownerId, nodeId, patch) => {
         updateGraph(ownerId, (graph) => updateNodeData(graph, nodeId, patch));
@@ -858,20 +957,22 @@ function ActionsFlowCanvas({
         const allowed =
           allowedByOwnerId.get(ownerId) ?? HOTSPOT_GRAPH_ALLOWED_NODE_TYPES;
         if (!allowed.includes(type)) return;
-        updateGraph(ownerId, (graph) => {
-          const { graph: withNode, node } = addNode(graph, type, position);
-          if (!pendingConnect) return withNode;
-          if (pendingConnect.handleType === "source") {
-            return connect(
-              withNode,
-              pendingConnect.nodeId,
-              node.id,
-              pendingConnect.handleId,
-            );
-          }
-          if (pendingConnect.nodeId === TRIGGER_NODE_ID) return withNode;
-          return connect(withNode, node.id, pendingConnect.nodeId, null);
-        });
+        runCanvasChange("Add action", [ownerId], () =>
+          updateGraph(ownerId, (graph) => {
+            const { graph: withNode, node } = addNode(graph, type, position);
+            if (!pendingConnect) return withNode;
+            if (pendingConnect.handleType === "source") {
+              return connect(
+                withNode,
+                pendingConnect.nodeId,
+                node.id,
+                pendingConnect.handleId,
+              );
+            }
+            if (pendingConnect.nodeId === TRIGGER_NODE_ID) return withNode;
+            return connect(withNode, node.id, pendingConnect.nodeId, null);
+          }),
+        );
       },
       clipboard,
       copyNode: (ownerId, nodeId) => {
@@ -892,7 +993,9 @@ function ActionsFlowCanvas({
         if (!graph) return false;
         const position =
           target?.position ?? pastePositionNear(graph, target?.nearNodeId);
-        writeGraph(ownerId, insertClonedNode(graph, clipboard, position));
+        runCanvasChange("Paste action", [ownerId], () =>
+          writeGraph(ownerId, insertClonedNode(graph, clipboard, position)),
+        );
         return true;
       },
     }),
@@ -902,10 +1005,102 @@ function ActionsFlowCanvas({
       onClipboardChange,
       openAddMenu,
       readGraph,
+      removeFence,
+      runCanvasChange,
+      scopeKey,
       updateGraph,
       writeGraph,
     ],
   );
+
+  //#region: Undo / redo controls and shortcuts
+  const canUndo = useCanUndo(scopeKey);
+  const canRedo = useCanRedo(scopeKey);
+
+  const undo = useCallback(() => {
+    const entry = history.undo(scopeKey);
+    if (entry) toast.message(`Undid: ${entry.label}`, { duration: 1600 });
+  }, [scopeKey]);
+
+  const redo = useCallback(() => {
+    const entry = history.redo(scopeKey);
+    if (entry) toast.message(`Redid: ${entry.label}`, { duration: 1600 });
+  }, [scopeKey]);
+
+  /** Selected action nodes (no triggers / fences), grouped by lane owner. */
+  const selectedActions = useCallback(() => {
+    const picked: Array<{ ownerId: number; nodeId: string }> = [];
+    for (const node of nodesRef.current) {
+      if (!node.selected || isFenceNode(node)) continue;
+      const parsed = parseFlowNodeId(node.id);
+      if (!parsed || parsed.nodeId === TRIGGER_NODE_ID) continue;
+      picked.push({ ownerId: parsed.hotspotId, nodeId: parsed.nodeId });
+    }
+    return picked;
+  }, []);
+
+  const copySelected = useCallback((): boolean => {
+    const [first] = selectedActions();
+    if (!first) return false;
+    api.copyNode(first.ownerId, first.nodeId);
+    toast.message("Action copied", { duration: 1400 });
+    return true;
+  }, [api, selectedActions]);
+
+  const pasteClipboard = useCallback((): boolean => {
+    if (!api.clipboard) return false;
+    const selected = nodesRef.current.find(
+      (node) => node.selected && !isFenceNode(node),
+    );
+    const parsed = selected ? parseFlowNodeId(selected.id) : null;
+    if (parsed) {
+      return api.pasteNode(parsed.hotspotId, { nearNodeId: parsed.nodeId });
+    }
+    // Nothing selected: drop it in the lane at the centre of the view.
+    const root = flowRootRef.current?.getBoundingClientRect();
+    if (!root || entries.length === 0) return false;
+    const flowPos = screenToFlowPosition({
+      x: root.left + root.width / 2,
+      y: root.top + root.height / 2,
+    });
+    const entry = pickLaneEntry(flowPos);
+    return api.pasteNode(entry.ownerId, {
+      position: toGraphPosition(flowPos.x, flowPos.y, entry.laneIndex),
+    });
+  }, [api, entries.length, pickLaneEntry, screenToFlowPosition]);
+
+  const duplicateSelected = useCallback((): boolean => {
+    const selected = selectedActions();
+    if (selected.length === 0) return false;
+    const ownerIds = [...new Set(selected.map((item) => item.ownerId))];
+    runCanvasChange("Duplicate", ownerIds, () => {
+      for (const ownerId of ownerIds) {
+        let graph = getOwnedActionGraph(ownerId);
+        if (!graph) continue;
+        for (const item of selected) {
+          if (item.ownerId !== ownerId) continue;
+          const source = graph.nodes.find((node) => node.id === item.nodeId);
+          if (!source) continue;
+          graph = insertClonedNode(
+            graph,
+            source,
+            pastePositionNear(graph, source.id),
+          );
+        }
+        writeGraph(ownerId, graph);
+      }
+    });
+    return true;
+  }, [runCanvasChange, selectedActions, writeGraph]);
+
+  useActionsShortcuts({
+    undo,
+    redo,
+    copy: copySelected,
+    paste: pasteClipboard,
+    duplicate: duplicateSelected,
+  });
+  //#endregion
 
   const persistActionPosition = useCallback(
     (node: ActionsCanvasNode, byId: Map<string, Node>) => {
@@ -1071,6 +1266,12 @@ function ActionsFlowCanvas({
     [updateGraph],
   );
 
+  // Deleting is immediate: snapshot before, record once ReactFlow finishes.
+  const pendingDeleteRef = useRef<{
+    before: CanvasSnapshot;
+    message: string;
+  } | null>(null);
+
   const onBeforeDelete = useCallback(
     async ({
       nodes: nodesToDelete,
@@ -1099,19 +1300,37 @@ function ActionsFlowCanvas({
       const edgeCount = extraEdges.length;
       const total = fenceCount + actionCount + edgeCount;
       if (total === 0) return false;
-      if (actionCount === total) return confirmDeleteMany(actionCount, "action");
-      if (fenceCount === total) return confirmDeleteMany(fenceCount, "fence");
-      if (edgeCount === total) {
-        return confirmDeleteMany(edgeCount, "connection");
-      }
-      return confirmDelete({
-        subject: "item",
-        title: "Delete items",
-        description: `Are you sure you want to delete these ${total} items?`,
+
+      const ownerIds = [...nodesToDelete, ...edgesToDelete].flatMap((item) => {
+        const parsed = parseFlowNodeId(item.id);
+        return parsed ? [parsed.hotspotId] : [];
       });
+      const noun =
+        actionCount === total
+          ? "Action"
+          : fenceCount === total
+            ? "Fence"
+            : edgeCount === total
+              ? "Connection"
+              : null;
+      pendingDeleteRef.current = {
+        before: captureCanvas(ownerIds),
+        message:
+          total === 1 && noun
+            ? `${noun} deleted`
+            : `${total} ${noun ? `${noun.toLowerCase()}s` : "items"} deleted`,
+      };
+      return true;
     },
-    [],
+    [captureCanvas],
   );
+
+  const onDelete = useCallback(() => {
+    const pending = pendingDeleteRef.current;
+    pendingDeleteRef.current = null;
+    if (!pending) return;
+    recordCanvasChange("Delete", pending.before, pending.message);
+  }, [recordCanvasChange]);
 
   const onConnect: OnConnect = useCallback(
     (connection: Connection) => {
@@ -1132,12 +1351,14 @@ function ActionsFlowCanvas({
 
       // Same lane — normal connect.
       if (sourceParsed.hotspotId === targetParsed.hotspotId) {
-        updateGraph(sourceParsed.hotspotId, (graph) =>
-          connect(
-            graph,
-            sourceParsed.nodeId,
-            targetParsed.nodeId,
-            connection.sourceHandle,
+        runCanvasChange("Connect", [sourceParsed.hotspotId], () =>
+          updateGraph(sourceParsed.hotspotId, (graph) =>
+            connect(
+              graph,
+              sourceParsed.nodeId,
+              targetParsed.nodeId,
+              connection.sourceHandle,
+            ),
           ),
         );
         return;
@@ -1178,10 +1399,12 @@ function ActionsFlowCanvas({
         connection.sourceHandle,
       );
 
-      writeGraph(fromOwner, nextFrom);
-      writeGraph(toOwner, nextTo);
+      runCanvasChange("Connect", [fromOwner, toOwner], () => {
+        writeGraph(fromOwner, nextFrom);
+        writeGraph(toOwner, nextTo);
+      });
     },
-    [allowedByOwnerId, laneByOwnerId, updateGraph, writeGraph],
+    [allowedByOwnerId, laneByOwnerId, runCanvasChange, updateGraph, writeGraph],
   );
 
   const onPaneContextMenu = useCallback(
@@ -1421,6 +1644,23 @@ function ActionsFlowCanvas({
         if (next.some((node) => node.id === fence.id)) continue;
         changed = true;
         next = [toFenceFlowNode(fence, scopeKey), ...next];
+        // A restored fence (undo) takes its members back.
+        const members = new Set(fence.memberIds);
+        next = next.map((node) => {
+          if (isFenceNode(node) || node.parentId || !members.has(node.id)) {
+            return node;
+          }
+          return {
+            ...node,
+            parentId: fence.id,
+            position: {
+              x: node.position.x - fence.x,
+              y: node.position.y - fence.y,
+            },
+            expandParent: false,
+            zIndex: 1,
+          };
+        });
       }
       return changed ? next : current;
     });
@@ -1521,6 +1761,7 @@ function ActionsFlowCanvas({
           onEdgesChange={onEdgesChange}
           onBeforeDelete={onBeforeDelete}
           onEdgesDelete={onEdgesDelete}
+          onDelete={onDelete}
           onConnect={onConnect}
           onConnectEnd={onConnectEnd}
           onPaneContextMenu={onPaneContextMenu}
@@ -1597,16 +1838,38 @@ function ActionsFlowCanvas({
           />
         </ReactFlow>
 
-        <button
-          type="button"
-          className="editor-actions-add-btn nodrag nopan"
-          title="Add an action. It connects after the selected node, or the last node in the lane."
+        <div
+          className="editor-actions-toolbar nodrag nopan"
           onPointerDown={(event) => event.stopPropagation()}
-          onClick={onAddButtonClick}
         >
-          <Plus />
-          Add action
-        </button>
+          <button
+            type="button"
+            className="editor-actions-add-btn"
+            title="Add an action. It connects after the selected node, or the last node in the lane."
+            onClick={onAddButtonClick}
+          >
+            <Plus />
+            Add action
+          </button>
+          <div className="editor-actions-history" role="group" aria-label="History">
+            <IconButton
+              title={`Undo (${shortcutLabel("Z")})`}
+              aria-label="Undo"
+              disabled={!canUndo}
+              onClick={undo}
+            >
+              <Undo2 />
+            </IconButton>
+            <IconButton
+              title={`Redo (${shortcutLabel("Z", true)})`}
+              aria-label="Redo"
+              disabled={!canRedo}
+              onClick={redo}
+            >
+              <Redo2 />
+            </IconButton>
+          </div>
+        </div>
 
         <ActionsCanvasSearch entries={entries} onFocused={focusFlowNode} />
 

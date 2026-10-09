@@ -1,3 +1,4 @@
+import { history } from "@/lib/editor/history/history-store";
 import { createEmptyActionGraph } from "@/lib/editor/actions/create-action-graph";
 import { useAssetsStore } from "@/lib/editor/assets/assets-store";
 import { assetRef, type EditorAsset } from "@/lib/editor/assets/types";
@@ -95,6 +96,8 @@ export function hydrateProject(input: {
   sceneRows: SceneRow[];
   assets: EditorAsset[];
 }) {
+  // A freshly loaded project starts with an empty undo history.
+  history.clear();
   let editorData = null;
   if (input.editorData != null) {
     const parsed = projectEditorDataSchema.safeParse(input.editorData);

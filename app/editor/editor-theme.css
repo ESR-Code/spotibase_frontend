@@ -2935,11 +2935,35 @@
   color: var(--editor-fg);
 }
 
-.editor-root .editor-actions-add-btn {
+.editor-root .editor-actions-toolbar {
   position: absolute;
   top: 12px;
   left: 12px;
   z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-root .editor-actions-history {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 34px;
+  padding: 0 3px;
+  border-radius: 10px;
+  border: 1px solid var(--editor-line);
+  background: rgba(17, 30, 54, 0.94);
+  box-shadow: 0 12px 28px -18px rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+}
+
+.editor-root .editor-actions-history .editor-icon-btn {
+  width: 28px;
+  height: 28px;
+}
+
+.editor-root .editor-actions-add-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -4764,6 +4788,25 @@
   font-weight: 500;
   line-height: 1.4;
   color: var(--editor-muted);
+}
+
+.editor-root .editor-toast-action {
+  flex-shrink: 0;
+  height: 26px;
+  margin-top: 0;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(63, 184, 175, 0.5);
+  background: rgba(63, 184, 175, 0.14);
+  color: var(--editor-teal);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.editor-root .editor-toast-action:hover {
+  background: rgba(63, 184, 175, 0.26);
 }
 
 .editor-root .editor-toast-close {

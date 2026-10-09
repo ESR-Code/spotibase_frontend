@@ -3,7 +3,7 @@
 import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { Frame, Trash2 } from "lucide-react";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
-import { confirmDelete } from "@/lib/editor/confirm";
+import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
 import { useActionFencesStore } from "@/lib/editor/state/action-fences-store";
 import {
   ACTION_FENCE_COLORS,
@@ -19,7 +19,7 @@ export function ActionFenceNode({
   selected,
 }: NodeProps<ActionFenceFlowNode>) {
   const updateFence = useActionFencesStore((s) => s.updateFence);
-  const removeFence = useActionFencesStore((s) => s.removeFence);
+  const { deleteFence } = useActionsEditor();
   const fence = useActionFencesStore((s) =>
     s.byScope[data.scopeKey]?.find((item) => item.id === id),
   );
@@ -87,10 +87,7 @@ export function ActionFenceNode({
           style={{ width: 24, height: 24, color: "#ff8a95" }}
           onClick={(event) => {
             event.stopPropagation();
-            void confirmDelete("fence").then((ok) => {
-              if (!ok) return;
-              removeFence(data.scopeKey, id);
-            });
+            deleteFence(id);
           }}
           onPointerDown={(event) => event.stopPropagation()}
         >

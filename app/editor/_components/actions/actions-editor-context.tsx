@@ -22,6 +22,7 @@ export type ActionsEditorApi = {
   ) => void;
   deleteNode: (hotspotId: number, nodeId: string) => void;
   deleteEdge: (hotspotId: number, edgeId: string) => void;
+  deleteFence: (fenceId: string) => void;
   updateNodeData: (
     hotspotId: number,
     nodeId: string,

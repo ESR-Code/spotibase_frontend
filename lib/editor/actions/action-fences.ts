@@ -195,3 +195,32 @@ export function attachNodesToFences(
 export function nodesByIdMap(nodes: Node[]): Map<string, Node> {
   return new Map(nodes.map((node) => [node.id, node]));
 }
+
+/**
+ * Put `target` fence membership back without touching geometry the user may
+ * have changed since. Fences missing from `target` but present in `other`
+ * (the opposite snapshot) are removed; fences only in `target` are re-added.
+ */
+export function mergeFenceSnapshot(
+  current: ActionFence[],
+  target: ActionFence[],
+  other: ActionFence[],
+): ActionFence[] {
+  const targetById = new Map(target.map((fence) => [fence.id, fence]));
+  const removeIds = new Set(
+    other.filter((fence) => !targetById.has(fence.id)).map((fence) => fence.id),
+  );
+  const next = current
+    .filter((fence) => !removeIds.has(fence.id))
+    .map((fence) => {
+      const snap = targetById.get(fence.id);
+      return snap ? { ...fence, memberIds: [...snap.memberIds] } : fence;
+    });
+  const have = new Set(next.map((fence) => fence.id));
+  for (const fence of target) {
+    if (!have.has(fence.id)) {
+      next.push({ ...fence, memberIds: [...fence.memberIds] });
+    }
+  }
+  return next;
+}

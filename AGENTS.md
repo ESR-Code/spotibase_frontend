@@ -40,6 +40,7 @@ This is a Next.js 16 / React 19 app. The product is **Spotibase** (“3D Hotspot
 | R2 file storage (uploads / reads)         | `worker/src/storage.ts`, `worker/src/assets.ts`, `lib/projects/storage.ts`, `docs/architecture.md` |
 | Editor media library (`asset:<id>` refs)  | `lib/editor/assets/`, `app/editor/_components/assets/` |
 | Editor load / save (scenes, editor_data)  | `lib/editor/persist/`, `app/editor/_components/editor-project-loader.tsx`, `drizzle/0004_*.sql` |
+| Undo / redo | `lib/editor/history/`, `docs/decisions.md` |
 | Feature status                            | `docs/features.md`                                                                  |
 
 

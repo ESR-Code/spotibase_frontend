@@ -59,6 +59,18 @@ function ToastCard({ item }: { item: EditorToast }) {
           <p className="editor-toast-description">{item.description}</p>
         ) : null}
       </div>
+      {item.action ? (
+        <button
+          type="button"
+          className="editor-toast-action"
+          onClick={() => {
+            item.action?.onClick();
+            toast.dismiss(item.id);
+          }}
+        >
+          {item.action.label}
+        </button>
+      ) : null}
       <IconButton
         className="editor-toast-close"
         aria-label="Dismiss notification"
