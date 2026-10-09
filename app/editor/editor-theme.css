@@ -2935,6 +2935,39 @@
   color: var(--editor-fg);
 }
 
+.editor-root .editor-actions-add-btn {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 25;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(230, 57, 70, 0.55);
+  background: rgba(230, 57, 70, 0.16);
+  color: var(--editor-fg);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 12px 28px -18px rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.editor-root .editor-actions-add-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+}
+
+.editor-root .editor-actions-add-btn:hover {
+  background: rgba(230, 57, 70, 0.28);
+  border-color: rgba(230, 57, 70, 0.8);
+}
+
 .editor-root .editor-actions-flow .react-flow__node-actionFence {
   padding: 0;
   border: none;
@@ -3402,6 +3435,37 @@
   background: var(--editor-teal) !important;
 }
 
+.editor-root .editor-action-add-next {
+  position: absolute;
+  top: 50%;
+  right: -38px;
+  z-index: 12;
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  border: 1px dashed rgba(63, 184, 175, 0.65);
+  background: rgba(17, 30, 54, 0.92);
+  color: var(--editor-teal);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.editor-root .editor-action-add-next svg {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+}
+
+.editor-root .editor-action-add-next:hover {
+  border-style: solid;
+  background: rgba(63, 184, 175, 0.2);
+  transform: translateY(-50%) scale(1.1);
+}
+
 .editor-root .editor-action-event-handles {
   position: relative;
   margin-top: 10px;
@@ -3492,6 +3556,17 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--editor-muted-2);
+}
+
+.editor-root .editor-actions-context-menu-hint {
+  flex-shrink: 0;
+  overflow: hidden;
+  margin-top: -2px;
+  padding: 0 12px 6px;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--editor-muted);
 }
 
 .editor-root .editor-actions-context-menu-search {

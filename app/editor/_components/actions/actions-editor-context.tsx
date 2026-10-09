@@ -33,6 +33,12 @@ export type ActionsEditorApi = {
     position: ActionNodeXY,
     pendingConnect?: ActionsPendingConnect,
   ) => void;
+  /** Open the add-node menu at a screen point, wiring the new node after `pendingConnect`. */
+  openAddMenu: (
+    hotspotId: number,
+    client: { clientX: number; clientY: number },
+    pendingConnect: ActionsPendingConnect,
+  ) => void;
   clipboard: ActionNode | null;
   copyNode: (hotspotId: number, nodeId: string) => void;
   pasteNode: (

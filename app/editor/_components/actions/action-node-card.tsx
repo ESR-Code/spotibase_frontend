@@ -3,6 +3,7 @@
 import { Handle, Position, useNodeId } from "@xyflow/react";
 import { ClipboardPaste, Copy, Trash2, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import { AddNextButton } from "@/app/editor/_components/actions/add-next-button";
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { parseFlowNodeId } from "@/lib/editor/actions/flow-adapter";
@@ -55,6 +56,7 @@ export function ActionNodeCard({
           className="editor-action-handle"
         />
       ) : null}
+      {showSource ? <AddNextButton /> : null}
 
       <div className="editor-action-node-header">
         <span

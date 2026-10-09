@@ -19,6 +19,7 @@ import {
   type OnNodesChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { Plus } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { confirmDelete, confirmDeleteMany } from "@/lib/editor/confirm";
 import { toast } from "@/lib/editor/toast";
@@ -35,7 +36,10 @@ import {
   toFenceFlowNode,
   type ActionsCanvasNode,
 } from "@/lib/editor/actions/action-fences";
-import { ACTION_FLOW_NODE_TYPES } from "@/app/editor/_components/actions/action-node-registry";
+import {
+  ACTION_FLOW_NODE_TYPES,
+  ACTION_UI_MENU_ITEMS,
+} from "@/app/editor/_components/actions/action-node-registry";
 import { SpawnHotspotTemplateDrawer } from "@/app/editor/_components/actions/spawn-hotspot-template-drawer";
 import { ActionsCanvasSearch } from "@/app/editor/_components/actions/actions-canvas-search";
 import {
@@ -67,6 +71,7 @@ import {
   getActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
 import {
+  flowNodeId,
   LANE_HEIGHT,
   parseFlowNodeId,
   toFlowGraph,
@@ -158,6 +163,63 @@ function placeNodeFromHandleDrop(
     y: drop.y - NODE_PLACE_Y,
   };
 }
+
+/** Gap between an anchor node and a node auto-placed after it. */
+const NODE_AFTER_GAP = 48;
+
+function laneLabelFor(entry: ActionFlowEntry): string {
+  switch (entry.triggerKind) {
+    case "appStart":
+      return "App Start";
+    case "sceneStart":
+      return "Scene Start";
+    case "legend":
+      return "Legend";
+    case "menuButton":
+      return `Menu · ${entry.title}`;
+    case "contentButton":
+      return `Button · ${entry.title}`;
+    default:
+      return entry.title || "Hotspot";
+  }
+}
+
+function nodeTypeLabel(type: ActionNodeType): string {
+  return ACTION_UI_MENU_ITEMS.find((item) => item.type === type)?.meta.label ?? type;
+}
+
+/** Node types offered after `sourceType` (For Each only accepts some sources). */
+function allowedAfter(
+  entry: ActionFlowEntry,
+  sourceType: ActionNodeType | undefined,
+): ActionNodeType[] {
+  return canConnectToForEach(sourceType)
+    ? entry.allowedNodeTypes
+    : entry.allowedNodeTypes.filter((type) => type !== "forEach");
+}
+
+/** Nodes with a single default output that a "next" node can be wired to. */
+function hasDefaultOutput(node: ActionNode): boolean {
+  if (node.type === "switch" || node.type === "openModal") return false;
+  if (node.type === "sendPostMessage" && node.data.mode === "receive") {
+    return false;
+  }
+  return true;
+}
+
+function triggerHasDefaultOutput(entry: ActionFlowEntry): boolean {
+  if (entry.triggerKind === "legend") return false;
+  if (entry.triggerKind === "menuButton" && entry.toggleEnabled) return false;
+  return true;
+}
+
+type AutoConnect = {
+  pendingConnect: ActionsPendingConnect;
+  anchorLabel: string;
+  anchorType?: ActionNodeType;
+  /** Graph position just right of the anchor. */
+  position: ActionNodeXY;
+};
 
 function graphFingerprint(graph: HotspotActionGraph): string {
   const nodes = graph.nodes.map((n) => `${n.id}:${n.type}`).join(",");
@@ -569,9 +631,214 @@ function ActionsFlowCanvas({
     [readGraph, writeGraph],
   );
 
+  /** Lane whose trigger row is closest to a flow-space point. */
+  const pickLaneEntry = useCallback(
+    (flowPos: { x: number; y: number }): ActionFlowEntry => {
+      let best = entries[0]!;
+      let bestDist = Infinity;
+      for (const entry of entries) {
+        const localY = toGraphPosition(flowPos.x, flowPos.y, entry.laneIndex).y;
+        const dist = Math.abs(localY - 120);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = entry;
+        }
+      }
+      return best;
+    },
+    [entries],
+  );
+
+  /**
+   * Where a new node should be wired: the selected node in this lane, else the
+   * lane's last open-ended node, else the trigger. Never replaces an existing edge.
+   */
+  const resolveAutoConnect = useCallback(
+    (entry: ActionFlowEntry): AutoConnect | null => {
+      const { graph, ownerId } = entry;
+      const hasOutgoing = new Set(graph.edges.map((edge) => edge.source));
+      const widthOf = (nodeId: string, fallback: number) =>
+        nodesRef.current.find((node) => node.id === flowNodeId(ownerId, nodeId))
+          ?.measured?.width ?? fallback;
+
+      const afterNode = (node: ActionNode): AutoConnect => ({
+        pendingConnect: { nodeId: node.id, handleId: null, handleType: "source" },
+        anchorType: node.type,
+        anchorLabel: nodeTypeLabel(node.type),
+        position: {
+          x: node.position.x + widthOf(node.id, NODE_PLACE_WIDTH) + NODE_AFTER_GAP,
+          y: node.position.y,
+        },
+      });
+      const afterTrigger = (): AutoConnect => ({
+        pendingConnect: {
+          nodeId: TRIGGER_NODE_ID,
+          handleId: null,
+          handleType: "source",
+        },
+        anchorLabel: "trigger",
+        position: {
+          x: graph.trigger.position.x + widthOf(TRIGGER_NODE_ID, 220) + NODE_AFTER_GAP,
+          y: graph.trigger.position.y,
+        },
+      });
+      const triggerOpen =
+        triggerHasDefaultOutput(entry) && !hasOutgoing.has(TRIGGER_NODE_ID);
+
+      const selected = nodesRef.current.find(
+        (node) =>
+          node.selected &&
+          !isFenceNode(node) &&
+          parseFlowNodeId(node.id)?.hotspotId === ownerId,
+      );
+      const selectedId = selected ? parseFlowNodeId(selected.id)?.nodeId : null;
+      if (selectedId === TRIGGER_NODE_ID && triggerOpen) return afterTrigger();
+      if (selectedId && selectedId !== TRIGGER_NODE_ID) {
+        const node = graph.nodes.find((item) => item.id === selectedId);
+        if (node && hasDefaultOutput(node) && !hasOutgoing.has(node.id)) {
+          return afterNode(node);
+        }
+      }
+
+      const reachable = new Set<string>();
+      const queue = [TRIGGER_NODE_ID];
+      while (queue.length > 0) {
+        const id = queue.pop()!;
+        for (const edge of graph.edges) {
+          if (edge.source !== id || reachable.has(edge.target)) continue;
+          reachable.add(edge.target);
+          queue.push(edge.target);
+        }
+      }
+      let tail: ActionNode | null = null;
+      for (const node of graph.nodes) {
+        if (!reachable.has(node.id)) continue;
+        if (!hasDefaultOutput(node) || hasOutgoing.has(node.id)) continue;
+        if (!tail || node.position.x > tail.position.x) tail = node;
+      }
+      if (tail) return afterNode(tail);
+      return triggerOpen ? afterTrigger() : null;
+    },
+    [],
+  );
+
+  const openPaneMenu = useCallback(
+    (
+      client: { clientX: number; clientY: number },
+      options?: {
+        entry?: ActionFlowEntry;
+        /** Drop the node beside its anchor instead of at the pointer. */
+        placeAtAnchor?: boolean;
+        /** Menu position in canvas px; defaults to the pointer. */
+        menuPoint?: { x: number; y: number };
+      },
+    ) => {
+      if (entries.length === 0) return;
+      const flowPos = screenToFlowPosition({
+        x: client.clientX,
+        y: client.clientY,
+      });
+      const entry = options?.entry ?? pickLaneEntry(flowPos);
+      const pointerPos = toGraphPosition(flowPos.x, flowPos.y, entry.laneIndex);
+      const auto = resolveAutoConnect(entry);
+      const menuPos = options?.menuPoint ?? menuPositionFromEvent(client);
+      setRawMenu({
+        kind: "pane",
+        x: menuPos.x,
+        y: menuPos.y,
+        hotspotId: entry.ownerId,
+        flowPosition: auto && options?.placeAtAnchor ? auto.position : pointerPos,
+        allowedNodeTypes: auto
+          ? allowedAfter(entry, auto.anchorType)
+          : entry.allowedNodeTypes,
+        pendingConnect: auto?.pendingConnect,
+        autoConnect: Boolean(auto),
+        anchorLabel: auto?.anchorLabel,
+        laneLabel: entries.length > 1 ? laneLabelFor(entry) : undefined,
+      });
+    },
+    [
+      entries,
+      menuPositionFromEvent,
+      pickLaneEntry,
+      resolveAutoConnect,
+      screenToFlowPosition,
+    ],
+  );
+
+  const openAddMenu = useCallback(
+    (
+      ownerId: number,
+      client: { clientX: number; clientY: number },
+      pendingConnect: ActionsPendingConnect,
+    ) => {
+      const entry = entries.find((item) => item.ownerId === ownerId);
+      if (!entry) return;
+      const fromFlow = nodesRef.current.find(
+        (node) => node.id === flowNodeId(ownerId, pendingConnect.nodeId),
+      );
+      const sourceType =
+        fromFlow && fromFlow.type !== TRIGGER_FLOW_TYPE
+          ? (fromFlow.type as ActionNodeType)
+          : undefined;
+      const allowed = allowedAfter(entry, sourceType);
+      if (allowed.length === 0) return;
+      const flowPos = screenToFlowPosition({
+        x: client.clientX,
+        y: client.clientY,
+      });
+      const menuPos = menuPositionFromEvent(client);
+      setRawMenu({
+        kind: "pane",
+        x: menuPos.x,
+        y: menuPos.y,
+        hotspotId: ownerId,
+        flowPosition: placeNodeFromHandleDrop(
+          toGraphPosition(flowPos.x, flowPos.y, entry.laneIndex),
+          "source",
+        ),
+        allowedNodeTypes: allowed,
+        pendingConnect,
+        laneLabel: entries.length > 1 ? laneLabelFor(entry) : undefined,
+      });
+    },
+    [entries, menuPositionFromEvent, screenToFlowPosition],
+  );
+
+  const onAddButtonClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      const root = flowRootRef.current?.getBoundingClientRect();
+      if (!root) return;
+      const button = event.currentTarget.getBoundingClientRect();
+      // Prefer the lane of the selected node; otherwise the lane in view.
+      const selected = nodesRef.current.find(
+        (node) => node.selected && !isFenceNode(node),
+      );
+      const selectedOwner = selected
+        ? parseFlowNodeId(selected.id)?.hotspotId
+        : undefined;
+      openPaneMenu(
+        {
+          clientX: root.left + root.width / 2,
+          clientY: root.top + root.height / 2,
+        },
+        {
+          entry: entries.find((item) => item.ownerId === selectedOwner),
+          placeAtAnchor: true,
+          menuPoint: {
+            x: button.left - root.left,
+            y: button.bottom - root.top + 6,
+          },
+        },
+      );
+    },
+    [entries, openPaneMenu],
+  );
+
   const api: ActionsEditorApi = useMemo(
     () => ({
       updateGraph,
+      openAddMenu,
       deleteNode: (ownerId, nodeId) => {
         void confirmDelete("action").then((ok) => {
           if (!ok) return;
@@ -629,7 +896,15 @@ function ActionsFlowCanvas({
         return true;
       },
     }),
-    [allowedByOwnerId, clipboard, onClipboardChange, readGraph, updateGraph, writeGraph],
+    [
+      allowedByOwnerId,
+      clipboard,
+      onClipboardChange,
+      openAddMenu,
+      readGraph,
+      updateGraph,
+      writeGraph,
+    ],
   );
 
   const persistActionPosition = useCallback(
@@ -912,36 +1187,18 @@ function ActionsFlowCanvas({
   const onPaneContextMenu = useCallback(
     (event: MouseEvent | React.MouseEvent) => {
       event.preventDefault();
-      if (entries.length === 0) return;
-
-      const flowPos = screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-
-      let best = entries[0]!;
-      let bestDist = Infinity;
-      for (const entry of entries) {
-        const localY = toGraphPosition(flowPos.x, flowPos.y, entry.laneIndex).y;
-        const dist = Math.abs(localY - 120);
-        if (dist < bestDist) {
-          bestDist = dist;
-          best = entry;
-        }
-      }
-
-      const graphPos = toGraphPosition(flowPos.x, flowPos.y, best.laneIndex);
-      const menuPos = menuPositionFromEvent(event);
-      setRawMenu({
-        kind: "pane",
-        x: menuPos.x,
-        y: menuPos.y,
-        hotspotId: best.ownerId,
-        flowPosition: graphPos,
-        allowedNodeTypes: best.allowedNodeTypes,
-      });
+      openPaneMenu({ clientX: event.clientX, clientY: event.clientY });
     },
-    [entries, menuPositionFromEvent, screenToFlowPosition],
+    [openPaneMenu],
+  );
+
+  const onPaneDoubleClick = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      const target = event.target as HTMLElement;
+      if (!target.classList.contains("react-flow__pane")) return;
+      openPaneMenu({ clientX: event.clientX, clientY: event.clientY });
+    },
+    [openPaneMenu],
   );
 
   const onConnectEnd: OnConnectEnd = useCallback(
@@ -994,6 +1251,7 @@ function ActionsFlowCanvas({
           handleId: fromHandle.id ?? null,
           handleType: fromHandle.type,
         },
+        laneLabel: entries.length > 1 ? laneLabelFor(entry) : undefined,
       });
     },
     [entries, menuPositionFromEvent, screenToFlowPosition],
@@ -1249,7 +1507,11 @@ function ActionsFlowCanvas({
 
   return (
     <ActionsEditorProvider value={api}>
-      <div ref={flowRootRef} className="editor-actions-flow relative h-full w-full">
+      <div
+        ref={flowRootRef}
+        className="editor-actions-flow relative h-full w-full"
+        onDoubleClick={onPaneDoubleClick}
+      >
         <ReactFlow<ActionsCanvasNode>
           nodes={nodes}
           edges={edges}
@@ -1280,6 +1542,7 @@ function ActionsFlowCanvas({
           }}
           deleteKeyCode={["Backspace", "Delete"]}
           multiSelectionKeyCode="Shift"
+          zoomOnDoubleClick={false}
           proOptions={{ hideAttribution: true }}
           defaultEdgeOptions={{
             type: ACTIONS_EDGE_TYPE,
@@ -1333,6 +1596,17 @@ function ActionsFlowCanvas({
             nodeColor={() => "rgba(230, 57, 70, 0.55)"}
           />
         </ReactFlow>
+
+        <button
+          type="button"
+          className="editor-actions-add-btn nodrag nopan"
+          title="Add an action. It connects after the selected node, or the last node in the lane."
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={onAddButtonClick}
+        >
+          <Plus />
+          Add action
+        </button>
 
         <ActionsCanvasSearch entries={entries} onFocused={focusFlowNode} />
 

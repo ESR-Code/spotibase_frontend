@@ -1,7 +1,7 @@
 "use client";
 
 import { ClipboardPaste, Copy, Search, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ACTION_MENU_GROUPS, ACTION_UI_MENU_ITEMS } from "@/app/editor/_components/actions/action-node-registry";
 import {
   useActionsEditor,
@@ -21,6 +21,12 @@ export type ActionsContextMenuState =
       flowPosition: { x: number; y: number };
       allowedNodeTypes: ActionNodeType[];
       pendingConnect?: ActionsPendingConnect;
+      /** `pendingConnect` was inferred (selected / last node), not dragged. */
+      autoConnect?: boolean;
+      /** Lane the node will be added to; set only when several lanes exist. */
+      laneLabel?: string;
+      /** What an auto-connected node will follow. */
+      anchorLabel?: string;
     }
   | {
       kind: "node";
@@ -53,6 +59,7 @@ export function ActionsContextMenu({
   const rootRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
 
   useEffect(() => {
     if (!menu) return;
@@ -103,18 +110,40 @@ export function ActionsContextMenu({
 
   const hasMatchingItems = groupedItems.length > 0;
 
+  // Keep the menu inside the canvas (it resizes as the search filters items).
+  useLayoutEffect(() => {
+    const el = rootRef.current;
+    const container = el?.parentElement;
+    if (!menu || !el || !container) return;
+    const margin = 8;
+    const maxLeft = Math.max(margin, container.clientWidth - el.offsetWidth - margin);
+    const maxTop = Math.max(margin, container.clientHeight - el.offsetHeight - margin);
+    const left = Math.min(Math.max(menu.x, margin), maxLeft);
+    const top = Math.min(Math.max(menu.y, margin), maxTop);
+    setPos((prev) =>
+      prev && prev.left === left && prev.top === top ? prev : { left, top },
+    );
+  }, [menu, groupedItems]);
+
   if (!menu) return null;
+
+  const paneHint =
+    menu.kind === "pane"
+      ? [menu.laneLabel, menu.anchorLabel ? `after ${menu.anchorLabel}` : null]
+          .filter(Boolean)
+          .join(" · ")
+      : "";
 
   return (
     <div
       ref={rootRef}
       role="menu"
       className="editor-actions-context-menu"
-      style={{ left: menu.x, top: menu.y }}
+      style={{ left: pos?.left ?? menu.x, top: pos?.top ?? menu.y }}
     >
       {menu.kind === "pane" ? (
         <>
-          {clipboard && !menu.pendingConnect ? (
+          {clipboard && (!menu.pendingConnect || menu.autoConnect) ? (
             <button
               type="button"
               role="menuitem"
@@ -131,6 +160,11 @@ export function ActionsContextMenu({
           <div className="editor-actions-context-menu-label">
             {menu.pendingConnect ? "Add & connect" : "Add node"}
           </div>
+          {paneHint ? (
+            <div className="editor-actions-context-menu-hint" title={paneHint}>
+              {paneHint}
+            </div>
+          ) : null}
           <div className="editor-actions-context-menu-search">
             <Search
               className="h-3.5 w-3.5 shrink-0"

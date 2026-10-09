@@ -29,7 +29,7 @@ export function ActionsModal() {
   const description =
     scope.kind === "hotspot"
       ? "Define what happens when this hotspot is clicked, and wire any Action buttons in its content."
-      : `App Start, Scene Start, menu buttons, hotspot clicks, and Action buttons for “${activeScene.name}”. Right-click a lane to add nodes.`;
+      : `App Start, Scene Start, menu buttons, hotspot clicks, and Action buttons for “${activeScene.name}”. Use “Add action”, double-click or right-click the canvas to add nodes.`;
 
   const chip =
     scope.kind === "hotspot" ? (

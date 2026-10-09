@@ -10,6 +10,7 @@ import {
 } from "@xyflow/react";
 import { ListTree, MousePointerClick, Play, Rocket } from "lucide-react";
 import { useEffect } from "react";
+import { AddNextButton } from "@/app/editor/_components/actions/add-next-button";
 import type { ActionFlowNodeData } from "@/lib/editor/actions/flow-adapter";
 import { getCategoryLucideIcon } from "@/lib/editor/theme/category-icons";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
@@ -111,11 +112,14 @@ export function HotspotTriggerNode({
       className={`editor-action-node editor-action-trigger ${legendEnabled ? "editor-action-trigger-legend" : ""} ${selected ? "selected" : ""}`}
     >
       {toggleEnabled || legendEnabled ? null : (
-        <Handle
-          type="source"
-          position={Position.Right}
-          className="editor-action-handle"
-        />
+        <>
+          <Handle
+            type="source"
+            position={Position.Right}
+            className="editor-action-handle"
+          />
+          <AddNextButton />
+        </>
       )}
       <div className="editor-action-node-header">
         <span
