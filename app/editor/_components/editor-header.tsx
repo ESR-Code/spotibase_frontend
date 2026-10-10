@@ -6,7 +6,9 @@ import { AccountMenu } from "@/app/projects/_components/account-menu";
 import { BrandMark } from "@/app/projects/_components/projects-topbar";
 import { EditorChip } from "@/app/editor/_components/ui/editor-chip";
 import { HeaderNavMenu } from "@/app/editor/_components/toolbar/header-nav-menu";
+import { HeaderPreviewButton } from "@/app/editor/_components/toolbar/header-preview-button";
 import { ModeToolbar } from "@/app/editor/_components/toolbar/mode-toolbar";
+import { PublishButton } from "@/app/editor/_components/toolbar/publish-button";
 import { SaveButton } from "@/app/editor/_components/toolbar/save-button";
 import { useProjectPersistStore } from "@/lib/editor/persist/persist-store";
 import { getSceneType } from "@/lib/editor/scene-types/registry";
@@ -78,8 +80,10 @@ export function EditorHeader() {
 
       <ModeToolbar />
 
-      <div className="flex min-w-0 items-center justify-end gap-3">
+      <div className="flex min-w-0 items-center justify-end gap-2">
+        <HeaderPreviewButton />
         <SaveButton />
+        <PublishButton />
         <div className="editor-vsep" />
         <AccountMenu />
       </div>

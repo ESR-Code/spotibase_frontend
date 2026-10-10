@@ -142,6 +142,18 @@
   color: var(--editor-muted);
 }
 
+.editor-root .editor-btn-outline {
+  background: transparent;
+  border-color: var(--editor-line);
+  color: var(--editor-fg);
+}
+
+.editor-root .editor-btn-outline:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: #2f4d7a;
+  color: var(--editor-fg);
+}
+
 .editor-root .editor-replace-model-btn {
   display: inline-flex;
   height: 32px;
@@ -1741,6 +1753,40 @@
 .editor-root .editor-block-card.is-drop-target {
   border-color: rgba(230, 57, 70, 0.55) !important;
   box-shadow: 0 0 0 1px rgba(230, 57, 70, 0.25);
+}
+
+.editor-root .editor-header-save-status {
+  display: inline-flex;
+  height: 32px;
+  max-width: 9rem;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--editor-muted);
+}
+
+.editor-root .editor-header-save-status.is-warn {
+  color: var(--editor-amber);
+}
+
+.editor-root .editor-header-save.editor-btn-primary:disabled {
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.editor-root .editor-header-save-status.is-action {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  color: var(--editor-amber);
+}
+
+.editor-root .editor-header-save-status.is-action:hover {
+  text-decoration: underline;
 }
 
 .editor-root .editor-vsep {

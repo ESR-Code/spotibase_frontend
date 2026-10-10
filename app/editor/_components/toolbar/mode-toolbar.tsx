@@ -1,59 +1,18 @@
 "use client";
 
-import {
-  MousePointer2,
-  Play,
-  Plus,
-  SquarePen,
-  Workflow,
-} from "lucide-react";
-import { clearEditorSelection } from "@/lib/editor/state/exclusive-selection";
+import { MousePointer2, Plus, Workflow } from "lucide-react";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
-import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
 
 export function ModeToolbar() {
   const mode = useEditorStore((s) => s.mode);
   const isPreview = useEditorStore((s) => s.isPreview);
   const setMode = useEditorStore((s) => s.setMode);
-  const closeAllOverlays = useUIStore((s) => s.closeAllOverlays);
-  const setPropertiesDrawerOpen = useUIStore((s) => s.setPropertiesDrawerOpen);
-  const setPreviewModalOpen = useUIStore((s) => s.setPreviewModalOpen);
-  const setPreviewActiveHotspotId = useUIStore((s) => s.setPreviewActiveHotspotId);
-  const setPreviewLabelPending = useUIStore((s) => s.setPreviewLabelPending);
-  const setHoverTooltip = useUIStore((s) => s.setHoverTooltip);
   const actionsModal = useUIStore((s) => s.actionsModal);
   const openActionsModal = useUIStore((s) => s.openActionsModal);
   const sceneActionsOpen = actionsModal?.kind === "scene";
-  const generalSettingsOpen = useUIStore((s) => s.generalSettingsDrawerOpen);
-  const setGeneralSettingsDrawerOpen = useUIStore(
-    (s) => s.setGeneralSettingsDrawerOpen,
-  );
 
-  const handleMode = (next: "select" | "add" | "preview") => {
-    if (next === "preview") {
-      const entering = !isPreview;
-      setMode("preview");
-      if (entering) {
-        const keepGeneralSettings = generalSettingsOpen;
-        closeAllOverlays();
-        if (keepGeneralSettings) setGeneralSettingsDrawerOpen(true);
-        setPropertiesDrawerOpen(false);
-        useUIStore.getState().setOutlinerCollapsed(true);
-        clearEditorSelection();
-      } else {
-        setPreviewModalOpen(false);
-        setPreviewActiveHotspotId(null);
-        setPreviewLabelPending(false);
-        setHoverTooltip(null);
-        useUIStore.getState().setInfoBoxAnchor(null);
-        useUIStore.getState().setLegendDrawerOpen(false);
-        useUIStore.getState().setSceneExplorerDrawerOpen(false);
-        useUIStore.getState().setLegendFilterCategory(LEGEND_CATEGORY_ALL);
-        window.dispatchEvent(new CustomEvent("editor:reset-camera"));
-      }
-      return;
-    }
+  const handleMode = (next: "select" | "add") => {
     if (isPreview) return;
     setMode(next);
   };
@@ -95,24 +54,6 @@ export function ModeToolbar() {
       >
         <Workflow className="h-3 w-3" />
         Actions
-      </button>
-      <div className="editor-vsep" style={{ height: 18 }} />
-      <button
-        type="button"
-        className={`editor-tool-btn ${isPreview ? "active" : ""}`}
-        onClick={() => handleMode("preview")}
-      >
-        {isPreview ? (
-          <>
-            <SquarePen className="h-3 w-3" />
-            Editor
-          </>
-        ) : (
-          <>
-            <Play className="h-3 w-3" />
-            Preview
-          </>
-        )}
       </button>
     </div>
   );

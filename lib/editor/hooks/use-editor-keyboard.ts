@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { confirmDelete } from "@/lib/editor/confirm";
+import { toggleEditorPreview } from "@/lib/editor/preview/toggle-preview";
 import { toast } from "@/lib/editor/toast";
 import { clearEditorSelection } from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -9,7 +10,6 @@ import { useLayersStore } from "@/lib/editor/state/layers-store";
 import { syncActiveSceneLayers } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
-import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
 
 export function useEditorKeyboard() {
   const setMode = useEditorStore((s) => s.setMode);
@@ -28,29 +28,7 @@ export function useEditorKeyboard() {
       const actionsOpen = ui.actionsModal != null;
 
       if (e.key === "p" || e.key === "P") {
-        const wasPreview = isPreview;
-        setMode("preview");
-        if (wasPreview) {
-          const ui = useUIStore.getState();
-          ui.setPreviewModalOpen(false);
-          ui.setPreviewActiveHotspotId(null);
-          ui.setPreviewLabelPending(false);
-          ui.setHoverTooltip(null);
-          ui.setInfoBoxAnchor(null);
-          ui.setLegendDrawerOpen(false);
-          ui.setSceneExplorerDrawerOpen(false);
-          ui.setLegendFilterCategory(LEGEND_CATEGORY_ALL);
-          window.dispatchEvent(new CustomEvent("editor:reset-camera"));
-        } else {
-          const keepGeneralSettings = ui.generalSettingsDrawerOpen;
-          closeAllOverlays();
-          if (keepGeneralSettings) {
-            useUIStore.getState().setGeneralSettingsDrawerOpen(true);
-          }
-          setPropertiesDrawerOpen(false);
-          useUIStore.getState().setOutlinerCollapsed(true);
-          clearEditorSelection();
-        }
+        toggleEditorPreview();
         return;
       }
 
