@@ -41,6 +41,10 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 
 
+### Publishing
+
+- Header **Publish** button opens a publish dialog: status (Not published / Live vN), Publish / Publish update (saves a dirty draft first), Unpublish, password protection (off by default; set / change / remove), and a read-only list of the 5 retained versions. Published versions are immutable `project_versions` snapshots; the Data API cannot write them. Assets used by a retained version are protected from GC and deletion.
+
 ### Hotspots
 
 - Place, select, drag, duplicate, delete (confirmation dialog). Types, colors, styles (dot / number / icon / image / hidden), shapes (circle / square / rounded / diamond / pin), pulse, wick, enable flag.
@@ -98,7 +102,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 ## Partial
 
-- **Editor save is manual.** No autosave, no version history (`project_versions` planned), no merge on conflict.
+- **Editor save is manual.** No autosave, no merge on conflict. Publishing keeps the last 5 published versions (read-only list; no rollback yet).
 - **Hotspot JSON export** (`lib/editor/io/export-hotspots.ts`) exists but is not wired in the UI. It exports the current scene’s hotspots only, not the full project.
 - **Home** `/` gates to auth or `/projects`. Product editor is `/projects/[id]/editor`.
 - **App metadata / README** still say “Create Next App”.
@@ -113,7 +117,9 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 These are implied by gaps or comments, not a committed roadmap.
 
-- `project_versions` snapshots and autosave.
+- Autosave.
+- Rollback / republish of an archived version; configurable retention.
+- Password verification endpoint for the viewer (the hash and flag are stored; nothing checks them yet).
 - Full project import / export file format.
 - Additional overlay kinds beyond image + shape.
 - Additional hotspot block types beyond heading / text / link / image / video.

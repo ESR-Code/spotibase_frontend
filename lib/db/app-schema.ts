@@ -7,6 +7,7 @@ import { authenticatedRole } from "drizzle-orm/neon";
 import {
   type AnyPgColumn,
   bigint,
+  boolean,
   check,
   foreignKey,
   index,
@@ -78,6 +79,10 @@ export const projects = pgTable(
     editorData: jsonb("editor_data"),
     /** Bumped by `save_editor_project`; stale saves are rejected. */
     editorRevision: integer("editor_revision").notNull().default(0),
+    /** Set by `set_project_publish_password`; the hash lives in `project_publish_secrets`. */
+    publishPasswordProtected: boolean("publish_password_protected")
+      .notNull()
+      .default(false),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -207,7 +212,79 @@ export const scenes = pgTable(
   ],
 ).enableRLS();
 
+export const VERSION_STATUSES = ["published", "archived"] as const;
+export type VersionStatus = (typeof VERSION_STATUSES)[number];
+
+/**
+ * Immutable publish snapshots (newest 5 per project kept). The Data API can
+ * only SELECT; `publish_project_version` / `unpublish_project` write.
+ * The migration also REVOKEs INSERT / UPDATE / DELETE from `authenticated`.
+ */
+export const projectVersions = pgTable(
+  "project_versions",
+  {
+    id: uuid("id").defaultRandom().primaryKey().notNull(),
+    organizationId: uuid("organization_id").notNull(),
+    projectId: uuid("project_id").notNull(),
+    version: integer("version").notNull(),
+    status: text("status").$type<VersionStatus>().notNull(),
+    snapshot: jsonb("snapshot").notNull(),
+    /** Assets the snapshot references; the Worker GC keeps these. */
+    assetIds: uuid("asset_ids").array().notNull().default(sql`'{}'::uuid[]`),
+    createdBy: uuid("created_by").default(sql`(public.current_user_id())::uuid`),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    index("project_versions_project_id_idx").on(table.projectId),
+    unique("project_versions_project_id_version_key").on(
+      table.projectId,
+      table.version,
+    ),
+    uniqueIndex("project_versions_one_published_key")
+      .on(table.projectId)
+      .where(sql`${table.status} = 'published'`),
+    index("project_versions_asset_ids_idx").using("gin", table.assetIds),
+    check(
+      "project_versions_status_check",
+      sql`${table.status} IN ('published', 'archived')`,
+    ),
+    foreignKey({
+      columns: [table.projectId, table.organizationId],
+      foreignColumns: [projects.id, projects.organizationId],
+      name: "project_versions_project_org_fkey",
+    }).onDelete("cascade"),
+    pgPolicy("project_versions_org_member_read", {
+      for: "select",
+      to: authenticatedRole,
+      using: isOrgMember(table.organizationId),
+    }),
+  ],
+).enableRLS();
+
+/** bcrypt hash of the publish password. RLS on, no policies, no grants. */
+export const projectPublishSecrets = pgTable(
+  "project_publish_secrets",
+  {
+    projectId: uuid("project_id").primaryKey().notNull(),
+    organizationId: uuid("organization_id").notNull(),
+    passwordHash: text("password_hash").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.projectId, table.organizationId],
+      foreignColumns: [projects.id, projects.organizationId],
+      name: "project_publish_secrets_project_org_fkey",
+    }).onDelete("cascade"),
+  ],
+).enableRLS();
+
 export type ProjectFolder = typeof projectFolders.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type Asset = typeof assets.$inferSelect;
 export type SceneRecord = typeof scenes.$inferSelect;
+export type ProjectVersion = typeof projectVersions.$inferSelect;

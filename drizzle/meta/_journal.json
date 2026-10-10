@@ -50,6 +50,13 @@
       "when": 1791130000000,
       "tag": "0006_project_asset_stats",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791140000000,
+      "tag": "0007_project_versions",
+      "breakpoints": true
     }
   ]
 }

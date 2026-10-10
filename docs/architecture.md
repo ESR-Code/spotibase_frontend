@@ -72,10 +72,12 @@ Linked Neon project (`neon.ts`, `auth: true`). Credentials live in `.env.local` 
 | projects | `public.projects` (+ `editor_data` JSONB, `editor_revision`) |
 | scenes | `public.scenes` (lifted columns + `data` JSONB) |
 | assets | `public.assets` (file metadata + `r2_key`) |
+| published versions | `public.project_versions` (immutable JSONB snapshots; SELECT-only for the Data API) |
+| publish password | `public.project_publish_secrets` (bcrypt hash; no grants, RPC-only) + `projects.publish_password_protected` flag |
 
 Drizzle introspects Auth tables into `lib/db/schema.ts`. Product tables live in `lib/db/app-schema.ts` and are migrated with `npm run db:generate` / `db:migrate` (do not migrate Auth tables). Refresh Auth types with `npm run db:pull`. Use `createDb()` from `lib/db/index.ts` on the **server only**. Org invitation emails stay off until an accept-invitation route exists. Do not use Drizzle as the login or browser CRUD path.
 
-RLS on `project_folders` / `projects` / `scenes` / `assets` allows rows only when `public.is_org_member(organization_id)` is true (SECURITY DEFINER check against `neon_auth.member` + `public.current_user_id()`). Browser CRUD goes through `/gateway/data/*` (Worker → Neon Data API).
+RLS on `project_folders` / `projects` / `scenes` / `assets` / `project_versions` allows rows only when `public.is_org_member(organization_id)` is true (SECURITY DEFINER check against `neon_auth.member` + `public.current_user_id()`). Browser CRUD goes through `/gateway/data/*` (Worker → Neon Data API).
 
 The browser calls same-origin `/gateway/*`. Next proxies that to the Worker (`WORKER_URL`, default `http://127.0.0.1:8787`) so the session cookie stays on the app origin. If the Worker is not running, `GET /gateway/auth/get-session` returns an empty session instead of a 500. The browser never sees Neon URLs or `DATABASE_URL`. `/auth/*` proxies Neon Auth. `/data/*` exchanges the session cookie for the user JWT and forwards to the Neon Data API (RLS is the authorization layer; `neon_auth` is not exposed). `/fn/*` is reserved for a future Neon Function and returns 501 until `NEON_FUNCTION_URL` is set. Run the Worker with `npm run dev:api` beside `npm run dev`, or both at once with `npm run dev:local` (local Worker + simulated R2; Auth, Data API, and Postgres are the linked cloud Neon branch).
 
@@ -125,6 +127,22 @@ Save (header button, Ctrl/Cmd+S) → serializeProject → POST /gateway/data/rpc
 - `save_editor_project(project, expected_revision, editor_data, scenes)` is a `SECURITY INVOKER` plpgsql function (migration `0004`): one transaction upserts / deletes scenes, writes `editor_data` and `scene_count`, bumps `editor_revision`. A stale revision raises `PT409` / hint `revision_conflict`.
 - `project_asset_stats(project_id)` (migration `0006`) returns ready-file kind counts + total bytes for the studio Details tab. One aggregate; no asset rows.
 - Dirty tracking: authored-store subscriptions trigger a debounced fingerprint of `serializeProject` against the last loaded / saved baseline. Object key order is ignored. Scene-scoped forms sync on switch without writing the stores (`useSceneFormReset`).
+### Publishing
+
+```
+Publish dialog (header) → publishCurrentProject (lib/editor/publish/)
+  dirty? saveProject() → rpc/save_editor_project
+  rpc/publish_project_version(project, expected_revision)   # SECURITY DEFINER, migration 0007
+    lock project, check revision, build snapshot in SQL from projects/scenes/assets
+    archive the live row, insert the new `published` row, prune to the 5 newest versions
+```
+
+- `project_versions` snapshot (`formatVersion: 1`): `editorRevision`, `project`, `editorData`, `scenes[]` (same row shape as `sceneRowSchema`), and an `assets` map (`r2Key`, kind, type, size) of the referenced ready assets. `asset_ids uuid[]` lists every referenced asset so the Worker GC does not parse snapshots. At most one `published` row per project (partial unique index).
+- The Data API can only `SELECT` versions (`REVOKE` of all write privileges + a select-only policy). Writes go through `publish_project_version`, `unpublish_project`, and `set_project_publish_password`, which check `public.is_org_member` themselves. The browser sends no snapshot.
+- Retention: 5 versions per project (live included, archived ones count). Pruning runs inside publish and deletes the row and its `asset_ids` together. Asset rows and R2 objects are never touched there.
+- Worker GC (`assets/gc`) keeps assets referenced by the saved draft **and** by any retained version (versions are read after the draft; a failed read aborts the sweep). `DELETE .../assets/:id` returns 409 while a retained version uses the asset.
+- Password: set / cleared only through `set_project_publish_password` (min 8 chars, `crypt`/bcrypt). The hash is in `project_publish_secrets`, which the Data API cannot read. Verification belongs to the future viewer.
+
 - Media: `lib/editor/assets/` (`useAssetsStore` project library, `uploadAsset`, `resolveAssetSrc`, `collectAssetRefs`). Asset Library dialog: project menu → Assets.
 
 ## Runtime shape

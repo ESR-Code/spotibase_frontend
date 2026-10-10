@@ -83,6 +83,7 @@ type UIState = {
   scenesModalOpen: boolean;
   /** Project asset library (images, models). */
   assetLibraryOpen: boolean;
+  publishDialogOpen: boolean;
   actionsModal: ActionsModalScope | null;
   /** Spawn Hotspot template drawer (owner + node) while the Actions canvas is open. */
   spawnTemplateEditor: { ownerId: number; nodeId: string } | null;
@@ -108,6 +109,7 @@ type UIState = {
   setInfoBoxAnchor: (value: InfoBoxAnchorState) => void;
   setScenesModalOpen: (value: boolean) => void;
   setAssetLibraryOpen: (value: boolean) => void;
+  setPublishDialogOpen: (value: boolean) => void;
   openActionsModal: (scope: ActionsModalScope) => void;
   closeActionsModal: () => void;
   openSpawnTemplateEditor: (ownerId: number, nodeId: string) => void;
@@ -140,6 +142,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   infoBoxAnchor: null,
   scenesModalOpen: false,
   assetLibraryOpen: false,
+  publishDialogOpen: false,
   actionsModal: null,
   spawnTemplateEditor: null,
   spawnClickActionsEditor: null,
@@ -197,6 +200,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   },
   setScenesModalOpen: (scenesModalOpen) => set({ scenesModalOpen }),
   setAssetLibraryOpen: (assetLibraryOpen) => set({ assetLibraryOpen }),
+  setPublishDialogOpen: (publishDialogOpen) => set({ publishDialogOpen }),
   openActionsModal: (actionsModal) => set({ actionsModal }),
   closeActionsModal: () =>
     set({
@@ -238,6 +242,7 @@ export const useUIStore = create<UIState>((set, get) => ({
       propertiesDrawerOpen: false,
       scenesModalOpen: false,
       assetLibraryOpen: false,
+      publishDialogOpen: false,
       actionsModal: null,
       spawnTemplateEditor: null,
       spawnClickActionsEditor: null,

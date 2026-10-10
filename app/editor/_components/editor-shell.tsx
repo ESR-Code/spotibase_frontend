@@ -16,6 +16,7 @@ import { SettingsDrawer } from "@/app/editor/_components/drawers/settings-drawer
 import { ActionsModal } from "@/app/editor/_components/actions/actions-modal";
 import { SpawnClickActionsModal } from "@/app/editor/_components/actions/spawn-click-actions-modal";
 import { PreviewModal } from "@/app/editor/_components/dialogs/preview-modal";
+import { PublishDialog } from "@/app/editor/_components/dialogs/publish-dialog";
 import { ScenesModal } from "@/app/editor/_components/dialogs/scenes-modal";
 import { GeoreferenceModal } from "@/app/editor/_components/dialogs/georeference-modal";
 import { ConfirmDialogHost } from "@/app/editor/_components/ui/confirm-dialog-host";
@@ -60,6 +61,7 @@ export function EditorShell() {
         <PreviewModal />
         <ScenesModal />
         <AssetLibraryDialog />
+        <PublishDialog />
         <GeoreferenceModal />
         <ActionsModal />
         <SpawnClickActionsModal />

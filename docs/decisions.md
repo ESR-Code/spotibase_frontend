@@ -91,6 +91,15 @@ Only decisions that constrain how new work should be done.
 - **Client normalizes images** (16:9 center crop, ≤ 1920×1080 WebP) so stored thumbnails stay small and uniform.
 - **Local-first dev storage.** Without R2 S3 credentials the Worker accepts the upload itself (`/thumbnail/upload`, same auth/key/type/size checks) into the Miniflare bucket, so storage works offline. The remote binding is opt-in (`npm run dev:api:r2`) for testing real presigned uploads; plain `dev:api` must not require a Cloudflare login. Production must have the S3 credentials set so bytes bypass the Worker.
 
+## Publishing
+
+- **Immutable server-built snapshots.** `publish_project_version` builds the snapshot in SQL from the saved rows after an `expected_revision` check; the browser never sends snapshot JSON. The future viewer reads only `project_versions` (`status = 'published'`), never `projects` / `scenes`.
+- **No Data API writes to `project_versions`.** Migration 0007 revokes INSERT / UPDATE / DELETE from `authenticated` (and `anonymous`) and leaves a select-only policy. Only the SECURITY DEFINER RPCs write; each checks `is_org_member` itself and uses `current_user_id()` (never `auth.*`, see migration `0005`).
+- **Retention is 5 versions per project, live included**, pruned on publish in the same transaction. Unpublish archives and never prunes. Any org member may publish (same access as `projects`).
+- **Assets referenced by the draft or any retained version are kept.** The Worker GC adds `project_versions.asset_ids` to its keep set; asset delete is refused with 409 while a retained version references the file. Pruning only drops the version row, so GC reclaims files on a later sweep.
+- **Password hash lives in `project_publish_secrets`** (RLS on, no policies or grants), not on `projects`, because `projects` is fully readable by org members. `projects.publish_password_protected` is the readable flag.
+- **Publish saves first.** A dirty draft is saved, then the fresh revision is published. Uploads in flight block publishing, like Save.
+
 ## Undo / redo
 
 - **Scoped snapshot history** (`lib/editor/history/`). `history-store.ts` holds one past/future stack per scope string (cap 100); entries are `{ label, undo, redo }` that write straight to the stores and never record themselves. `snapshot.ts` turns before/after JSON snapshots into an entry (`recordSnapshotChange` / `runSnapshotChange`, no-ops skipped) and `toastUndo` shows the Undo toast, which only undoes its own entry while it is still the latest.

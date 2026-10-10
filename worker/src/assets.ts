@@ -146,9 +146,9 @@ type GcSceneRow = {
  * `/storage/projects/:id/assets` sub-routes:
  * - `POST /upload-url` reserve a pending row (or reuse one with the same sha256)
  * - `PUT /upload?key=` local-dev direct upload into the simulated bucket
- * - `POST /gc` delete unreferenced ready assets; pending rows wait out the upload window
+ * - `POST /gc` delete ready assets neither the draft nor a retained version references; pending rows wait out the upload window
  * - `POST /:assetId/commit` validate the object and mark the row ready
- * - `DELETE /:assetId` drop the row and the object
+ * - `DELETE /:assetId` drop the row and the object (409 while a retained version uses it)
  * - `DELETE ""` remove every asset object (project delete; rows cascade)
  */
 export async function handleAssets(
@@ -206,6 +206,16 @@ export async function handleAssets(
 			return commitUpload(request, row, token);
 		}
 		if (action === "" && request.method === "DELETE") {
+			const inVersion = await dataApi(
+				token,
+				`/project_versions?project_id=eq.${project.id}&asset_ids=cs.{${row.id}}&select=id&limit=1`,
+			);
+			if (!inVersion.ok) {
+				return json(403, { error: "Could not check the project versions." });
+			}
+			if (((await inVersion.json()) as unknown[]).length > 0) {
+				return json(409, { error: "Used by a published version" });
+			}
 			const response = await dataApi(token, `/assets?id=eq.${row.id}`, { method: "DELETE" });
 			if (!response.ok) {
 				return json(403, { error: await dataError(response, "Could not delete the asset.") });
@@ -370,6 +380,19 @@ async function collectUnreferencedAssets(project: ProjectAccess, token: string) 
 	if (!scenes || !projects || !assets) {
 		return json(403, { error: "Could not read the project." });
 	}
+	// Read versions after the draft: a version is built from a draft that
+	// already held its assets, so an asset dropped from the draft in between
+	// is still seen here. A failed read aborts the sweep (never delete blind).
+	const versionQuery = new URLSearchParams({
+		project_id: `eq.${project.id}`,
+		select: "id,asset_ids",
+		order: "id.asc",
+	});
+	const versions = await listPages<{ asset_ids: string[] | null }>(
+		token,
+		`/project_versions?${versionQuery}`,
+	);
+	if (!versions) return json(403, { error: "Could not read the project versions." });
 
 	const keep = new Set<string>();
 	for (const scene of scenes) {
@@ -379,6 +402,9 @@ async function collectUnreferencedAssets(project: ProjectAccess, token: string) 
 		}
 	}
 	collectReferencedIds(projects[0]?.editor_data, keep);
+	for (const version of versions) {
+		for (const id of version.asset_ids ?? []) keep.add(id.toLowerCase());
+	}
 
 	const now = Date.now();
 	let deleted = 0;
