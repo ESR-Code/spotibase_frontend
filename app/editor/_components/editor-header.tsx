@@ -28,7 +28,7 @@ export function EditorHeader() {
   );
 
   return (
-    <header className="z-20 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 border-b border-[var(--studio-line)] bg-[rgba(9,15,31,0.86)] px-5 py-3 backdrop-blur-xl">
+    <header className="z-[32] grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 border-b border-[var(--studio-line)] bg-[rgba(9,15,31,0.86)] px-5 py-3 backdrop-blur-xl">
       <div className="flex min-w-0 items-center gap-3">
         <div className="shrink-0">
           <BrandMark />

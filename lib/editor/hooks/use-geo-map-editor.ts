@@ -6,6 +6,10 @@ import { toast } from "@/lib/editor/toast";
 import { runHotspotActions } from "@/lib/editor/actions/run-hotspot-actions";
 import { captureViewportPreview } from "@/lib/editor/engine/capture-viewport-preview";
 import {
+  registerViewportCapturer,
+  SCENE_THUMBNAIL_MAX_WIDTH,
+} from "@/lib/editor/engine/viewport-capture";
+import {
   poseFromGeoViewport,
   resolveGeoHomeViewport,
   type GeoMapViewport,
@@ -19,7 +23,7 @@ import {
   selectLayerExclusive,
 } from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
-import { findHotspot } from "@/lib/editor/state/preview-hotspots";
+import { findHotspot, listPreviewHotspots } from "@/lib/editor/state/preview-hotspots";
 import { usePreviewSpawnedHotspotsStore } from "@/lib/editor/state/preview-spawned-hotspots-store";
 import { useGeoStore } from "@/lib/editor/state/geo-store";
 import { useLayersStore } from "@/lib/editor/state/layers-store";
@@ -41,6 +45,7 @@ import {
   usePreviewAppearanceStore,
 } from "@/lib/editor/state/preview-appearance-store";
 import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
+import { isHiddenHotspotStyle } from "@/lib/editor/types/hotspot";
 import {
   DEFAULT_SHAPE_FILL,
   DEFAULT_SHAPE_STROKE,
@@ -152,6 +157,7 @@ function syncOverlayAnchors(map: MapLibreMap) {
     editor.hoveredId != null && editor.hoveredId !== previewActiveId;
   if (
     editor.isPreview &&
+    !ui.previewShowAllLabels &&
     settings.previewShowLabelOnSelect &&
     previewActiveId != null &&
     !ui.previewLabelPending &&
@@ -173,6 +179,56 @@ function syncOverlayAnchors(map: MapLibreMap) {
       ui.setHoverTooltip(null);
     }
   }
+
+  syncAllHotspotLabels(map, {
+    showAll: editor.isPreview && ui.previewShowAllLabels,
+    infoBoxOpen,
+    previewActiveId,
+    legendFilter: ui.legendFilterCategory,
+  });
+}
+
+function syncAllHotspotLabels(
+  map: MapLibreMap,
+  options: {
+    showAll: boolean;
+    infoBoxOpen: boolean;
+    previewActiveId: number | null;
+    legendFilter: string;
+  },
+) {
+  const ui = useUIStore.getState();
+  if (!options.showAll) {
+    if (ui.labelAnchors.length > 0) ui.setLabelAnchors([]);
+    return;
+  }
+
+  const canvas = map.getCanvas();
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+  const filterByLegend = options.legendFilter !== LEGEND_CATEGORY_ALL;
+  const anchors: { id: number; x: number; y: number; title: string }[] = [];
+
+  for (const hotspot of listPreviewHotspots()) {
+    const resolved = resolveHotspotAppearance(hotspot, true);
+    if (isHiddenHotspotStyle(resolved.style)) continue;
+    if (filterByLegend && hotspot.category !== options.legendFilter) continue;
+    if (!isPreviewHotspotEnabled(true, hotspot.id)) continue;
+    if (options.infoBoxOpen && hotspot.id === options.previewActiveId) continue;
+    const point = projectHotspot(map, hotspot.position.x, hotspot.position.y);
+    if (!point) continue;
+    if (point.x < 0 || point.y < 0 || point.x > width || point.y > height) {
+      continue;
+    }
+    anchors.push({
+      id: hotspot.id,
+      x: point.x,
+      y: point.y,
+      title: resolved.title,
+    });
+  }
+
+  ui.setLabelAnchors(anchors);
 }
 
 export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
@@ -423,6 +479,11 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
     window.addEventListener("editor:set-hotspot-camera", onSetHotspotCamera);
     window.addEventListener("editor:focus-hotspot", onFocusHotspot);
     window.addEventListener("editor:scene-switched", onSceneSwitched);
+    const unregisterCapture = registerViewportCapturer(() => {
+      const canvas = map.getCanvas();
+      if (!canvas) return null;
+      return captureViewportPreview(canvas, SCENE_THUMBNAIL_MAX_WIDTH);
+    });
 
     const unsubEditor = useEditorStore.subscribe(() => syncOverlayAnchors(map));
     const unsubUi = useUIStore.subscribe(() => syncOverlayAnchors(map));
@@ -453,6 +514,7 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
       );
       window.removeEventListener("editor:focus-hotspot", onFocusHotspot);
       window.removeEventListener("editor:scene-switched", onSceneSwitched);
+      unregisterCapture();
       unsubEditor();
       unsubUi();
       unsubPreview();
@@ -485,6 +547,7 @@ export function handleGeoMarkerEnter(id: number, clientX: number, clientY: numbe
   const hotspot = findHotspot(id);
   if (!hotspot || !rect) return;
   if (id === ui.previewActiveHotspotId) return;
+  if (ui.previewShowAllLabels) return;
   ui.setHoverTooltip({
     x: clientX - rect.left,
     y: clientY - rect.top,

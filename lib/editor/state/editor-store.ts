@@ -20,6 +20,7 @@ import { usePreviewPostMessageTestStore } from "@/lib/editor/state/preview-post-
 import { usePreviewSpawnedHotspotsStore } from "@/lib/editor/state/preview-spawned-hotspots-store";
 import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility-store";
 import { useCustomMenuToggleStore } from "@/lib/editor/state/custom-menu-toggle-store";
+import { useUIStore } from "@/lib/editor/state/ui-store";
 import { useEditorAnimPreviewStore } from "@/lib/editor/state/editor-anim-preview-store";
 import { resetModelAnimation } from "@/lib/editor/engine/model-animation";
 import { hotspotTypeColors, PROJECT_NAME } from "@/lib/editor/theme/tokens";
@@ -118,6 +119,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       useCustomMenuToggleStore.getState().reset();
       resetModelAnimation();
       useEditorAnimPreviewStore.getState().reset();
+      useUIStore.getState().setPreviewShowAllLabels(false);
       if (isPreview) {
         usePreviewPostMessageTestStore.getState().beginPreview();
       } else {
@@ -167,6 +169,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       usePreviewPostMessageTestStore.getState().reset();
       resetModelAnimation();
       useEditorAnimPreviewStore.getState().reset();
+      useUIStore.getState().setPreviewShowAllLabels(false);
       void Promise.all([
         import("@/lib/editor/state/ui-store"),
         import("@/lib/editor/actions/open-modal-events"),

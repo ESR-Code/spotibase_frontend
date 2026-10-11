@@ -38,6 +38,7 @@ function toFormValues(
     markerDialogBackdrop: settings.markerDialogBackdrop,
     markerDialogBackdropBlur: settings.markerDialogBackdropBlur,
     markerDialogResetCameraOnClose: settings.markerDialogResetCameraOnClose,
+    markerDialogPrevNext: settings.markerDialogPrevNext ?? true,
     legendEnabled: settings.legendEnabled,
     logoUrl: settings.logoUrl,
     logoScale: settings.logoScale,

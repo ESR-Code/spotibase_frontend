@@ -259,7 +259,9 @@ export function createPickingController(
       const activeId = ui.previewActiveHotspotId;
       const rect = canvas.getBoundingClientRect();
 
-      if (id != null && id !== activeId) {
+      if (ui.previewShowAllLabels) {
+        if (ui.hoverTooltip) ui.setHoverTooltip(null);
+      } else if (id != null && id !== activeId) {
         // Hovering a different hotspot — follow the cursor.
         const hovered = findHotspot(id);
         ui.setHoverTooltip({

@@ -4,7 +4,10 @@ import dynamic from "next/dynamic";
 import { AlignmentMarkersOverlay } from "@/app/editor/_components/viewport/alignment-markers-overlay";
 import { AlignmentPickBanner } from "@/app/editor/_components/viewport/alignment-pick-banner";
 import { EngineErrorBanner } from "@/app/editor/_components/viewport/engine-error-banner";
-import { HotspotHoverTooltip } from "@/app/editor/_components/viewport/hotspot-hover-tooltip";
+import {
+  HotspotHoverTooltip,
+  HotspotLabelOverlay,
+} from "@/app/editor/_components/viewport/hotspot-hover-tooltip";
 import { ModelDropOverlay } from "@/app/editor/_components/viewport/model-drop-overlay";
 import { PlayCanvasViewport } from "@/app/editor/_components/viewport/playcanvas-viewport";
 import { PostMessageReceiveTestSuite } from "@/app/editor/_components/viewport/post-message-receive-test-suite";
@@ -51,6 +54,7 @@ export function ViewportFrame() {
       {isGeo ? <GeoMapViewport /> : null}
       {engineError && !isGeo ? <EngineErrorBanner message={engineError} /> : null}
       <HotspotHoverTooltip />
+      <HotspotLabelOverlay />
       {!isGeo ? <AlignmentMarkersOverlay /> : null}
       <AlignmentPickBanner />
       {isGeo ? null : <ModelDropOverlay />}

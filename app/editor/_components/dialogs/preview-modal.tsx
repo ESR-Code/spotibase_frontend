@@ -54,6 +54,8 @@ export function PreviewModal() {
   const resetCameraOnClose = useSettingsStore(
     (s) => s.markerDialogResetCameraOnClose,
   );
+  const prevNextEnabled = useSettingsStore((s) => s.markerDialogPrevNext);
+  const showPrevNext = prevNextEnabled !== false && count >= 2;
 
   const revealSelectLabel = useCallback(
     (hotspotId: number) => {
@@ -167,14 +169,14 @@ export function PreviewModal() {
   }, [showLabelOnSelect, isInfoBox, setHoverTooltip]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !showPrevNext) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") goPrev();
       else if (e.key === "ArrowRight") goNext();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, goPrev, goNext]);
+  }, [open, showPrevNext, goPrev, goNext]);
 
   if (!hotspot) return null;
 
@@ -264,19 +266,21 @@ export function PreviewModal() {
         />
       </EditorDialog.Body>
 
-      <EditorDialog.Footer>
-        <EditorButton variant="ghost" className="text-[12px]" onClick={goPrev}>
-          <ChevronLeft className="h-3 w-3" />
-          Prev
-        </EditorButton>
-        <span className="text-[11px]" style={{ color: "var(--editor-muted-2)" }}>
-          {index + 1} / {count}
-        </span>
-        <EditorButton variant="ghost" className="text-[12px]" onClick={goNext}>
-          Next
-          <ChevronRight className="h-3 w-3" />
-        </EditorButton>
-      </EditorDialog.Footer>
+      {showPrevNext ? (
+        <EditorDialog.Footer>
+          <EditorButton variant="ghost" className="text-[12px]" onClick={goPrev}>
+            <ChevronLeft className="h-3 w-3" />
+            Prev
+          </EditorButton>
+          <span className="text-[11px]" style={{ color: "var(--editor-muted-2)" }}>
+            {index + 1} / {count}
+          </span>
+          <EditorButton variant="ghost" className="text-[12px]" onClick={goNext}>
+            Next
+            <ChevronRight className="h-3 w-3" />
+          </EditorButton>
+        </EditorDialog.Footer>
+      ) : null}
     </EditorDialog>
   );
 }

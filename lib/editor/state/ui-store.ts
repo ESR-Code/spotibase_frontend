@@ -9,6 +9,14 @@ export type HoverTooltipState = {
   pinned?: boolean;
 } | null;
 
+/** Screen position of one hotspot title while Preview shows every label. */
+export type HotspotLabelAnchor = {
+  id: number;
+  x: number;
+  y: number;
+  title: string;
+};
+
 /** Screen-space anchor for the marker info box presentation. */
 export type InfoBoxAnchorState = {
   x: number;
@@ -31,6 +39,26 @@ function sameHoverTooltip(
     Math.abs(a.x - b.x) <= SCREEN_EPS &&
     Math.abs(a.y - b.y) <= SCREEN_EPS
   );
+}
+
+function sameLabelAnchors(
+  a: HotspotLabelAnchor[],
+  b: HotspotLabelAnchor[],
+): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    const left = a[i];
+    const right = b[i];
+    if (
+      left.id !== right.id ||
+      left.title !== right.title ||
+      Math.abs(left.x - right.x) > SCREEN_EPS ||
+      Math.abs(left.y - right.y) > SCREEN_EPS
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function sameInfoBoxAnchor(
@@ -77,6 +105,10 @@ type UIState = {
   previewActiveHotspotId: number | null;
   /** Hide select label briefly after click before revealing with transition. */
   previewLabelPending: boolean;
+  /** Preview-session toggle: show a title on every visible hotspot. */
+  previewShowAllLabels: boolean;
+  /** Screen anchors for that toggle. Empty when it is off. */
+  labelAnchors: HotspotLabelAnchor[];
   hoverTooltip: HoverTooltipState;
   /** Screen position of the active hotspot for info box presentation. */
   infoBoxAnchor: InfoBoxAnchorState;
@@ -105,6 +137,8 @@ type UIState = {
   setPreviewModalIndex: (index: number) => void;
   setPreviewActiveHotspotId: (id: number | null) => void;
   setPreviewLabelPending: (value: boolean) => void;
+  setPreviewShowAllLabels: (value: boolean) => void;
+  setLabelAnchors: (anchors: HotspotLabelAnchor[]) => void;
   setHoverTooltip: (value: HoverTooltipState) => void;
   setInfoBoxAnchor: (value: InfoBoxAnchorState) => void;
   setScenesModalOpen: (value: boolean) => void;
@@ -138,6 +172,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   previewModalIndex: 0,
   previewActiveHotspotId: null,
   previewLabelPending: false,
+  previewShowAllLabels: false,
+  labelAnchors: [],
   hoverTooltip: null,
   infoBoxAnchor: null,
   scenesModalOpen: false,
@@ -189,6 +225,21 @@ export const useUIStore = create<UIState>((set, get) => ({
   setPreviewLabelPending: (previewLabelPending) => {
     if (get().previewLabelPending === previewLabelPending) return;
     set({ previewLabelPending });
+  },
+  setPreviewShowAllLabels: (previewShowAllLabels) => {
+    const current = get();
+    if (current.previewShowAllLabels === previewShowAllLabels) {
+      if (previewShowAllLabels || current.labelAnchors.length === 0) return;
+    }
+    set(
+      previewShowAllLabels
+        ? { previewShowAllLabels: true, hoverTooltip: null }
+        : { previewShowAllLabels: false, labelAnchors: [] },
+    );
+  },
+  setLabelAnchors: (labelAnchors) => {
+    if (sameLabelAnchors(get().labelAnchors, labelAnchors)) return;
+    set({ labelAnchors });
   },
   setHoverTooltip: (hoverTooltip) => {
     if (sameHoverTooltip(get().hoverTooltip, hoverTooltip)) return;

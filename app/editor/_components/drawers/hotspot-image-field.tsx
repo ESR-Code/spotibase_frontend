@@ -30,6 +30,8 @@ type HotspotImageFieldProps = {
   layout?: "stack" | "split";
   /** Optional URL / extra controls rendered above the upload button. */
   urlInput?: ReactNode;
+  /** Extra controls under the upload row (scene thumbnail screenshot, etc.). */
+  extraActions?: ReactNode;
 };
 
 export function HotspotImageField({
@@ -43,6 +45,7 @@ export function HotspotImageField({
   className,
   layout = "stack",
   urlInput,
+  extraActions,
 }: HotspotImageFieldProps) {
   const [uploading, setUploading] = useState(false);
   const src = useAssetSrc(value);
@@ -67,19 +70,21 @@ export function HotspotImageField({
   const controls = (
     <div className="min-w-0">
       {showUrlInput ? <div className="mb-2">{urlInput}</div> : null}
-      <div className="flex gap-2">
+      <div className="flex min-w-0 gap-2">
         <label
           className={cn(
-            "editor-btn mb-0 flex-1 cursor-pointer justify-center",
+            "editor-btn mb-0 min-w-0 flex-1 cursor-pointer justify-center overflow-hidden",
             uploading && "pointer-events-none opacity-60",
           )}
         >
           {uploading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
           ) : (
-            <Upload className="h-4 w-4" />
+            <Upload className="h-4 w-4 shrink-0" />
           )}
-          {uploading ? "Uploading…" : uploadLabel}
+          <span className="truncate">
+            {uploading ? "Uploading…" : uploadLabel}
+          </span>
           <input
             type="file"
             accept={IMAGE_ASSET_ACCEPT}
@@ -99,10 +104,8 @@ export function HotspotImageField({
             toast.success(successMessage);
           }}
         />
-        <IconButton title={clearTitle} onClick={() => onChange("")} disabled={!value}>
-          <X />
-        </IconButton>
       </div>
+      {extraActions ? <div className="mt-2">{extraActions}</div> : null}
       {hint ? (
         <div className="mt-1.5 text-[11px]" style={{ color: "var(--editor-muted)" }}>
           {hint}
@@ -114,8 +117,8 @@ export function HotspotImageField({
   const preview = (
     <div
       className={cn(
-        "flex items-center justify-center overflow-hidden rounded-lg text-xs",
-        layout === "split" ? "h-[88px] max-h-[88px]" : "mt-2 h-[72px]",
+        "relative flex min-w-0 items-center justify-center overflow-hidden rounded-lg text-xs",
+        layout === "split" ? "min-h-[88px] self-stretch" : "mt-2 h-[72px]",
       )}
       style={{
         background: "var(--editor-input-bg)",
@@ -125,21 +128,31 @@ export function HotspotImageField({
     >
       {missing ? (
         <span
-          className="inline-flex items-center gap-2 px-2 text-center"
+          className="flex max-w-full flex-col items-center gap-1.5 px-3 text-center text-[11px] leading-snug"
           style={{ color: "var(--editor-crimson)" }}
         >
-          <ImageOff className="h-3.5 w-3.5" />
+          <ImageOff className="h-4 w-4 shrink-0" />
           Missing asset
         </span>
       ) : src ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt="Preview" className="h-full w-full object-cover" />
+        <img src={src} alt="Preview" className="absolute inset-0 h-full w-full object-cover" />
       ) : (
-        <span className="inline-flex items-center gap-2 px-2 text-center">
-          <ImageIcon className="h-3.5 w-3.5" />
+        <span className="flex max-w-full flex-col items-center gap-1.5 px-3 text-center text-[11px] leading-snug">
+          <ImageIcon className="h-4 w-4 shrink-0 opacity-70" />
           {emptyLabel}
         </span>
       )}
+      {value ? (
+        <IconButton
+          title={clearTitle}
+          aria-label={clearTitle}
+          className="absolute right-1.5 top-1.5 z-[1] border border-[var(--editor-line)] bg-[rgba(9,15,31,0.82)]"
+          onClick={() => onChange("")}
+        >
+          <X />
+        </IconButton>
+      ) : null}
     </div>
   );
 

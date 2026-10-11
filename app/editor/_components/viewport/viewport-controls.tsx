@@ -9,6 +9,7 @@ import {
   RotateCcw,
   SlidersHorizontal,
   Square,
+  Tags,
 } from "lucide-react";
 import { runCustomMenuButtonActions } from "@/lib/editor/actions/run-action-graph";
 import { useEditorAnimTransport } from "@/lib/editor/hooks/use-editor-anim-transport";
@@ -29,6 +30,8 @@ export function ViewportControls() {
   const wireframe = useModelStore((s) => s.wireframe);
   const setWireframe = useModelStore((s) => s.setWireframe);
   const isPreview = useEditorStore((s) => s.isPreview);
+  const showAllLabels = useUIStore((s) => s.previewShowAllLabels);
+  const setPreviewShowAllLabels = useUIStore((s) => s.setPreviewShowAllLabels);
   const setSettingsDrawerOpen = useUIStore((s) => s.setSettingsDrawerOpen);
   const customMenuButtons = useSettingsStore((s) => s.customMenuButtons);
   const toggledIds = useCustomMenuToggleStore((s) => s.toggledIds);
@@ -65,6 +68,18 @@ export function ViewportControls() {
         >
           <Minus className="h-3.5 w-3.5" />
         </ControlButton>
+        {isPreview ? (
+          <>
+            <div className="editor-vsep" style={{ height: 18 }} />
+            <ControlButton
+              title={showAllLabels ? "Hide hotspot labels" : "Show hotspot labels"}
+              active={showAllLabels}
+              onClick={() => setPreviewShowAllLabels(!showAllLabels)}
+            >
+              <Tags className="h-3.5 w-3.5" />
+            </ControlButton>
+          </>
+        ) : null}
         {isPreview && customMenuButtons.length > 0 ? (
           <>
             <div className="editor-vsep" style={{ height: 18 }} />

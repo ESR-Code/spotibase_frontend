@@ -37,6 +37,7 @@ function pickSettings(state: SettingsState): EditorSettings {
     markerDialogBackdrop: state.markerDialogBackdrop,
     markerDialogBackdropBlur: state.markerDialogBackdropBlur,
     markerDialogResetCameraOnClose: state.markerDialogResetCameraOnClose,
+    markerDialogPrevNext: state.markerDialogPrevNext,
     legendEnabled: state.legendEnabled,
     legendCategories: state.legendCategories,
     logoUrl: state.logoUrl,

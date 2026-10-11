@@ -102,13 +102,18 @@ function AssetPickerDialog({
               <button
                 key={asset.id}
                 type="button"
-                className="editor-btn flex h-auto flex-col items-stretch gap-1.5 p-1.5 text-left"
+                className="editor-btn flex h-auto min-w-0 flex-col items-stretch gap-1.5 overflow-hidden p-1.5 text-left whitespace-normal"
                 onClick={() => onPick(asset)}
                 title={asset.name}
               >
                 <AssetThumb asset={asset} className="aspect-square w-full" />
-                <span className="truncate text-[11px] font-semibold">{asset.name}</span>
-                <span className="text-[10px]" style={{ color: "var(--editor-muted)" }}>
+                <span className="block min-w-0 w-full truncate text-[11px] font-semibold">
+                  {asset.name}
+                </span>
+                <span
+                  className="block min-w-0 w-full truncate text-[10px]"
+                  style={{ color: "var(--editor-muted)" }}
+                >
                   {formatAssetSize(asset.size)}
                 </span>
               </button>

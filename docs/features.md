@@ -17,8 +17,8 @@ Status as of the current codebase. “Partial” means code exists but the featu
 - Multiple scenes; one primary. Types: **3D Model** (orbit + GLB), **2D Image** (pan/zoom + PNG/JPG/WebP), **Geo map** (MapLibre globe/flat).
 - Type is fixed at creation. Settings sections and outliner tabs follow the scene-type registry.
 - Subject import via file picker or drag-drop (`import-subject`). Scene subject cache when switching.
-- Optional scene description (create form + Scene Settings) and thumbnail upload (Scene Settings). Empty description is omitted from lists, not shown as a placeholder.
-- Scene settings: name / description / thumbnail, camera limits, grid, logo, marker dialog presentation (modal / drawer / infobox, optional drawer inset), legend, custom Preview bottom-menu buttons.
+- Optional scene description (create form + Scene Settings) and thumbnail upload (Scene Settings), including **Use screenshot** which captures the live viewport and stores it as an image asset. Empty description is omitted from lists, not shown as a placeholder.
+- Scene settings: name / description / thumbnail, camera limits, grid, logo, marker dialog presentation (modal / drawer / infobox, optional drawer inset), optional prev/next buttons in the hotspot dialog (on by default; hidden when the scene has fewer than two hotspots), legend, custom Preview bottom-menu buttons.
 - Environment + lighting (PlayCanvas). SSAO effects (model scenes).
 - Geo start pin, zoom, map style, globe vs flat mercator. Nominatim place search.
 
@@ -88,7 +88,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 ### Preview chrome
 
 - Project-wide General Settings: accent, inputs, borders, surface opacity/blur, legend / scene-explorer / hotspot-dialog surface colors, bottom-menu style, Scene Explorer enable.
-- Legend drawer in Preview. Scene Explorer drawer in Preview (above the legend button) lists scenes with name, optional description, and thumbnail; click uses the Go To Scene transition. Logo overlay. Reset-view / home camera (orbit or geo viewport pose).
+- Legend drawer in Preview. Scene Explorer drawer in Preview (above the legend button) lists scenes with name, optional description, and thumbnail; click uses the Go To Scene transition. Logo overlay. Reset-view / home camera (orbit or geo viewport pose). Preview bottom bar can show every visible hotspot title at once (session only; cleared when leaving Preview).
 - Post Message receive test HUD (editor-only chip/panel, stacked under the viewport info HUD) when a receive node has Test in Preview on.
 
 

@@ -4,6 +4,10 @@ import { useEffect, useRef } from "react";
 import { toast } from "@/lib/editor/toast";
 import { createCameraController } from "@/lib/editor/engine/camera-controller";
 import { captureViewportPreview } from "@/lib/editor/engine/capture-viewport-preview";
+import {
+  registerViewportCapturer,
+  SCENE_THUMBNAIL_MAX_WIDTH,
+} from "@/lib/editor/engine/viewport-capture";
 import { createPlayCanvasAppAsync } from "@/lib/editor/engine/create-playcanvas-app";
 import { createEffectsManager } from "@/lib/editor/engine/effects-manager";
 import { createHotspotManager } from "@/lib/editor/engine/hotspot-manager";
@@ -558,6 +562,11 @@ export function usePlayCanvasEditor() {
         window.addEventListener("editor:zoom", onZoom);
         window.addEventListener("editor:focus-hotspot", onFocusHotspot);
         window.addEventListener("editor:scene-switched", onSceneSwitched);
+        const unregisterCapture = registerViewportCapturer(() => {
+          if (!isPlayCanvasSceneType(getActiveSceneType())) return null;
+          app.render();
+          return captureViewportPreview(canvas, SCENE_THUMBNAIL_MAX_WIDTH);
+        });
 
         useModelStore.getState().setEngineReady(true);
         useModelStore.getState().setEngineError(null);
@@ -581,6 +590,7 @@ export function usePlayCanvasEditor() {
           window.removeEventListener("editor:zoom", onZoom);
           window.removeEventListener("editor:focus-hotspot", onFocusHotspot);
           window.removeEventListener("editor:scene-switched", onSceneSwitched);
+          unregisterCapture();
           unsubEnv();
           unsubEffects();
           unsubSettings();

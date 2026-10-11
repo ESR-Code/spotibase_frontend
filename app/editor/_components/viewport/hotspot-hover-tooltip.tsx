@@ -5,11 +5,12 @@ import { useUIStore } from "@/lib/editor/state/ui-store";
 
 export function HotspotHoverTooltip() {
   const tooltip = useUIStore((s) => s.hoverTooltip);
+  const showAllLabels = useUIStore((s) => s.previewShowAllLabels);
   const labelColor = useSettingsStore((s) => s.hotspotLabelColor);
   const textColor = useSettingsStore((s) => s.hotspotLabelTextColor);
   const borderColor = useSettingsStore((s) => s.hotspotLabelBorderColor);
 
-  if (!tooltip) return null;
+  if (!tooltip || showAllLabels) return null;
 
   return (
     <div
@@ -28,4 +29,30 @@ export function HotspotHoverTooltip() {
       {tooltip.title}
     </div>
   );
+}
+
+export function HotspotLabelOverlay() {
+  const showAllLabels = useUIStore((s) => s.previewShowAllLabels);
+  const anchors = useUIStore((s) => s.labelAnchors);
+  const labelColor = useSettingsStore((s) => s.hotspotLabelColor);
+  const textColor = useSettingsStore((s) => s.hotspotLabelTextColor);
+  const borderColor = useSettingsStore((s) => s.hotspotLabelBorderColor);
+
+  if (!showAllLabels || anchors.length === 0) return null;
+
+  return anchors.map((anchor) => (
+    <div
+      key={anchor.id}
+      className="editor-hover-tooltip pointer-events-none absolute z-20"
+      style={{
+        left: anchor.x,
+        top: anchor.y,
+        background: labelColor,
+        color: textColor,
+        borderColor,
+      }}
+    >
+      {anchor.title}
+    </div>
+  ));
 }

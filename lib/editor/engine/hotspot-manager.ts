@@ -123,6 +123,12 @@ export function createHotspotManager(
     const camRot = camera.getRotation();
     const refDist = settings.hotspotRefDist;
     const previewActiveId = ui.previewActiveHotspotId;
+    const showAllLabels = editor.isPreview && ui.previewShowAllLabels;
+    const infoBoxOpen =
+      ui.previewModalOpen &&
+      settings.markerDialogPresentation === "infobox";
+    const labelAnchors: { id: number; x: number; y: number; title: string }[] =
+      [];
 
     const legendFilter = ui.legendFilterCategory;
     const filterByLegend =
@@ -199,7 +205,30 @@ export function createHotspotManager(
         visual.core.rotateLocal(-90, 0, 0);
       }
 
+      if (
+        showAllLabels &&
+        camera.camera &&
+        !(infoBoxOpen && hotspot.id === previewActiveId)
+      ) {
+        toHotspot.sub2(pos, camPos);
+        if (toHotspot.dot(camera.forward) > 0) {
+          camera.camera.worldToScreen(pos, screenPos);
+          labelAnchors.push({
+            id: hotspot.id,
+            x: screenPos.x,
+            y: screenPos.y,
+            title: resolved.title,
+          });
+        }
+      }
+
       index += 1;
+    }
+
+    if (showAllLabels) {
+      useUIStore.getState().setLabelAnchors(labelAnchors);
+    } else if (ui.labelAnchors.length > 0) {
+      useUIStore.getState().setLabelAnchors([]);
     }
 
     // Pin title label to the selected preview hotspot after the click reveal delay.
@@ -207,11 +236,9 @@ export function createHotspotManager(
     // Skip when the info box is open — it occupies the same screen space.
     const hoveringOther =
       editor.hoveredId != null && editor.hoveredId !== previewActiveId;
-    const infoBoxOpen =
-      ui.previewModalOpen &&
-      settings.markerDialogPresentation === "infobox";
     if (
       editor.isPreview &&
+      !showAllLabels &&
       settings.previewShowLabelOnSelect &&
       previewActiveId != null &&
       !ui.previewLabelPending &&

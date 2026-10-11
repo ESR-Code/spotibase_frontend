@@ -39,6 +39,7 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   markerDialogBackdrop: false,
   markerDialogBackdropBlur: false,
   markerDialogResetCameraOnClose: true,
+  markerDialogPrevNext: true,
   legendEnabled: false,
   legendCategories: [],
   logoUrl: "",
@@ -184,6 +185,7 @@ export function cloneEditorSettings(settings: EditorSettings): EditorSettings {
       presentation === "infobox" ? false : settings.markerDialogBackdrop,
     markerDialogBackdropBlur:
       presentation === "infobox" ? false : settings.markerDialogBackdropBlur,
+    markerDialogPrevNext: settings.markerDialogPrevNext ?? true,
     resetPosition: cloneCameraResetPosition(settings.resetPosition ?? null),
     legendCategories: cloneLegendCategories(settings.legendCategories ?? []),
     legendEnabled: settings.legendEnabled ?? false,

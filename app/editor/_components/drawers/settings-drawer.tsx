@@ -2,6 +2,7 @@
 
 import {
   Camera,
+  ChevronsLeftRight,
   Globe,
   ImageIcon,
   Info,
@@ -336,6 +337,20 @@ export function SettingsDrawer() {
             checked={values.markerDialogResetCameraOnClose}
             onChange={(checked) =>
               form.setValue("markerDialogResetCameraOnClose", checked)
+            }
+          />
+        </SettingsSection>
+
+        <SettingsSection
+          title="Prev/next buttons"
+          icon={<ChevronsLeftRight className="h-3.5 w-3.5" />}
+        >
+          <SwitchField
+            label="Show prev/next buttons"
+            description="Show previous and next in the hotspot dialog"
+            checked={values.markerDialogPrevNext}
+            onChange={(checked) =>
+              form.setValue("markerDialogPrevNext", checked)
             }
           />
         </SettingsSection>
