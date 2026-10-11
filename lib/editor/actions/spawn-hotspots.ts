@@ -12,6 +12,11 @@ import {
 import { cloneActionGraph, createDefaultActionGraph } from "@/lib/editor/actions/create-action-graph";
 import { nextContentButtonOwnerId } from "@/lib/editor/blocks/content-buttons";
 import { geoToScene } from "@/lib/editor/coords/scene-coords";
+import {
+  sampleSubjectSurfaceY,
+  subjectTopY,
+} from "@/lib/editor/engine/subject-surface";
+import { getSceneType } from "@/lib/editor/scene-types/registry";
 import { createHotspotData } from "@/lib/editor/state/editor-store";
 import { findHotspotIndex } from "@/lib/editor/state/preview-hotspots";
 import {
@@ -118,10 +123,51 @@ function resolvePosition(
       latitude: y,
     });
     if (!converted.ok) return null;
-    return converted.local;
+    const local = converted.local;
+    if (!getSceneType(active.type).spawnSurfacePlacement) return local;
+    const placedY = resolveHeight(template, local.x, local.z);
+    if (placedY == null) return null;
+    return { x: local.x, y: placedY, z: local.z };
   }
 
   return { x, y, z };
+}
+
+/**
+ * Y for a lat/lon pin on a 3D scene. The georeference only gives x / z; height
+ * comes from the subject surface (topmost mesh at that spot) or an explicit
+ * scene-unit value. `null` skips the item.
+ */
+function resolveHeight(
+  template: SpawnHotspotTemplate,
+  x: number,
+  z: number,
+): number | null {
+  if (template.yPlacement === "explicit") {
+    return parseCoord(template.positionHeight);
+  }
+
+  const offset = parseCoord(template.surfaceOffset) ?? 0;
+  const hit = sampleSubjectSurfaceY(x, z);
+  if (hit != null) return hit + offset;
+
+  switch (template.surfaceFallback) {
+    case "skip":
+      return null;
+    case "subjectTop":
+      return (subjectTopY() ?? 0) + offset;
+    default:
+      return offset;
+  }
+}
+
+/** Lat/lon on a scene type that can place pins on the subject surface. */
+export function spawnSupportsYPlacement(coordMode: SpawnCoordMode): boolean {
+  if (resolvedCoordMode(coordMode) !== "latlon") return false;
+  const scenes = useScenesStore.getState();
+  const active =
+    scenes.scenes.find((s) => s.id === scenes.activeSceneId) ?? scenes.scenes[0];
+  return Boolean(active && getSceneType(active.type).spawnSurfacePlacement);
 }
 
 export const SPAWN_NEEDS_FOR_EACH_MESSAGE =

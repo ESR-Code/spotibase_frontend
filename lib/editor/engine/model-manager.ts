@@ -14,6 +14,10 @@ import {
   collectModelMeshes,
   type CollectedModelMesh,
 } from "@/lib/editor/engine/model-meshes";
+import {
+  bindSubjectSurface,
+  unbindSubjectSurface,
+} from "@/lib/editor/engine/subject-surface";
 import { getSceneType } from "@/lib/editor/scene-types/registry";
 import {
   DEFAULT_MODEL_REFLECTION,
@@ -129,12 +133,19 @@ export function createModelManager(
   const syncMeshCatalog = () => {
     if (activeSceneType() !== "model") {
       meshEntities = [];
+      unbindSubjectSurface();
       useModelStore.getState().setMeshes([]);
       clearAnimationBinding();
       return;
     }
     const collected = collectModelMeshes(modelRoot);
     meshEntities = collected.entities;
+    // Fresh subject → fresh surface caches (Spawn Hotspot Y placement).
+    const surfaceEntities = collected.entities.map((item) => item.entity);
+    bindSubjectSurface({
+      getMeshEntities: () => surfaceEntities,
+      triangleType: pcModule.PRIMITIVE_TRIANGLES,
+    });
     applyMeshVisibility(
       usePreviewVisibilityStore.getState().disabledMeshIds,
     );

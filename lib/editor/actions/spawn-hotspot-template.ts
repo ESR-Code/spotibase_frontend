@@ -15,6 +15,8 @@ import type {
   HotspotActionGraph,
   SpawnCoordMode,
   SpawnHotspotTemplate,
+  SpawnSurfaceFallback,
+  SpawnYPlacement,
 } from "@/lib/editor/types/hotspot-action";
 import { hotspotTypeColors, markerColorSwatches } from "@/lib/editor/theme/tokens";
 
@@ -143,6 +145,10 @@ export function createDefaultSpawnHotspotTemplate(): SpawnHotspotTemplate {
     positionX: "{{lng}}",
     positionY: "{{lat}}",
     positionZ: "0",
+    yPlacement: "surface",
+    surfaceOffset: "0.3",
+    surfaceFallback: "ground",
+    positionHeight: "0",
     blocks: [],
     actions: createDefaultActionGraph(),
   };
@@ -164,6 +170,17 @@ function asTemplateActions(value: unknown): HotspotActionGraph {
 export function asSpawnCoordMode(value: unknown): SpawnCoordMode {
   if (value === "xyz" || value === "latlon" || value === "auto") return value;
   return "auto";
+}
+
+export function asSpawnYPlacement(value: unknown): SpawnYPlacement {
+  return value === "explicit" ? "explicit" : "surface";
+}
+
+export function asSpawnSurfaceFallback(value: unknown): SpawnSurfaceFallback {
+  if (value === "subjectTop" || value === "skip" || value === "ground") {
+    return value;
+  }
+  return "ground";
 }
 
 export function asSpawnHotspotTemplate(value: unknown): SpawnHotspotTemplate {
@@ -193,6 +210,10 @@ export function asSpawnHotspotTemplate(value: unknown): SpawnHotspotTemplate {
     positionX: asString(rec.positionX, fallback.positionX),
     positionY: asString(rec.positionY, fallback.positionY),
     positionZ: asString(rec.positionZ, fallback.positionZ),
+    yPlacement: asSpawnYPlacement(rec.yPlacement),
+    surfaceOffset: asString(rec.surfaceOffset, fallback.surfaceOffset),
+    surfaceFallback: asSpawnSurfaceFallback(rec.surfaceFallback),
+    positionHeight: asString(rec.positionHeight, fallback.positionHeight),
     blocks: cloneSpawnBlocks(rec.blocks),
     actions: asTemplateActions(rec.actions),
   };

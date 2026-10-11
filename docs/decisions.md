@@ -48,6 +48,7 @@ Only decisions that constrain how new work should be done.
 - **Canonical local frame is ENU:** +X east, +Y north, +Z up (meters). Control points are source of truth; the 4×4 is derived.
 - **3-point alignment for models, 2-point for images.** Geo scenes are not alignment targets.
 - **Spawn lat/lon on PlayCanvas** goes through `geoToScene` only when `geoReference.status === "aligned"`.
+- **Spawn Y on 3D scenes** (gated by `spawnSurfacePlacement` in the scene-type registry, model only): API lat/lon carries no usable height, so only the converted x / z are kept and Y is the topmost subject surface there, so pins never sit inside buildings of different heights. The query (`engine/subject-surface.ts`) projects triangles onto XZ and interpolates Y; it keeps a per-mesh-instance world-space copy plus an XZ grid, rebuilt only when that mesh's world matrix changes. Action code reaches it through the `bindSubjectSurface` binding set by `model-manager`, never engine instances. Per-node template fields: `yPlacement` (`surface` default / `explicit`), `surfaceOffset` (default 0.3, same lift as Add mode), `surfaceFallback` (`ground` default / `subjectTop` / `skip`) for no hit. Explicit Y is in scene units, no offset. Meshes disabled in Preview are ignored; skinned/animated meshes are sampled in bind pose.
 
 ## Rendering details
 

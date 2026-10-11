@@ -13,12 +13,19 @@ import { SettingsSection } from "@/app/editor/_components/ui/settings-section";
 import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
 import { insertTextAt } from "@/lib/editor/actions/interpolate-fields";
-import { spawnUsesLatLon } from "@/lib/editor/actions/spawn-hotspots";
+import {
+  spawnSupportsYPlacement,
+  spawnUsesLatLon,
+} from "@/lib/editor/actions/spawn-hotspots";
 import type { HttpFieldSource } from "@/lib/editor/blocks/http-field-sources";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { markerColorSwatches } from "@/lib/editor/theme/tokens";
-import type { SpawnHotspotTemplate } from "@/lib/editor/types/hotspot-action";
-import type { SpawnCoordMode } from "@/lib/editor/types/hotspot-action";
+import {
+  SPAWN_SURFACE_FALLBACKS,
+  type SpawnCoordMode,
+  type SpawnHotspotTemplate,
+  type SpawnSurfaceFallback,
+} from "@/lib/editor/types/hotspot-action";
 import { HOTSPOT_SHAPES } from "@/lib/editor/types/hotspot";
 
 type SpawnHotspotGeneralTabProps = {
@@ -79,6 +86,7 @@ export function SpawnHotspotGeneralTab({
     template.color as (typeof markerColorSwatches)[number],
   );
   const latLon = spawnUsesLatLon(coordMode);
+  const placeY = spawnSupportsYPlacement(coordMode);
 
   return (
     <div className="editor-general-tab space-y-2.5">
@@ -324,6 +332,79 @@ export function SpawnHotspotGeneralTab({
             </div>
           </div>
         )}
+
+        {placeY ? (
+          <div className="space-y-2">
+            <div>
+              <FieldLabel>Height</FieldLabel>
+              <div className="editor-pill-row">
+                <TypePill
+                  active={template.yPlacement === "surface"}
+                  onClick={() => onChange({ yPlacement: "surface" })}
+                >
+                  Surface
+                </TypePill>
+                <TypePill
+                  active={template.yPlacement === "explicit"}
+                  onClick={() => onChange({ yPlacement: "explicit" })}
+                >
+                  Explicit Y
+                </TypePill>
+              </div>
+            </div>
+
+            {template.yPlacement === "explicit" ? (
+              <div>
+                <FieldLabel className="mb-1.5">Y</FieldLabel>
+                <TokenInput
+                  value={template.positionHeight}
+                  placeholder="{{height}}"
+                  sources={fieldSources}
+                  onChange={(positionHeight) => onChange({ positionHeight })}
+                />
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <FieldLabel className="mb-1.5">Offset</FieldLabel>
+                    <TokenInput
+                      value={template.surfaceOffset}
+                      placeholder="0.3"
+                      sources={fieldSources}
+                      onChange={(surfaceOffset) => onChange({ surfaceOffset })}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel className="mb-1.5">If no surface</FieldLabel>
+                    <select
+                      className="editor-input w-full"
+                      value={template.surfaceFallback}
+                      onChange={(e) =>
+                        onChange({
+                          surfaceFallback: e.target
+                            .value as SpawnSurfaceFallback,
+                        })
+                      }
+                    >
+                      {SPAWN_SURFACE_FALLBACKS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div
+                  className="text-[11px]"
+                  style={{ color: "var(--editor-muted)" }}
+                >
+                  Places the pin on the topmost mesh at this lat/lon.
+                </div>
+              </>
+            )}
+          </div>
+        ) : null}
       </SettingsSection>
     </div>
   );

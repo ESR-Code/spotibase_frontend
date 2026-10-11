@@ -286,6 +286,24 @@ export const SPAWN_COORD_MODES: {
   { value: "latlon", label: "Lat / Lon" },
 ];
 
+/**
+ * How Spawn Hotspot picks Y for lat/lon on 3D scenes.
+ * `surface` casts down onto the subject; `explicit` uses `positionHeight`.
+ */
+export type SpawnYPlacement = "surface" | "explicit";
+
+/** Surface mode when the downward ray hits no mesh. */
+export type SpawnSurfaceFallback = "ground" | "subjectTop" | "skip";
+
+export const SPAWN_SURFACE_FALLBACKS: {
+  value: SpawnSurfaceFallback;
+  label: string;
+}[] = [
+  { value: "ground", label: "Ground (Y = 0)" },
+  { value: "subjectTop", label: "Subject top" },
+  { value: "skip", label: "Skip item" },
+];
+
 /** Shared hotspot fields used as a For Each item template. */
 export type SpawnHotspotTemplate = {
   title: string;
@@ -305,6 +323,13 @@ export type SpawnHotspotTemplate = {
   positionX: string;
   positionY: string;
   positionZ: string;
+  /** Lat/lon on 3D scenes only: how Y is chosen. */
+  yPlacement: SpawnYPlacement;
+  /** Scene-unit lift above the surface / fallback (token-capable). */
+  surfaceOffset: string;
+  surfaceFallback: SpawnSurfaceFallback;
+  /** Explicit Y in scene units (token-capable). */
+  positionHeight: string;
   blocks: HotspotBlock[];
   /** Click graph cloned onto each spawned pin. */
   actions: HotspotActionGraph;

@@ -5,6 +5,7 @@ import { ACTION_UI_REGISTRY } from "@/app/editor/_components/actions/action-node
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { getActionGraph } from "@/lib/editor/actions/create-action-graph";
 import { chainFromTrigger } from "@/lib/editor/actions/graph-ops";
+import { spawnSupportsYPlacement } from "@/lib/editor/actions/spawn-hotspots";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
@@ -139,8 +140,14 @@ function actionNodeDetail(
       if (!raw) return "→ response";
       return `→ ${raw}`;
     }
-    case "spawnHotspots":
-      return `→ ${node.data.coordMode}`;
+    case "spawnHotspots": {
+      if (!spawnSupportsYPlacement(node.data.coordMode)) {
+        return `→ ${node.data.coordMode}`;
+      }
+      const placement =
+        node.data.template.yPlacement === "explicit" ? "explicit Y" : "surface";
+      return `→ ${node.data.coordMode} · ${placement}`;
+    }
     case "switch": {
       const count = node.data.cases.length;
       const field = node.data.subject.trim() || "(no field)";

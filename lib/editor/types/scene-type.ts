@@ -29,6 +29,8 @@ export type SceneTypeDescriptor = {
     reflection: boolean;
   };
   settingsSections: SceneSettingsSections;
+  /** Spawn Hotspot can place lat/lon pins on the subject surface (Y raycast). */
+  spawnSurfacePlacement: boolean;
   outlinerTabs: {
     layers: boolean;
   };
