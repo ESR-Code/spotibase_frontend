@@ -1772,11 +1772,6 @@
   color: var(--editor-amber);
 }
 
-.editor-root .editor-header-save.editor-btn-primary:disabled {
-  opacity: 1;
-  cursor: not-allowed;
-}
-
 .editor-root .editor-header-save-status.is-action {
   border: none;
   background: transparent;

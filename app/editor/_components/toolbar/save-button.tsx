@@ -27,6 +27,7 @@ export function SaveButton() {
   const saving = status === "saving";
   const conflict = status === "conflict";
   const failed = status === "error";
+  const canSave = !saving && !uploading && !conflict && (dirty || failed);
 
   const statusLabel = saving
     ? "Saving…"
@@ -70,10 +71,10 @@ export function SaveButton() {
         </span>
       )}
       <EditorButton
-        variant="primary"
-        className="editor-header-save h-8 gap-1.5 px-3 text-[12px]"
+        variant={canSave ? "primary" : "default"}
+        className="h-8 gap-1.5 px-3 text-[12px]"
         title={title}
-        disabled={saving || uploading || conflict || (!dirty && !failed)}
+        disabled={!canSave}
         onClick={() => void saveProject()}
       >
         {saving || uploading ? (
