@@ -74,6 +74,17 @@ export async function unpublishProject(projectId: string): Promise<void> {
   await rpc<unknown>("unpublish_project", { p_project_id: projectId });
 }
 
+/** Makes an archived snapshot live. The editor draft is not changed. */
+export async function republishProjectVersion(
+  projectId: string,
+  versionId: string,
+): Promise<{ id: string; version: number }> {
+  return rpc("republish_project_version", {
+    p_project_id: projectId,
+    p_version_id: versionId,
+  });
+}
+
 /** `null` removes password protection. The password is never read back. */
 export async function setPublishPassword(
   projectId: string,

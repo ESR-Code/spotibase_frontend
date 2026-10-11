@@ -12,6 +12,7 @@ import {
   Loader2,
   Lock,
   Rocket,
+  Upload,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -29,6 +30,7 @@ import {
 import { useProjectPersistStore } from "@/lib/editor/persist/persist-store";
 import {
   loadPublishState,
+  republishProjectVersion,
   setPublishPassword,
   unpublishProject,
   type PublishState,
@@ -78,6 +80,7 @@ function PublishSettings({ onClose }: { onClose: () => void }) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [busy, setBusy] = useState<Busy>(null);
+  const [republishingId, setRepublishingId] = useState<string | null>(null);
   const [passwordFormOpen, setPasswordFormOpen] = useState(false);
 
   const refresh = useCallback(async () => {
@@ -123,7 +126,7 @@ function PublishSettings({ onClose }: { onClose: () => void }) {
   const upToDate =
     live != null && !dirty && live.editorRevision != null && revision <= live.editorRevision;
   const protectedOn = state?.passwordProtected ?? false;
-  const working = busy !== null;
+  const working = busy !== null || republishingId !== null;
 
   const publish = async () => {
     setBusy("publish");
@@ -189,6 +192,30 @@ function PublishSettings({ onClose }: { onClose: () => void }) {
     });
     if (!accepted) return;
     if (await savePassword(null)) setPasswordFormOpen(false);
+  };
+
+  const republish = async (version: PublishVersion) => {
+    if (!projectId) return;
+    const accepted = await confirmDelete({
+      subject: "version",
+      title: `Publish version ${version.version}`,
+      description: live
+        ? `Version ${live.version} goes offline. Viewers will see version ${version.version}. The editor is not changed.`
+        : `Viewers will see version ${version.version}. The editor is not changed.`,
+      confirmLabel: "Publish",
+    });
+    if (!accepted) return;
+    setRepublishingId(version.id);
+    try {
+      await republishProjectVersion(projectId, version.id);
+      toast.success(`Version ${version.version} is live`);
+      await refresh();
+    } catch (error) {
+      toast.error("Could not publish that version", {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    }
+    setRepublishingId(null);
   };
 
   const publishLabel = live ? "Publish update" : "Publish";
@@ -308,7 +335,14 @@ function PublishSettings({ onClose }: { onClose: () => void }) {
             ) : null
           }
         >
-          <VersionList loading={loading} versions={state?.versions ?? []} userId={userId} />
+          <VersionList
+            loading={loading}
+            versions={state?.versions ?? []}
+            userId={userId}
+            republishingId={republishingId}
+            disabled={working}
+            onRepublish={(version) => void republish(version)}
+          />
         </Section>
       </EditorDialog.Body>
 
@@ -512,10 +546,16 @@ function VersionList({
   loading,
   versions,
   userId,
+  republishingId,
+  disabled,
+  onRepublish,
 }: {
   loading: boolean;
   versions: PublishVersion[];
   userId: string | null;
+  republishingId: string | null;
+  disabled: boolean;
+  onRepublish: (version: PublishVersion) => void;
 }) {
   if (loading) {
     return (
@@ -553,6 +593,21 @@ function VersionList({
                 {userId && v.created_by === userId ? " · you" : ""}
               </span>
             </span>
+            {isLive ? null : (
+              <IconButton
+                className="editor-publish-version-action"
+                title={`Publish version ${v.version}`}
+                aria-label={`Publish version ${v.version}`}
+                disabled={disabled}
+                onClick={() => onRepublish(v)}
+              >
+                {republishingId === v.id ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Upload />
+                )}
+              </IconButton>
+            )}
             {isLive ? (
               <span className="editor-publish-pill is-live">
                 <span className="editor-publish-pill-dot" aria-hidden />

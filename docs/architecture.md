@@ -134,12 +134,14 @@ Publish dialog (header) → publishCurrentProject (lib/editor/publish/)
   dirty? saveProject() → rpc/save_editor_project
   rpc/publish_project_version(project, expected_revision)   # SECURITY DEFINER, migration 0007
     lock project, check revision, build snapshot in SQL from projects/scenes/assets
-    archive the live row, insert the new `published` row, prune to the 5 newest versions
+    archive the live row, insert the new `published` row, prune to 5
+    (always keep the new row and the row that was live, then the newest)
+  rpc/republish_project_version(project, version)   # archived snapshot becomes live; draft unchanged
 ```
 
 - `project_versions` snapshot (`formatVersion: 1`): `editorRevision`, `project`, `editorData`, `scenes[]` (same row shape as `sceneRowSchema`), and an `assets` map (`r2Key`, kind, type, size) of the referenced ready assets. `asset_ids uuid[]` lists every referenced asset so the Worker GC does not parse snapshots. At most one `published` row per project (partial unique index).
-- The Data API can only `SELECT` versions (`REVOKE` of all write privileges + a select-only policy). Writes go through `publish_project_version`, `unpublish_project`, and `set_project_publish_password`, which check `public.is_org_member` themselves. The browser sends no snapshot.
-- Retention: 5 versions per project (live included, archived ones count). Pruning runs inside publish and deletes the row and its `asset_ids` together. Asset rows and R2 objects are never touched there.
+- The Data API can only `SELECT` versions (`REVOKE` of all write privileges + a select-only policy). Writes go through `publish_project_version`, `republish_project_version`, `unpublish_project`, and `set_project_publish_password`, which check `public.is_org_member` themselves. The browser sends no snapshot.
+- Retention: 5 versions per project (live included, archived ones count). Pruning runs inside publish and deletes the row and its `asset_ids` together. The new row and the row that was live are always kept, even when that live row is older than newer archived versions; the remaining slots go to the highest version numbers. Asset rows and R2 objects are never touched there. `republish_project_version` (migration `0008`) only swaps which row is `published`.
 - Worker GC (`assets/gc`) keeps assets referenced by the saved draft **and** by any retained version (versions are read after the draft; a failed read aborts the sweep). `DELETE .../assets/:id` returns 409 while a retained version uses the asset.
 - Password: set / cleared only through `set_project_publish_password` (min 8 chars, `crypt`/bcrypt). The hash is in `project_publish_secrets`, which the Data API cannot read. Verification belongs to the future viewer.
 

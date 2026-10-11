@@ -43,7 +43,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 ### Publishing
 
-- Header **Publish** button opens a publish dialog: status (Not published / Live vN), Publish / Publish update (saves a dirty draft first), Unpublish, password protection (off by default; set / change / remove), and a read-only list of the 5 retained versions. Published versions are immutable `project_versions` snapshots; the Data API cannot write them. Assets used by a retained version are protected from GC and deletion.
+- Header **Publish** button opens a publish dialog: status (Not published / Live vN), Publish / Publish update (saves a dirty draft first), Unpublish, password protection (off by default; set / change / remove), and the 5 retained versions. Each archived version has a publish button that makes that snapshot live and takes the current one offline; the editor draft is not changed. Published versions are immutable `project_versions` snapshots; the Data API cannot write them. Assets used by a retained version are protected from GC and deletion. Pruning always keeps the version that was live, even when it is older than newer archived versions.
 
 ### Hotspots
 
@@ -102,7 +102,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 ## Partial
 
-- **Editor save is manual.** No autosave, no merge on conflict. Publishing keeps the last 5 published versions (read-only list; no rollback yet).
+- **Editor save is manual.** No autosave, no merge on conflict. Publishing keeps 5 versions. An archived version can be made live again; loading one back into the editor is not built.
 - **Hotspot JSON export** (`lib/editor/io/export-hotspots.ts`) exists but is not wired in the UI. It exports the current scene’s hotspots only, not the full project.
 - **Home** `/` gates to auth or `/projects`. Product editor is `/projects/[id]/editor`.
 - **App metadata / README** still say “Create Next App”.
@@ -118,7 +118,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 These are implied by gaps or comments, not a committed roadmap.
 
 - Autosave.
-- Rollback / republish of an archived version; configurable retention.
+- Configurable version retention. Loading an archived snapshot back into the editor.
 - Password verification endpoint for the viewer (the hash and flag are stored; nothing checks them yet).
 - Full project import / export file format.
 - Additional overlay kinds beyond image + shape.

@@ -5264,6 +5264,20 @@
   box-shadow: 0 0 8px rgba(63, 184, 175, 0.7);
 }
 
+.editor-root .editor-publish-version-action {
+  width: 26px;
+  height: 26px;
+  color: var(--editor-fg);
+  border-color: var(--editor-line);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.editor-root .editor-publish-version-action:hover:not(:disabled) {
+  color: #fff;
+  border-color: rgba(230, 57, 70, 0.65);
+  background: rgba(230, 57, 70, 0.16);
+}
+
 .editor-root .editor-publish-pill {
   display: inline-flex;
   align-items: center;
