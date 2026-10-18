@@ -29,6 +29,8 @@ type CategorySelectProps = {
   includeAllOption?: boolean;
   allowClear?: boolean;
   label?: string;
+  /** Extra classes for the portaled menu (it renders outside its parent surface). */
+  menuClassName?: string;
 };
 
 type MenuPosition = {
@@ -45,6 +47,7 @@ export function CategorySelect({
   includeAllOption = false,
   allowClear = false,
   label = "Category",
+  menuClassName,
 }: CategorySelectProps) {
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -165,7 +168,7 @@ export function CategorySelect({
           <div
             ref={menuRef}
             id={listId}
-            className="editor-category-select-menu editor-glass editor-panel-shadow"
+            className={`editor-category-select-menu editor-glass editor-panel-shadow${menuClassName ? ` ${menuClassName}` : ""}`}
             role="listbox"
             style={{
               top: menuPos.top,

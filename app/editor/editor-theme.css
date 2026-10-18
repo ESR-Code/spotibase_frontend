@@ -1208,7 +1208,7 @@
     transparent
   );
   color: var(--preview-surface-legend-drawer-fg);
-  border-color: var(--preview-border);
+  border-color: var(--preview-surface-legend-drawer-stroke);
 }
 
 .editor-root[data-preview="true"] .editor-scene-explorer-drawer.editor-glass {
@@ -1218,7 +1218,7 @@
     transparent
   );
   color: var(--preview-surface-scene-explorer-drawer-fg);
-  border-color: var(--preview-border);
+  border-color: var(--preview-surface-scene-explorer-drawer-stroke);
 }
 
 .editor-root[data-preview="true"] .editor-marker-dialog.editor-dialog-surface {
@@ -1291,11 +1291,6 @@
   color: var(--preview-accent);
 }
 
-.editor-root[data-preview="true"][data-preview-borders="off"] .editor-legend-drawer.editor-glass,
-.editor-root[data-preview="true"][data-preview-borders="off"] .editor-scene-explorer-drawer.editor-glass {
-  border-color: transparent;
-}
-
 .editor-root[data-preview="true"][data-preview-borders="off"] .editor-legend-drawer .editor-input,
 .editor-root[data-preview="true"][data-preview-borders="off"] .editor-legend-drawer .editor-textarea,
 .editor-root[data-preview="true"][data-preview-borders="off"] .editor-legend-drawer .editor-select,
@@ -1323,6 +1318,140 @@
   color: var(--preview-accent);
   background: color-mix(in srgb, var(--preview-accent) 14%, transparent);
   border-color: color-mix(in srgb, var(--preview-accent) 35%, transparent);
+}
+
+/* Per-surface aliases: every Preview surface (and the portaled legend category menu) */
+.editor-root[data-preview="true"] .editor-legend-drawer,
+.editor-root[data-preview="true"] .editor-legend-menu {
+  --ps-bg: var(--preview-surface-legend-drawer-bg);
+  --ps-fg: var(--preview-surface-legend-drawer-fg);
+  --ps-stroke: var(--preview-surface-legend-drawer-stroke);
+}
+
+.editor-root[data-preview="true"] .editor-scene-explorer-drawer {
+  --ps-bg: var(--preview-surface-scene-explorer-drawer-bg);
+  --ps-fg: var(--preview-surface-scene-explorer-drawer-fg);
+  --ps-stroke: var(--preview-surface-scene-explorer-drawer-stroke);
+}
+
+.editor-root[data-preview="true"] .editor-marker-dialog {
+  --ps-bg: var(--preview-surface-hotspot-dialog-bg);
+  --ps-fg: var(--preview-surface-hotspot-dialog-fg);
+  --ps-stroke: var(--preview-surface-hotspot-dialog-stroke);
+}
+
+/* Remap editor tokens inside surfaces so secondary text, icons, and hovers follow the surface text color */
+.editor-root[data-preview="true"] .editor-preview-surface {
+  --editor-fg: var(--ps-fg);
+  --editor-muted: color-mix(in srgb, var(--ps-fg) 62%, transparent);
+  --editor-muted-2: color-mix(in srgb, var(--ps-fg) 42%, transparent);
+  --editor-line: var(--preview-border);
+  --editor-line-soft: var(--preview-border);
+  --editor-input-bg: var(--preview-input-bg);
+  --ps-hover: color-mix(in srgb, var(--ps-fg) 7%, transparent);
+  scrollbar-color: color-mix(in srgb, var(--ps-fg) 35%, transparent) transparent;
+}
+
+.editor-root[data-preview="true"] .editor-preview-surface .editor-preview-divider {
+  border-bottom-color: var(--ps-stroke);
+}
+
+/* Legend category menu is portaled outside the drawer: give it the drawer's surface look */
+.editor-root[data-preview="true"] .editor-legend-menu {
+  background: color-mix(in srgb, var(--ps-bg) var(--preview-surface-opacity), transparent);
+  color: var(--ps-fg);
+  border-color: var(--ps-stroke);
+  backdrop-filter: blur(var(--preview-surface-blur));
+  -webkit-backdrop-filter: blur(var(--preview-surface-blur));
+}
+
+/* List rows (legend, scene explorer, category options) */
+.editor-root[data-preview="true"] .editor-preview-surface .editor-hot-item:hover,
+.editor-root[data-preview="true"] .editor-preview-surface .editor-category-option:hover,
+.editor-root[data-preview="true"] .editor-preview-surface .editor-category-select-special:hover {
+  background: var(--ps-hover);
+  border-color: var(--preview-border);
+}
+
+.editor-root[data-preview="true"] .editor-preview-surface .editor-hot-item.selected,
+.editor-root[data-preview="true"] .editor-preview-surface .editor-category-option.selected,
+.editor-root[data-preview="true"] .editor-preview-surface .editor-category-select-special.selected {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--preview-accent) 18%, transparent),
+    color-mix(in srgb, var(--preview-accent) 3%, transparent)
+  );
+  border-color: color-mix(in srgb, var(--preview-accent) 45%, transparent);
+}
+
+.editor-root[data-preview="true"] .editor-preview-surface .editor-category-option.compact:hover {
+  background: transparent;
+  border: none;
+}
+
+/* Icon buttons (close X) */
+.editor-root[data-preview="true"] .editor-preview-surface .editor-icon-btn {
+  color: var(--editor-muted);
+}
+
+/* Inputs: focus ring + placeholders for every field type and surface */
+.editor-root[data-preview="true"] .editor-preview-surface .editor-textarea,
+.editor-root[data-preview="true"] .editor-preview-surface .editor-select {
+  background: var(--preview-input-bg);
+  color: var(--preview-input-fg);
+  border-color: var(--preview-border);
+}
+
+.editor-root[data-preview="true"] .editor-preview-surface .editor-input::placeholder,
+.editor-root[data-preview="true"] .editor-preview-surface .editor-textarea::placeholder {
+  color: color-mix(in srgb, var(--preview-input-fg) 55%, transparent);
+}
+
+.editor-root[data-preview="true"] .editor-preview-surface .editor-input:focus,
+.editor-root[data-preview="true"] .editor-preview-surface .editor-textarea:focus,
+.editor-root[data-preview="true"] .editor-preview-surface .editor-select:focus,
+.editor-root[data-preview="true"] .editor-preview-surface .editor-category-select-trigger:hover,
+.editor-root[data-preview="true"] .editor-preview-surface .editor-category-select-trigger.open {
+  border-color: var(--preview-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--preview-accent) 18%, transparent);
+}
+
+.editor-root[data-preview="true"] .editor-preview-surface .editor-category-select-trigger {
+  background: var(--preview-input-bg);
+  color: var(--preview-input-fg);
+  border-color: var(--preview-border);
+}
+
+/* Scene explorer thumbnails */
+.editor-root[data-preview="true"] .editor-scene-explorer-drawer .editor-scene-item-icon {
+  background: color-mix(in srgb, var(--preview-accent) 12%, transparent);
+  border-color: var(--preview-border);
+}
+
+.editor-root[data-preview="true"] .editor-scene-explorer-drawer .editor-scene-explorer-thumb-fallback {
+  color: var(--editor-muted);
+}
+
+.editor-root[data-preview="true"] .editor-scene-explorer-drawer .editor-scene-explorer-thumb-fallback.selected {
+  color: var(--preview-accent);
+}
+
+/* Hotspot dialog content */
+.editor-root[data-preview="true"] .editor-marker-dialog .editor-image-block-frame,
+.editor-root[data-preview="true"] .editor-marker-dialog .editor-video-block-frame {
+  background: color-mix(in srgb, var(--ps-fg) 5%, transparent);
+  border-color: var(--preview-border);
+}
+
+.editor-root[data-preview="true"] .editor-marker-dialog .editor-image-block-nav .editor-btn.editor-btn-ghost,
+.editor-root[data-preview="true"] .editor-marker-dialog .editor-image-block-nav .editor-btn.editor-btn-ghost:hover {
+  color: var(--preview-accent);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.editor-root[data-preview="true"] .editor-marker-dialog .editor-image-block-nav .editor-btn.editor-btn-ghost:hover {
+  background: color-mix(in srgb, var(--preview-accent) 16%, transparent);
 }
 
 .editor-root[data-preview="true"] .editor-btn-primary {
@@ -2803,6 +2932,18 @@
   height: 100%;
   width: 100%;
   object-fit: cover;
+}
+
+.editor-root .editor-preview-divider {
+  border-bottom: 1px solid var(--editor-line-soft);
+}
+
+.editor-root .editor-scene-explorer-thumb-fallback {
+  color: var(--editor-amber);
+}
+
+.editor-root .editor-scene-explorer-thumb-fallback.selected {
+  color: var(--editor-crimson-2);
 }
 
 .editor-root .editor-scene-explorer-item {

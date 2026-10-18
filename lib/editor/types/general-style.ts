@@ -20,16 +20,20 @@ export const GENERAL_STYLE_SURFACES = [
     id: "legendDrawer",
     label: "Legend drawer",
     description: "Browse panel opened from the Legend control in Preview",
+    strokeDescription: "Show a border and dividers on the legend drawer",
   },
   {
     id: "sceneExplorerDrawer",
     label: "Scene explorer",
     description: "Browse panel opened from the Scene Explorer control in Preview",
+    strokeDescription: "Show a border and dividers on the scene explorer drawer",
   },
   {
     id: "hotspotDialog",
     label: "Hotspot modal / drawer / info box",
     description: "Content surface shown when a hotspot is opened in Preview",
+    strokeDescription:
+      "Show a border around the hotspot modal, drawer, or info box",
   },
 ] as const;
 

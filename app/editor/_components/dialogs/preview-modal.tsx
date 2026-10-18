@@ -221,6 +221,7 @@ export function PreviewModal() {
       anchorVisible={infoBoxAnchor?.visible ?? true}
       className={cn(
         "editor-marker-dialog",
+        "editor-preview-surface",
         isInfoBox && "editor-marker-infobox",
       )}
     >

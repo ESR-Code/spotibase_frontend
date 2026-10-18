@@ -230,32 +230,27 @@ export function GeneralSettingsDrawer() {
                     fallback={DEFAULT_GENERAL_STYLE.surfaces[surface.id].textColor}
                   />
                 </div>
-                {surface.id === "hotspotDialog" ? (
-                  <>
-                    <SwitchField
-                      label="Use stroke"
-                      description="Show a border around the hotspot modal, drawer, or info box"
-                      checked={tokens.strokeEnabled}
-                      onChange={(strokeEnabled) =>
-                        setSurfaceColors(surface.id, { strokeEnabled })
+                <SwitchField
+                  label="Use stroke"
+                  description={surface.strokeDescription}
+                  checked={tokens.strokeEnabled}
+                  onChange={(strokeEnabled) =>
+                    setSurfaceColors(surface.id, { strokeEnabled })
+                  }
+                />
+                {tokens.strokeEnabled ? (
+                  <div>
+                    <FieldLabel>Stroke color</FieldLabel>
+                    <ColorSwatch
+                      value={tokens.strokeColor}
+                      onChange={(strokeColor) =>
+                        setSurfaceColors(surface.id, { strokeColor })
+                      }
+                      fallback={
+                        DEFAULT_GENERAL_STYLE.surfaces[surface.id].strokeColor
                       }
                     />
-                    {tokens.strokeEnabled ? (
-                      <div>
-                        <FieldLabel>Stroke color</FieldLabel>
-                        <ColorSwatch
-                          value={tokens.strokeColor}
-                          onChange={(strokeColor) =>
-                            setSurfaceColors(surface.id, { strokeColor })
-                          }
-                          fallback={
-                            DEFAULT_GENERAL_STYLE.surfaces[surface.id]
-                              .strokeColor
-                          }
-                        />
-                      </div>
-                    ) : null}
-                  </>
+                  </div>
                 ) : null}
               </StyleGroup>
             );

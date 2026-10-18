@@ -88,12 +88,11 @@ export function LegendDrawer() {
 
   return (
     <GlassPanel
-      className={`editor-legend-drawer editor-glass editor-panel-shadow flex flex-col ${visible ? "open" : ""}`}
+      className={`editor-legend-drawer editor-preview-surface editor-glass editor-panel-shadow flex flex-col ${visible ? "open" : ""}`}
       aria-hidden={!visible}
     >
       <div
-        className="flex flex-shrink-0 items-center justify-between px-4 py-3"
-        style={{ borderBottom: "1px solid var(--editor-line-soft)" }}
+        className="editor-preview-divider flex flex-shrink-0 items-center justify-between px-4 py-3"
       >
         <div>
           <div className="font-display text-[14px] font-bold">Legend</div>
@@ -107,14 +106,14 @@ export function LegendDrawer() {
       </div>
 
       <div
-        className="flex-shrink-0 space-y-3 p-4"
-        style={{ borderBottom: "1px solid var(--editor-line-soft)" }}
+        className="editor-preview-divider flex-shrink-0 space-y-3 p-4"
       >
         <CategorySelect
           label="Category"
           value={category}
           categories={legendCategories}
           includeAllOption
+          menuClassName="editor-preview-surface editor-legend-menu"
           onChange={selectLegendFilterCategory}
         />
         <div>

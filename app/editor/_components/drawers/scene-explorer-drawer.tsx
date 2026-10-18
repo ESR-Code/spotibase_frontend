@@ -74,12 +74,11 @@ export function SceneExplorerDrawer() {
 
   return (
     <GlassPanel
-      className={`editor-scene-explorer-drawer editor-glass editor-panel-shadow flex flex-col ${visible ? "open" : ""}`}
+      className={`editor-scene-explorer-drawer editor-preview-surface editor-glass editor-panel-shadow flex flex-col ${visible ? "open" : ""}`}
       aria-hidden={!visible}
     >
       <div
-        className="flex flex-shrink-0 items-center justify-between px-4 py-3"
-        style={{ borderBottom: "1px solid var(--editor-line-soft)" }}
+        className="editor-preview-divider flex flex-shrink-0 items-center justify-between px-4 py-3"
       >
         <div>
           <div className="font-display text-[14px] font-bold">
@@ -143,10 +142,7 @@ function SceneExplorerListItem({
         </span>
       ) : (
         <span
-          className="editor-scene-item-icon editor-scene-explorer-thumb"
-          style={{
-            color: selected ? "var(--editor-crimson-2)" : "var(--editor-amber)",
-          }}
+          className={`editor-scene-item-icon editor-scene-explorer-thumb editor-scene-explorer-thumb-fallback ${selected ? "selected" : ""}`}
         >
           <Layers className="h-7 w-7" />
         </span>
