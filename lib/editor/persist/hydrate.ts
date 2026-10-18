@@ -1,4 +1,8 @@
 import { history } from "@/lib/editor/history/history-store";
+import {
+  stampLegacyAppStartLane,
+  stampLegacySceneLanes,
+} from "@/lib/editor/actions/action-lanes";
 import { createEmptyActionGraph } from "@/lib/editor/actions/create-action-graph";
 import { useAssetsStore } from "@/lib/editor/assets/assets-store";
 import { assetRef, type EditorAsset } from "@/lib/editor/assets/types";
@@ -114,7 +118,11 @@ export function hydrateProject(input: {
     editorData?.primarySceneId && rows.some((r) => r.id === editorData.primarySceneId)
       ? editorData.primarySceneId
       : (rows[0]?.id ?? null);
-  const scenes = rows.length > 0 ? rows.map((row) => sceneFromRow(row, primaryId)) : [seedScene()];
+  // Lane origins are frozen here (before the dirty baseline) so loading an older
+  // project never shows it as unsaved.
+  const scenes = (
+    rows.length > 0 ? rows.map((row) => sceneFromRow(row, primaryId)) : [seedScene()]
+  ).map(stampLegacySceneLanes);
   const active = scenes.find((s) => s.isPrimary) ?? scenes[0]!;
   if (!active.isPrimary) active.isPrimary = true;
 
@@ -124,9 +132,11 @@ export function hydrateProject(input: {
   useScenesStore.setState({
     scenes,
     activeSceneId: active.id,
-    appStartActions: editorData
-      ? (editorData.appStartActions as unknown as HotspotActionGraph)
-      : createEmptyActionGraph(),
+    appStartActions: stampLegacyAppStartLane(
+      editorData
+        ? (editorData.appStartActions as unknown as HotspotActionGraph)
+        : createEmptyActionGraph(),
+    ),
   });
 
   const general = useGeneralSettingsStore.getState();

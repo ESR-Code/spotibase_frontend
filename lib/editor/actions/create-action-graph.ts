@@ -728,6 +728,7 @@ export function cloneActionGraph(
     });
   return {
     trigger: { position: { ...graph.trigger.position } },
+    ...(typeof graph.laneY === "number" ? { laneY: graph.laneY } : {}),
     nodes,
     edges: graph.edges
       .filter(

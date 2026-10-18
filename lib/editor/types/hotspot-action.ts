@@ -709,6 +709,12 @@ export type HotspotActionGraph = {
   trigger: { position: ActionNodeXY };
   nodes: ActionNode[];
   edges: ActionEdge[];
+  /**
+   * Canvas Y origin of this owner's lane (node positions are relative to it).
+   * Persisted so adding / removing other owners never shifts this lane.
+   * Missing → the canvas places the lane below existing content.
+   */
+  laneY?: number;
 };
 
 export const TRIGGER_NODE_ID = "trigger";

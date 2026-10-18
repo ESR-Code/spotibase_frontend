@@ -839,6 +839,22 @@ export function moveNode(
   };
 }
 
+/** Move several nodes (trigger included) in one graph write. */
+export function moveNodes(
+  graph: HotspotActionGraph,
+  positions: Map<string, ActionNodeXY>,
+): HotspotActionGraph {
+  const trigger = positions.get(TRIGGER_NODE_ID);
+  return {
+    ...graph,
+    trigger: trigger ? { position: { ...trigger } } : graph.trigger,
+    nodes: graph.nodes.map((node) => {
+      const position = positions.get(node.id);
+      return position ? { ...node, position: { ...position } } : node;
+    }),
+  };
+}
+
 export function moveTrigger(
   graph: HotspotActionGraph,
   position: ActionNodeXY,

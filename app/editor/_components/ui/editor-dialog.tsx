@@ -180,11 +180,14 @@ export function EditorDialog({
 function DialogHeader({
   title,
   description,
+  leading,
   children,
   className,
 }: {
   title?: string;
   description?: React.ReactNode;
+  /** Rendered before the title block (e.g. an icon badge). */
+  leading?: React.ReactNode;
   children?: React.ReactNode;
   className?: string;
 }) {
@@ -192,6 +195,7 @@ function DialogHeader({
 
   return (
     <div className={cn("editor-dialog-header", className)}>
+      {leading}
       {(title || description) && (
         <div className="min-w-0 flex-1">
           {title ? (

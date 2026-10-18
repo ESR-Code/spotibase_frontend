@@ -140,13 +140,13 @@ export function fencesVisibleOnCanvas(
     | { includeAll: true }
     | {
         includeAll: false;
-        laneIndex: number;
+        laneOriginY: number;
         laneHeight: number;
       },
 ): ActionFence[] {
   if (options.includeAll) return fences;
 
-  const laneTop = options.laneIndex * options.laneHeight;
+  const laneTop = options.laneOriginY;
   const laneBottom = laneTop + options.laneHeight;
 
   return fences.filter((fence) => {

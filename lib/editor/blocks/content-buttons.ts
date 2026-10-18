@@ -149,10 +149,13 @@ export function cloneButtonBlock(
   block: ButtonBlock,
   remintOwner = false,
 ): ButtonBlock {
+  const actions = cloneActionGraph(block.actions ?? createEmptyActionGraph());
+  // A reminted copy is a new canvas owner: let the canvas give it a free lane.
+  if (remintOwner) delete actions.laneY;
   return {
     ...block,
     ownerId: remintOwner ? nextContentButtonOwnerId() : block.ownerId,
-    actions: cloneActionGraph(block.actions ?? createEmptyActionGraph()),
+    actions,
   };
 }
 

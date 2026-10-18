@@ -57,8 +57,18 @@ export function ActionsModal() {
       backdropBlur
       className="editor-actions-dialog"
     >
-      <EditorDialog.Header title={title} description={description}>
-        <div className="flex items-center gap-2">
+      <EditorDialog.Header
+        className="editor-actions-header"
+        title={title}
+        description={<span title={description}>{description}</span>}
+        leading={
+          <span className="editor-actions-header-badge" aria-hidden>
+            <Workflow />
+          </span>
+        }
+      >
+        <div className="editor-actions-header-scope">{chip}</div>
+        <div className="editor-actions-header-tools">
           <button
             type="button"
             className="editor-actions-fence-btn"
@@ -70,15 +80,8 @@ export function ActionsModal() {
             <Frame />
             Fence
           </button>
-          <span
-            className="hidden items-center gap-1.5 text-[11px] font-semibold sm:inline-flex"
-            style={{ color: "var(--editor-muted)" }}
-          >
-            <Workflow className="h-3.5 w-3.5" />
-            Actions
-          </span>
-          {chip}
-          <IconButton title="Close" onClick={closeActionsModal}>
+          <div className="editor-vsep" />
+          <IconButton title="Close (Esc)" aria-label="Close" onClick={closeActionsModal}>
             <X />
           </IconButton>
         </div>

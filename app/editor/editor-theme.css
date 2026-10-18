@@ -3235,6 +3235,77 @@
   flex-shrink: 0;
 }
 
+/* Actions canvas header: one slim row */
+.editor-root .editor-actions-dialog .editor-dialog-header.editor-actions-header {
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px 8px 14px;
+  background: linear-gradient(180deg, rgba(17, 30, 54, 0.9), rgba(13, 24, 44, 0.9));
+  border-bottom: 1px solid var(--editor-line);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+}
+
+.editor-root .editor-actions-header-badge {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--editor-crimson) 0%, #8a1622 100%);
+  box-shadow:
+    0 6px 14px -8px rgba(230, 57, 70, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.editor-root .editor-actions-header-badge svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Title + description on one line; description truncates */
+.editor-root .editor-actions-header > .min-w-0 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.editor-root .editor-actions-header > .min-w-0 > .font-display {
+  flex-shrink: 0;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+}
+
+.editor-root .editor-actions-header > .min-w-0 > .mt-1 {
+  min-width: 0;
+  margin-top: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-root .editor-actions-header-scope {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.editor-root .editor-actions-header-tools {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 900px) {
+  .editor-root .editor-actions-header > .min-w-0 > .mt-1 {
+    display: none;
+  }
+}
+
 .editor-root .editor-actions-fence-btn {
   display: inline-flex;
   align-items: center;
@@ -3348,10 +3419,46 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 34px;
-  padding: 0 8px 0 10px;
+  height: 46px;
+  padding: 0 10px 0 8px;
   flex-shrink: 0;
   cursor: grab;
+}
+
+.editor-root .editor-action-fence-drag:active {
+  cursor: grabbing;
+}
+
+/* Bottom-right resize grip: always visible, large hit area, sits inside the fence */
+.editor-root .editor-action-fence .react-flow__resize-control.handle.bottom.right:not(.editor-action-fence-grip) {
+  display: none;
+}
+
+.editor-root .editor-action-fence .react-flow__resize-control.editor-action-fence-grip {
+  display: flex;
+  width: 28px;
+  height: 28px;
+  left: auto;
+  top: auto;
+  right: 6px;
+  bottom: 6px;
+  transform: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid;
+  border-radius: 8px;
+  cursor: nwse-resize;
+  opacity: 0.7;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.editor-root .editor-action-fence:hover .react-flow__resize-control.editor-action-fence-grip,
+.editor-root .editor-action-fence .react-flow__resize-control.editor-action-fence-grip:hover {
+  opacity: 1;
+}
+
+.editor-root .editor-action-fence .react-flow__resize-control.editor-action-fence-grip:hover {
+  transform: scale(1.08);
 }
 
 .editor-root .editor-action-fence-name {

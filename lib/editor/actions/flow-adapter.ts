@@ -7,6 +7,7 @@ import type {
 } from "@/lib/editor/types/hotspot-action";
 import type { Edge, Node } from "@xyflow/react";
 
+/** Lane spacing used by older saves (see `stampLegacySceneLanes`). */
 export const LANE_HEIGHT = 220;
 export const TRIGGER_FLOW_TYPE = "hotspotTrigger";
 
@@ -32,7 +33,8 @@ export type ActionFlowEntry = {
   ownerId: number;
   title: string;
   graph: HotspotActionGraph;
-  laneIndex: number;
+  /** Canvas Y of this lane; graph positions are relative to it. */
+  originY: number;
   triggerKind: ActionTriggerKind;
   triggerIcon?: string;
   toggledIcon?: string;
@@ -65,7 +67,7 @@ export function toFlowGraph(entries: ActionFlowEntry[]): {
       ownerId,
       title,
       graph,
-      laneIndex,
+      originY,
       triggerKind,
       triggerIcon,
       toggledIcon,
@@ -73,7 +75,7 @@ export function toFlowGraph(entries: ActionFlowEntry[]): {
       triggerSubtitle,
       allowedNodeTypes,
     } = entry;
-    const yOffset = laneIndex * LANE_HEIGHT;
+    const yOffset = originY;
 
     nodes.push({
       id: flowNodeId(ownerId, TRIGGER_NODE_ID),
@@ -132,14 +134,14 @@ export function toFlowGraph(entries: ActionFlowEntry[]): {
   return { nodes, edges };
 }
 
-/** Convert a flow canvas Y back to graph-local Y for a given lane. */
+/** Convert a flow canvas point back to graph-local coords for a lane origin. */
 export function toGraphPosition(
   flowX: number,
   flowY: number,
-  laneIndex: number,
+  originY: number,
 ): { x: number; y: number } {
   return {
     x: flowX,
-    y: flowY - laneIndex * LANE_HEIGHT,
+    y: flowY - originY,
   };
 }

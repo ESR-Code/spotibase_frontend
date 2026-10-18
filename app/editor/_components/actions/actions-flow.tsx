@@ -30,6 +30,7 @@ import { recordSnapshotChange } from "@/lib/editor/history/snapshot";
 import { toast } from "@/lib/editor/toast";
 import {
   attachNodesToFences,
+  fenceBounds,
   fenceNodeStyle,
   fencesVisibleOnCanvas,
   isFenceNode,
@@ -95,13 +96,17 @@ import {
   addNode,
   connect,
   insertClonedNode,
-  moveNode,
+  moveNodes,
   pastePositionNear,
   removeEdge,
   removeNode,
   updateNodeData,
 } from "@/lib/editor/actions/graph-ops";
 import { canConnectToForEach } from "@/lib/editor/actions/for-each";
+import {
+  resolveLaneOrigins,
+  type LaneOwner,
+} from "@/lib/editor/actions/action-lanes";
 import { filterActionNodeTypesForScene } from "@/lib/editor/actions/registry";
 import { listButtonBlocks } from "@/lib/editor/blocks/content-buttons";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -178,6 +183,27 @@ function placeNodeFromHandleDrop(
 
 /** Gap between an anchor node and a node auto-placed after it. */
 const NODE_AFTER_GAP = 48;
+/** Height assumed for a node that hasn't been measured yet. */
+const NODE_PLACE_HEIGHT = 80;
+
+type Rect = { x: number; y: number; width: number; height: number };
+
+/** Move an auto-placed node down until it no longer overlaps a node in its lane. */
+function freeSpotBelow(position: ActionNodeXY, taken: Rect[]): ActionNodeXY {
+  let y = position.y;
+  for (let guard = 0; guard < taken.length + 1; guard++) {
+    const hit = taken.find(
+      (rect) =>
+        position.x < rect.x + rect.width &&
+        position.x + NODE_PLACE_WIDTH > rect.x &&
+        y < rect.y + rect.height &&
+        y + NODE_PLACE_HEIGHT > rect.y,
+    );
+    if (!hit) break;
+    y = hit.y + hit.height + NODE_PLACE_GAP;
+  }
+  return { x: position.x, y };
+}
 
 function laneLabelFor(entry: ActionFlowEntry): string {
   switch (entry.triggerKind) {
@@ -350,9 +376,66 @@ function ActionsFlowCanvas({
     [],
   );
 
+  // Every lane owner in the scene (the hotspot-only canvas too), so lane origins
+  // and new-lane placement are the same on both canvases.
+  const laneOwners: LaneOwner[] = useMemo(() => {
+    if (isolatedLane) return [];
+    const owners: LaneOwner[] = [
+      { ownerId: APP_START_OWNER_ID, graph: appStartActions ?? createEmptyActionGraph() },
+      {
+        ownerId: SCENE_START_OWNER_ID,
+        graph: activeScene.startActions ?? createEmptyActionGraph(),
+      },
+    ];
+    if (legendEnabled) {
+      owners.push({
+        ownerId: LEGEND_OWNER_ID,
+        graph: activeScene.legendActions ?? createEmptyActionGraph(),
+      });
+    }
+    for (const button of customMenuButtons) {
+      owners.push({
+        ownerId: button.ownerId,
+        graph: button.actions ?? createEmptyActionGraph(),
+      });
+    }
+    for (const hotspot of liveHotspots) {
+      owners.push({ ownerId: hotspot.id, graph: getActionGraph(hotspot) });
+    }
+    for (const { block } of listButtonBlocks(liveHotspots)) {
+      owners.push({
+        ownerId: block.ownerId,
+        graph: block.actions ?? createEmptyActionGraph(),
+      });
+    }
+    return owners;
+  }, [
+    activeScene.legendActions,
+    activeScene.startActions,
+    appStartActions,
+    customMenuButtons,
+    isolatedLane,
+    legendEnabled,
+    liveHotspots,
+  ]);
+
+  // Serialized so the map keeps its identity while origins don't change.
+  const laneOriginsKey = useMemo(
+    () =>
+      JSON.stringify([
+        ...resolveLaneOrigins(laneOwners, isolatedLane ? [] : fences),
+      ]),
+    [fences, isolatedLane, laneOwners],
+  );
+  const laneOrigins = useMemo(
+    () => new Map<number, number>(JSON.parse(laneOriginsKey)),
+    [laneOriginsKey],
+  );
+
   const entries: ActionFlowEntry[] = useMemo(() => {
     const forScene = (types: ActionNodeType[]) =>
       filterActionNodeTypesForScene(types, activeScene.type);
+    const originY = (ownerId: number) => laneOrigins.get(ownerId) ?? 0;
 
     if (isolatedLane) {
       return [
@@ -360,7 +443,7 @@ function ActionsFlowCanvas({
           ownerId: SPAWN_CLICK_LANE_OWNER_ID,
           title: isolatedLane.title,
           graph: isolatedLane.graph,
-          laneIndex: 0,
+          originY: 0,
           triggerKind: "hotspot" as const,
           allowedNodeTypes: forScene(HOTSPOT_GRAPH_ALLOWED_NODE_TYPES),
         },
@@ -368,14 +451,13 @@ function ActionsFlowCanvas({
     }
 
     const list: ActionFlowEntry[] = [];
-    let laneIndex = 0;
 
     if (includeStartGraphs) {
       list.push({
         ownerId: APP_START_OWNER_ID,
         title: "All scenes",
         graph: appStartActions ?? createEmptyActionGraph(),
-        laneIndex: laneIndex++,
+        originY: originY(APP_START_OWNER_ID),
         triggerKind: "appStart",
         allowedNodeTypes: forScene(START_GRAPH_ALLOWED_NODE_TYPES),
       });
@@ -383,7 +465,7 @@ function ActionsFlowCanvas({
         ownerId: SCENE_START_OWNER_ID,
         title: activeScene.name,
         graph: activeScene.startActions ?? createEmptyActionGraph(),
-        laneIndex: laneIndex++,
+        originY: originY(SCENE_START_OWNER_ID),
         triggerKind: "sceneStart",
         allowedNodeTypes: forScene(SCENE_START_GRAPH_ALLOWED_NODE_TYPES),
       });
@@ -393,7 +475,7 @@ function ActionsFlowCanvas({
           title: "Legend",
           graph:
             getOwnedActionGraph(LEGEND_OWNER_ID) ?? createEmptyActionGraph(),
-          laneIndex: laneIndex++,
+          originY: originY(LEGEND_OWNER_ID),
           triggerKind: "legend",
           allowedNodeTypes: forScene(SCENE_START_GRAPH_ALLOWED_NODE_TYPES),
         });
@@ -403,7 +485,7 @@ function ActionsFlowCanvas({
           ownerId: button.ownerId,
           title: button.tooltip.trim() || "Custom button",
           graph: button.actions ?? createEmptyActionGraph(),
-          laneIndex: laneIndex++,
+          originY: originY(button.ownerId),
           triggerKind: "menuButton",
           triggerIcon: button.icon,
           toggledIcon: button.toggledIcon,
@@ -411,66 +493,32 @@ function ActionsFlowCanvas({
           allowedNodeTypes: forScene(MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES),
         });
       }
-      for (const hotspot of hotspots) {
-        list.push({
-          ownerId: hotspot.id,
-          title: hotspot.title,
-          graph: getActionGraph(hotspot),
-          laneIndex: laneIndex++,
-          triggerKind: "hotspot",
-          allowedNodeTypes: forScene(HOTSPOT_GRAPH_ALLOWED_NODE_TYPES),
-        });
-      }
-      for (const { hotspot, block } of listButtonBlocks(hotspots)) {
-        list.push({
-          ownerId: block.ownerId,
-          title: block.label.trim() || "Action button",
-          graph: block.actions ?? createEmptyActionGraph(),
-          laneIndex: laneIndex++,
-          triggerKind: "contentButton",
-          triggerIcon: block.icon,
-          triggerSubtitle: hotspot.title,
-          allowedNodeTypes: forScene(MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES),
-        });
-      }
-      return list;
     }
 
-    // Hotspot-only canvas uses the same lane Y as Scene Actions so fences
-    // (stored in scene flow coords) line up with these nodes.
-    const sceneLaneBase =
-      2 + (legendEnabled ? 1 : 0) + customMenuButtons.length;
-    const sceneHotspots = activeScene.hotspots;
     for (const hotspot of hotspots) {
-      const sceneIndex = sceneHotspots.findIndex((item) => item.id === hotspot.id);
       list.push({
         ownerId: hotspot.id,
         title: hotspot.title,
         graph: getActionGraph(hotspot),
-        laneIndex: sceneLaneBase + (sceneIndex >= 0 ? sceneIndex : 0),
+        originY: originY(hotspot.id),
         triggerKind: "hotspot",
         allowedNodeTypes: forScene(HOTSPOT_GRAPH_ALLOWED_NODE_TYPES),
       });
     }
-
-    const shownHotspotIds = new Set(hotspots.map((hotspot) => hotspot.id));
-    listButtonBlocks(liveHotspots).forEach(({ hotspot, block }, globalIndex) => {
-      if (!shownHotspotIds.has(hotspot.id)) return;
+    for (const { hotspot, block } of listButtonBlocks(hotspots)) {
       list.push({
         ownerId: block.ownerId,
         title: block.label.trim() || "Action button",
         graph: block.actions ?? createEmptyActionGraph(),
-        laneIndex: sceneLaneBase + liveHotspots.length + globalIndex,
+        originY: originY(block.ownerId),
         triggerKind: "contentButton",
         triggerIcon: block.icon,
         triggerSubtitle: hotspot.title,
         allowedNodeTypes: forScene(MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES),
       });
-    });
-
+    }
     return list;
   }, [
-    activeScene.hotspots,
     activeScene.name,
     activeScene.startActions,
     activeScene.legendActions,
@@ -480,14 +528,14 @@ function ActionsFlowCanvas({
     hotspots,
     includeStartGraphs,
     isolatedLane,
+    laneOrigins,
     legendCategories,
     legendEnabled,
-    liveHotspots,
   ]);
 
-  const laneByOwnerId = useMemo(() => {
+  const originByOwnerId = useMemo(() => {
     const map = new Map<number, number>();
-    entries.forEach((entry) => map.set(entry.ownerId, entry.laneIndex));
+    entries.forEach((entry) => map.set(entry.ownerId, entry.originY));
     return map;
   }, [entries]);
 
@@ -507,22 +555,34 @@ function ActionsFlowCanvas({
   const menu =
     rawMenu && ownerIds.has(rawMenu.hotspotId) ? rawMenu : null;
 
-  const { nodes: initialNodes, edges: storeEdges } = useMemo(
+  const { nodes: initialNodes, edges: flowEdges } = useMemo(
     () => toFlowGraph(entries),
     [entries],
   );
+  // Edges only change with graph structure: keep their identity across field
+  // edits so React Flow doesn't re-render every edge on each keystroke.
+  const storeEdgesKey = useMemo(() => JSON.stringify(flowEdges), [flowEdges]);
+  const storeEdges = useMemo(
+    () => JSON.parse(storeEdgesKey) as typeof flowEdges,
+    [storeEdgesKey],
+  );
+  // Keyed on ids (not node objects) so field edits don't recompute fences.
+  const visibleNodeIdsKey = useMemo(
+    () => initialNodes.map((node) => node.id).join("|"),
+    [initialNodes],
+  );
+  const firstLaneOriginY = entries[0]?.originY ?? 0;
   const canvasFences = useMemo(() => {
-    const visibleIds = new Set(initialNodes.map((node) => node.id));
+    const visibleIds = new Set(visibleNodeIdsKey.split("|"));
     if (includeStartGraphs) {
       return fencesVisibleOnCanvas(fences, visibleIds, { includeAll: true });
     }
-    const laneIndex = entries[0]?.laneIndex ?? 0;
     return fencesVisibleOnCanvas(fences, visibleIds, {
       includeAll: false,
-      laneIndex,
+      laneOriginY: firstLaneOriginY,
       laneHeight: LANE_HEIGHT,
     });
-  }, [entries, fences, includeStartGraphs, initialNodes]);
+  }, [fences, firstLaneOriginY, includeStartGraphs, visibleNodeIdsKey]);
   const [nodes, setNodes] = useState<ActionsCanvasNode[]>(() =>
     attachNodesToFences(initialNodes, canvasFences, scopeKey),
   );
@@ -572,12 +632,14 @@ function ActionsFlowCanvas({
   }, [canvasFences, graphStructureKey, initialNodes, scopeKey]);
 
   useEffect(() => {
-    setNodes((current) =>
-      current.map((node) => {
+    const entryByOwner = new Map(entries.map((entry) => [entry.ownerId, entry]));
+    setNodes((current) => {
+      let changed = false;
+      const next = current.map((node) => {
         if (isFenceNode(node)) return node;
         const data = node.data as ActionFlowNodeData;
         if (!data.isTrigger) return node;
-        const entry = entries.find((item) => item.ownerId === data.hotspotId);
+        const entry = entryByOwner.get(data.hotspotId);
         if (!entry) return node;
         if (
           data.hotspotTitle === entry.title &&
@@ -588,6 +650,7 @@ function ActionsFlowCanvas({
         ) {
           return node;
         }
+        changed = true;
         return {
           ...node,
           data: {
@@ -599,8 +662,10 @@ function ActionsFlowCanvas({
             triggerSubtitle: entry.triggerSubtitle,
           },
         };
-      }),
-    );
+      });
+      // Unchanged triggers: keep the array so React Flow skips a full update.
+      return changed ? next : current;
+    });
   }, [entries]);
 
   const edges = useMemo(
@@ -627,6 +692,21 @@ function ActionsFlowCanvas({
     },
     [updateHotspot],
   );
+
+  // Owners placed this session (new hotspot, menu button, legend…) get their
+  // origin saved, so later owner changes can't move them.
+  useEffect(() => {
+    if (isolatedLane) return;
+    for (const { ownerId, graph } of laneOwners) {
+      if (typeof graph.laneY === "number") continue;
+      const laneY = laneOrigins.get(ownerId);
+      const current = getOwnedActionGraph(ownerId);
+      if (laneY === undefined || !current || typeof current.laneY === "number") {
+        continue;
+      }
+      writeGraph(ownerId, { ...current, laneY });
+    }
+  }, [isolatedLane, laneOrigins, laneOwners, writeGraph]);
 
   const readGraph = useCallback((ownerId: number): HotspotActionGraph | null => {
     const isolated = isolatedLaneRef.current;
@@ -724,7 +804,7 @@ function ActionsFlowCanvas({
       let best = entries[0]!;
       let bestDist = Infinity;
       for (const entry of entries) {
-        const localY = toGraphPosition(flowPos.x, flowPos.y, entry.laneIndex).y;
+        const localY = toGraphPosition(flowPos.x, flowPos.y, entry.originY).y;
         const dist = Math.abs(localY - 120);
         if (dist < bestDist) {
           bestDist = dist;
@@ -747,15 +827,32 @@ function ActionsFlowCanvas({
       const widthOf = (nodeId: string, fallback: number) =>
         nodesRef.current.find((node) => node.id === flowNodeId(ownerId, nodeId))
           ?.measured?.width ?? fallback;
+      const byId = nodesByIdMap(nodesRef.current);
+      const taken: Rect[] = [];
+      for (const node of nodesRef.current) {
+        if (isFenceNode(node) || parseFlowNodeId(node.id)?.hotspotId !== ownerId) {
+          continue;
+        }
+        const abs = nodeAbsolutePosition(node, byId);
+        taken.push({
+          x: abs.x,
+          y: abs.y - entry.originY,
+          width: node.measured?.width ?? NODE_PLACE_WIDTH,
+          height: node.measured?.height ?? NODE_PLACE_HEIGHT,
+        });
+      }
 
       const afterNode = (node: ActionNode): AutoConnect => ({
         pendingConnect: { nodeId: node.id, handleId: null, handleType: "source" },
         anchorType: node.type,
         anchorLabel: nodeTypeLabel(node.type),
-        position: {
-          x: node.position.x + widthOf(node.id, NODE_PLACE_WIDTH) + NODE_AFTER_GAP,
-          y: node.position.y,
-        },
+        position: freeSpotBelow(
+          {
+            x: node.position.x + widthOf(node.id, NODE_PLACE_WIDTH) + NODE_AFTER_GAP,
+            y: node.position.y,
+          },
+          taken,
+        ),
       });
       const afterTrigger = (): AutoConnect => ({
         pendingConnect: {
@@ -764,10 +861,13 @@ function ActionsFlowCanvas({
           handleType: "source",
         },
         anchorLabel: "trigger",
-        position: {
-          x: graph.trigger.position.x + widthOf(TRIGGER_NODE_ID, 220) + NODE_AFTER_GAP,
-          y: graph.trigger.position.y,
-        },
+        position: freeSpotBelow(
+          {
+            x: graph.trigger.position.x + widthOf(TRIGGER_NODE_ID, 220) + NODE_AFTER_GAP,
+            y: graph.trigger.position.y,
+          },
+          taken,
+        ),
       });
       const triggerOpen =
         triggerHasDefaultOutput(entry) && !hasOutgoing.has(TRIGGER_NODE_ID);
@@ -826,7 +926,7 @@ function ActionsFlowCanvas({
         y: client.clientY,
       });
       const entry = options?.entry ?? pickLaneEntry(flowPos);
-      const pointerPos = toGraphPosition(flowPos.x, flowPos.y, entry.laneIndex);
+      const pointerPos = toGraphPosition(flowPos.x, flowPos.y, entry.originY);
       const auto = resolveAutoConnect(entry);
       const menuPos = options?.menuPoint ?? menuPositionFromEvent(client);
       setRawMenu({
@@ -881,7 +981,7 @@ function ActionsFlowCanvas({
         y: menuPos.y,
         hotspotId: ownerId,
         flowPosition: placeNodeFromHandleDrop(
-          toGraphPosition(flowPos.x, flowPos.y, entry.laneIndex),
+          toGraphPosition(flowPos.x, flowPos.y, entry.originY),
           "source",
         ),
         allowedNodeTypes: allowed,
@@ -922,7 +1022,7 @@ function ActionsFlowCanvas({
     [entries, openPaneMenu],
   );
 
-  const api: ActionsEditorApi = useMemo(
+  const apiImpl: ActionsEditorApi = useMemo(
     () => ({
       updateGraph,
       openAddMenu,
@@ -1013,6 +1113,36 @@ function ActionsFlowCanvas({
     ],
   );
 
+  // The context value keeps one identity (only the clipboard changes it), so node
+  // components don't all re-render on every graph write; calls use the latest impl.
+  const apiImplRef = useRef(apiImpl);
+  useLayoutEffect(() => {
+    apiImplRef.current = apiImpl;
+  }, [apiImpl]);
+  const api: ActionsEditorApi = useMemo(
+    () => ({
+      updateGraph: (ownerId, updater) =>
+        apiImplRef.current.updateGraph(ownerId, updater),
+      openAddMenu: (ownerId, client, pendingConnect) =>
+        apiImplRef.current.openAddMenu(ownerId, client, pendingConnect),
+      deleteNode: (ownerId, nodeId) =>
+        apiImplRef.current.deleteNode(ownerId, nodeId),
+      deleteEdge: (ownerId, edgeId) =>
+        apiImplRef.current.deleteEdge(ownerId, edgeId),
+      deleteFence: (fenceId) => apiImplRef.current.deleteFence(fenceId),
+      updateNodeData: (ownerId, nodeId, patch) =>
+        apiImplRef.current.updateNodeData(ownerId, nodeId, patch),
+      addNode: (ownerId, type, position, pendingConnect) =>
+        apiImplRef.current.addNode(ownerId, type, position, pendingConnect),
+      clipboard,
+      copyNode: (ownerId, nodeId) =>
+        apiImplRef.current.copyNode(ownerId, nodeId),
+      pasteNode: (ownerId, target) =>
+        apiImplRef.current.pasteNode(ownerId, target),
+    }),
+    [clipboard],
+  );
+
   //#region: Undo / redo controls and shortcuts
   const canUndo = useCanUndo(scopeKey);
   const canRedo = useCanRedo(scopeKey);
@@ -1065,7 +1195,7 @@ function ActionsFlowCanvas({
     });
     const entry = pickLaneEntry(flowPos);
     return api.pasteNode(entry.ownerId, {
-      position: toGraphPosition(flowPos.x, flowPos.y, entry.laneIndex),
+      position: toGraphPosition(flowPos.x, flowPos.y, entry.originY),
     });
   }, [api, entries.length, pickLaneEntry, screenToFlowPosition]);
 
@@ -1102,18 +1232,28 @@ function ActionsFlowCanvas({
   });
   //#endregion
 
-  const persistActionPosition = useCallback(
-    (node: ActionsCanvasNode, byId: Map<string, Node>) => {
-      if (isFenceNode(node)) return;
-      const parsed = parseFlowNodeId(node.id);
-      if (!parsed) return;
-      const abs = nodeAbsolutePosition(node, byId);
-      const laneIndex = laneByOwnerId.get(parsed.hotspotId) ?? 0;
-      updateGraph(parsed.hotspotId, (graph) =>
-        moveNode(graph, parsed.nodeId, toGraphPosition(abs.x, abs.y, laneIndex)),
-      );
+  /** Persist moved nodes' graph positions: one graph write per owner. */
+  const persistActionPositions = useCallback(
+    (moved: ActionsCanvasNode[], byId: Map<string, Node>) => {
+      const byOwner = new Map<number, Map<string, ActionNodeXY>>();
+      for (const node of moved) {
+        if (isFenceNode(node)) continue;
+        const parsed = parseFlowNodeId(node.id);
+        if (!parsed) continue;
+        const abs = nodeAbsolutePosition(node, byId);
+        const originY = originByOwnerId.get(parsed.hotspotId) ?? 0;
+        let positions = byOwner.get(parsed.hotspotId);
+        if (!positions) {
+          positions = new Map();
+          byOwner.set(parsed.hotspotId, positions);
+        }
+        positions.set(parsed.nodeId, toGraphPosition(abs.x, abs.y, originY));
+      }
+      for (const [ownerId, positions] of byOwner) {
+        updateGraph(ownerId, (graph) => moveNodes(graph, positions));
+      }
     },
-    [laneByOwnerId, updateGraph],
+    [originByOwnerId, updateGraph],
   );
 
   const onNodesChange: OnNodesChange<ActionsCanvasNode> = useCallback(
@@ -1135,8 +1275,7 @@ function ActionsFlowCanvas({
               return !(current?.parentId && removingFenceIds.has(current.parentId));
             });
 
-      let next = nodesRef.current;
-      setNodes((current) => {
+      const applyChanges = (current: ActionsCanvasNode[]) => {
         let mapped = applyNodeChanges(safeChanges, current);
         if (removingFenceIds.size > 0) {
           const before = nodesByIdMap(current);
@@ -1151,17 +1290,35 @@ function ActionsFlowCanvas({
             };
           });
         }
-        next = mapped;
+        return mapped;
+      };
+
+      // Only drag / resize ends and removals write to the stores.
+      const commits = safeChanges.some(
+        (change) =>
+          change.type === "remove" ||
+          (change.type === "position" && change.dragging === false) ||
+          (change.type === "dimensions" && change.resizing === false),
+      );
+      // Computed here, not inside the updater: React may run that updater later,
+      // so reading its result now could persist the previous drag frame.
+      // Node changes are idempotent, so this matches what the updater produces.
+      const next = commits ? applyChanges(nodesRef.current) : null;
+
+      setNodes((current) => {
+        const mapped = applyChanges(current);
         nodesRef.current = mapped;
         return mapped;
       });
 
+      if (!next) return;
       const byId = nodesByIdMap(next);
 
       for (const id of removingFenceIds) {
         removeFence(scopeKey, id);
       }
 
+      const moved: ActionsCanvasNode[] = [];
       for (const change of safeChanges) {
         if (change.type === "remove") {
           if (isActionFenceId(change.id)) continue;
@@ -1175,46 +1332,36 @@ function ActionsFlowCanvas({
         }
         if (
           change.type === "dimensions" &&
-          isActionFenceId(change.id) &&
-          change.dimensions
+          change.resizing === false &&
+          isActionFenceId(change.id)
         ) {
-          updateFence(scopeKey, change.id, {
-            width: change.dimensions.width,
-            height: change.dimensions.height,
-          });
-          if (change.resizing === false) {
-            const fenceNode = next.find((item) => item.id === change.id);
-            if (fenceNode) {
-              const map = nodesByIdMap(next);
-              const memberships: Array<{ nodeId: string; fenceId: string | null }> =
-                [];
-              const ungrouped = new Map<string, { x: number; y: number }>();
-              for (const child of next) {
-                if (child.parentId !== fenceNode.id) continue;
-                if (pointInFence(nodeCenter(child, map), fenceNode)) continue;
-                ungrouped.set(child.id, nodeAbsolutePosition(child, map));
-                memberships.push({ nodeId: child.id, fenceId: null });
-              }
-              if (ungrouped.size > 0) {
-                setNodes((current) =>
-                  current.map((item) => {
-                    const abs = ungrouped.get(item.id);
-                    if (!abs) return item;
-                    return { ...item, parentId: undefined, position: abs };
-                  }),
-                );
-                applyMemberships(scopeKey, memberships);
-              }
-            }
+          const fenceNode = byId.get(change.id);
+          if (!fenceNode) continue;
+          // Resizing from the top / left edge also moves the fence: save both.
+          updateFence(scopeKey, change.id, fenceBounds(fenceNode));
+          const memberships: Array<{ nodeId: string; fenceId: string | null }> =
+            [];
+          const ungrouped = new Map<string, { x: number; y: number }>();
+          for (const child of next) {
+            if (child.parentId !== fenceNode.id) continue;
+            if (pointInFence(nodeCenter(child, byId), fenceNode)) continue;
+            ungrouped.set(child.id, nodeAbsolutePosition(child, byId));
+            memberships.push({ nodeId: child.id, fenceId: null });
+          }
+          if (ungrouped.size > 0) {
+            setNodes((current) =>
+              current.map((item) => {
+                const abs = ungrouped.get(item.id);
+                if (!abs) return item;
+                return { ...item, parentId: undefined, position: abs };
+              }),
+            );
+            applyMemberships(scopeKey, memberships);
           }
           continue;
         }
-        if (
-          change.type === "position" &&
-          change.position &&
-          change.dragging === false
-        ) {
-          const node = next.find((item) => item.id === change.id);
+        if (change.type === "position" && change.dragging === false) {
+          const node = byId.get(change.id) as ActionsCanvasNode | undefined;
           if (!node) continue;
           if (isFenceNode(node)) {
             updateFence(scopeKey, node.id, {
@@ -1222,17 +1369,18 @@ function ActionsFlowCanvas({
               y: node.position.y,
             });
             for (const child of next) {
-              if (child.parentId === node.id) persistActionPosition(child, byId);
+              if (child.parentId === node.id) moved.push(child);
             }
             continue;
           }
-          persistActionPosition(node, byId);
+          moved.push(node);
         }
       }
+      if (moved.length > 0) persistActionPositions(moved, byId);
     },
     [
       applyMemberships,
-      persistActionPosition,
+      persistActionPositions,
       removeFence,
       scopeKey,
       updateFence,
@@ -1375,13 +1523,13 @@ function ActionsFlowCanvas({
       const moving = fromGraph.nodes.find((n) => n.id === targetParsed.nodeId);
       if (!moving || !allowed?.includes(moving.type)) return;
 
-      const fromLane = laneByOwnerId.get(fromOwner) ?? 0;
-      const toLane = laneByOwnerId.get(toOwner) ?? 0;
-      const flowY = moving.position.y + fromLane * LANE_HEIGHT;
+      const fromOrigin = originByOwnerId.get(fromOwner) ?? 0;
+      const toOrigin = originByOwnerId.get(toOwner) ?? 0;
+      const flowY = moving.position.y + fromOrigin;
       const nextPosition = toGraphPosition(
         moving.position.x,
         flowY,
-        toLane,
+        toOrigin,
       );
 
       const nextFrom = removeNode(fromGraph, moving.id);
@@ -1404,7 +1552,7 @@ function ActionsFlowCanvas({
         writeGraph(toOwner, nextTo);
       });
     },
-    [allowedByOwnerId, laneByOwnerId, runCanvasChange, updateGraph, writeGraph],
+    [allowedByOwnerId, originByOwnerId, runCanvasChange, updateGraph, writeGraph],
   );
 
   const onPaneContextMenu = useCallback(
@@ -1458,7 +1606,7 @@ function ActionsFlowCanvas({
       const graphPos = toGraphPosition(
         flowPos.x,
         flowPos.y,
-        entry.laneIndex,
+        entry.originY,
       );
 
       skipNextPaneClickRef.current = true;
@@ -1691,7 +1839,7 @@ function ActionsFlowCanvas({
         maxY = Math.max(maxY, abs.y + height);
       }
       const pad = 40;
-      const header = 34;
+      const header = 46;
       fence = createActionFence(scopeKey, {
         x: minX - pad,
         y: minY - pad - header,

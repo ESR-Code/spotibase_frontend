@@ -265,6 +265,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         ...rest,
         title,
         legendName: title,
+        // The copy is a new canvas owner: drop the lane origin so it gets a free lane.
+        actions: source.actions
+          ? { ...source.actions, laneY: undefined }
+          : source.actions,
         blocks: cloneHotspotBlocks(source.blocks, true),
       },
     );

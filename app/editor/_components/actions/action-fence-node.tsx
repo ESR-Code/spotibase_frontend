@@ -1,7 +1,12 @@
 "use client";
 
-import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
-import { Frame, Trash2 } from "lucide-react";
+import {
+  NodeResizeControl,
+  NodeResizer,
+  type Node,
+  type NodeProps,
+} from "@xyflow/react";
+import { Frame, GripVertical, MoveDiagonal2, Trash2 } from "lucide-react";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { useActionsEditor } from "@/app/editor/_components/actions/actions-editor-context";
 import { useActionFencesStore } from "@/lib/editor/state/action-fences-store";
@@ -48,10 +53,22 @@ export function ActionFenceNode({
           background: color,
         }}
       />
+      <NodeResizeControl
+        position="bottom-right"
+        minWidth={220}
+        minHeight={140}
+        className="editor-action-fence-grip"
+        style={{ background: `${color}33`, borderColor: `${color}aa`, color }}
+      >
+        <span title="Drag to resize" className="flex h-full w-full items-center justify-center">
+          <MoveDiagonal2 className="h-3.5 w-3.5" />
+        </span>
+      </NodeResizeControl>
       <div
         className="editor-action-fence-drag"
         style={{ background: `${color}26` }}
       >
+        <GripVertical className="h-4 w-4 shrink-0 opacity-60" style={{ color }} />
         <Frame className="h-3.5 w-3.5 shrink-0" style={{ color }} />
         <input
           className="editor-action-fence-name nodrag nopan nowheel"
