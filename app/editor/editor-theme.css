@@ -1884,33 +1884,179 @@
   box-shadow: 0 0 0 1px rgba(230, 57, 70, 0.25);
 }
 
+.editor-root .editor-header-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Save status: dot + label */
 .editor-root .editor-header-save-status {
   display: inline-flex;
-  height: 32px;
-  max-width: 9rem;
+  height: 28px;
+  max-width: 10rem;
   align-items: center;
+  gap: 7px;
+  padding: 0 10px 0 9px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
+  letter-spacing: 0.01em;
   color: var(--editor-muted);
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.editor-root .editor-header-save-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--editor-muted-2);
+}
+
+.editor-root .editor-header-save-status.is-saved .editor-header-save-dot {
+  background: #3ecf8e;
+  box-shadow: 0 0 0 3px rgba(62, 207, 142, 0.16);
 }
 
 .editor-root .editor-header-save-status.is-warn {
   color: var(--editor-amber);
+  background: rgba(244, 162, 89, 0.1);
+  border-color: rgba(244, 162, 89, 0.28);
+}
+
+.editor-root .editor-header-save-status.is-warn .editor-header-save-dot {
+  background: var(--editor-amber);
+}
+
+.editor-root .editor-header-save-status.is-saving {
+  color: var(--editor-fg);
+}
+
+.editor-root .editor-header-save-status.is-saving .editor-header-save-dot {
+  background: var(--editor-teal);
+  animation: editor-header-save-pulse 1.1s ease-in-out infinite;
+}
+
+.editor-root .editor-header-save-status.is-error {
+  color: #ff8d96;
+  background: rgba(230, 57, 70, 0.12);
+  border-color: rgba(230, 57, 70, 0.35);
+}
+
+.editor-root .editor-header-save-status.is-error .editor-header-save-dot {
+  background: var(--editor-crimson-2);
 }
 
 .editor-root .editor-header-save-status.is-action {
-  border: none;
-  background: transparent;
-  padding: 0;
   cursor: pointer;
-  color: var(--editor-amber);
 }
 
 .editor-root .editor-header-save-status.is-action:hover {
-  text-decoration: underline;
+  background: rgba(230, 57, 70, 0.2);
+}
+
+@keyframes editor-header-save-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.7);
+  }
+}
+
+/* Header action buttons (Preview / Save / Publish) */
+.editor-root .editor-header-btn {
+  height: 32px;
+  gap: 6px;
+  padding: 0 13px;
+  font-size: 12px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--editor-line);
+  color: var(--editor-fg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.editor-root .editor-header-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: #2f4d7a;
+}
+
+.editor-root .editor-header-btn:disabled {
+  opacity: 0.5;
+}
+
+.editor-root .editor-header-btn.is-active {
+  color: var(--editor-active-text);
+  background: rgba(230, 57, 70, 0.14);
+  border-color: rgba(230, 57, 70, 0.45);
+}
+
+.editor-root .editor-header-btn.is-attention {
+  border-color: rgba(244, 162, 89, 0.55);
+  background: rgba(244, 162, 89, 0.1);
+}
+
+.editor-root .editor-header-btn.is-attention:hover:not(:disabled) {
+  background: rgba(244, 162, 89, 0.18);
+  border-color: rgba(244, 162, 89, 0.75);
+}
+
+.editor-root .editor-header-btn-publish {
+  color: #fff;
+  font-weight: 700;
+  border-color: rgba(255, 255, 255, 0.14);
+  background: linear-gradient(135deg, var(--editor-crimson) 0%, #b51e2c 100%);
+  box-shadow:
+    0 6px 16px -8px rgba(230, 57, 70, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.editor-root .editor-header-btn-publish:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--editor-crimson-2) 0%, #c92635 100%);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+/* Header responsiveness: labels collapse to icons below 768px; status keeps its dot */
+@media (max-width: 767px) {
+  .editor-root .editor-header-btn-label,
+  .editor-root .editor-header-save-text {
+    display: none;
+  }
+
+  .editor-root .editor-header-btn {
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .editor-root .editor-header-save-status {
+    padding: 0 9px;
+  }
+
+  .editor-root .editor-header-actions {
+    gap: 6px;
+  }
+
+  .editor-root .editor-header-actions .editor-vsep {
+    margin: 0 1px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1279px) {
+  .editor-root .editor-header-save-status {
+    max-width: 7.5rem;
+  }
 }
 
 .editor-root .editor-vsep {

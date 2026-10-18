@@ -51,28 +51,41 @@ export function SaveButton() {
         ? "Wait for uploads to finish before saving"
         : "Save project (Ctrl/Cmd+S)";
 
+  const tone = failed || conflict
+    ? "is-error"
+    : saving || uploading
+      ? "is-saving"
+      : dirty
+        ? "is-warn"
+        : "is-saved";
+
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2.5">
       {conflict ? (
         <button
           type="button"
-          className="editor-header-save-status is-action"
+          className="editor-header-save-status is-error is-action"
           title={title}
+          aria-label="Reload to sync"
           onClick={() => window.location.reload()}
         >
-          Reload
+          <span className="editor-header-save-dot" />
+          <span className="editor-header-save-text">Reload to sync</span>
         </button>
       ) : (
         <span
-          className={`editor-header-save-status${dirty || failed ? " is-warn" : ""}`}
+          className={`editor-header-save-status ${tone}`}
           title={failed ? title : statusLabel}
+          aria-label={statusLabel}
+          role="status"
         >
-          {statusLabel}
+          <span className="editor-header-save-dot" />
+          <span className="editor-header-save-text">{statusLabel}</span>
         </span>
       )}
       <EditorButton
-        variant={canSave ? "primary" : "default"}
-        className="h-8 gap-1.5 px-3 text-[12px]"
+        variant="outline"
+        className={`editor-header-btn${canSave ? " is-attention" : ""}`}
         title={title}
         disabled={!canSave}
         onClick={() => void saveProject()}
@@ -82,7 +95,7 @@ export function SaveButton() {
         ) : (
           <Save className="h-3.5 w-3.5" />
         )}
-        Save
+        <span className="editor-header-btn-label">Save</span>
       </EditorButton>
     </div>
   );

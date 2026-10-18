@@ -10,8 +10,10 @@ export function HeaderPreviewButton() {
 
   return (
     <EditorButton
-      className="h-8 gap-1.5 px-3 text-[12px]"
+      variant="outline"
+      className={`editor-header-btn${isPreview ? " is-active" : ""}`}
       title={isPreview ? "Back to the editor (P)" : "Preview (P)"}
+      aria-label={isPreview ? "Back to the editor" : "Preview"}
       aria-pressed={isPreview}
       onClick={() => toggleEditorPreview()}
     >
@@ -20,7 +22,7 @@ export function HeaderPreviewButton() {
       ) : (
         <Play className="h-3.5 w-3.5" />
       )}
-      {isPreview ? "Editor" : "Preview"}
+      <span className="editor-header-btn-label">{isPreview ? "Editor" : "Preview"}</span>
     </EditorButton>
   );
 }

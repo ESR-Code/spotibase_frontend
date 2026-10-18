@@ -28,12 +28,12 @@ export function EditorHeader() {
   );
 
   return (
-    <header className="z-[32] grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 border-b border-[var(--studio-line)] bg-[rgba(9,15,31,0.86)] px-5 py-3 backdrop-blur-xl">
+    <header className="editor-header z-[32] grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b border-[var(--studio-line)] bg-[rgba(9,15,31,0.86)] px-3 py-2.5 backdrop-blur-xl sm:px-5 sm:py-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-x-4">
       <div className="flex min-w-0 items-center gap-3">
         <div className="shrink-0">
-          <BrandMark />
+          <BrandMark compact />
         </div>
-        <div className="editor-vsep" />
+        <div className="editor-vsep hidden sm:block" />
         <HeaderNavMenu />
         <nav
           aria-label="Project"
@@ -78,11 +78,14 @@ export function EditorHeader() {
         </nav>
       </div>
 
-      <ModeToolbar />
+      <div className="editor-header-modes col-span-2 row-start-2 min-w-0 justify-self-center lg:col-span-1 lg:row-start-auto">
+        <ModeToolbar />
+      </div>
 
-      <div className="flex min-w-0 items-center justify-end gap-2">
-        <HeaderPreviewButton />
+      <div className="editor-header-actions">
         <SaveButton />
+        <div className="editor-vsep" />
+        <HeaderPreviewButton />
         <PublishButton />
         <div className="editor-vsep" />
         <AccountMenu />

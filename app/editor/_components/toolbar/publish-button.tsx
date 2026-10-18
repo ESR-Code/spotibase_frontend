@@ -13,13 +13,13 @@ export function PublishButton() {
 
   return (
     <EditorButton
-      variant="outline"
-      className="h-8 gap-1.5 px-3 text-[12px]"
+      className="editor-header-btn editor-header-btn-publish"
       title="Publish settings"
+      aria-label="Publish"
       onClick={() => setOpen(true)}
     >
       <Upload className="h-3.5 w-3.5" />
-      Publish
+      <span className="editor-header-btn-label">Publish</span>
     </EditorButton>
   );
 }

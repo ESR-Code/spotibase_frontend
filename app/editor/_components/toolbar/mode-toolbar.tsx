@@ -19,7 +19,7 @@ export function ModeToolbar() {
 
   return (
     <div
-      className="flex items-center gap-1 rounded-xl p-1"
+      className="flex max-w-full items-center gap-1 overflow-x-auto rounded-xl p-1"
       style={{
         background: "rgba(11,20,36,0.6)",
         border: "1px solid var(--editor-line)",

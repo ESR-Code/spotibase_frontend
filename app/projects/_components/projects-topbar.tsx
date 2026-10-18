@@ -4,7 +4,7 @@ import { AccountMenu } from "@/app/projects/_components/account-menu";
 import { Bell, Settings } from "lucide-react";
 import Link from "next/link";
 
-export function BrandMark() {
+export function BrandMark({ compact = false }: { compact?: boolean }) {
   return (
     <Link href="/projects" className="flex items-center gap-2.5" aria-label="Spotibase home">
       <span className="relative flex h-8 w-8 items-center justify-center rounded-[9px] bg-gradient-to-br from-[#ff7186] via-[#fd4f6a] to-[#b8253f] shadow-[0_6px_18px_-6px_rgba(253,79,106,0.8)]">
@@ -13,7 +13,7 @@ export function BrandMark() {
           <circle cx="12" cy="9" r="1.8" fill="#fff" />
         </svg>
       </span>
-      <span className="studio-heading text-xl leading-none">Spotibase</span>
+      <span className={`studio-heading text-xl leading-none${compact ? " hidden md:inline" : ""}`}>Spotibase</span>
     </Link>
   );
 }
