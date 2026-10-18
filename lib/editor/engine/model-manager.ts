@@ -2,6 +2,8 @@ import type { Application, Entity, StandardMaterial, Texture } from "playcanvas"
 import type * as pc from "playcanvas";
 import { toast } from "@/lib/editor/toast";
 import { buildDefaultBox } from "@/lib/editor/engine/default-scene-builder";
+import { decodeMeshoptGlb } from "@/lib/editor/engine/glb-meshopt";
+import { configureModelDecoders } from "@/lib/editor/engine/model-decoders";
 import { createImageTexture } from "@/lib/editor/engine/hotspot-text-texture";
 import {
   bindModelAnimation,
@@ -277,7 +279,10 @@ export function createModelManager(
       updateAuthoredMeta: boolean;
     },
   ): Promise<Entity | null> => {
-    const blob = new Blob([buffer], { type: "model/gltf-binary" });
+    configureModelDecoders(pcModule);
+    // Meshopt (gltfpack) isn't parsed by PlayCanvas: decode it first. No-op otherwise.
+    const glb = await decodeMeshoptGlb(buffer);
+    const blob = new Blob([glb], { type: "model/gltf-binary" });
     const url = URL.createObjectURL(blob);
     let incoming: InstanceType<typeof pcModule.Asset> | null = null;
 

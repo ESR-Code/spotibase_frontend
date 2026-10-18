@@ -84,6 +84,24 @@ function visibleMeshInstances(): MeshInstance[] {
   return out;
 }
 
+/** Max integer per PlayCanvas vertex data type (TYPE_INT8 … TYPE_UINT16). */
+const NORMALIZED_MAX: Record<number, number> = { 0: 127, 1: 255, 2: 32767, 3: 65535 };
+
+/** 1 / max for a normalized integer POSITION stream; 0 when positions are plain values. */
+function positionNormalizeScale(mesh: Mesh): number {
+  const element = mesh.vertexBuffer?.format.elements.find(
+    (item) => item.name === "POSITION",
+  );
+  if (!element?.normalize) return 0;
+  const max = NORMALIZED_MAX[element.dataType];
+  return max ? 1 / max : 0;
+}
+
+function dequantize(value: number, scale: number): number {
+  // Signed normalized values clamp at -1 (glTF / GPU snorm rule).
+  return scale ? Math.max(value * scale, -1) : value;
+}
+
 function readLocalGeometry(mesh: Mesh, triangleType: number): LocalGeometry | null {
   try {
     const rawPositions: number[] = [];
@@ -120,11 +138,13 @@ function readLocalGeometry(mesh: Mesh, triangleType: number): LocalGeometry | nu
     }
     if (tris.length === 0) return null;
 
+    // Quantized meshes (KHR_mesh_quantization) come back as raw integers.
+    const scale = positionNormalizeScale(mesh);
     const positions = new Float32Array(vertexCount * 3);
     for (let v = 0; v < vertexCount; v++) {
-      positions[v * 3] = rawPositions[v * stride];
-      positions[v * 3 + 1] = rawPositions[v * stride + 1];
-      positions[v * 3 + 2] = rawPositions[v * stride + 2];
+      positions[v * 3] = dequantize(rawPositions[v * stride], scale);
+      positions[v * 3 + 1] = dequantize(rawPositions[v * stride + 1], scale);
+      positions[v * 3 + 2] = dequantize(rawPositions[v * stride + 2], scale);
     }
     return { positions, triangles: Uint32Array.from(tris) };
   } catch {

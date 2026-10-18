@@ -14,7 +14,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 ### Scenes
 
-- Multiple scenes; one primary. Types: **3D Model** (orbit + GLB), **2D Image** (pan/zoom + PNG/JPG/WebP), **Geo map** (MapLibre globe/flat).
+- Multiple scenes; one primary. Types: **3D Model** (orbit + GLB, including compressed GLB: Draco, meshopt, KTX2 textures), **2D Image** (pan/zoom + PNG/JPG/WebP), **Geo map** (MapLibre globe/flat).
 - Type is fixed at creation. Settings sections and outliner tabs follow the scene-type registry.
 - Subject import via file picker or drag-drop (`import-subject`). Scene subject cache when switching.
 - Optional scene description (create form + Scene Settings) and thumbnail upload (Scene Settings), including **Use screenshot** which captures the live viewport and stores it as an image asset. Empty description is omitted from lists, not shown as a placeholder.
