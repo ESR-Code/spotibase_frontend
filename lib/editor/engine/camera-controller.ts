@@ -3,6 +3,13 @@ import type * as pc from "playcanvas";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import type { CameraMode } from "@/lib/editor/types/scene-type";
 
+type OrbitPoseState = {
+  yaw: number;
+  pitch: number;
+  distance: number;
+  target: Vec3;
+};
+
 type OrbitState = {
   mode: CameraMode;
   yaw: number;
@@ -10,14 +17,13 @@ type OrbitState = {
   distance: number;
   target: Vec3;
   zoomTarget: number | null;
+  /** Animations interpolate orbit parameters (not positions) so they never pass the pole. */
   anim: {
     active: boolean;
     t: number;
     duration: number;
-    fromPos: Vec3;
-    toPos: Vec3;
-    fromTarget: Vec3;
-    toTarget: Vec3;
+    from: OrbitPoseState;
+    to: OrbitPoseState;
   } | null;
   dragging: boolean;
   panning: boolean;
@@ -30,6 +36,16 @@ const ZOOM_STEP = 0.036;
 const ZOOM_SMOOTH = 7.5;
 const PAN_ZOOM_YAW = 0;
 const PAN_ZOOM_PITCH = 0;
+/** Orbit pitch is elevation: 0° horizon, 90° straight down. Past ±90° the view turns over. */
+const PITCH_LIMIT = 90;
+/** 3D: the orbit target may leave the subject box by this fraction of its size per side. */
+const PAN_MARGIN_3D = 0.5;
+/** 2D: at least this share of the image (or of the view, when zoomed in) stays on screen. */
+const PAN_KEEP_2D = 0.25;
+/** Rubber-band zone past a pan limit, as a fraction of the camera distance. */
+const PAN_SOFT_ZONE = 0.15;
+/** Spring-back speed after a pan past the limit is released. */
+const PAN_SPRING = 12;
 
 export type CameraOrbitPose = {
   yaw: number;
@@ -101,8 +117,148 @@ export function createCameraController(
   };
   const panRight = new pcModule.Vec3();
   const panUp = new pcModule.Vec3();
-  const animPos = new pcModule.Vec3();
   const animTarget = new pcModule.Vec3();
+
+  //#region Pan limits
+  /** Subject world box from the last framing; null = no subject, no limits. */
+  let subjectBox: { center: Vec3; halfExtents: Vec3 } | null = null;
+  /** Unconstrained target while panning; the shown target is rubber-banded from it. */
+  const rawPanTarget = new pcModule.Vec3();
+  /** Limits for the current gesture (widened to include where it started). */
+  let gestureLimits: { min: Vec3; max: Vec3 } | null = null;
+  let springBack = false;
+
+  const panLimits = (): { min: Vec3; max: Vec3 } | null => {
+    if (!subjectBox || !settings().limitPanToSubject) return null;
+    const { center, halfExtents } = subjectBox;
+    const min = new pcModule.Vec3();
+    const max = new pcModule.Vec3();
+    if (state.mode === "panZoom") {
+      // Image lies in the XY plane, viewed straight on along -Z.
+      const halfVFov = (((camera.camera?.fov ?? 42) * Math.PI) / 180) / 2;
+      const aspect =
+        camera.camera?.aspectRatio ??
+        canvas.clientWidth / Math.max(canvas.clientHeight, 1);
+      const viewHalfH = state.distance * Math.tan(halfVFov);
+      const viewHalf = [viewHalfH * aspect, viewHalfH];
+      const c = [center.x, center.y];
+      const h = [halfExtents.x, halfExtents.y];
+      const lo = [0, 0];
+      const hi = [0, 0];
+      for (let axis = 0; axis < 2; axis++) {
+        const keep = PAN_KEEP_2D * 2 * Math.min(h[axis]!, viewHalf[axis]!);
+        const reach = h[axis]! + viewHalf[axis]! - keep;
+        lo[axis] = c[axis]! - reach;
+        hi[axis] = c[axis]! + reach;
+      }
+      min.set(lo[0]!, lo[1]!, -Infinity);
+      max.set(hi[0]!, hi[1]!, Infinity);
+      return { min, max };
+    }
+    const largest = Math.max(halfExtents.x, halfExtents.y, halfExtents.z);
+    // Thin axes (flat models) still get some room.
+    const margin = (h: number) => Math.max(h, largest * 0.25) * 2 * PAN_MARGIN_3D;
+    min.set(
+      center.x - halfExtents.x - margin(halfExtents.x),
+      center.y - halfExtents.y - margin(halfExtents.y),
+      center.z - halfExtents.z - margin(halfExtents.z),
+    );
+    max.set(
+      center.x + halfExtents.x + margin(halfExtents.x),
+      center.y + halfExtents.y + margin(halfExtents.y),
+      center.z + halfExtents.z + margin(halfExtents.z),
+    );
+    return { min, max };
+  };
+
+  /** Ease past a limit: overshoot o shows as o / (1 + o / soft), never beyond `soft`. */
+  const rubberBand = (value: number, lo: number, hi: number, soft: number) => {
+    if (value < lo) {
+      const over = lo - value;
+      return lo - over / (1 + over / soft);
+    }
+    if (value > hi) {
+      const over = value - hi;
+      return hi + over / (1 + over / soft);
+    }
+    return value;
+  };
+
+  const beginPanGesture = () => {
+    rawPanTarget.copy(state.target);
+    springBack = false;
+    const limits = panLimits();
+    if (!limits) {
+      gestureLimits = null;
+      return;
+    }
+    // Starting outside (e.g. after focusing a far hotspot): don't jump; allow panning back in.
+    limits.min.min(state.target);
+    limits.max.max(state.target);
+    gestureLimits = limits;
+  };
+
+  const applyPanDelta = (delta: Vec3) => {
+    rawPanTarget.add(delta);
+    if (!gestureLimits) {
+      state.target.copy(rawPanTarget);
+      return;
+    }
+    const soft = Math.max(state.distance * PAN_SOFT_ZONE, 0.05);
+    const { min, max } = gestureLimits;
+    state.target.set(
+      rubberBand(rawPanTarget.x, min.x, max.x, soft),
+      rubberBand(rawPanTarget.y, min.y, max.y, soft),
+      rubberBand(rawPanTarget.z, min.z, max.z, soft),
+    );
+  };
+
+  const endPanGesture = () => {
+    springBack = gestureLimits != null;
+  };
+
+  /** After release (or a zoom that tightens 2D limits), ease the target back inside. */
+  const updateSpringBack = (dt: number) => {
+    if (state.panning || state.anim?.active) return;
+    if (!springBack && state.mode !== "panZoom") return;
+    const limits = springBack ? gestureLimits : panLimits();
+    if (!limits) {
+      springBack = false;
+      return;
+    }
+    const clamped = new pcModule.Vec3(
+      clamp(state.target.x, limits.min.x, limits.max.x),
+      clamp(state.target.y, limits.min.y, limits.max.y),
+      clamp(state.target.z, limits.min.z, limits.max.z),
+    );
+    const gap = clamped.distance(state.target);
+    if (gap < 1e-4) {
+      if (gap > 0) state.target.copy(clamped);
+      springBack = false;
+      return;
+    }
+    const alpha = 1 - Math.exp(-PAN_SPRING * Math.max(dt, 0));
+    state.target.lerp(state.target, clamped, alpha);
+  };
+  //#endregion
+
+  const clampPitch = (pitch: number) => {
+    const s = settings();
+    const min = clamp(s.minPitch, -PITCH_LIMIT, PITCH_LIMIT);
+    const max = clamp(s.maxPitch, min, PITCH_LIMIT);
+    return clamp(pitch, min, max);
+  };
+
+  /** Full-circle yaw range: wrap instead of clamping so orbiting never hits a wall. */
+  const yawIsUnbounded = () => {
+    const s = settings();
+    return s.maxYaw - s.minYaw >= 360;
+  };
+
+  const clampYaw = (yaw: number) => {
+    const s = settings();
+    return yawIsUnbounded() ? wrapDegrees(yaw) : clamp(yaw, s.minYaw, s.maxYaw);
+  };
 
   const applyPose = () => {
     const s = settings();
@@ -110,8 +266,8 @@ export function createCameraController(
       state.pitch = PAN_ZOOM_PITCH;
       state.yaw = PAN_ZOOM_YAW;
     } else {
-      state.pitch = clamp(state.pitch, s.minPitch, s.maxPitch);
-      state.yaw = clamp(state.yaw, s.minYaw, s.maxYaw);
+      state.pitch = clampPitch(state.pitch);
+      state.yaw = clampYaw(state.yaw);
     }
     state.distance = clamp(state.distance, s.minDistance, s.maxDistance);
 
@@ -136,7 +292,9 @@ export function createCameraController(
       state.target.z + state.distance * Math.cos(yawRad) * Math.cos(pitchRad);
 
     camera.setPosition(x, y, z);
-    camera.lookAt(state.target);
+    // Orientation from yaw / pitch, not lookAt: lookAt uses world up and
+    // flips the view when looking straight down.
+    camera.setEulerAngles(-state.pitch, state.yaw, 0);
     lastPose.yaw = state.yaw;
     lastPose.pitch = state.pitch;
     lastPose.distance = state.distance;
@@ -151,21 +309,6 @@ export function createCameraController(
     home.distance = state.distance;
     home.target.copy(state.target);
     home.ready = true;
-  };
-
-  const orbitPosition = (
-    target: Vec3,
-    yaw: number,
-    pitch: number,
-    distance: number,
-  ) => {
-    const pitchRad = (pitch * Math.PI) / 180;
-    const yawRad = (yaw * Math.PI) / 180;
-    return new pcModule.Vec3(
-      target.x + distance * Math.sin(yawRad) * Math.cos(pitchRad),
-      target.y + distance * Math.sin(pitchRad),
-      target.z + distance * Math.cos(yawRad) * Math.cos(pitchRad),
-    );
   };
 
   /** Compute zoom-extents pose from the entity's current world AABB (includes scale/rotation). */
@@ -206,6 +349,9 @@ export function createCameraController(
       bbox.center.set(0, state.mode === "panZoom" ? 0 : 1, 0);
       bbox.halfExtents.set(1, 1, 1);
     }
+    subjectBox = hasMesh
+      ? { center: bbox.center.clone(), halfExtents: bbox.halfExtents.clone() }
+      : null;
 
     const size = bbox.halfExtents.clone().mulScalar(2);
     const span = Math.max(size.length(), size.x, size.y, size.z, 1);
@@ -264,6 +410,8 @@ export function createCameraController(
         state.dragging = e.button === 0;
         state.panning = e.button === 2 || e.shiftKey;
       }
+      // Shift-drag can switch an orbit into a pan mid-gesture; start limits now either way.
+      beginPanGesture();
       canvas.setPointerCapture(e.pointerId);
     }
   };
@@ -281,7 +429,7 @@ export function createCameraController(
       const panScale = state.distance * 0.0018;
       panRight.copy(camera.right).mulScalar(-dx * panScale);
       panUp.copy(camera.up).mulScalar(dy * panScale);
-      state.target.add(panRight).add(panUp);
+      applyPanDelta(panRight.add(panUp));
     } else if (state.dragging) {
       state.yaw -= dx * 0.35;
       state.pitch += dy * 0.3;
@@ -290,6 +438,7 @@ export function createCameraController(
   };
 
   const onPointerUp = (e: PointerEvent) => {
+    if (state.dragging || state.panning) endPanGesture();
     state.dragging = false;
     state.panning = false;
     if (canvas.hasPointerCapture(e.pointerId)) {
@@ -328,12 +477,18 @@ export function createCameraController(
       anim.t += dt;
       const k = Math.min(1, anim.t / anim.duration);
       const ease = 1 - Math.pow(1 - k, 3);
-      animPos.lerp(anim.fromPos, anim.toPos, ease);
-      animTarget.lerp(anim.fromTarget, anim.toTarget, ease);
-      camera.setPosition(animPos);
+      const { from, to } = anim;
+      const yawDelta = yawIsUnbounded()
+        ? wrapDegrees(to.yaw - from.yaw)
+        : to.yaw - from.yaw;
+      state.yaw = from.yaw + yawDelta * ease;
+      state.pitch = from.pitch + (to.pitch - from.pitch) * ease;
+      // Log-space zoom so near and far moves feel equally smooth.
+      state.distance =
+        from.distance * Math.pow(to.distance / from.distance, ease);
+      animTarget.lerp(from.target, to.target, ease);
       state.target.copy(animTarget);
-      camera.lookAt(state.target);
-      syncOrbitFromPose();
+      applyPose();
       if (k >= 1) {
         state.anim = null;
         state.zoomTarget = null;
@@ -350,14 +505,31 @@ export function createCameraController(
       }
     }
 
+    updateSpringBack(dt);
     applyPose();
   };
 
-  const syncOrbitFromPose = () => {
-    const offset = camera.getPosition().clone().sub(state.target);
-    state.distance = Math.max(0.2, offset.length());
-    state.pitch = (Math.asin(clamp(offset.y / state.distance, -1, 1)) * 180) / Math.PI;
-    state.yaw = (Math.atan2(offset.x, offset.z) * 180) / Math.PI;
+  const currentPose = (): OrbitPoseState => ({
+    yaw: state.yaw,
+    pitch: state.pitch,
+    distance: state.distance,
+    target: state.target.clone(),
+  });
+
+  const startAnim = (to: OrbitPoseState, duration: number) => {
+    state.zoomTarget = null;
+    state.anim = {
+      active: true,
+      t: 0,
+      duration,
+      from: currentPose(),
+      to: {
+        ...to,
+        yaw: state.mode === "panZoom" ? PAN_ZOOM_YAW : clampYaw(to.yaw),
+        pitch: state.mode === "panZoom" ? PAN_ZOOM_PITCH : clampPitch(to.pitch),
+        distance: Math.max(0.05, to.distance),
+      },
+    };
   };
 
   const frameToEntity = (entity: Entity, options?: { storeHome?: boolean }) => {
@@ -368,24 +540,17 @@ export function createCameraController(
     const homeDist = home.ready
       ? home.distance
       : Math.max(state.distance, 8);
-    const offset = camera.getPosition().clone().sub(state.target);
-    if (offset.lengthSq() < 1e-6) {
-      offset.set(0.72, 0.48, 0.88);
-    }
-    offset.normalize();
     const focusDist = clamp(homeDist * 0.42, homeDist * 0.35, homeDist * 0.7);
-    const toPos = new pcModule.Vec3().copy(point).add(offset.mulScalar(focusDist));
-
-    state.anim = {
-      active: true,
-      t: 0,
+    // Keep the current viewing direction; move in and re-centre on the point.
+    startAnim(
+      {
+        yaw: state.yaw,
+        pitch: state.pitch,
+        distance: focusDist,
+        target: point.clone(),
+      },
       duration,
-      fromPos: camera.getPosition().clone(),
-      toPos,
-      fromTarget: state.target.clone(),
-      toTarget: point.clone(),
-    };
-    state.zoomTarget = null;
+    );
   };
 
   const resetHome = (entity?: Entity) => {
@@ -405,16 +570,15 @@ export function createCameraController(
       return;
     }
 
-    state.zoomTarget = null;
-    state.anim = {
-      active: true,
-      t: 0,
-      duration: 0.85,
-      fromPos: camera.getPosition().clone(),
-      toPos: orbitPosition(home.target, home.yaw, home.pitch, home.distance),
-      fromTarget: state.target.clone(),
-      toTarget: home.target.clone(),
-    };
+    startAnim(
+      {
+        yaw: home.yaw,
+        pitch: home.pitch,
+        distance: home.distance,
+        target: home.target.clone(),
+      },
+      0.85,
+    );
   };
 
   const getOrbitPose = (): CameraOrbitPose => ({
@@ -439,8 +603,8 @@ export function createCameraController(
       };
     }
     return {
-      yaw: clamp(pose.yaw, s.minYaw, s.maxYaw),
-      pitch: clamp(pose.pitch, s.minPitch, s.maxPitch),
+      yaw: clampYaw(pose.yaw),
+      pitch: clampPitch(pose.pitch),
       distance: clamp(pose.distance, s.minDistance, s.maxDistance),
       target: new pcModule.Vec3(pose.target.x, pose.target.y, pose.target.z),
     };
@@ -472,22 +636,7 @@ export function createCameraController(
   };
 
   const animateToOrbitPose = (pose: CameraOrbitPose, duration = 0.85) => {
-    const resolved = resolveOrbitPose(pose);
-    state.zoomTarget = null;
-    state.anim = {
-      active: true,
-      t: 0,
-      duration,
-      fromPos: camera.getPosition().clone(),
-      toPos: orbitPosition(
-        resolved.target,
-        resolved.yaw,
-        resolved.pitch,
-        resolved.distance,
-      ),
-      fromTarget: state.target.clone(),
-      toTarget: resolved.target,
-    };
+    startAnim(resolveOrbitPose(pose), duration);
   };
 
   const storeHomeFromEntity = (entity: Entity) => {
@@ -534,4 +683,9 @@ export function createCameraController(
 
 function clamp(v: number, min: number, max: number) {
   return Math.min(max, Math.max(min, v));
+}
+
+/** Wrap an angle into [-180, 180). */
+function wrapDegrees(deg: number) {
+  return ((((deg + 180) % 360) + 360) % 360) - 180;
 }

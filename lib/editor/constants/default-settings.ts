@@ -22,7 +22,8 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   minYaw: -180,
   maxYaw: 180,
   minPitch: 0,
-  maxPitch: 94,
+  maxPitch: 90,
+  limitPanToSubject: true,
   minZoom: 0,
   maxZoom: 22,
   resetPosition: null,
@@ -178,6 +179,8 @@ export function cloneEditorSettings(settings: EditorSettings): EditorSettings {
     ...settings,
     minZoom: settings.minZoom ?? DEFAULT_EDITOR_SETTINGS.minZoom,
     maxZoom: settings.maxZoom ?? DEFAULT_EDITOR_SETTINGS.maxZoom,
+    limitPanToSubject:
+      settings.limitPanToSubject ?? DEFAULT_EDITOR_SETTINGS.limitPanToSubject,
     markerDialogPresentation: presentation,
     markerDialogSize: size,
     markerDialogDrawerInset: settings.markerDialogDrawerInset ?? false,

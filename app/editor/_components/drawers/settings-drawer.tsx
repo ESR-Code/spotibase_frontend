@@ -423,6 +423,12 @@ export function SettingsDrawer() {
                 step={1}
                 onChange={(v) => form.setValue("maxDistance", v)}
               />
+              <SwitchField
+                label="Limit panning to subject"
+                description="Keep the camera near the model or image so it can't be panned away and lost"
+                checked={values.limitPanToSubject}
+                onChange={(checked) => form.setValue("limitPanToSubject", checked)}
+              />
 
               <div
                 className="mb-1 mt-3 pt-3 text-[10px] font-bold uppercase tracking-wider"
@@ -466,7 +472,7 @@ export function SettingsDrawer() {
                 value={values.minPitch}
                 display={`${values.minPitch}°`}
                 min={0}
-                max={180}
+                max={90}
                 step={1}
                 onChange={(v) => form.setValue("minPitch", v)}
               />
@@ -475,12 +481,12 @@ export function SettingsDrawer() {
                 value={values.maxPitch}
                 display={`${values.maxPitch}°`}
                 min={0}
-                max={180}
+                max={90}
                 step={1}
                 onChange={(v) => form.setValue("maxPitch", v)}
               />
               <p className="mt-1.5 text-[11px]" style={{ color: "var(--editor-muted)" }}>
-                Pitch: 0° top-down, 90° horizon, 180° underside.
+                Pitch: 0° level with the horizon, 90° straight down (top view).
               </p>
             </>
           )}

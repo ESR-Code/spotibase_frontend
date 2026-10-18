@@ -51,6 +51,8 @@ export type EditorSettings = {
   maxYaw: number;
   minPitch: number;
   maxPitch: number;
+  /** Keep camera panning near the scene subject (3D model / 2D image). */
+  limitPanToSubject: boolean;
   /** Geo map closest zoom (MapLibre 0–22). */
   minZoom: number;
   /** Geo map farthest zoom (MapLibre 0–22). */

@@ -21,6 +21,7 @@ function pickSettings(state: SettingsState): EditorSettings {
     maxYaw: state.maxYaw,
     minPitch: state.minPitch,
     maxPitch: state.maxPitch,
+    limitPanToSubject: state.limitPanToSubject,
     minZoom: state.minZoom,
     maxZoom: state.maxZoom,
     resetPosition: state.resetPosition,

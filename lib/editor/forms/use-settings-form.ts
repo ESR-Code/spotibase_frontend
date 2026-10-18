@@ -21,8 +21,10 @@ function toFormValues(
     maxDistance: settings.maxDistance,
     minYaw: settings.minYaw,
     maxYaw: settings.maxYaw,
-    minPitch: settings.minPitch,
-    maxPitch: settings.maxPitch,
+    // Older saves allowed > 90° (camera turned over the top).
+    minPitch: Math.min(settings.minPitch, 90),
+    maxPitch: Math.min(settings.maxPitch, 90),
+    limitPanToSubject: settings.limitPanToSubject ?? true,
     minZoom: settings.minZoom,
     maxZoom: settings.maxZoom,
     gridColor: settings.gridColor,
