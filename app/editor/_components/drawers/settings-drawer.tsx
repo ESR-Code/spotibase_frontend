@@ -42,6 +42,7 @@ import { useGeoForm } from "@/lib/editor/forms/use-geo-form";
 import { useSettingsForm } from "@/lib/editor/forms/use-settings-form";
 import { getSceneType } from "@/lib/editor/scene-types/registry";
 import type {
+  HotspotLabelStyle,
   MarkerDialogPresentation,
   MarkerDialogSize,
 } from "@/lib/editor/types/editor-settings";
@@ -69,6 +70,15 @@ const MARKER_DIALOG_SIZES: {
   { id: "medium", label: "Medium" },
   { id: "large", label: "Large" },
   { id: "fullscreen", label: "Full screen" },
+];
+
+const HOTSPOT_LABEL_STYLES: {
+  id: HotspotLabelStyle;
+  label: string;
+}[] = [
+  { id: "classic", label: "Classic" },
+  { id: "pill", label: "Pill" },
+  { id: "glass", label: "Glass" },
 ];
 
 export function SettingsDrawer() {
@@ -213,6 +223,18 @@ export function SettingsDrawer() {
             >
               Label Appearance
             </div>
+            <FieldLabel>Label Style</FieldLabel>
+            <div className="mb-3 flex flex-wrap gap-2">
+              {HOTSPOT_LABEL_STYLES.map((style) => (
+                <TypePill
+                  key={style.id}
+                  active={values.hotspotLabelStyle === style.id}
+                  onClick={() => form.setValue("hotspotLabelStyle", style.id)}
+                >
+                  {style.label}
+                </TypePill>
+              ))}
+            </div>
             <FieldLabel>Label Color</FieldLabel>
             <input
               type="color"
@@ -220,7 +242,16 @@ export function SettingsDrawer() {
               value={values.hotspotLabelColor}
               onChange={(e) => form.setValue("hotspotLabelColor", e.target.value)}
             />
-            <FieldLabel>Text Color</FieldLabel>
+            <SliderField
+              label="Background Opacity"
+              value={values.hotspotLabelOpacity}
+              display={values.hotspotLabelOpacity.toFixed(2)}
+              min={0}
+              max={1}
+              step={0.05}
+              onChange={(v) => form.setValue("hotspotLabelOpacity", v)}
+            />
+            <FieldLabel className="mt-3">Text Color</FieldLabel>
             <input
               type="color"
               className="mb-3 h-8 w-full rounded"
@@ -229,15 +260,23 @@ export function SettingsDrawer() {
                 form.setValue("hotspotLabelTextColor", e.target.value)
               }
             />
-            <FieldLabel>Border Color</FieldLabel>
-            <input
-              type="color"
-              className="h-8 w-full rounded"
-              value={values.hotspotLabelBorderColor}
-              onChange={(e) =>
-                form.setValue("hotspotLabelBorderColor", e.target.value)
-              }
-            />
+            {values.hotspotLabelStyle === "classic" ? (
+              <>
+                <FieldLabel>Border Color</FieldLabel>
+                <input
+                  type="color"
+                  className="h-8 w-full rounded"
+                  value={values.hotspotLabelBorderColor}
+                  onChange={(e) =>
+                    form.setValue("hotspotLabelBorderColor", e.target.value)
+                  }
+                />
+              </>
+            ) : (
+              <p className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
+                The icon uses each hotspot&apos;s own icon and marker color.
+              </p>
+            )}
           </div>
         </SettingsSection>
 

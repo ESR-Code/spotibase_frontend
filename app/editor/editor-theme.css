@@ -2131,7 +2131,8 @@
   font-weight: 600;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   /* Center above the marker with a clear gap */
-  transform: translate(-50%, calc(-100% - 18px));
+  --editor-label-gap: 18px;
+  transform: translate(-50%, calc(-100% - var(--editor-label-gap)));
   white-space: nowrap;
 }
 
@@ -2142,12 +2143,83 @@
 @keyframes editor-hover-tooltip-in {
   from {
     opacity: 0;
-    transform: translate(-50%, calc(-100% - 8px));
+    transform: translate(-50%, calc(-100% - var(--editor-label-gap) + 10px));
   }
   to {
     opacity: 1;
-    transform: translate(-50%, calc(-100% - 18px));
+    transform: translate(-50%, calc(-100% - var(--editor-label-gap)));
   }
+}
+
+/* Hotspot label styles — background / accent come from inline CSS vars. */
+.editor-root .editor-hotspot-label-pill,
+.editor-root .editor-hotspot-label-glass {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px 4px 4px;
+  /* Fixed clearance above the marker (Classic keeps its 18px). */
+  --editor-label-gap: 30px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.editor-root .editor-hotspot-label-pill {
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(15, 30, 60, 0.14);
+}
+
+/* Pointer tail under the pill. */
+.editor-root .editor-hotspot-label-pill::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 12px;
+  height: 7px;
+  transform: translateX(-50%);
+  background: var(--editor-label-bg);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.editor-root .editor-hotspot-label-glass {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 10px;
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+
+.editor-root .editor-hotspot-label-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+}
+
+.editor-root .editor-hotspot-label-pill .editor-hotspot-label-icon {
+  background: var(--editor-label-accent);
+  color: #fff;
+}
+
+.editor-root .editor-hotspot-label-glass .editor-hotspot-label-icon {
+  color: var(--editor-label-accent);
+}
+
+/* No marker icon: small plain circle in the marker color. Margin keeps the
+   22px icon footprint so the label height matches the icon variant. */
+.editor-root .editor-hotspot-label-dot {
+  width: 12px;
+  height: 12px;
+  margin: 5px;
+}
+
+.editor-root .editor-hotspot-label-glass .editor-hotspot-label-dot {
+  background: var(--editor-label-accent);
 }
 
 .editor-root .editor-drop-overlay {

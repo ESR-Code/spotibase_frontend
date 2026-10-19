@@ -7,6 +7,9 @@ export type MarkerDialogPresentation = "modal" | "drawer" | "infobox";
 /** Desktop width of the marker dialog. Mobile always uses fullscreen. */
 export type MarkerDialogSize = "medium" | "large" | "fullscreen";
 
+/** Visual style of hotspot hover / select / show-all labels in Preview. */
+export type HotspotLabelStyle = "classic" | "pill" | "glass";
+
 export type { LegendCategory };
 
 /** User-defined Preview bottom-bar button, wired in the Actions editor. */
@@ -73,6 +76,10 @@ export type EditorSettings = {
   hotspotLabelTextColor: string;
   /** Hotspot label border color. */
   hotspotLabelBorderColor: string;
+  /** Hotspot label look: classic box, icon pill, or frosted glass chip. */
+  hotspotLabelStyle: HotspotLabelStyle;
+  /** Hotspot label background opacity, 0–1 (text and icon stay opaque). */
+  hotspotLabelOpacity: number;
   /** Marker dialog presentation: centered modal, side drawer, or anchored info box. */
   markerDialogPresentation: MarkerDialogPresentation;
   /** Desktop size for drawer/modal/info box presentation. */

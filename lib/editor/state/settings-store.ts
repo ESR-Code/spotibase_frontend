@@ -32,6 +32,8 @@ function pickSettings(state: SettingsState): EditorSettings {
     hotspotLabelColor: state.hotspotLabelColor,
     hotspotLabelTextColor: state.hotspotLabelTextColor,
     hotspotLabelBorderColor: state.hotspotLabelBorderColor,
+    hotspotLabelStyle: state.hotspotLabelStyle,
+    hotspotLabelOpacity: state.hotspotLabelOpacity,
     markerDialogPresentation: state.markerDialogPresentation,
     markerDialogSize: state.markerDialogSize,
     markerDialogDrawerInset: state.markerDialogDrawerInset,

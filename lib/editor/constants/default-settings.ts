@@ -34,6 +34,8 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   hotspotLabelColor: "#15243f",
   hotspotLabelTextColor: "#ffffff",
   hotspotLabelBorderColor: "#e63946",
+  hotspotLabelStyle: "classic",
+  hotspotLabelOpacity: 1,
   markerDialogPresentation: "drawer",
   markerDialogSize: "medium",
   markerDialogDrawerInset: false,
@@ -181,6 +183,10 @@ export function cloneEditorSettings(settings: EditorSettings): EditorSettings {
     maxZoom: settings.maxZoom ?? DEFAULT_EDITOR_SETTINGS.maxZoom,
     limitPanToSubject:
       settings.limitPanToSubject ?? DEFAULT_EDITOR_SETTINGS.limitPanToSubject,
+    hotspotLabelStyle:
+      settings.hotspotLabelStyle ?? DEFAULT_EDITOR_SETTINGS.hotspotLabelStyle,
+    hotspotLabelOpacity:
+      settings.hotspotLabelOpacity ?? DEFAULT_EDITOR_SETTINGS.hotspotLabelOpacity,
     markerDialogPresentation: presentation,
     markerDialogSize: size,
     markerDialogDrawerInset: settings.markerDialogDrawerInset ?? false,

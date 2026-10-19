@@ -53,6 +53,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 - **Mesh click** (3D model scenes): Subject → Meshes → **Make clickable** turns a model mesh into a hotspot trigger (no marker). It has the same title, blocks, actions (default Open Modal), legend and Hotspot Editor. In Preview, hovering highlights the mesh; clicking runs the actions, and the mesh stays highlighted while its modal is open. A marker in front wins. In the editor, clicking the mesh opens its hotspot. Rebind or unbind in the General tab. A mesh missing from the current model is flagged (outliner badge + General tab) and simply isn't clickable; the binding is kept.
 - Content blocks: heading, text, link, image (upload or URL / token; optional per-slide caption; 2+ images become a Preview carousel), video (YouTube / Vimeo embed), action button (icon + label + optional italic description; Preview accent). Token fields can insert HTTP / Post Message / For Each paths.
 - Preview: hover tooltip, select label, open presentation, legend filter.
+- Hotspot labels: per-scene style (Classic box / Pill with icon circle / frosted Glass chip with leader line) and background opacity in Scene Settings → Hotspots. Pill / Glass show the hotspot's own icon tinted with its marker color.
 
 
 
