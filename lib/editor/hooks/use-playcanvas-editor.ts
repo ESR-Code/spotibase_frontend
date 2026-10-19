@@ -12,6 +12,11 @@ import { createPlayCanvasAppAsync } from "@/lib/editor/engine/create-playcanvas-
 import { createEffectsManager } from "@/lib/editor/engine/effects-manager";
 import { createHotspotManager } from "@/lib/editor/engine/hotspot-manager";
 import { createMeshHighlightManager } from "@/lib/editor/engine/mesh-highlight-manager";
+import { createMeshRaycaster } from "@/lib/editor/engine/mesh-raycaster";
+import {
+  getModelMeshCenter,
+  unbindModelMeshQueries,
+} from "@/lib/editor/engine/model-mesh-queries";
 import { unbindModelAnimation, resetModelAnimation } from "@/lib/editor/engine/model-animation";
 import { createModelManager } from "@/lib/editor/engine/model-manager";
 import { createPickingController } from "@/lib/editor/engine/picking-controller";
@@ -41,6 +46,7 @@ import {
   DEFAULT_MODEL_SCALE,
   useModelStore,
 } from "@/lib/editor/state/model-store";
+import { effectiveMeshHighlights } from "@/lib/editor/state/mesh-interaction-highlight";
 import { findHotspot } from "@/lib/editor/state/preview-hotspots";
 import { usePreviewAppearanceStore } from "@/lib/editor/state/preview-appearance-store";
 import { usePreviewMeshHighlightStore } from "@/lib/editor/state/preview-mesh-highlight-store";
@@ -94,6 +100,12 @@ export function usePlayCanvasEditor() {
           scene.hotspotRoot,
           scene.camera,
         );
+        const meshRaycaster = createMeshRaycaster(
+          pc,
+          scene.camera,
+          canvas,
+          () => models.getMeshes(),
+        );
         const picking = createPickingController(
           pc,
           canvas,
@@ -101,6 +113,7 @@ export function usePlayCanvasEditor() {
           scene.modelRoot,
           hotspotMgr,
           cameraCtrl,
+          meshRaycaster,
         );
         const meshHighlight = createMeshHighlightManager(
           app,
@@ -370,15 +383,29 @@ export function usePlayCanvasEditor() {
           (state, prev) => {
             if (state.disabledMeshIds === prev.disabledMeshIds) return;
             models.applyMeshVisibility(state.disabledMeshIds);
-            meshHighlight.sync(usePreviewMeshHighlightStore.getState().byMeshId);
+            meshHighlight.sync(effectiveMeshHighlights());
             scene.invalidateStaticShadows();
           },
         );
-        const unsubMeshHighlight = usePreviewMeshHighlightStore.subscribe(
-          (state) => {
-            meshHighlight.sync(state.byMeshId);
-          },
-        );
+        const unsubMeshHighlight = usePreviewMeshHighlightStore.subscribe(() => {
+          meshHighlight.sync(effectiveMeshHighlights());
+        });
+        // Mesh-click "active" highlight follows the selected (editor) or open
+        // (Preview) hotspot.
+        const unsubMeshActiveEditor = useEditorStore.subscribe((state, prev) => {
+          if (
+            state.selectedId === prev.selectedId &&
+            state.isPreview === prev.isPreview &&
+            state.hotspots === prev.hotspots
+          ) {
+            return;
+          }
+          meshHighlight.sync(effectiveMeshHighlights());
+        });
+        const unsubMeshActiveUi = useUIStore.subscribe((state, prev) => {
+          if (state.previewActiveHotspotId === prev.previewActiveHotspotId) return;
+          meshHighlight.sync(effectiveMeshHighlights());
+        });
         const unsubWire = useModelStore.subscribe((state, prev) => {
           if (state.wireframe !== prev.wireframe) {
             models.setWireframe(state.wireframe);
@@ -394,14 +421,10 @@ export function usePlayCanvasEditor() {
           }
           if (state.modelReflection !== prev.modelReflection) {
             models.applyReflection(state.modelReflection);
-            meshHighlight.sync(
-              usePreviewMeshHighlightStore.getState().byMeshId,
-            );
+            meshHighlight.refresh(effectiveMeshHighlights());
           }
           if (state.meshes !== prev.meshes) {
-            meshHighlight.sync(
-              usePreviewMeshHighlightStore.getState().byMeshId,
-            );
+            meshHighlight.sync(effectiveMeshHighlights());
           }
           if (state.animations !== prev.animations) {
             syncKeyLightShadowMode();
@@ -487,13 +510,11 @@ export function usePlayCanvasEditor() {
             return;
           }
 
-          cameraCtrl.focusOnPoint(
-            new pc.Vec3(
-              hotspot.position.x,
-              hotspot.position.y,
-              hotspot.position.z,
-            ),
-          );
+          // Mesh-click hotspots focus the live mesh; stored position is the fallback.
+          const target =
+            (hotspot.meshId ? getModelMeshCenter(hotspot.meshId) : null) ??
+            hotspot.position;
+          cameraCtrl.focusOnPoint(new pc.Vec3(target.x, target.y, target.z));
         };
         const onSceneSwitched = async (event: Event) => {
           const sceneId = (event as CustomEvent<{ sceneId: string }>).detail
@@ -599,10 +620,13 @@ export function usePlayCanvasEditor() {
           unsubSpawned();
           unsubMeshVisibility();
           unsubMeshHighlight();
+          unsubMeshActiveEditor();
+          unsubMeshActiveUi();
           unsubWire();
           app.off("update", onUpdate);
           unbindResize();
           picking.dispose();
+          unbindModelMeshQueries();
           hotspotMgr.dispose();
           meshHighlight.destroy();
           effectsMgr.destroy();

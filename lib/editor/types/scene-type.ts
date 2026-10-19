@@ -31,6 +31,8 @@ export type SceneTypeDescriptor = {
   settingsSections: SceneSettingsSections;
   /** Spawn Hotspot can place lat/lon pins on the subject surface (Y raycast). */
   spawnSurfacePlacement: boolean;
+  /** Model meshes can be made clickable (mesh-bound hotspots, `Hotspot.meshId`). */
+  meshClick: boolean;
   outlinerTabs: {
     layers: boolean;
   };

@@ -83,7 +83,17 @@ export type Hotspot = {
    * openModal chain; an explicit empty `nodes: []` means do nothing.
    */
   actions?: HotspotActionGraph;
+  /**
+   * Mesh click: when set, this hotspot is triggered by clicking that model mesh
+   * (id from the mesh catalog) instead of a marker. Everything else is shared.
+   */
+  meshId?: string;
 };
+
+/** True when the hotspot is triggered by a model mesh, not a marker. */
+export function isMeshBoundHotspot(hotspot: Pick<Hotspot, "meshId">): boolean {
+  return typeof hotspot.meshId === "string" && hotspot.meshId.length > 0;
+}
 
 export type { HotspotBlock, HotspotBlockType } from "@/lib/editor/types/hotspot-block";
 export type {

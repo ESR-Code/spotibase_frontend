@@ -26,6 +26,8 @@ export type ActionFlowNodeData = {
   /** Dual normal/toggled outputs on the trigger. */
   toggleEnabled?: boolean;
   triggerSubtitle?: string;
+  /** Hotspot lane triggered by a model mesh (`Hotspot.meshId`). */
+  meshClick?: boolean;
   allowedNodeTypes?: ActionNodeType[];
 };
 
@@ -40,6 +42,7 @@ export type ActionFlowEntry = {
   toggledIcon?: string;
   toggleEnabled?: boolean;
   triggerSubtitle?: string;
+  meshClick?: boolean;
   allowedNodeTypes: ActionNodeType[];
 };
 
@@ -73,6 +76,7 @@ export function toFlowGraph(entries: ActionFlowEntry[]): {
       toggledIcon,
       toggleEnabled,
       triggerSubtitle,
+      meshClick,
       allowedNodeTypes,
     } = entry;
     const yOffset = originY;
@@ -93,6 +97,7 @@ export function toFlowGraph(entries: ActionFlowEntry[]): {
         toggledIcon,
         toggleEnabled,
         triggerSubtitle,
+        meshClick,
         allowedNodeTypes,
       },
       deletable: false,

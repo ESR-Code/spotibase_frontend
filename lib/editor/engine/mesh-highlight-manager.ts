@@ -17,6 +17,13 @@ type TintOverride = {
   tinted: StandardMaterial;
 };
 
+/** What is currently drawn for one mesh, so `sync` only touches changes. */
+type AppliedHighlight = {
+  key: string;
+  entity: Entity;
+  stroked: boolean;
+};
+
 type OutlineTarget = {
   width: number;
   height: number;
@@ -28,13 +35,17 @@ type AdjustableOutlineRenderer = InstanceType<
 > & {
   rt: OutlineTarget;
   tempRt: OutlineTarget;
+  outlineCameraEntity: Entity | null;
   updateRenderTarget: (sceneCamera: {
     renderTarget?: { width: number; height: number } | null;
   }) => void;
 };
 
 export type MeshHighlightManager = {
+  /** Apply highlights; only meshes whose style changed are touched. */
   sync: (byMeshId: MeshHighlightById) => void;
+  /** Rebuild everything (original materials changed, e.g. reflection). */
+  refresh: (byMeshId: MeshHighlightById) => void;
   frameUpdate: () => void;
   destroy: () => void;
 };
@@ -46,6 +57,12 @@ export type MeshHighlightManager = {
  *   and metallic GLBs. Opacity 0 / tint off restores the original.
  * - Stroke via PlayCanvas OutlineRenderer, captured on a hidden layer so
  *   selected meshes are not redrawn on Immediate (which covered hotspots).
+ *
+ * Performance: `sync` is called on every hover change, so it is incremental.
+ * Unchanged meshes are left alone, tinted clones are cached per (material,
+ * style), and the OutlineRenderer is created once and only has its camera
+ * switched off when nothing is stroked. Creating / destroying it adds and
+ * removes a scene camera plus render targets, which stalled the GPU.
  */
 
 function applyTintToClone(
@@ -79,11 +96,14 @@ export function createMeshHighlightManager(
   getMeshes: () => CollectedModelMesh[],
 ): MeshHighlightManager {
   const overrides = new Map<MeshInstance, TintOverride>();
-  let outlined: Entity[] = [];
+  const applied = new Map<string, AppliedHighlight>();
+  /** Tinted clones by original material, then style key. Reused across hovers. */
+  const tintCache = new Map<Material, Map<string, StandardMaterial>>();
+  let catalog: CollectedModelMesh[] | null = null;
   let outlineRenderer: InstanceType<typeof pcModule.OutlineRenderer> | null =
     null;
   let captureLayer: Layer | null = null;
-  let strokeActive = false;
+  let strokeCount = 0;
   let strokeWidth = 1;
 
   const hexToColor = (hex: string) => {
@@ -142,41 +162,58 @@ export function createMeshHighlightManager(
     return outlineRenderer;
   };
 
-  const clearStroke = () => {
-    if (outlineRenderer) {
-      for (const entity of outlined) {
-        try {
-          outlineRenderer.removeEntity(entity, false);
-        } catch {
-          // Entity was destroyed with a previous model load.
-        }
-      }
+  const setOutlineCameraEnabled = (enabled: boolean) => {
+    const cameraEntity = (outlineRenderer as AdjustableOutlineRenderer | null)
+      ?.outlineCameraEntity;
+    if (cameraEntity && cameraEntity.enabled !== enabled) {
+      cameraEntity.enabled = enabled;
     }
-    outlined = [];
-    strokeActive = false;
   };
 
-  const destroyOutlineRenderer = () => {
-    clearStroke();
-    if (!outlineRenderer) return;
-    outlineRenderer.destroy();
-    outlineRenderer = null;
+  const destroyTintCache = () => {
+    for (const byKey of tintCache.values()) {
+      for (const material of byKey.values()) material.destroy();
+    }
+    tintCache.clear();
   };
 
-  const clearTint = () => {
-    for (const [meshInstance, rec] of overrides) {
+  const tintedClone = (
+    original: StandardMaterial,
+    styleKey: string,
+    tint: ReturnType<typeof hexToColor>,
+    amount: number,
+  ) => {
+    let byKey = tintCache.get(original);
+    if (!byKey) {
+      byKey = new Map();
+      tintCache.set(original, byKey);
+    }
+    let tinted = byKey.get(styleKey);
+    if (!tinted) {
+      tinted = original.clone() as StandardMaterial;
+      applyTintToClone(tinted, pcModule, tint, amount);
+      byKey.set(styleKey, tinted);
+    }
+    return tinted;
+  };
+
+  const restoreTint = (entity: Entity) => {
+    const instances = entity.render?.meshInstances ?? [];
+    for (const meshInstance of instances) {
+      const rec = overrides.get(meshInstance);
+      if (!rec) continue;
       try {
         meshInstance.material = rec.original;
       } catch {
         // Mesh instance was destroyed with a previous model load.
       }
-      rec.tinted.destroy();
+      overrides.delete(meshInstance);
     }
-    overrides.clear();
   };
 
   const applyTint = (
     entity: Entity,
+    styleKey: string,
     tint: ReturnType<typeof hexToColor>,
     opacity: number,
   ) => {
@@ -188,68 +225,101 @@ export function createMeshHighlightManager(
       const material = meshInstance.material;
       if (!(material instanceof pcModule.StandardMaterial)) continue;
       if (overrides.has(meshInstance)) continue;
-
-      const original = material;
-      const tinted = material.clone() as StandardMaterial;
-      applyTintToClone(tinted, pcModule, tint, amount);
+      const tinted = tintedClone(material, styleKey, tint, amount);
       meshInstance.material = tinted;
-      overrides.set(meshInstance, { original, tinted });
+      overrides.set(meshInstance, { original: material, tinted });
     }
   };
 
-  const sync = (byMeshId: MeshHighlightById) => {
-    clearStroke();
-    clearTint();
-
-    const strokeTargets: {
-      entity: Entity;
-      color: ReturnType<typeof hexToColor>;
-    }[] = [];
-    let maxStrokeWidth = 1;
-
-    for (const item of getMeshes()) {
-      const style = byMeshId[item.id];
-      if (!style) continue;
-      const entity = item.entity;
-      if (!entity.enabled || !entity.render?.enabled) continue;
-      if (style.tintEnabled) {
-        applyTint(entity, hexToColor(style.tintColor), style.tintOpacity);
+  const removeHighlight = (record: AppliedHighlight) => {
+    restoreTint(record.entity);
+    if (record.stroked && outlineRenderer) {
+      try {
+        outlineRenderer.removeEntity(record.entity, false);
+      } catch {
+        // Entity was destroyed with a previous model load.
       }
-      if (style.strokeEnabled) {
-        strokeTargets.push({
-          entity,
-          color: hexToColor(style.strokeColor),
-        });
-        maxStrokeWidth = Math.max(maxStrokeWidth, style.strokeWidth);
+      strokeCount -= 1;
+    }
+  };
+
+  /** New model: old entities / materials are gone. Drop state without touching them. */
+  const resetForCatalog = (meshes: CollectedModelMesh[]) => {
+    if (catalog === meshes) return;
+    catalog = meshes;
+    for (const record of applied.values()) removeHighlight(record);
+    applied.clear();
+    overrides.clear();
+    destroyTintCache();
+    strokeCount = 0;
+  };
+
+  const styleKeyOf = (style: MeshHighlightById[string]) =>
+    `${style.tintEnabled ? `${style.tintColor}/${style.tintOpacity}` : "-"}|${
+      style.strokeEnabled ? `${style.strokeColor}/${style.strokeWidth}` : "-"
+    }`;
+
+  const sync = (byMeshId: MeshHighlightById) => {
+    const meshes = getMeshes();
+    resetForCatalog(meshes);
+
+    // Remove highlights that ended, changed style, or whose mesh got hidden.
+    const entityById = new Map(meshes.map((item) => [item.id, item.entity]));
+    for (const [id, record] of applied) {
+      const style = byMeshId[id];
+      const entity = entityById.get(id);
+      const visible = !!entity?.enabled && !!entity.render?.enabled;
+      if (!style || !visible || styleKeyOf(style) !== record.key) {
+        removeHighlight(record);
+        applied.delete(id);
       }
     }
 
-    if (strokeTargets.length === 0) {
-      destroyOutlineRenderer();
-      return;
+    // Add new / changed ones.
+    let maxStrokeWidth = 1;
+    for (const [id, style] of Object.entries(byMeshId)) {
+      if (style.strokeEnabled) maxStrokeWidth = Math.max(maxStrokeWidth, style.strokeWidth);
+      if (applied.has(id)) continue;
+      const entity = entityById.get(id);
+      if (!entity?.enabled || !entity.render?.enabled) continue;
+      const key = styleKeyOf(style);
+      if (style.tintEnabled) {
+        applyTint(entity, key, hexToColor(style.tintColor), style.tintOpacity);
+      }
+      if (style.strokeEnabled) {
+        ensureOutlineRenderer().addEntity(entity, hexToColor(style.strokeColor), false);
+        strokeCount += 1;
+      }
+      applied.set(id, { key, entity, stroked: style.strokeEnabled });
     }
 
     strokeWidth = Math.min(4, Math.max(1, maxStrokeWidth));
-    const renderer = ensureOutlineRenderer();
-    for (const target of strokeTargets) {
-      renderer.addEntity(target.entity, target.color, false);
-    }
-    outlined = strokeTargets.map((target) => target.entity);
-    strokeActive = true;
+    setOutlineCameraEnabled(strokeCount > 0);
   };
 
   const frameUpdate = () => {
-    if (!strokeActive || !outlineRenderer) return;
+    if (strokeCount <= 0 || !outlineRenderer) return;
     const layer = blendLayer();
     if (!layer) return;
     outlineRenderer.frameUpdate(camera, layer, false);
   };
 
   const destroy = () => {
-    clearStroke();
-    clearTint();
-    destroyOutlineRenderer();
+    for (const record of applied.values()) removeHighlight(record);
+    applied.clear();
+    overrides.clear();
+    destroyTintCache();
+    if (outlineRenderer) {
+      outlineRenderer.destroy();
+      outlineRenderer = null;
+    }
+    strokeCount = 0;
   };
 
-  return { sync, frameUpdate, destroy };
+  const refresh = (byMeshId: MeshHighlightById) => {
+    catalog = null; // forces resetForCatalog to drop applied state and clones
+    sync(byMeshId);
+  };
+
+  return { sync, refresh, frameUpdate, destroy };
 }

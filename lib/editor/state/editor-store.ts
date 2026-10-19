@@ -91,6 +91,7 @@ export function createHotspotData(
     actions: data.actions
       ? cloneActionGraph(data.actions)
       : createDefaultActionGraph(),
+    ...(data.meshId ? { meshId: data.meshId } : {}),
   };
 }
 
@@ -265,6 +266,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         ...rest,
         title,
         legendName: title,
+        // One hotspot per mesh: a copy is a plain marker hotspot.
+        meshId: undefined,
         // The copy is a new canvas owner: drop the lane origin so it gets a free lane.
         actions: source.actions
           ? { ...source.actions, laneY: undefined }

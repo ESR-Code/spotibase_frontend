@@ -3,6 +3,10 @@ import type * as pc from "playcanvas";
 import { toast } from "@/lib/editor/toast";
 import { buildDefaultBox } from "@/lib/editor/engine/default-scene-builder";
 import { decodeMeshoptGlb } from "@/lib/editor/engine/glb-meshopt";
+import {
+  bindModelMeshQueries,
+  unbindModelMeshQueries,
+} from "@/lib/editor/engine/model-mesh-queries";
 import { configureModelDecoders } from "@/lib/editor/engine/model-decoders";
 import { createImageTexture } from "@/lib/editor/engine/hotspot-text-texture";
 import {
@@ -136,6 +140,7 @@ export function createModelManager(
     if (activeSceneType() !== "model") {
       meshEntities = [];
       unbindSubjectSurface();
+      unbindModelMeshQueries();
       useModelStore.getState().setMeshes([]);
       clearAnimationBinding();
       return;
@@ -148,10 +153,37 @@ export function createModelManager(
       getMeshEntities: () => surfaceEntities,
       triangleType: pcModule.PRIMITIVE_TRIANGLES,
     });
+    const entityById = new Map(
+      collected.entities.map((item) => [item.id, item.entity]),
+    );
+    bindModelMeshQueries({ getCenter: (id) => meshCenter(entityById.get(id)) });
     applyMeshVisibility(
       usePreviewVisibilityStore.getState().disabledMeshIds,
     );
     useModelStore.getState().setMeshes(collected.entries);
+  };
+
+  const centerBox = new pcModule.BoundingBox();
+  /** Cached per entity; recomputed only when its world transform changes. */
+  const centerCache = new WeakMap<
+    Entity,
+    { matrix: Float32Array; center: { x: number; y: number; z: number } }
+  >();
+  /** World AABB centre of a mesh entity (follows model scale / rotation). */
+  const meshCenter = (entity: Entity | undefined) => {
+    const instances = entity?.render?.meshInstances;
+    if (!entity || !instances?.length) return null;
+    const world = entity.getWorldTransform().data;
+    const cached = centerCache.get(entity);
+    if (cached && cached.matrix.every((value, i) => value === world[i])) {
+      return cached.center;
+    }
+    centerBox.copy(instances[0]!.aabb);
+    for (let i = 1; i < instances.length; i++) centerBox.add(instances[i]!.aabb);
+    const c = centerBox.center;
+    const center = { x: c.x, y: c.y, z: c.z };
+    centerCache.set(entity, { matrix: Float32Array.from(world), center });
+    return center;
   };
 
   const destroyOwnedTexture = () => {

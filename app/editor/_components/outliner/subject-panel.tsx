@@ -14,6 +14,7 @@ import { useRef, type PointerEvent as ReactPointerEvent } from "react";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { SettingsSection } from "@/app/editor/_components/ui/settings-section";
+import { SubjectMeshList } from "@/app/editor/_components/outliner/subject-mesh-list";
 import { CoordinateInspector } from "@/app/editor/_components/viewport/coordinate-inspector";
 import { openGeoreferenceWorkflow } from "@/app/editor/_components/drawers/georeference-section";
 import { importSubjectFile } from "@/lib/editor/io/import-subject";
@@ -264,6 +265,8 @@ export function SubjectPanel() {
             ) : null}
           </SettingsSection>
         ) : null}
+
+        {descriptor.meshClick ? <SubjectMeshList /> : null}
 
         <GeoreferenceSubjectButton />
       </div>

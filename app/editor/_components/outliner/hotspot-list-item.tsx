@@ -1,11 +1,13 @@
 "use client";
 
 import { resolveAssetSrc } from "@/lib/editor/assets";
-import { Focus, Trash2 } from "lucide-react";
+import { AlertTriangle, Box, Focus, Trash2 } from "lucide-react";
 import { HotspotMarkerIcon } from "@/app/editor/_components/ui/hotspot-marker-icon";
 import { hotspotShapeClass } from "@/lib/editor/theme/hotspot-shape";
+import { useMeshBinding } from "@/lib/editor/state/mesh-bindings";
 import {
   hotspotTypeLabel,
+  isMeshBoundHotspot,
   type Hotspot,
 } from "@/lib/editor/types/hotspot";
 
@@ -32,6 +34,7 @@ export function HotspotListItem({
   onFocus,
   onDelete,
 }: HotspotListItemProps) {
+  const meshStatus = useMeshBinding(hotspot);
   return (
     <div
       className={`editor-hot-item ${selected ? "selected" : ""}`}
@@ -47,9 +50,26 @@ export function HotspotListItem({
           className="flex items-center gap-1.5 text-[10.5px] uppercase tracking-wider"
           style={{ color: "var(--editor-muted-2)" }}
         >
-          <span>{typeIcons[hotspot.type]}</span>
-          <span>{hotspotTypeLabel(hotspot.type)}</span>
+          {isMeshBoundHotspot(hotspot) ? (
+            <span className="truncate normal-case tracking-normal" title={hotspot.meshId}>
+              Mesh click
+            </span>
+          ) : (
+            <>
+              <span>{typeIcons[hotspot.type]}</span>
+              <span>{hotspotTypeLabel(hotspot.type)}</span>
+            </>
+          )}
           <span>· HSP-{String(hotspot.id).padStart(3, "0")}</span>
+          {meshStatus === "missing" ? (
+            <span
+              className="inline-flex items-center"
+              title={`Mesh “${hotspot.meshId}” isn’t in the current model`}
+              style={{ color: "var(--editor-amber)" }}
+            >
+              <AlertTriangle className="h-3 w-3" />
+            </span>
+          ) : null}
         </div>
       </div>
       <button
@@ -81,6 +101,10 @@ export function HotspotListItem({
 
 function MarkerVisual({ hotspot }: { hotspot: Hotspot }) {
   const shapeClass = hotspotShapeClass(hotspot.shape);
+
+  if (isMeshBoundHotspot(hotspot)) {
+    return <MeshClickBadge />;
+  }
 
   if (hotspot.style === "hidden") {
     return (
@@ -140,5 +164,17 @@ function MarkerVisual({ hotspot }: { hotspot: Hotspot }) {
       className={`editor-hot-dot ${shapeClass}`}
       style={{ background: hotspot.color }}
     />
+  );
+}
+
+/** Outliner / legend badge for a hotspot triggered by a model mesh. */
+export function MeshClickBadge({ large = false }: { large?: boolean }) {
+  return (
+    <span
+      className={`editor-hot-dot ${large ? "editor-hot-dot-lg" : ""} editor-mesh-click-badge`}
+      title="Mesh click"
+    >
+      <Box className={large ? "h-3.5 w-3.5" : "h-3 w-3"} />
+    </span>
   );
 }

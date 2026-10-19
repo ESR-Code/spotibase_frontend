@@ -7,6 +7,7 @@ import {
   visualStyleKey,
   type HotspotVisual,
 } from "@/lib/editor/engine/hotspot-visuals";
+import { getModelMeshCenter } from "@/lib/editor/engine/model-mesh-queries";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { findHotspot, listPreviewHotspots } from "@/lib/editor/state/preview-hotspots";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
@@ -18,6 +19,7 @@ import { resolveHotspotAppearance } from "@/lib/editor/state/preview-appearance-
 import { PIN_SPRITE_SCALE } from "@/lib/editor/constants/default-settings";
 import {
   isHiddenHotspotStyle,
+  isMeshBoundHotspot,
   normalizeHotspotShape,
   type Vec3,
 } from "@/lib/editor/types/hotspot";
@@ -70,7 +72,8 @@ export function createHotspotManager(
       }
 
       // Drag owns the live transform until pointerup commits it.
-      if (draggingId !== hotspot.id) {
+      // Mesh-click hotspots follow their mesh in `update` instead.
+      if (draggingId !== hotspot.id && !isMeshBoundHotspot(hotspot)) {
         const live = existing.root.getPosition();
         if (
           live.x !== hotspot.position.x ||
@@ -146,6 +149,42 @@ export function createHotspotManager(
       const hiddenStyle = isHiddenHotspotStyle(resolved.style);
       const categoryVisible =
         !filterByLegend || hotspot.category === legendFilter;
+
+      // Mesh-click hotspot: no marker. The hidden visual sits at the live mesh
+      // centre so the info box anchor, select label and labels still have a point.
+      if (isMeshBoundHotspot(hotspot)) {
+        if (visual.root.enabled) visual.root.enabled = false;
+        const center = getModelMeshCenter(hotspot.meshId!);
+        const target = center ?? hotspot.position;
+        const live = visual.root.getPosition();
+        if (live.x !== target.x || live.y !== target.y || live.z !== target.z) {
+          visual.root.setPosition(target.x, target.y, target.z);
+        }
+        const clickable =
+          center != null &&
+          categoryVisible &&
+          isPreviewHotspotEnabled(editor.isPreview, hotspot.id);
+        if (
+          clickable &&
+          showAllLabels &&
+          camera.camera &&
+          !(infoBoxOpen && hotspot.id === previewActiveId)
+        ) {
+          const pos = visual.root.getPosition();
+          toHotspot.sub2(pos, camPos);
+          if (toHotspot.dot(camera.forward) > 0) {
+            camera.camera.worldToScreen(pos, screenPos);
+            labelAnchors.push({
+              id: hotspot.id,
+              x: screenPos.x,
+              y: screenPos.y,
+              title: resolved.title,
+            });
+          }
+        }
+        index += 1;
+        continue;
+      }
       const enabled =
         categoryVisible &&
         !(editor.isPreview && hiddenStyle) &&

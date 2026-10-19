@@ -14,7 +14,7 @@ import { useHotspotForm } from "@/lib/editor/forms/use-hotspot-form";
 import { clearEditorSelection } from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
-import { hotspotTypeLabel } from "@/lib/editor/types/hotspot";
+import { hotspotTypeLabel, isMeshBoundHotspot } from "@/lib/editor/types/hotspot";
 
 type PropertiesTab = "general" | "blocks" | "actions";
 
@@ -131,16 +131,19 @@ export function HotspotPropertiesDrawer() {
         className="flex flex-shrink-0 gap-2 p-4"
         style={{ borderTop: "1px solid var(--editor-line)" }}
       >
-        <EditorButton
-          className="flex-1"
-          onClick={() => {
-            duplicateHotspot(selected.id);
-            toast.success("Hotspot duplicated");
-          }}
-        >
-          <Copy className="h-4 w-4" />
-          Duplicate
-        </EditorButton>
+        {/* One hotspot per mesh: a mesh-click hotspot can't be duplicated. */}
+        {isMeshBoundHotspot(selected) ? null : (
+          <EditorButton
+            className="flex-1"
+            onClick={() => {
+              duplicateHotspot(selected.id);
+              toast.success("Hotspot duplicated");
+            }}
+          >
+            <Copy className="h-4 w-4" />
+            Duplicate
+          </EditorButton>
+        )}
         <EditorButton
           className="flex-1"
           style={{ color: "#ff8a95", borderColor: "rgba(230,57,70,0.4)" }}

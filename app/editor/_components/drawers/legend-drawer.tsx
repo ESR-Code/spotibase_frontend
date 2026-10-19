@@ -9,6 +9,7 @@ import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { HotspotMarkerIcon } from "@/app/editor/_components/ui/hotspot-marker-icon";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
+import { MeshClickBadge } from "@/app/editor/_components/outliner/hotspot-list-item";
 import { runHotspotActions } from "@/lib/editor/actions/run-hotspot-actions";
 import { selectLegendFilterCategory } from "@/lib/editor/actions/legend-category";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -21,7 +22,7 @@ import { usePreviewVisibilityStore } from "@/lib/editor/state/preview-visibility
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import { hotspotShapeClass } from "@/lib/editor/theme/hotspot-shape";
-import type { Hotspot } from "@/lib/editor/types/hotspot";
+import { isMeshBoundHotspot, type Hotspot } from "@/lib/editor/types/hotspot";
 import {
   LEGEND_CATEGORY_ALL,
   type LegendCategory,
@@ -205,6 +206,11 @@ function LegendListItem({
 }
 
 function LegendMarkerVisual({ hotspot }: { hotspot: Hotspot }) {
+  if (isMeshBoundHotspot(hotspot)) return <MeshClickBadge large />;
+  return <LegendMarkerDot hotspot={hotspot} />;
+}
+
+function LegendMarkerDot({ hotspot }: { hotspot: Hotspot }) {
   const isPreview = useEditorStore((s) => s.isPreview);
   const appearanceOverride = usePreviewAppearanceStore(
     (s) => s.overrides[hotspot.id],

@@ -3,6 +3,7 @@ import type * as pc from "playcanvas";
 import { toast } from "@/lib/editor/toast";
 import type { CameraController } from "@/lib/editor/engine/camera-controller";
 import type { HotspotManager } from "@/lib/editor/engine/hotspot-manager";
+import type { MeshRaycaster } from "@/lib/editor/engine/mesh-raycaster";
 import {
   raycastMeshes,
   rayPlaneHit,
@@ -17,10 +18,16 @@ import { selectHotspotExclusive } from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { resolveHotspotAppearance } from "@/lib/editor/state/preview-appearance-store";
 import { findHotspot, listPreviewHotspots } from "@/lib/editor/state/preview-hotspots";
+import {
+  findMeshBoundHotspotId,
+  hasMeshBoundHotspots,
+} from "@/lib/editor/state/mesh-bindings";
+import { usePreviewMeshHighlightStore } from "@/lib/editor/state/preview-mesh-highlight-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import { isAlignedGeoReference } from "@/lib/editor/types/geo-reference";
+import { isMeshBoundHotspot } from "@/lib/editor/types/hotspot";
 
 export type PickingController = {
   dispose: () => void;
@@ -33,6 +40,7 @@ export function createPickingController(
   modelRoot: Entity,
   hotspots: HotspotManager,
   cameraCtrl: CameraController,
+  meshRaycaster: MeshRaycaster,
 ): PickingController {
   const dragPlane = new pcModule.Plane();
   const dragOffset = new pcModule.Vec3();
@@ -48,6 +56,8 @@ export function createPickingController(
   let dragStartX = 0;
   let dragStartY = 0;
   let didDragHotspot = false;
+  /** Editor Select-mode press on empty space; a click (no drag) may select a mesh hotspot. */
+  let editorDown: { x: number; y: number } | null = null;
 
   const activeSceneType = () => {
     const scenes = useScenesStore.getState();
@@ -74,6 +84,8 @@ export function createPickingController(
 
     const editor = useEditorStore.getState();
     for (const h of listPreviewHotspots()) {
+      // Mesh-click hotspots have no marker; the mesh picker handles them.
+      if (isMeshBoundHotspot(h)) continue;
       const visual = hotspots.getVisual(h.id);
       if (!visual || !visual.root.enabled) continue;
       const appearance = resolveHotspotAppearance(h, editor.isPreview);
@@ -99,6 +111,51 @@ export function createPickingController(
     }
     useUIStore.getState().setPropertiesDrawerOpen(id != null);
   };
+
+  //#region Mesh click (hotspots bound to a model mesh)
+  // Picking is a CPU raycast on pointer events only. Hover is coalesced to at
+  // most one pick per animation frame, using the latest pointer position.
+  let hoverFrame = 0;
+  let hoverPending: {
+    x: number;
+    y: number;
+    apply: (id: number | null, clientX: number, clientY: number) => void;
+  } | null = null;
+
+  const setHoverMesh = (hotspotId: number | null) => {
+    const meshId =
+      hotspotId != null ? (findHotspot(hotspotId)?.meshId ?? null) : null;
+    usePreviewMeshHighlightStore.getState().setHoverMeshId(meshId);
+  };
+
+  const pickMeshHotspotId = (clientX: number, clientY: number) => {
+    if (!hasMeshBoundHotspots()) return null;
+    return findMeshBoundHotspotId(meshRaycaster.pickMeshId(clientX, clientY));
+  };
+
+  const requestMeshHover = (
+    clientX: number,
+    clientY: number,
+    apply: (id: number | null, clientX: number, clientY: number) => void,
+  ) => {
+    hoverPending = { x: clientX, y: clientY, apply };
+    if (hoverFrame) return;
+    hoverFrame = requestAnimationFrame(() => {
+      hoverFrame = 0;
+      const pending = hoverPending;
+      hoverPending = null;
+      if (!pending) return;
+      pending.apply(pickMeshHotspotId(pending.x, pending.y), pending.x, pending.y);
+    });
+  };
+
+  const cancelMeshHover = () => {
+    if (hoverFrame) cancelAnimationFrame(hoverFrame);
+    hoverFrame = 0;
+    hoverPending = null;
+    usePreviewMeshHighlightStore.getState().setHoverMeshId(null);
+  };
+  //#endregion
 
   const pickAlignmentLocal = (
     clientX: number,
@@ -212,10 +269,10 @@ export function createPickingController(
       const scenes = useScenesStore.getState();
       const active =
         scenes.scenes.find((s) => s.id === scenes.activeSceneId) ?? null;
-      if (
+      const inspecting =
         isAlignedGeoReference(active?.geoReference) &&
-        useCoordsInspectorStore.getState().clickInspectEnabled
-      ) {
+        useCoordsInspectorStore.getState().clickInspectEnabled;
+      if (inspecting) {
         const ray = screenRayFromEvent(
           pcModule,
           camera,
@@ -236,7 +293,59 @@ export function createPickingController(
         }
       }
       selectAndOpen(null);
+      // Coords inspect owns clicks while it's on.
+      editorDown = inspecting ? null : { x: e.clientX, y: e.clientY };
     }
+  };
+
+  /** Hover state for the hotspot under the pointer (marker or mesh) in Preview. */
+  const applyPreviewHover = (id: number | null, clientX: number, clientY: number) => {
+    useEditorStore.getState().setHoveredHotspot(id);
+    setHoverMesh(id);
+    const ui = useUIStore.getState();
+    const settings = useSettingsStore.getState();
+    const activeId = ui.previewActiveHotspotId;
+    const rect = canvas.getBoundingClientRect();
+
+    if (ui.previewShowAllLabels) {
+      if (ui.hoverTooltip) ui.setHoverTooltip(null);
+    } else if (id != null && id !== activeId) {
+      // Hovering a different hotspot — follow the cursor.
+      const hovered = findHotspot(id);
+      ui.setHoverTooltip({
+        x: clientX - rect.left,
+        y: clientY - rect.top,
+        title: hovered
+          ? resolveHotspotAppearance(hovered, true).title
+          : "",
+        pinned: false,
+      });
+    } else if (id === activeId) {
+      // Still over the selected marker — never stick the label to the mouse.
+      // Select-pinned label is handled by the hotspot manager after reveal.
+      if (
+        !settings.previewShowLabelOnSelect ||
+        ui.previewLabelPending ||
+        ui.hoverTooltip?.pinned !== true
+      ) {
+        ui.setHoverTooltip(null);
+      }
+    } else {
+      const keepSelectLabel =
+        settings.previewShowLabelOnSelect &&
+        activeId != null &&
+        !ui.previewLabelPending;
+      if (!keepSelectLabel) {
+        ui.setHoverTooltip(null);
+      }
+    }
+    canvas.style.cursor = id != null ? "pointer" : "grab";
+  };
+
+  /** Editor Select mode: highlight a clickable mesh under the pointer. */
+  const applyEditorHover = (id: number | null) => {
+    setHoverMesh(id);
+    canvas.style.cursor = id != null ? "pointer" : "";
   };
 
   const onPointerMove = (e: PointerEvent) => {
@@ -252,48 +361,28 @@ export function createPickingController(
     }
 
     if (editor.isPreview && editor.draggingId == null) {
-      const id = pickHotspotId(e.clientX, e.clientY);
-      useEditorStore.getState().setHoveredHotspot(id);
-      const ui = useUIStore.getState();
-      const settings = useSettingsStore.getState();
-      const activeId = ui.previewActiveHotspotId;
-      const rect = canvas.getBoundingClientRect();
-
-      if (ui.previewShowAllLabels) {
-        if (ui.hoverTooltip) ui.setHoverTooltip(null);
-      } else if (id != null && id !== activeId) {
-        // Hovering a different hotspot — follow the cursor.
-        const hovered = findHotspot(id);
-        ui.setHoverTooltip({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-          title: hovered
-            ? resolveHotspotAppearance(hovered, true).title
-            : "",
-          pinned: false,
-        });
-      } else if (id === activeId) {
-        // Still over the selected marker — never stick the label to the mouse.
-        // Select-pinned label is handled by the hotspot manager after reveal.
-        if (
-          !settings.previewShowLabelOnSelect ||
-          ui.previewLabelPending ||
-          ui.hoverTooltip?.pinned !== true
-        ) {
-          ui.setHoverTooltip(null);
-        }
-      } else {
-        const keepSelectLabel =
-          settings.previewShowLabelOnSelect &&
-          activeId != null &&
-          !ui.previewLabelPending;
-        if (!keepSelectLabel) {
-          ui.setHoverTooltip(null);
-        }
+      const markerId = pickHotspotId(e.clientX, e.clientY);
+      // The hotspot marker wins; otherwise ask the mesh picker (skip while orbiting).
+      if (markerId != null || !hasMeshBoundHotspots()) {
+        hoverPending = null;
+        applyPreviewHover(markerId, e.clientX, e.clientY);
+      } else if (!editor.previewDown) {
+        requestMeshHover(e.clientX, e.clientY, applyPreviewHover);
       }
-      canvas.style.cursor = id != null ? "pointer" : "grab";
     } else if (!editor.isPreview) {
       useUIStore.getState().setHoverTooltip(null);
+      if (
+        editor.mode === "select" &&
+        editor.draggingId == null &&
+        !editorDown &&
+        hasMeshBoundHotspots() &&
+        pickHotspotId(e.clientX, e.clientY) == null
+      ) {
+        requestMeshHover(e.clientX, e.clientY, applyEditorHover);
+      } else if (usePreviewMeshHighlightStore.getState().hoverMeshId) {
+        cancelMeshHover();
+        canvas.style.cursor = "";
+      }
     }
 
     if (editor.draggingId != null) {
@@ -333,12 +422,29 @@ export function createPickingController(
         if (id === down.id) {
           runHotspotActions(id);
         }
+      } else if (!editor.previewDragged) {
+        // No marker under the press: a mesh-click hotspot may be.
+        const id = pickMeshHotspotId(e.clientX, e.clientY);
+        if (id != null) runHotspotActions(id);
       }
       useEditorStore.getState().setPreviewDragged(false);
       if (useUIStore.getState().previewActiveHotspotId == null) {
         useEditorStore
           .getState()
           .setHoveredHotspot(pickHotspotId(e.clientX, e.clientY));
+      }
+    }
+
+    if (editorDown && !editor.isPreview) {
+      const down = editorDown;
+      editorDown = null;
+      const dx = e.clientX - down.x;
+      const dy = e.clientY - down.y;
+      const isClick = dx * dx + dy * dy <= PREVIEW_CLICK_PX * PREVIEW_CLICK_PX;
+      if (isClick && editor.mode === "select") {
+        // Clicking a clickable mesh opens its hotspot, like clicking a marker.
+        const id = pickMeshHotspotId(e.clientX, e.clientY);
+        if (id != null) selectAndOpen(id);
       }
     }
 
@@ -356,6 +462,7 @@ export function createPickingController(
   };
 
   const onPointerLeave = () => {
+    cancelMeshHover();
     if (useEditorStore.getState().isPreview) {
       useEditorStore.getState().setHoveredHotspot(null);
       const ui = useUIStore.getState();
@@ -381,6 +488,7 @@ export function createPickingController(
       canvas.removeEventListener("pointermove", onPointerMove, true);
       window.removeEventListener("pointerup", onPointerUp);
       canvas.removeEventListener("pointerleave", onPointerLeave);
+      if (hoverFrame) cancelAnimationFrame(hoverFrame);
       canvas.style.cursor = "";
     },
   };

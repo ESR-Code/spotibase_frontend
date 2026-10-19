@@ -32,6 +32,7 @@ const MODEL_TYPE: SceneTypeDescriptor = {
     layers: false,
   },
   spawnSurfacePlacement: true,
+  meshClick: true,
   emptySubjectName: "Default_Box.glb",
   emptySubjectInfo: "Default sample model",
 };
@@ -63,6 +64,7 @@ const IMAGE_TYPE: SceneTypeDescriptor = {
     layers: false,
   },
   spawnSurfacePlacement: false,
+  meshClick: false,
   emptySubjectName: "No image",
   emptySubjectInfo: "Import a PNG, JPG, or WebP",
 };
@@ -94,6 +96,7 @@ const GEO_TYPE: SceneTypeDescriptor = {
     layers: true,
   },
   spawnSurfacePlacement: false,
+  meshClick: false,
   emptySubjectName: "Earth",
   emptySubjectInfo: "World globe — set start coordinates in Scene Settings",
 };

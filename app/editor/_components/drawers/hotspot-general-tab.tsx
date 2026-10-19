@@ -11,6 +11,7 @@ import {
 import type { UseFormReturn } from "react-hook-form";
 import { toast } from "@/lib/editor/toast";
 import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-image-field";
+import { HotspotMeshBindingSection } from "@/app/editor/_components/drawers/hotspot-mesh-binding";
 import { HotspotMarkerImageField } from "@/app/editor/_components/drawers/hotspot-marker-image-field";
 import { PositionAxisInput } from "@/app/editor/_components/drawers/position-axis-input";
 import { CameraPoseCaptureField } from "@/app/editor/_components/ui/camera-pose-capture-field";
@@ -28,6 +29,7 @@ import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { markerColorSwatches } from "@/lib/editor/theme/tokens";
 import {
   HOTSPOT_SHAPES,
+  isMeshBoundHotspot,
   type Hotspot,
 } from "@/lib/editor/types/hotspot";
 
@@ -45,6 +47,8 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
   const scene = useActiveScene();
   const isGeo = scene.type === "geo";
   const isModel = scene.type === "model";
+  // Mesh-click hotspots have no marker and follow their mesh's position.
+  const meshBound = isMeshBoundHotspot(selected);
   const isCustomColor = !markerColorSwatches.includes(
     values.color as (typeof markerColorSwatches)[number],
   );
@@ -86,6 +90,8 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
         </div>
       </SettingsSection>
 
+      {meshBound ? <HotspotMeshBindingSection selected={selected} /> : null}
+
       {legendEnabled ? (
         <SettingsSection
           title="Legend"
@@ -101,126 +107,128 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
         </SettingsSection>
       ) : null}
 
-      <SettingsSection title="Marker" icon={<MapPin className="h-3.5 w-3.5" />}>
-        <div>
-          <FieldLabel>Type</FieldLabel>
-          <div className="editor-pill-row">
-            {(["none", "info", "warning", "spec", "link"] as const).map(
-              (type) => (
-                <TypePill
-                  key={type}
-                  active={values.type === type}
-                  onClick={() => form.setValue("type", type)}
-                >
-                  {type}
-                </TypePill>
-              ),
-            )}
-          </div>
-        </div>
-
-        <div>
-          <FieldLabel>Style</FieldLabel>
-          <div className="editor-pill-row">
-            {(["dot", "number", "icon", "image", "hidden"] as const).map(
-              (style) => (
-                <TypePill
-                  key={style}
-                  active={values.style === style}
-                  onClick={() => form.setValue("style", style)}
-                >
-                  {style}
-                </TypePill>
-              ),
-            )}
-          </div>
-          {values.style === "number" && (
-            <input
-              className="editor-input mt-2"
-              type="number"
-              min={0}
-              placeholder="Marker number"
-              {...form.register("number")}
-            />
-          )}
-          {values.style === "icon" && (
-            <div className="mt-2">
-              <CategoryIconPicker
-                value={values.icon ?? "Info"}
-                color={values.color}
-                onChange={(icon) => form.setValue("icon", icon)}
-              />
+      {meshBound ? null : (
+        <SettingsSection title="Marker" icon={<MapPin className="h-3.5 w-3.5" />}>
+          <div>
+            <FieldLabel>Type</FieldLabel>
+            <div className="editor-pill-row">
+              {(["none", "info", "warning", "spec", "link"] as const).map(
+                (type) => (
+                  <TypePill
+                    key={type}
+                    active={values.type === type}
+                    onClick={() => form.setValue("type", type)}
+                  >
+                    {type}
+                  </TypePill>
+                ),
+              )}
             </div>
-          )}
-          {values.style === "image" && (
-            <HotspotMarkerImageField
-              value={values.markerImage ?? ""}
-              onChange={(value) => {
-                form.setValue("markerImage", value);
-                form.setValue("style", "image");
-              }}
-            />
-          )}
-        </div>
-
-        <div>
-          <FieldLabel>Shape</FieldLabel>
-          <div className="editor-pill-row">
-            {HOTSPOT_SHAPES.map((shape) => (
-              <TypePill
-                key={shape}
-                active={(values.shape ?? "circle") === shape}
-                onClick={() => form.setValue("shape", shape)}
-              >
-                {shape}
-              </TypePill>
-            ))}
           </div>
-        </div>
 
-        <div>
-          <FieldLabel>Color</FieldLabel>
-          <div className="editor-swatch-row">
-            {markerColorSwatches.map((color) => (
-              <ColorSwatch
-                key={color}
-                color={color}
-                selected={values.color === color}
-                onClick={() => form.setValue("color", color)}
-              />
-            ))}
-            <label
-              className={`editor-swatch editor-swatch-custom ${isCustomColor ? "selected" : ""}`}
-              title="Custom color"
-              style={isCustomColor ? { background: values.color } : undefined}
-            >
+          <div>
+            <FieldLabel>Style</FieldLabel>
+            <div className="editor-pill-row">
+              {(["dot", "number", "icon", "image", "hidden"] as const).map(
+                (style) => (
+                  <TypePill
+                    key={style}
+                    active={values.style === style}
+                    onClick={() => form.setValue("style", style)}
+                  >
+                    {style}
+                  </TypePill>
+                ),
+              )}
+            </div>
+            {values.style === "number" && (
               <input
-                type="color"
-                aria-label="Custom color"
-                value={
-                  /^#[0-9a-fA-F]{6}$/.test(values.color)
-                    ? values.color
-                    : "#e63946"
-                }
-                onChange={(e) => form.setValue("color", e.target.value)}
+                className="editor-input mt-2"
+                type="number"
+                min={0}
+                placeholder="Marker number"
+                {...form.register("number")}
               />
-            </label>
+            )}
+            {values.style === "icon" && (
+              <div className="mt-2">
+                <CategoryIconPicker
+                  value={values.icon ?? "Info"}
+                  color={values.color}
+                  onChange={(icon) => form.setValue("icon", icon)}
+                />
+              </div>
+            )}
+            {values.style === "image" && (
+              <HotspotMarkerImageField
+                value={values.markerImage ?? ""}
+                onChange={(value) => {
+                  form.setValue("markerImage", value);
+                  form.setValue("style", "image");
+                }}
+              />
+            )}
           </div>
-        </div>
 
-        <SwitchField
-          label="Pulsing ring"
-          description="Animate a soft ring around the marker"
-          checked={values.pulse}
-          onChange={(checked) => form.setValue("pulse", checked)}
-        />
-        <SwitchField
-          label="Wick"
-          description="Show a short pin under the marker"
-          checked={values.wick}
-          onChange={(checked) => form.setValue("wick", checked)}
-        />
-      </SettingsSection>
+          <div>
+            <FieldLabel>Shape</FieldLabel>
+            <div className="editor-pill-row">
+              {HOTSPOT_SHAPES.map((shape) => (
+                <TypePill
+                  key={shape}
+                  active={(values.shape ?? "circle") === shape}
+                  onClick={() => form.setValue("shape", shape)}
+                >
+                  {shape}
+                </TypePill>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <FieldLabel>Color</FieldLabel>
+            <div className="editor-swatch-row">
+              {markerColorSwatches.map((color) => (
+                <ColorSwatch
+                  key={color}
+                  color={color}
+                  selected={values.color === color}
+                  onClick={() => form.setValue("color", color)}
+                />
+              ))}
+              <label
+                className={`editor-swatch editor-swatch-custom ${isCustomColor ? "selected" : ""}`}
+                title="Custom color"
+                style={isCustomColor ? { background: values.color } : undefined}
+              >
+                <input
+                  type="color"
+                  aria-label="Custom color"
+                  value={
+                    /^#[0-9a-fA-F]{6}$/.test(values.color)
+                      ? values.color
+                      : "#e63946"
+                  }
+                  onChange={(e) => form.setValue("color", e.target.value)}
+                />
+              </label>
+            </div>
+          </div>
+
+          <SwitchField
+            label="Pulsing ring"
+            description="Animate a soft ring around the marker"
+            checked={values.pulse}
+            onChange={(checked) => form.setValue("pulse", checked)}
+          />
+          <SwitchField
+            label="Wick"
+            description="Show a short pin under the marker"
+            checked={values.wick}
+            onChange={(checked) => form.setValue("wick", checked)}
+          />
+        </SettingsSection>
+      )}
 
       <SettingsSection
         title="Header image"
@@ -286,82 +294,84 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
         ) : null}
       </SettingsSection>
 
-      <SettingsSection
-        title="Position"
-        icon={<Move3D className="h-3.5 w-3.5" />}
-        defaultOpen
-      >
-        {isGeo ? (
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <FieldLabel className="mb-1.5">Longitude</FieldLabel>
-              <PositionAxisInput
-                aria-label="Longitude"
-                value={selected.position.x}
-                onChange={(x) =>
-                  updateHotspot(selected.id, {
-                    position: { ...selected.position, x },
-                  })
-                }
-              />
+      {meshBound ? null : (
+        <SettingsSection
+          title="Position"
+          icon={<Move3D className="h-3.5 w-3.5" />}
+          defaultOpen
+        >
+          {isGeo ? (
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <FieldLabel className="mb-1.5">Longitude</FieldLabel>
+                <PositionAxisInput
+                  aria-label="Longitude"
+                  value={selected.position.x}
+                  onChange={(x) =>
+                    updateHotspot(selected.id, {
+                      position: { ...selected.position, x },
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <FieldLabel className="mb-1.5">Latitude</FieldLabel>
+                <PositionAxisInput
+                  aria-label="Latitude"
+                  value={selected.position.y}
+                  onChange={(y) =>
+                    updateHotspot(selected.id, {
+                      position: { ...selected.position, y },
+                    })
+                  }
+                />
+              </div>
             </div>
-            <div>
-              <FieldLabel className="mb-1.5">Latitude</FieldLabel>
-              <PositionAxisInput
-                aria-label="Latitude"
-                value={selected.position.y}
-                onChange={(y) =>
-                  updateHotspot(selected.id, {
-                    position: { ...selected.position, y },
-                  })
-                }
-              />
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <FieldLabel className="mb-1.5">X</FieldLabel>
+                <PositionAxisInput
+                  aria-label="Position X"
+                  value={selected.position.x}
+                  onChange={(x) =>
+                    updateHotspot(selected.id, {
+                      position: { ...selected.position, x },
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <FieldLabel className="mb-1.5">Y</FieldLabel>
+                <PositionAxisInput
+                  aria-label="Position Y"
+                  value={selected.position.y}
+                  onChange={(y) =>
+                    updateHotspot(selected.id, {
+                      position: {
+                        ...selected.position,
+                        y: isModel ? Math.max(0, y) : y,
+                      },
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <FieldLabel className="mb-1.5">Z</FieldLabel>
+                <PositionAxisInput
+                  aria-label="Position Z"
+                  value={selected.position.z}
+                  onChange={(z) =>
+                    updateHotspot(selected.id, {
+                      position: { ...selected.position, z },
+                    })
+                  }
+                />
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <FieldLabel className="mb-1.5">X</FieldLabel>
-              <PositionAxisInput
-                aria-label="Position X"
-                value={selected.position.x}
-                onChange={(x) =>
-                  updateHotspot(selected.id, {
-                    position: { ...selected.position, x },
-                  })
-                }
-              />
-            </div>
-            <div>
-              <FieldLabel className="mb-1.5">Y</FieldLabel>
-              <PositionAxisInput
-                aria-label="Position Y"
-                value={selected.position.y}
-                onChange={(y) =>
-                  updateHotspot(selected.id, {
-                    position: {
-                      ...selected.position,
-                      y: isModel ? Math.max(0, y) : y,
-                    },
-                  })
-                }
-              />
-            </div>
-            <div>
-              <FieldLabel className="mb-1.5">Z</FieldLabel>
-              <PositionAxisInput
-                aria-label="Position Z"
-                value={selected.position.z}
-                onChange={(z) =>
-                  updateHotspot(selected.id, {
-                    position: { ...selected.position, z },
-                  })
-                }
-              />
-            </div>
-          </div>
-        )}
-      </SettingsSection>
+          )}
+        </SettingsSection>
+      )}
     </div>
   );
 }

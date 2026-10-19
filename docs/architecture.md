@@ -197,7 +197,7 @@ Graphs are `{ nodes, edges }` owned by:
 
 | Owner | Id convention |
 | --- | --- |
-| Hotspot click | hotspot `id` (> 0) |
+| Hotspot click (marker or mesh click: `Hotspot.meshId`) | hotspot `id` (> 0) |
 | App Start | `APP_START_OWNER_ID` (−1) |
 | Scene Start | `SCENE_START_OWNER_ID` (−2) |
 | Spawn click template (editor-only) | `SPAWN_CLICK_LANE_OWNER_ID` (−3), not persisted |

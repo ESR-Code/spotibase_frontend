@@ -128,7 +128,7 @@ import {
   type ActionFence,
 } from "@/lib/editor/types/action-fence";
 import { TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
-import type { Hotspot } from "@/lib/editor/types/hotspot";
+import { isMeshBoundHotspot, type Hotspot } from "@/lib/editor/types/hotspot";
 
 export type IsolatedActionLane = {
   title: string;
@@ -218,7 +218,9 @@ function laneLabelFor(entry: ActionFlowEntry): string {
     case "contentButton":
       return `Button · ${entry.title}`;
     default:
-      return entry.title || "Hotspot";
+      return entry.meshClick
+        ? `Mesh · ${entry.title || "Hotspot"}`
+        : entry.title || "Hotspot";
   }
 }
 
@@ -502,6 +504,7 @@ function ActionsFlowCanvas({
         graph: getActionGraph(hotspot),
         originY: originY(hotspot.id),
         triggerKind: "hotspot",
+        meshClick: isMeshBoundHotspot(hotspot),
         allowedNodeTypes: forScene(HOTSPOT_GRAPH_ALLOWED_NODE_TYPES),
       });
     }
@@ -646,7 +649,8 @@ function ActionsFlowCanvas({
           data.triggerIcon === entry.triggerIcon &&
           data.toggledIcon === entry.toggledIcon &&
           data.toggleEnabled === entry.toggleEnabled &&
-          data.triggerSubtitle === entry.triggerSubtitle
+          data.triggerSubtitle === entry.triggerSubtitle &&
+          data.meshClick === entry.meshClick
         ) {
           return node;
         }
@@ -660,6 +664,7 @@ function ActionsFlowCanvas({
             toggledIcon: entry.toggledIcon,
             toggleEnabled: entry.toggleEnabled,
             triggerSubtitle: entry.triggerSubtitle,
+            meshClick: entry.meshClick,
           },
         };
       });

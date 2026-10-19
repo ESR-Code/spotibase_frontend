@@ -13,6 +13,12 @@ export type MeshHighlightById = Record<string, MeshHighlightStyle>;
 
 type PreviewMeshHighlightState = {
   byMeshId: MeshHighlightById;
+  /**
+   * Mesh-click hover (viewport pointer or a "Meshes" list row). Drawn under the
+   * node paint above, never replacing it; see `effectiveMeshHighlights`.
+   */
+  hoverMeshId: string | null;
+  setHoverMeshId: (meshId: string | null) => void;
   /** Paint selected meshes. Later Highlight Mesh nodes overlay earlier ones. */
   paint: (meshIds: string[], style: MeshHighlightStyle) => void;
   /** Drop highlight from selected meshes; others stay as they are. */
@@ -24,6 +30,9 @@ type PreviewMeshHighlightState = {
 export const usePreviewMeshHighlightStore = create<PreviewMeshHighlightState>(
   (set) => ({
     byMeshId: {},
+    hoverMeshId: null,
+    setHoverMeshId: (hoverMeshId) =>
+      set((state) => (state.hoverMeshId === hoverMeshId ? state : { hoverMeshId })),
     paint: (meshIds, style) =>
       set((state) => {
         if (meshIds.length === 0) return state;
@@ -46,6 +55,6 @@ export const usePreviewMeshHighlightStore = create<PreviewMeshHighlightState>(
         }
         return changed ? { byMeshId } : state;
       }),
-    reset: () => set({ byMeshId: {} }),
+    reset: () => set({ byMeshId: {}, hoverMeshId: null }),
   }),
 );

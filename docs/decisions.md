@@ -40,6 +40,19 @@ Only decisions that constrain how new work should be done.
 - **`run` returning `"stop"`** ends the primary walk (Open Modal branches, Subscribe poll, receive-mode Post Message, Switch/For Each tails, cancelled Animation playback).
 - **Legend trigger** is first-class like Scene Start: a scene-scoped graph (`legendActions`) whose canvas lane appears only while Enable legend is on. One source handle per category (plus All). `selectLegendFilterCategory` walks the matching handle; leaving Preview must not fire it. Keep the graph when legend is turned off so re-enabling restores wiring.
 - **Compressed GLB:** Draco and KTX2 / Basis use PlayCanvas' own support with decoders self-hosted in `public/decoders/` (pinned copies, see its README), configured once by `configureModelDecoders`. PlayCanvas has no meshopt support, so `decodeMeshoptGlb` (`meshoptimizer` package) rewrites meshopt GLBs into plain GLBs before load. The stored asset stays the original compressed file. Code that reads vertex data must handle quantized (`KHR_mesh_quantization`) positions, as `subject-surface.ts` does.
+- **Mesh click is a hotspot, not a new system:** `Hotspot.meshId` binds a hotspot to a catalog mesh (path-based id from `collectModelMeshes`). It reuses the hotspot actions, blocks, Open Modal, legend, persistence and canvas lane. The differences:
+  - It has no marker. The hidden visual tracks the live mesh centre so anchors and labels still work.
+  - Picking is a CPU raycast (`engine/mesh-raycaster.ts`), run only on pointer events (hover coalesced to one per animation frame) and only while the scene has mesh-bound hotspots:
+    - An AABB broad phase over every visible model mesh instance.
+    - Then exact ray/triangle tests front to back in mesh-local space. These stop once the next box starts beyond the closest surface found, so non-clickable meshes still occlude.
+    - Triangles are read once per `Mesh` (`engine/mesh-geometry.ts`, shared with the surface sampler).
+    - Don't use `pc.Picker` for hover: each `prepare()` re-renders the whole World layer.
+  - Markers win.
+  - Hover / active highlights are drawn under Highlight Mesh node paint (`effectiveMeshHighlights`). Hover is tint-only; only the active mesh gets an outline.
+  - `mesh-highlight-manager.sync` is incremental and caches tinted clones. Its `OutlineRenderer` is created once and its camera disabled when idle. Never create or destroy it per change: it adds a scene camera and render targets.
+  - Gated by `meshClick` in the scene-type registry. Keep one hotspot per mesh (no Duplicate).
+  - Missing meshes are reported (`useMeshBinding`), never auto-cleared.
+  - UI reads mesh centres through `model-mesh-queries.ts`, not PlayCanvas.
 - **Action fences are scene-wide** so hotspot and scene canvases share the same frames.
 - **Action canvas lanes have a persisted origin** (`HotspotActionGraph.laneY`); node positions are relative to it and fences are absolute. Lanes are never placed by list position: an owner without `laneY` (new hotspot, menu button, button block, legend turned on) is placed below all existing lanes and fences (`resolveLaneOrigins` in `lib/editor/actions/action-lanes.ts`), and the canvas saves that origin. Older saves are frozen to their old 220px-per-lane layout in `hydrateProject`. Duplicated hotspots / reminted button blocks drop `laneY` so they get a fresh lane.
 - **Animation clips by name.** The Animation node plays named glTF clips from the loaded GLB, not Blender frame ranges. Optional start/end seconds trim that clip (defaults to the clip’s own range). `run` waits until the window completes, then holds that pose; interrupt / leave Preview / subject replace cancels the wait (`"stop"`). Editor Select/Add can scrub the same clips via the viewport transport without waiting or continuing the graph.

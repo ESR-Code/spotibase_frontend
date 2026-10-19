@@ -8,7 +8,7 @@ import {
   type Node,
   type NodeProps,
 } from "@xyflow/react";
-import { ListTree, MousePointerClick, Play, Rocket } from "lucide-react";
+import { Box, ListTree, MousePointerClick, Play, Rocket } from "lucide-react";
 import { useEffect } from "react";
 import { AddNextButton } from "@/app/editor/_components/actions/add-next-button";
 import type { ActionFlowNodeData } from "@/lib/editor/actions/flow-adapter";
@@ -95,6 +95,16 @@ export function HotspotTriggerNode({
                 bg: "rgba(230,57,70,0.15)",
                 border: "rgba(230,57,70,0.4)",
               }
+            : data.meshClick
+              ? {
+                  label: "Mesh clicked",
+                  subtitle: data.hotspotTitle,
+                  chip: `HSP-${String(data.hotspotId).padStart(3, "0")}`,
+                  Icon: Box,
+                  color: "var(--editor-teal)",
+                  bg: "rgba(63,184,175,0.15)",
+                  border: "rgba(63,184,175,0.4)",
+                }
             : {
               label: "Hotspot clicked",
               subtitle: data.hotspotTitle,
