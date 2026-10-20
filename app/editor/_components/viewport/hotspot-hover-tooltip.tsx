@@ -86,7 +86,8 @@ function HotspotLabel({
           top: y,
           background,
           color: textColor,
-          borderColor,
+          // Border Color is a Classic-only setting; Glass keeps its CSS border.
+          borderColor: style === "classic" ? borderColor : undefined,
           "--editor-label-bg": background,
           "--editor-label-accent": hotspot?.color || borderColor,
         } as CSSProperties
