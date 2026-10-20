@@ -68,7 +68,8 @@ Only decisions that constrain how new work should be done.
 ## Rendering details
 
 - PlayCanvas uses `FILLMODE_NONE` + manual resize (`viewport-resize.ts`) so CSS owns canvas size.
-- Backbuffer pixel ratio is capped at 1.5 (`MAX_PIXEL_RATIO` in `viewport-resize.ts`).
+- Backbuffer pixel ratio is 1 (`MAX_PIXEL_RATIO` in `viewport-resize.ts`): retina screens render at CSS size with MSAA, no adaptive resolution. The canvas is opaque (`alpha: false`). SSAO runs at half resolution (`ssao.scale = 0.5`).
+- The PlayCanvas loop skips work while the viewport is hidden: a backdrop dialog covers it (`isViewportCovered` in `use-playcanvas-editor.ts`: actions, asset library, scenes, publish) or the canvas is off-screen (IntersectionObserver). The last frame stays behind the backdrop; closing redraws. Hotspot pulse / halo frames stop while the window is unfocused. Add new full-cover dialogs to `isViewportCovered`.
 - Viewport thumbnails call `app.render()` then `toDataURL` in the same turn; do not leave `preserveDrawingBuffer` on.
 - MapLibre workers are copied into `public/` on `postinstall` and served with a JavaScript `Content-Type` (module workers).
 - **On-demand rendering.** `autoRender` is always off. `onUpdate` in `use-playcanvas-editor.ts` sets `renderNextFrame` only when the camera moved, a clip is playing, a store the scene reads changed, or something called `requestViewportRender` (`engine/viewport-invalidate.ts`). Hotspot pulse / halo animations redraw at most 30 fps. Engine code that changes the scene outside a store update (async textures, drag, clip pose, resize) must call `requestViewportRender`, or the change stays invisible until the next redraw. Do not subscribe redraws to fields `onUpdate` itself writes (`fps`, label / info-box anchors): that loops.

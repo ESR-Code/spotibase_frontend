@@ -17,7 +17,8 @@ export async function createPlayCanvasAppAsync(
     touch: new pc.TouchDevice(canvas),
     graphicsDeviceOptions: {
       antialias: true,
-      alpha: true,
+      // Clear color is always opaque; an alpha canvas only adds page compositing.
+      alpha: false,
       // "high-performance" wakes the discrete GPU on dual-GPU laptops (fans,
       // battery). Let the browser pick; the editor renders on demand.
       powerPreference: "default",

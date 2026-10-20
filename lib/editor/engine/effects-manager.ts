@@ -63,7 +63,8 @@ export function createEffectsManager(
     frame.ssao.samples = Math.round(state.aoSamples);
     frame.ssao.power = state.aoPower;
     frame.ssao.blurEnabled = state.aoBlurEnabled;
-    frame.ssao.scale = 1;
+    // Half-resolution AO: ~4x cheaper; the soft term upsamples cleanly.
+    frame.ssao.scale = 0.5;
     frame.ssao.minAngle = 10;
     frame.ssao.randomize = false;
     frame.update();

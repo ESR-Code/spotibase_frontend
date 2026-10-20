@@ -72,6 +72,19 @@ import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 /** Max redraw rate when only hotspot pulse / halo animations need frames. */
 const MARKER_ANIM_FRAME_INTERVAL = 1 / 30;
 
+/**
+ * Backdrop dialogs that hide the viewport. The last frame stays frozen
+ * behind the backdrop; the scene redraws when they close.
+ */
+function isViewportCovered(ui: ReturnType<typeof useUIStore.getState>): boolean {
+  return (
+    ui.actionsModal != null ||
+    ui.assetLibraryOpen ||
+    ui.scenesModalOpen ||
+    ui.publishDialogOpen
+  );
+}
+
 function getActiveSceneType(): SceneTypeId {
   const state = useScenesStore.getState();
   return (
@@ -270,6 +283,25 @@ export function usePlayCanvasEditor() {
         const lastCamPos = new pc.Vec3(Infinity, Infinity, Infinity);
         const lastCamRot = new pc.Quat();
         let markerAnimClock = 0;
+
+        // Skip the loop while the viewport cannot be seen; redraw on return.
+        let viewportCovered = isViewportCovered(useUIStore.getState());
+        let canvasOnScreen = true;
+        let windowFocused = document.hasFocus();
+        const visibilityObserver = new IntersectionObserver(([entry]) => {
+          const onScreen = !!entry?.isIntersecting;
+          if (onScreen && !canvasOnScreen) invalidate();
+          canvasOnScreen = onScreen;
+        });
+        visibilityObserver.observe(canvas);
+        const onWindowFocus = () => {
+          windowFocused = true;
+        };
+        const onWindowBlur = () => {
+          windowFocused = false;
+        };
+        window.addEventListener("focus", onWindowFocus);
+        window.addEventListener("blur", onWindowBlur);
         const overlayScreen = new pc.Vec3();
         const overlayWorld = new pc.Vec3();
         const overlayTo = new pc.Vec3();
@@ -357,6 +389,7 @@ export function usePlayCanvasEditor() {
 
         const onUpdate = (dt: number) => {
           if (!isPlayCanvasSceneType(activeSceneType)) return;
+          if (viewportCovered || !canvasOnScreen) return;
           cameraCtrl.update(dt);
           const hotspotsAnimating = hotspotMgr.update(dt);
           meshHighlight.frameUpdate();
@@ -376,10 +409,13 @@ export function usePlayCanvasEditor() {
             lastCamPos.copy(camPos);
             lastCamRot.copy(camRot);
           }
-          // Pulse rings / selection halo are soft fades: 30 fps is enough.
+          // Pulse rings / selection halo are soft fades: 30 fps is enough,
+          // and they hold still while the window is in the background.
           markerAnimClock += dt;
           const markerFrameDue =
-            hotspotsAnimating && markerAnimClock >= MARKER_ANIM_FRAME_INTERVAL;
+            hotspotsAnimating &&
+            windowFocused &&
+            markerAnimClock >= MARKER_ANIM_FRAME_INTERVAL;
           if (renderRequested || cameraMoved || clipPlaying || markerFrameDue) {
             app.renderNextFrame = true;
             renderRequested = false;
@@ -415,6 +451,11 @@ export function usePlayCanvasEditor() {
           usePreviewMeshHighlightStore,
         ].map((store) => store.subscribe(invalidate));
         const unsubUiRedraw = useUIStore.subscribe((state, prev) => {
+          const covered = isViewportCovered(state);
+          if (covered !== viewportCovered) {
+            viewportCovered = covered;
+            if (!covered) invalidate();
+          }
           if (
             state.previewActiveHotspotId !== prev.previewActiveHotspotId ||
             state.legendFilterCategory !== prev.legendFilterCategory
@@ -702,6 +743,9 @@ export function usePlayCanvasEditor() {
           unregisterCapture();
           unsubRedraw.forEach((unsub) => unsub());
           unsubUiRedraw();
+          visibilityObserver.disconnect();
+          window.removeEventListener("focus", onWindowFocus);
+          window.removeEventListener("blur", onWindowBlur);
           app.assets.off("load", invalidate);
           unsubEnv();
           unsubEffects();

@@ -4,8 +4,11 @@ import { requestViewportRender } from "@/lib/editor/engine/viewport-invalidate";
 /** Trailing delay so animated layout (outliner width) settles before reallocating GPU buffers. */
 const RESIZE_DEBOUNCE_MS = 80;
 
-/** Cap retina backbuffer cost. `graphicsDevice.resizeCanvas` multiplies by maxPixelRatio. */
-export const MAX_PIXEL_RATIO = 1.5;
+/**
+ * Backbuffer pixels per CSS pixel. 1 keeps retina fill cost at CSS size (MSAA
+ * smooths edges). `graphicsDevice.resizeCanvas` multiplies by maxPixelRatio.
+ */
+export const MAX_PIXEL_RATIO = 1;
 
 export function applyMaxPixelRatio(app: Application) {
   const dpr =
