@@ -71,8 +71,10 @@ Only decisions that constrain how new work should be done.
 - Backbuffer pixel ratio is capped at 1.5 (`MAX_PIXEL_RATIO` in `viewport-resize.ts`).
 - Viewport thumbnails call `app.render()` then `toDataURL` in the same turn; do not leave `preserveDrawingBuffer` on.
 - MapLibre workers are copied into `public/` on `postinstall` and served with a JavaScript `Content-Type` (module workers).
-- On geo scenes the PlayCanvas layer stays mounted but hidden, and `autoRender` is turned off so the 3D loop does not keep drawing.
-- Model-scene key-light shadows are 2048² with one cascade. If the loaded GLB has animation clips, `SHADOWUPDATE_REALTIME`; otherwise `SHADOWUPDATE_THISFRAME` (frozen map). Recapture after light or model-transform changes. Do not refit `shadowDistance` while frozen so orbiting stays cheap.
+- **On-demand rendering.** `autoRender` is always off. `onUpdate` in `use-playcanvas-editor.ts` sets `renderNextFrame` only when the camera moved, a clip is playing, a store the scene reads changed, or something called `requestViewportRender` (`engine/viewport-invalidate.ts`). Hotspot pulse / halo animations redraw at most 30 fps. Engine code that changes the scene outside a store update (async textures, drag, clip pose, resize) must call `requestViewportRender`, or the change stays invisible until the next redraw. Do not subscribe redraws to fields `onUpdate` itself writes (`fps`, label / info-box anchors): that loops.
+- The WebGL context uses `powerPreference: "default"`. Do not switch back to `"high-performance"`: it wakes the discrete GPU on dual-GPU laptops.
+- On geo scenes the PlayCanvas layer stays mounted but hidden; `onUpdate` returns early so nothing is drawn.
+- Model-scene key-light shadows are 4096² with one cascade. `SHADOWUPDATE_REALTIME` only while a clip is playing; otherwise `SHADOWUPDATE_THISFRAME` (frozen map). Pause, scrub, and reset recapture once via `requestViewportRender({ shadows: true })`. Recapture after light or model-transform changes. Do not refit `shadowDistance` while frozen so orbiting stays cheap.
 - 3D hotspot drag moves the live entity only; the authored position is committed on pointerup.
 
 ## Hotspot content blocks

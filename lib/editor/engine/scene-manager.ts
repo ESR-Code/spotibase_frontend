@@ -5,6 +5,7 @@ import {
   applyShadowCatcherAppearance,
   createShadowCatcherMaterial,
 } from "@/lib/editor/engine/shadow-catcher-material";
+import { requestViewportRender } from "@/lib/editor/engine/viewport-invalidate";
 import { useEnvironmentStore } from "@/lib/editor/state/environment-store";
 
 export type SceneHandles = {
@@ -24,8 +25,8 @@ export type SceneHandles = {
    */
   fitKeyLightShadows: (cameraDistance: number) => void;
   /**
-   * Live clips → regenerate shadows every frame. No clips → capture this
-   * frame then freeze (`SHADOWUPDATE_THISFRAME` → `NONE`).
+   * A clip is playing → regenerate shadows every frame. Otherwise capture
+   * this frame then freeze (`SHADOWUPDATE_THISFRAME` → `NONE`).
    */
   applyShadowUpdateMode: (
     hasAnimations: boolean,
@@ -55,8 +56,8 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
   });
   app.root.addChild(camera);
 
-  // Key — warm studio key. One 2048 cascade; update mode is live only when
-  // the loaded GLB has animation clips (see applyShadowUpdateMode).
+  // Key — warm studio key. One 4096 cascade; update mode is live only while
+  // a clip is playing (see applyShadowUpdateMode).
   const keyLight = new pcModule.Entity("KeyLight");
   keyLight.addComponent("light", {
     type: "directional",
@@ -103,11 +104,14 @@ export function createScene(app: Application, pcModule: typeof pc): SceneHandles
     keyLight.light.shadowUpdateMode = hasAnimations
       ? pcModule.SHADOWUPDATE_REALTIME
       : pcModule.SHADOWUPDATE_THISFRAME;
+    // THISFRAME only captures on a rendered frame.
+    requestViewportRender();
   };
 
   const invalidateStaticShadows = () => {
     if (!keyLight.light || shadowsLive) return;
     keyLight.light.shadowUpdateMode = pcModule.SHADOWUPDATE_THISFRAME;
+    requestViewportRender();
   };
 
   // Fill — cool bounce so dark sides stay readable

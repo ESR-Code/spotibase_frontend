@@ -11,6 +11,7 @@ import {
   createPulseRingTexture,
   createTextTexture,
 } from "@/lib/editor/engine/hotspot-text-texture";
+import { requestViewportRender } from "@/lib/editor/engine/viewport-invalidate";
 import { hotspotTypeColors } from "@/lib/editor/theme/tokens";
 import {
   DEFAULT_HOTSPOT_SHAPE,
@@ -112,7 +113,10 @@ export function createHotspotVisual(
     styleKey: visualStyleKey(hotspot),
   };
 
-  void rebuildCore(app, pcModule, visual, hotspot);
+  // Icon / image cores load async; draw once they land.
+  void rebuildCore(app, pcModule, visual, hotspot).finally(() =>
+    requestViewportRender(),
+  );
   return visual;
 }
 

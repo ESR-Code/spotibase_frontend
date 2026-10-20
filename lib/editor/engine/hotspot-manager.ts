@@ -8,6 +8,7 @@ import {
   type HotspotVisual,
 } from "@/lib/editor/engine/hotspot-visuals";
 import { getModelMeshCenter } from "@/lib/editor/engine/model-mesh-queries";
+import { requestViewportRender } from "@/lib/editor/engine/viewport-invalidate";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { findHotspot, listPreviewHotspots } from "@/lib/editor/state/preview-hotspots";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
@@ -27,7 +28,8 @@ import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
 
 export type HotspotManager = {
   syncFromStore: () => void;
-  update: (dt: number) => void;
+  /** Returns true while a pulse ring or selection halo is animating. */
+  update: (dt: number) => boolean;
   getVisual: (id: number) => HotspotVisual | undefined;
   /** Move the live entity only. Does not write the store (use during drag). */
   setWorldPosition: (id: number, position: Vec3) => void;
@@ -90,7 +92,9 @@ export function createHotspotManager(
 
       const nextKey = visualStyleKey(resolved);
       if (existing.styleKey !== nextKey) {
-        void rebuildCore(app, pcModule, existing, resolved);
+        void rebuildCore(app, pcModule, existing, resolved).finally(() =>
+          requestViewportRender(),
+        );
       } else {
         const hidden = isHiddenHotspotStyle(resolved.style);
         existing.ring.enabled = !!resolved.pulse && !hidden;
@@ -116,7 +120,8 @@ export function createHotspotManager(
     mat.update();
   };
 
-  const update = (dt: number) => {
+  const update = (dt: number): boolean => {
+    let animating = false;
     elapsed += dt;
     const t = elapsed;
     const settings = useSettingsStore.getState();
@@ -211,6 +216,7 @@ export function createHotspotManager(
       const isPreviewActive =
         editor.isPreview && hotspot.id === previewActiveId;
       if (hotspot.id === editor.selectedId || isPreviewActive) {
+        animating = true;
         setMaterialOpacity(
           visual.haloMat,
           0.15 + Math.sin(t * 4) * 0.08,
@@ -221,6 +227,7 @@ export function createHotspotManager(
       }
 
       if (visual.ring.enabled) {
+        animating = true;
         // Expanding fade ring: grows out while opacity eases to 0, then loops
         const cycle = ((t * 0.55 + index * 0.37) % 1 + 1) % 1;
         const ease = 1 - Math.pow(1 - cycle, 2.2);
@@ -345,12 +352,14 @@ export function createHotspotManager(
     } else if (ui.infoBoxAnchor != null) {
       useUIStore.getState().setInfoBoxAnchor(null);
     }
+    return animating;
   };
 
   const setWorldPosition = (id: number, position: Vec3) => {
     const visual = visuals.get(id);
     if (!visual) return;
     visual.root.setPosition(position.x, position.y, position.z);
+    requestViewportRender();
   };
 
   const commitWorldPosition = (id: number) => {

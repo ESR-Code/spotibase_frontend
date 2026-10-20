@@ -17,10 +17,15 @@ import {
   getModelMeshCenter,
   unbindModelMeshQueries,
 } from "@/lib/editor/engine/model-mesh-queries";
-import { unbindModelAnimation, resetModelAnimation } from "@/lib/editor/engine/model-animation";
+import {
+  isModelAnimationPlaying,
+  resetModelAnimation,
+  unbindModelAnimation,
+} from "@/lib/editor/engine/model-animation";
 import { createModelManager } from "@/lib/editor/engine/model-manager";
 import { createPickingController } from "@/lib/editor/engine/picking-controller";
 import { createScene } from "@/lib/editor/engine/scene-manager";
+import { bindViewportInvalidator } from "@/lib/editor/engine/viewport-invalidate";
 import { bindViewportResize } from "@/lib/editor/engine/viewport-resize";
 import {
   type ImportSubjectDetail,
@@ -64,6 +69,9 @@ import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 
+/** Max redraw rate when only hotspot pulse / halo animations need frames. */
+const MARKER_ANIM_FRAME_INTERVAL = 1 / 30;
+
 function getActiveSceneType(): SceneTypeId {
   const state = useScenesStore.getState();
   return (
@@ -80,6 +88,7 @@ export function usePlayCanvasEditor() {
 
     let destroyed = false;
     let cleanup: (() => void) | undefined;
+    let unbindInvalidator: (() => void) | undefined;
 
     const init = async () => {
       try {
@@ -90,7 +99,20 @@ export function usePlayCanvasEditor() {
           return;
         }
 
+        // On-demand rendering: `autoRender` stays off and `onUpdate` draws a
+        // frame only when something visible changed. Store changes and engine
+        // code (`requestViewportRender`) set this flag.
+        app.autoRender = false;
+        let renderRequested = true;
+        const invalidate = () => {
+          renderRequested = true;
+        };
+
         const scene = createScene(app, pc);
+        unbindInvalidator = bindViewportInvalidator((options) => {
+          renderRequested = true;
+          if (options?.shadows) scene.invalidateStaticShadows();
+        });
         const models = createModelManager(app, pc, scene.modelRoot);
         const cameraCtrl = createCameraController(app, pc, scene.camera, canvas);
         const effectsMgr = createEffectsManager(app, pc, scene.camera);
@@ -142,9 +164,9 @@ export function usePlayCanvasEditor() {
         let subjectLoadToken = 0;
         let activeSceneType = initialType;
 
+        // Geo scenes: `onUpdate` returns early, so nothing is drawn.
         const setEngineActive = (active: boolean) => {
-          app.autoRender = active;
-          if (active) app.renderNextFrame = true;
+          if (active) invalidate();
         };
 
         const loadPlayCanvasSubject = async (
@@ -219,15 +241,20 @@ export function usePlayCanvasEditor() {
           setEngineActive(false);
         }
         if (destroyed) {
+          unbindInvalidator();
           destroy();
           return;
         }
         applyStoredModelPose();
         cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
 
+        // Live shadows only while a clip advances; a paused or scrubbed pose is
+        // recaptured once (model-animation requests that).
+        let clipPlaying = isModelAnimationPlaying();
         const syncKeyLightShadowMode = () => {
+          clipPlaying = isModelAnimationPlaying();
           scene.applyShadowUpdateMode(
-            useModelStore.getState().animations.length > 0,
+            clipPlaying,
             cameraCtrl.getOrbitPose().distance,
           );
         };
@@ -235,8 +262,14 @@ export function usePlayCanvasEditor() {
 
         const unbindResize = bindViewportResize(app, canvas);
 
+        // Async asset loads (GLB textures, KTX2 transcodes) land between frames.
+        app.assets.on("load", invalidate);
+
         let frameCount = 0;
         let fpsAccum = 0;
+        const lastCamPos = new pc.Vec3(Infinity, Infinity, Infinity);
+        const lastCamRot = new pc.Quat();
+        let markerAnimClock = 0;
         const overlayScreen = new pc.Vec3();
         const overlayWorld = new pc.Vec3();
         const overlayTo = new pc.Vec3();
@@ -325,13 +358,36 @@ export function usePlayCanvasEditor() {
         const onUpdate = (dt: number) => {
           if (!isPlayCanvasSceneType(activeSceneType)) return;
           cameraCtrl.update(dt);
-          hotspotMgr.update(dt);
+          const hotspotsAnimating = hotspotMgr.update(dt);
           meshHighlight.frameUpdate();
           projectOverlayMarkers();
+          if (isModelAnimationPlaying() !== clipPlaying) {
+            syncKeyLightShadowMode();
+          }
           if (activeSceneType === "model") {
             scene.fitKeyLightShadows(cameraCtrl.getOrbitPose().distance);
           }
-          frameCount += 1;
+
+          const camPos = scene.camera.getPosition();
+          const camRot = scene.camera.getRotation();
+          const cameraMoved =
+            !camPos.equals(lastCamPos) || !camRot.equals(lastCamRot);
+          if (cameraMoved) {
+            lastCamPos.copy(camPos);
+            lastCamRot.copy(camRot);
+          }
+          // Pulse rings / selection halo are soft fades: 30 fps is enough.
+          markerAnimClock += dt;
+          const markerFrameDue =
+            hotspotsAnimating && markerAnimClock >= MARKER_ANIM_FRAME_INTERVAL;
+          if (renderRequested || cameraMoved || clipPlaying || markerFrameDue) {
+            app.renderNextFrame = true;
+            renderRequested = false;
+            markerAnimClock = 0;
+            // FPS reports frames actually drawn; it reads 0 while idle.
+            frameCount += 1;
+          }
+
           fpsAccum += dt;
           if (fpsAccum >= 0.5) {
             useModelStore
@@ -345,6 +401,27 @@ export function usePlayCanvasEditor() {
           }
         };
         app.on("update", onUpdate);
+
+        // Redraw when a store the 3D scene reads changes. Model and UI stores
+        // are filtered below: `onUpdate` writes FPS / overlay anchors to them.
+        const unsubRedraw = [
+          useEnvironmentStore,
+          useEffectsStore,
+          useSettingsStore,
+          useEditorStore,
+          usePreviewAppearanceStore,
+          usePreviewSpawnedHotspotsStore,
+          usePreviewVisibilityStore,
+          usePreviewMeshHighlightStore,
+        ].map((store) => store.subscribe(invalidate));
+        const unsubUiRedraw = useUIStore.subscribe((state, prev) => {
+          if (
+            state.previewActiveHotspotId !== prev.previewActiveHotspotId ||
+            state.legendFilterCategory !== prev.legendFilterCategory
+          ) {
+            invalidate();
+          }
+        });
 
         const unsubEnv = useEnvironmentStore.subscribe(() => {
           scene.applyEnvironment();
@@ -407,6 +484,17 @@ export function usePlayCanvasEditor() {
           meshHighlight.sync(effectiveMeshHighlights());
         });
         const unsubWire = useModelStore.subscribe((state, prev) => {
+          // Not `fps`: a stats write would trigger a redraw, then new stats.
+          if (
+            state.wireframe !== prev.wireframe ||
+            state.modelScale !== prev.modelScale ||
+            state.modelRotation !== prev.modelRotation ||
+            state.modelReflection !== prev.modelReflection ||
+            state.meshes !== prev.meshes ||
+            state.animations !== prev.animations
+          ) {
+            invalidate();
+          }
           if (state.wireframe !== prev.wireframe) {
             models.setWireframe(state.wireframe);
           }
@@ -612,6 +700,9 @@ export function usePlayCanvasEditor() {
           window.removeEventListener("editor:focus-hotspot", onFocusHotspot);
           window.removeEventListener("editor:scene-switched", onSceneSwitched);
           unregisterCapture();
+          unsubRedraw.forEach((unsub) => unsub());
+          unsubUiRedraw();
+          app.assets.off("load", invalidate);
           unsubEnv();
           unsubEffects();
           unsubSettings();
@@ -650,6 +741,7 @@ export function usePlayCanvasEditor() {
     return () => {
       destroyed = true;
       cleanup?.();
+      unbindInvalidator?.();
       unbindModelAnimation();
       useModelStore.getState().setEngineReady(false);
       useModelStore.getState().setMeshes([]);

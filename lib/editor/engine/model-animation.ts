@@ -1,4 +1,5 @@
 import type { Entity, GraphNode, Quat, Vec3 } from "playcanvas";
+import { requestViewportRender } from "@/lib/editor/engine/viewport-invalidate";
 
 export type PlaySubjectAnimationOpts = {
   animationName: string;
@@ -66,6 +67,12 @@ export function resetModelAnimation(): void {
   if (!binding) return;
   pauseAnim(binding.getEntity());
   binding.restoreBindPose();
+  requestViewportRender({ shadows: true });
+}
+
+/** True while a clip is advancing (editor transport or Preview action). */
+export function isModelAnimationPlaying(): boolean {
+  return bound?.getEntity()?.anim?.playing === true;
 }
 
 function resolveClipDuration(clipId: string): number {
@@ -187,7 +194,9 @@ function holdPoseAt(entity: Entity | null, time: number): void {
   anim.playing = false;
   anim.speed = 1;
   layer.pause();
+  // The setter evaluates the pose immediately; draw it and its shadow.
   layer.activeStateCurrentTime = time;
+  requestViewportRender({ shadows: true });
 }
 
 function waitForPlayback(

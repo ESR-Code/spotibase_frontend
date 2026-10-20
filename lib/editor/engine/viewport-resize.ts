@@ -1,4 +1,5 @@
 import type { Application } from "playcanvas";
+import { requestViewportRender } from "@/lib/editor/engine/viewport-invalidate";
 
 /** Trailing delay so animated layout (outliner width) settles before reallocating GPU buffers. */
 const RESIZE_DEBOUNCE_MS = 80;
@@ -42,6 +43,8 @@ export function bindViewportResize(
     lastW = width;
     lastH = height;
     app.graphicsDevice.resizeCanvas(width, height);
+    // Resizing clears the backbuffer; on-demand rendering must redraw it.
+    requestViewportRender();
   };
 
   const scheduleSync = () => {

@@ -18,7 +18,9 @@ export async function createPlayCanvasAppAsync(
     graphicsDeviceOptions: {
       antialias: true,
       alpha: true,
-      powerPreference: "high-performance",
+      // "high-performance" wakes the discrete GPU on dual-GPU laptops (fans,
+      // battery). Let the browser pick; the editor renders on demand.
+      powerPreference: "default",
       // Screenshots call app.render() then toDataURL in the same turn.
     },
   });
