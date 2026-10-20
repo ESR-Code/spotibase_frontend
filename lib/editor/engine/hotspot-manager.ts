@@ -48,8 +48,31 @@ export function createHotspotManager(
   let elapsed = 0;
   const screenPos = new pcModule.Vec3();
   const toHotspot = new pcModule.Vec3();
-  const OPACITY_EPS = 0.01;
   const SCREEN_EPS = 0.5;
+  /** Relative change below which a marker's zoom scale is left alone. */
+  const SCALE_EPS = 1e-4;
+
+  // Billboards: camera rotation × (-90° X) so the +Y plane faces the camera.
+  // Recomputed only when the camera turns; entities re-orient once per turn.
+  const planeToCamera = new pcModule.Quat().setFromEulerAngles(-90, 0, 0);
+  const billboardRot = new pcModule.Quat();
+  const lastCamRot = new pcModule.Quat(NaN, NaN, NaN, NaN);
+  let billboardVersion = 0;
+  const billboardApplied = new WeakMap<Entity, number>();
+
+  const faceCamera = (entity: Entity) => {
+    if (billboardApplied.get(entity) === billboardVersion) return;
+    entity.setRotation(billboardRot);
+    billboardApplied.set(entity, billboardVersion);
+  };
+
+  /**
+   * Animated fades write a per-instance uniform. Changing `material.opacity`
+   * needs `material.update()`, which rebuilds every uniform of the material.
+   */
+  const setFadeOpacity = (entity: Entity, opacity: number) => {
+    entity.render?.meshInstances[0]?.setParameter("material_opacity", opacity);
+  };
 
   const syncFromStore = () => {
     const { isPreview, draggingId } = useEditorStore.getState();
@@ -104,22 +127,6 @@ export function createHotspotManager(
     }
   };
 
-  const setMaterialOpacity = (
-    mat: { opacity: number; blendType: number; update: () => void },
-    opacity: number,
-    blendType: number,
-  ) => {
-    if (
-      Math.abs(mat.opacity - opacity) < OPACITY_EPS &&
-      mat.blendType === blendType
-    ) {
-      return;
-    }
-    mat.opacity = opacity;
-    mat.blendType = blendType;
-    mat.update();
-  };
-
   const update = (dt: number): boolean => {
     let animating = false;
     elapsed += dt;
@@ -129,6 +136,11 @@ export function createHotspotManager(
     const ui = useUIStore.getState();
     const camPos = camera.getPosition();
     const camRot = camera.getRotation();
+    if (!camRot.equals(lastCamRot)) {
+      lastCamRot.copy(camRot);
+      billboardRot.mul2(camRot, planeToCamera);
+      billboardVersion += 1;
+    }
     const refDist = settings.hotspotRefDist;
     const previewActiveId = ui.previewActiveHotspotId;
     const showAllLabels = editor.isPreview && ui.previewShowAllLabels;
@@ -211,19 +223,19 @@ export function createHotspotManager(
       else if (editor.isPreview && hotspot.id === previewActiveId) accent = 1.25;
       else if (editor.isPreview && hotspot.id === editor.hoveredId) accent = 1.22;
       const scale = Math.max(0.02, zoomScale * accent);
-      visual.root.setLocalScale(scale, scale, scale);
+      // Setting scale dirties the marker's transforms; skip when unchanged.
+      if (Math.abs(visual.root.getLocalScale().x - scale) > scale * SCALE_EPS) {
+        visual.root.setLocalScale(scale, scale, scale);
+      }
 
       const isPreviewActive =
         editor.isPreview && hotspot.id === previewActiveId;
-      if (hotspot.id === editor.selectedId || isPreviewActive) {
+      // The halo is only drawn while it is visible (selected / open).
+      const haloActive = hotspot.id === editor.selectedId || isPreviewActive;
+      if (visual.halo.enabled !== haloActive) visual.halo.enabled = haloActive;
+      if (haloActive) {
         animating = true;
-        setMaterialOpacity(
-          visual.haloMat,
-          0.15 + Math.sin(t * 4) * 0.08,
-          pcModule.BLEND_NORMAL,
-        );
-      } else {
-        setMaterialOpacity(visual.haloMat, 0, visual.haloMat.blendType);
+        setFadeOpacity(visual.halo, 0.15 + Math.sin(t * 4) * 0.08);
       }
 
       if (visual.ring.enabled) {
@@ -237,18 +249,12 @@ export function createHotspotManager(
             ? PIN_SPRITE_SCALE
             : 1;
         visual.ring.setLocalScale(ringScale * pinBoost, 1, ringScale * pinBoost);
-        setMaterialOpacity(
-          visual.ringMat,
-          (1 - ease) * 0.78,
-          pcModule.BLEND_NORMAL,
-        );
-        visual.ring.setRotation(camRot);
-        visual.ring.rotateLocal(-90, 0, 0);
+        setFadeOpacity(visual.ring, (1 - ease) * 0.78);
+        faceCamera(visual.ring);
       }
 
       if (visual.coreTexture && visual.core) {
-        visual.core.setRotation(camRot);
-        visual.core.rotateLocal(-90, 0, 0);
+        faceCamera(visual.core);
       }
 
       if (

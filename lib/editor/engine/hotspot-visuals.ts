@@ -95,6 +95,8 @@ export function createHotspotVisual(
     castShadows: false,
     receiveShadows: false,
   });
+  // hotspot-manager enables it (and drives its opacity) while selected / open.
+  halo.enabled = false;
   root.addChild(halo);
 
   const visual: HotspotVisual = {
@@ -468,8 +470,8 @@ function makePlane(
     layers: [pcModule.LAYERID_UI],
   });
   onHotspotLayer(e, pcModule);
-  // Default plane faces +Y; hotspot-manager billboards by copying camera
-  // rotation then rotateLocal(-90,0,0) so the face looks at the camera.
+  // Default plane faces +Y; hotspot-manager billboards it with camera
+  // rotation × (-90° X), re-applied only when the camera turns.
   return e;
 }
 

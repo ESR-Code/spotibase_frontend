@@ -101,5 +101,15 @@ export function resolveHotspotAppearance(
   if (!isPreview) return hotspot;
   const override = usePreviewAppearanceStore.getState().overrides[hotspot.id];
   if (!override) return hotspot;
-  return { ...hotspot, ...override };
+  // Called per hotspot per frame; reuse the merge while both inputs are unchanged.
+  const cached = mergedAppearance.get(hotspot);
+  if (cached?.override === override) return cached.merged;
+  const merged = { ...hotspot, ...override };
+  mergedAppearance.set(hotspot, { override, merged });
+  return merged;
 }
+
+const mergedAppearance = new WeakMap<
+  Hotspot,
+  { override: object; merged: Hotspot }
+>();

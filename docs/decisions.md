@@ -77,6 +77,7 @@ Only decisions that constrain how new work should be done.
 - On geo scenes the PlayCanvas layer stays mounted but hidden; `onUpdate` returns early so nothing is drawn.
 - Model-scene key-light shadows are 4096² with one cascade. `SHADOWUPDATE_REALTIME` only while a clip is playing; otherwise `SHADOWUPDATE_THISFRAME` (frozen map). Pause, scrub, and reset recapture once via `requestViewportRender({ shadows: true })`. Recapture after light or model-transform changes. Do not refit `shadowDistance` while frozen so orbiting stays cheap.
 - 3D hotspot drag moves the live entity only; the authored position is committed on pointerup.
+- `hotspot-manager.update` runs every tick, so it only writes what changed: marker scale is set when it differs, billboards re-orient once per camera turn, and the halo is disabled unless selected / open. Animated fades (pulse ring, halo) set the `material_opacity` mesh-instance parameter, never `material.opacity` + `update()`. Helpers it calls per hotspot (`listPreviewHotspots`, `resolveHotspotAppearance`, `isPreviewHotspotEnabled`, spawned `list()`) are memoized by input identity; keep them allocation-free.
 
 ## Hotspot content blocks
 

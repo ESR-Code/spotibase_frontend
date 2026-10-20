@@ -28,9 +28,20 @@ export function isPreviewHotspotEnabled(
   hotspotId: number,
 ): boolean {
   if (!isPreview) return true;
-  return !usePreviewVisibilityStore
-    .getState()
-    .disabledHotspotIds.includes(hotspotId);
+  return !disabledHotspotSet().has(hotspotId);
+}
+
+// Called per hotspot per frame by the 3D loop; rebuilt only when the list changes.
+let disabledIdsSource: number[] | null = null;
+let disabledIdsSet = new Set<number>();
+
+function disabledHotspotSet(): Set<number> {
+  const ids = usePreviewVisibilityStore.getState().disabledHotspotIds;
+  if (ids !== disabledIdsSource) {
+    disabledIdsSource = ids;
+    disabledIdsSet = new Set(ids);
+  }
+  return disabledIdsSet;
 }
 
 export function isPreviewLayerVisible(

@@ -40,7 +40,21 @@ type PreviewSpawnedState = {
   reset: () => void;
 };
 
+// `list()` runs every frame in the 3D loop; rebuild only when `bySource` changes.
+let listSource: Record<string, SpawnedEntry[]> | null = null;
+let listCache: Hotspot[] = [];
+
 function hotspotsFrom(
+  bySource: Record<string, SpawnedEntry[]>,
+): Hotspot[] {
+  if (bySource !== listSource) {
+    listSource = bySource;
+    listCache = flattenSpawned(bySource);
+  }
+  return listCache;
+}
+
+function flattenSpawned(
   bySource: Record<string, SpawnedEntry[]>,
 ): Hotspot[] {
   return Object.values(bySource).flatMap((entries) =>
