@@ -120,19 +120,24 @@ export function createCameraController(
   const animTarget = new pcModule.Vec3();
 
   //#region Pan limits
+  type SubjectBox = { center: Vec3; halfExtents: Vec3 };
   /** Subject world box from the last framing; null = no subject, no limits. */
-  let subjectBox: { center: Vec3; halfExtents: Vec3 } | null = null;
+  let subjectBox: SubjectBox | null = null;
   /** Unconstrained target while panning; the shown target is rubber-banded from it. */
   const rawPanTarget = new pcModule.Vec3();
   /** Limits for the current gesture (widened to include where it started). */
   let gestureLimits: { min: Vec3; max: Vec3 } | null = null;
   let springBack = false;
 
-  const panLimits = (): { min: Vec3; max: Vec3 } | null => {
+  /** Pass `out` to reuse vectors (per-frame callers); omit for limits you keep. */
+  const panLimits = (out?: {
+    min: Vec3;
+    max: Vec3;
+  }): { min: Vec3; max: Vec3 } | null => {
     if (!subjectBox || !settings().limitPanToSubject) return null;
     const { center, halfExtents } = subjectBox;
-    const min = new pcModule.Vec3();
-    const max = new pcModule.Vec3();
+    const min = out?.min ?? new pcModule.Vec3();
+    const max = out?.max ?? new pcModule.Vec3();
     if (state.mode === "panZoom") {
       // Image lies in the XY plane, viewed straight on along -Z.
       const halfVFov = (((camera.camera?.fov ?? 42) * Math.PI) / 180) / 2;
@@ -217,16 +222,54 @@ export function createCameraController(
     springBack = gestureLimits != null;
   };
 
+  const scratchLimits = { min: new pcModule.Vec3(), max: new pcModule.Vec3() };
+  const clamped = new pcModule.Vec3();
+
+  /**
+   * 2D limits depend on zoom, target, aspect, subject box, and the setting.
+   * Once the target sits inside them, skip the per-frame check until one of
+   * those inputs changes (zoom, pan, resize, reframe, setting toggle).
+   */
+  const settled2d = {
+    distance: Number.NaN,
+    tx: Number.NaN,
+    ty: Number.NaN,
+    aspect: Number.NaN,
+    limited: false,
+    box: null as SubjectBox | null,
+  };
+  const viewAspect = () =>
+    camera.camera?.aspectRatio ??
+    canvas.clientWidth / Math.max(canvas.clientHeight, 1);
+  const markSettled2d = () => {
+    settled2d.distance = state.distance;
+    settled2d.tx = state.target.x;
+    settled2d.ty = state.target.y;
+    settled2d.aspect = viewAspect();
+    settled2d.limited = settings().limitPanToSubject;
+    settled2d.box = subjectBox;
+  };
+  const isSettled2d = () =>
+    settled2d.distance === state.distance &&
+    settled2d.tx === state.target.x &&
+    settled2d.ty === state.target.y &&
+    settled2d.aspect === viewAspect() &&
+    settled2d.limited === settings().limitPanToSubject &&
+    settled2d.box === subjectBox;
+
   /** After release (or a zoom that tightens 2D limits), ease the target back inside. */
   const updateSpringBack = (dt: number) => {
     if (state.panning || state.anim?.active) return;
-    if (!springBack && state.mode !== "panZoom") return;
-    const limits = springBack ? gestureLimits : panLimits();
+    if (!springBack && (state.mode !== "panZoom" || isSettled2d())) return;
+    // Gesture limits are widened; only the strict 2D check may mark settled.
+    const strict = !springBack;
+    const limits = strict ? panLimits(scratchLimits) : gestureLimits;
     if (!limits) {
       springBack = false;
+      if (strict) markSettled2d();
       return;
     }
-    const clamped = new pcModule.Vec3(
+    clamped.set(
       clamp(state.target.x, limits.min.x, limits.max.x),
       clamp(state.target.y, limits.min.y, limits.max.y),
       clamp(state.target.z, limits.min.z, limits.max.z),
@@ -235,6 +278,7 @@ export function createCameraController(
     if (gap < 1e-4) {
       if (gap > 0) state.target.copy(clamped);
       springBack = false;
+      if (strict) markSettled2d();
       return;
     }
     const alpha = 1 - Math.exp(-PAN_SPRING * Math.max(dt, 0));
