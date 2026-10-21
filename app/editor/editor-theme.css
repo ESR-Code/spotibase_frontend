@@ -1884,6 +1884,15 @@
   box-shadow: 0 0 0 1px rgba(230, 57, 70, 0.25);
 }
 
+.editor-root .editor-header {
+  background: linear-gradient(
+    180deg,
+    rgba(21, 36, 63, 0.85),
+    rgba(17, 30, 54, 0.85)
+  );
+  backdrop-filter: blur(14px);
+}
+
 .editor-root .editor-header-actions {
   display: flex;
   min-width: 0;
@@ -2012,17 +2021,33 @@
   border-color: rgba(244, 162, 89, 0.75);
 }
 
-.editor-root .editor-header-btn-publish {
+.editor-root .editor-header-btn-preview {
+  width: 32px;
+  padding: 0;
+  justify-content: center;
   color: #fff;
-  font-weight: 700;
-  border-color: rgba(255, 255, 255, 0.14);
+  /* border-color: rgba(255, 255, 255, 0.12); */
+  background: linear-gradient(135deg, #343f54 0%, #8a98b8 100%);
+  box-shadow:
+    0 6px 16px -8px rgba(52, 63, 84, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.editor-root .editor-header-btn-preview:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3e4b64 0%, #9aa7c4 100%);
+  /* border-color: rgba(255, 255, 255, 0.2); */
+}
+
+.editor-root .editor-header-btn-preview.is-active {
+  color: #fff;
+  /* border-color: rgba(255, 255, 255, 0.14); */
   background: linear-gradient(135deg, var(--editor-crimson) 0%, #b51e2c 100%);
   box-shadow:
     0 6px 16px -8px rgba(230, 57, 70, 0.75),
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
-.editor-root .editor-header-btn-publish:hover:not(:disabled) {
+.editor-root .editor-header-btn-preview.is-active:hover:not(:disabled) {
   background: linear-gradient(135deg, var(--editor-crimson-2) 0%, #c92635 100%);
   border-color: rgba(255, 255, 255, 0.22);
 }

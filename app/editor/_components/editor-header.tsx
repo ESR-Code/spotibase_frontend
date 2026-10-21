@@ -28,7 +28,7 @@ export function EditorHeader() {
   );
 
   return (
-    <header className="editor-header z-[32] grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b border-[var(--studio-line)] bg-[rgba(9,15,31,0.86)] px-3 py-2.5 backdrop-blur-xl sm:px-5 sm:py-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-x-4">
+    <header className="editor-header z-[32] grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b border-[var(--studio-line)] px-3 py-2.5 sm:px-5 sm:py-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-x-4">
       <div className="flex min-w-0 items-center gap-3">
         <div className="shrink-0">
           <BrandMark compact />

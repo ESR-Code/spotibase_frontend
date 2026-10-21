@@ -13,7 +13,8 @@ export function PublishButton() {
 
   return (
     <EditorButton
-      className="editor-header-btn editor-header-btn-publish"
+      variant="outline"
+      className="editor-header-btn"
       title="Publish settings"
       aria-label="Publish"
       onClick={() => setOpen(true)}

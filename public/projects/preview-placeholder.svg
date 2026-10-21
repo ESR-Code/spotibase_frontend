@@ -1,36 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" fill="none">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="960" y2="540" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#0c1730"/>
-      <stop offset="0.55" stop-color="#132445"/>
-      <stop offset="1" stop-color="#1a1030"/>
+    <linearGradient id="back" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#bcdcfb"/>
+      <stop offset="1" stop-color="#9ccaf5"/>
     </linearGradient>
-    <linearGradient id="glow" x1="180" y1="80" x2="780" y2="460" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#e63946" stop-opacity="0.45"/>
-      <stop offset="0.5" stop-color="#3fb8af" stop-opacity="0.28"/>
-      <stop offset="1" stop-color="#9b8cff" stop-opacity="0.35"/>
+    <linearGradient id="front" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#e4f1fd"/>
+      <stop offset="1" stop-color="#c9e2f9"/>
     </linearGradient>
-    <radialGradient id="orb" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(620 210) rotate(90) scale(180 180)">
-      <stop stop-color="#ff5a6a" stop-opacity="0.55"/>
-      <stop offset="1" stop-color="#ff5a6a" stop-opacity="0"/>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(480 300) scale(300 190)">
+      <stop stop-color="#7fb8f2" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#7fb8f2" stop-opacity="0"/>
     </radialGradient>
+    <filter id="blur" x="-20%" y="-100%" width="140%" height="300%">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
   </defs>
-  <rect width="960" height="540" fill="url(#bg)"/>
-  <rect width="960" height="540" fill="url(#glow)" opacity="0.55"/>
-  <circle cx="620" cy="210" r="180" fill="url(#orb)"/>
-  <g opacity="0.35" stroke="#8a98b8" stroke-width="1">
-    <path d="M0 120H960M0 240H960M0 360H960M0 480H960"/>
-    <path d="M120 0V540M240 0V540M360 0V540M480 0V540M600 0V540M720 0V540M840 0V540"/>
-  </g>
-  <g transform="translate(280 145)">
-    <rect x="40" y="80" width="320" height="190" rx="18" fill="#111e36" stroke="#1f3358" stroke-width="2"/>
-    <rect x="70" y="30" width="180" height="70" rx="14" fill="#15243f" stroke="#1f3358" stroke-width="2"/>
-    <path d="M90 100H310" stroke="#e63946" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
-    <circle cx="110" cy="150" r="10" fill="#3fb8af"/>
-    <circle cx="145" cy="150" r="10" fill="#f4a259"/>
-    <circle cx="180" cy="150" r="10" fill="#9b8cff"/>
-    <rect x="90" y="190" width="160" height="10" rx="5" fill="#1f3358"/>
-    <rect x="90" y="214" width="110" height="10" rx="5" fill="#1a2b4a"/>
-    <rect x="280" y="188" width="54" height="54" rx="12" fill="url(#glow)" opacity="0.9"/>
-  </g>
+  <rect width="960" height="540" fill="#171e30"/>
+  <rect width="960" height="540" fill="none"/>
+
+  <!-- soft shadow -->
+  <ellipse cx="480" cy="424" rx="150" ry="14" fill="#0a0f1c" opacity="0.7" filter="url(#blur)"/>
+
+  <!-- back panel -->
+  <rect x="315" y="118" width="330" height="140" rx="20" fill="#a9d1f7"/>
+
+  <!-- paper card -->
+  <rect x="340" y="140" width="280" height="90" rx="12" fill="#f5faff"/>
+  <rect x="362" y="158" width="130" height="9" rx="4.5" fill="#d5dfec"/>
+  <rect x="362" y="182" width="260" height="3" fill="#e2eaf4"/>
+
+  <!-- front pocket -->
+  <rect x="300" y="200" width="360" height="214" rx="26" fill="#d6e9fb"/>
+  <rect x="300" y="200" width="360" height="214" rx="26" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2"/>
+
+  <!-- cloud -->
+  <path d="M452 322a16 16 0 0 1-2-32a24 24 0 0 1 46-8a19 19 0 0 1 8 40z" stroke="#4c9be8" stroke-width="5" stroke-linejoin="round" fill="#8cc2f4"/>
+
+  <!-- bottom lines -->
+  <rect x="340" y="378" width="280" height="3" fill="#b9d6f1"/>
+  <rect x="340" y="390" width="280" height="3" fill="#cfe3f6"/>
 </svg>
