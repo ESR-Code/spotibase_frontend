@@ -19,6 +19,8 @@ import type {
   SendPostMessageActionNode,
 } from "@/lib/editor/types/hotspot-action";
 import {
+  asPlayAnimationMode,
+  asPlayAnimationStopBehavior,
   asPlayAnimationTime,
   clampPlayAnimationSpeed,
   clampSubscribeIntervalMs,
@@ -760,6 +762,19 @@ export function updateNodeData(
         return {
           ...node,
           data: {
+            mode: Object.prototype.hasOwnProperty.call(patch, "mode")
+              ? asPlayAnimationMode(patch.mode)
+              : asPlayAnimationMode(node.data.mode),
+            resumeAfterInterrupt:
+              typeof patch.resumeAfterInterrupt === "boolean"
+                ? patch.resumeAfterInterrupt
+                : (node.data.resumeAfterInterrupt ?? true),
+            stopBehavior: Object.prototype.hasOwnProperty.call(
+              patch,
+              "stopBehavior",
+            )
+              ? asPlayAnimationStopBehavior(patch.stopBehavior)
+              : asPlayAnimationStopBehavior(node.data.stopBehavior),
             animationName:
               typeof patch.animationName === "string"
                 ? patch.animationName

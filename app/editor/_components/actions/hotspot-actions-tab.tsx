@@ -101,11 +101,14 @@ function actionNodeDetail(
       return `→ ${count} (off)`;
     }
     case "playAnimation": {
+      const mode = node.data.mode ?? "once";
+      if (mode === "stop") return "→ stop loop";
       const name = node.data.animationName.trim();
       if (!name) return "→ (no clip)";
       const start = node.data.startTime ?? 0;
       const end = node.data.endTime ?? 0;
       const extras = [
+        mode === "loop" ? "loop" : mode === "pingPong" ? "ping-pong" : null,
         end > start ? `${start}–${end}s` : null,
         node.data.inverse ? "reverse" : null,
         node.data.speed !== 1 ? `${node.data.speed}×` : null,

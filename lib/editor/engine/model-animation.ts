@@ -11,6 +11,13 @@ export type PlaySubjectAnimationOpts = {
 
 export type PlaySubjectAnimationResult = "completed" | "cancelled";
 
+export type StartSubjectLoopOpts = PlaySubjectAnimationOpts & {
+  /** Bounce start↔end instead of jumping back to the start. */
+  pingPong: boolean;
+  /** Restart this loop after a one-shot clip interrupts it and completes. */
+  resume: boolean;
+};
+
 export type ModelAnimationBinding = {
   getEntity: () => Entity | null;
   restoreBindPose: () => void;
@@ -26,6 +33,12 @@ type BindPoseSample = {
 
 let bound: ModelAnimationBinding | null = null;
 let generation = 0;
+/**
+ * The Preview loop to come back to. Only one clip plays at a time, so a
+ * one-shot interrupts it; `playSubjectAnimation` restarts it on completion
+ * when `resume` is set. Cleared by stop / reset / unbind / editor transport.
+ */
+let activeLoop: StartSubjectLoopOpts | null = null;
 
 export function captureBindPose(root: Entity): BindPoseSample[] {
   const samples: BindPoseSample[] = [];
@@ -52,17 +65,20 @@ export function restoreBindPose(samples: BindPoseSample[]): void {
 
 export function bindModelAnimation(binding: ModelAnimationBinding): void {
   generation += 1;
+  activeLoop = null;
   bound = binding;
 }
 
 export function unbindModelAnimation(): void {
   generation += 1;
+  activeLoop = null;
   bound = null;
 }
 
 /** Stop playback and restore the imported bind pose. Cancels in-flight waits. */
 export function resetModelAnimation(): void {
   generation += 1;
+  activeLoop = null;
   const binding = bound;
   if (!binding) return;
   pauseAnim(binding.getEntity());
@@ -87,6 +103,7 @@ function resolveClipDuration(clipId: string): number {
 /** Hold a clip pose at `time` for editor scrubbing. Cancels graph waits. */
 export function seekEditorAnimation(clipId: string, time: number): void {
   generation += 1;
+  activeLoop = null;
   const binding = bound;
   const entity = binding?.getEntity() ?? null;
   const anim = entity?.anim;
@@ -120,6 +137,7 @@ export function playEditorAnimation(clipId: string, fromTime: number): void {
   }
 
   generation += 1;
+  activeLoop = null;
   anim.speed = 1;
   layer.play(clipId);
   anim.playing = true;
@@ -129,6 +147,7 @@ export function playEditorAnimation(clipId: string, fromTime: number): void {
 /** Stop advancing and keep the current clip pose. Cancels graph waits. */
 export function pauseEditorAnimation(): void {
   generation += 1;
+  activeLoop = null;
   holdPoseAt(bound?.getEntity() ?? null, readEditorAnimationTime());
 }
 
@@ -162,7 +181,7 @@ export async function playSubjectAnimation(
   const span = endTime - startTime;
   if (!(span > 0)) {
     holdPoseAt(entity, startTime);
-    return token === generation ? "completed" : "cancelled";
+    return "completed";
   }
 
   layer.activeStateCurrentTime = opts.inverse ? endTime : startTime;
@@ -170,9 +189,92 @@ export async function playSubjectAnimation(
   const waitMs = (span / speed) * 1000;
   const result = await waitForPlayback(token, waitMs);
   if (result === "completed" && token === generation) {
-    holdPoseAt(entity, opts.inverse ? startTime : endTime);
+    if (!resumeActiveLoop()) holdPoseAt(entity, opts.inverse ? startTime : endTime);
   }
   return result;
+}
+
+/** Restart the remembered loop after a one-shot completes, when it asks to. */
+function resumeActiveLoop(): boolean {
+  if (!activeLoop?.resume) return false;
+  return runLoop(activeLoop, ++generation);
+}
+
+/**
+ * Start a repeating Preview loop and return without waiting. Replaces any
+ * earlier loop and interrupts any one-shot clip.
+ */
+export function startSubjectLoop(opts: StartSubjectLoopOpts): boolean {
+  const token = ++generation;
+  activeLoop = null;
+  if (!runLoop(opts, token)) return false;
+  activeLoop = opts;
+  return true;
+}
+
+/** End the Preview loop: keep its current pose or restore the bind pose. */
+export function stopSubjectLoop(behavior: "hold" | "rest"): void {
+  if (behavior === "rest") {
+    resetModelAnimation();
+    return;
+  }
+  generation += 1;
+  activeLoop = null;
+  const entity = bound?.getEntity() ?? null;
+  if (entity?.anim?.playing) holdPoseAt(entity, readEditorAnimationTime());
+}
+
+function runLoop(opts: StartSubjectLoopOpts, token: number): boolean {
+  const binding = bound;
+  const entity = binding?.getEntity() ?? null;
+  const anim = entity?.anim;
+  const layer = anim?.baseLayer;
+  if (!binding || !anim || !layer) return false;
+
+  const speed = Math.max(opts.speed, 0.01);
+  layer.play(opts.animationName);
+  const clipDuration =
+    layer.activeStateDuration || binding.durationFor(opts.animationName);
+  const startTime = Math.min(Math.max(0, opts.startTime), clipDuration);
+  const endTime =
+    opts.endTime > startTime ? Math.min(opts.endTime, clipDuration) : clipDuration;
+  if (!(endTime - startTime > 0)) {
+    holdPoseAt(entity, startTime);
+    return true;
+  }
+
+  let forward = !opts.inverse;
+  anim.speed = forward ? speed : -speed;
+  // PlayCanvas AnimComponentSystem only ticks layers when this is true.
+  anim.playing = true;
+  layer.activeStateCurrentTime = forward ? startTime : endTime;
+
+  // Clips are assigned non-looping; the controller's state time keeps
+  // advancing past the window, so wrap (or bounce) it here each frame.
+  const tick = () => {
+    if (token !== generation) return;
+    const time = layer.activeStateCurrentTime;
+    if (forward && time >= endTime) {
+      if (opts.pingPong) {
+        forward = false;
+        anim.speed = -speed;
+        layer.activeStateCurrentTime = endTime;
+      } else {
+        layer.activeStateCurrentTime = startTime;
+      }
+    } else if (!forward && time <= startTime) {
+      if (opts.pingPong) {
+        forward = true;
+        anim.speed = speed;
+        layer.activeStateCurrentTime = startTime;
+      } else {
+        layer.activeStateCurrentTime = endTime;
+      }
+    }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+  return true;
 }
 
 function pauseAnim(entity: Entity | null): void {

@@ -417,9 +417,50 @@ export function resolvePlayAnimationRange(
   return { startTime: start, endTime: end };
 }
 
+/**
+ * `once` plays the window and waits; `loop` / `pingPong` start a repeating
+ * Preview loop and continue the chain; `stop` ends that loop.
+ */
+export type PlayAnimationMode = "once" | "loop" | "pingPong" | "stop";
+
+/** What `stop` leaves on screen: the current loop pose or the rest pose. */
+export type PlayAnimationStopBehavior = "hold" | "rest";
+
+const PLAY_ANIMATION_MODES: readonly PlayAnimationMode[] = [
+  "once",
+  "loop",
+  "pingPong",
+  "stop",
+];
+
+export function asPlayAnimationMode(value: unknown): PlayAnimationMode {
+  return PLAY_ANIMATION_MODES.includes(value as PlayAnimationMode)
+    ? (value as PlayAnimationMode)
+    : "once";
+}
+
+export function asPlayAnimationStopBehavior(
+  value: unknown,
+): PlayAnimationStopBehavior {
+  return value === "rest" ? "rest" : "hold";
+}
+
+export function isPlayAnimationLoopMode(mode: PlayAnimationMode): boolean {
+  return mode === "loop" || mode === "pingPong";
+}
+
 export type PlayAnimationActionNode = ActionNodeBase<
   "playAnimation",
   {
+    /** Legacy nodes without a mode are `once`. */
+    mode: PlayAnimationMode;
+    /**
+     * Loop modes only: restart the loop after a `once` clip interrupts it
+     * and completes. Default true.
+     */
+    resumeAfterInterrupt: boolean;
+    /** `stop` mode only. Default `hold`. */
+    stopBehavior: PlayAnimationStopBehavior;
     /** Catalog clip id from the loaded GLB. */
     animationName: string;
     /** When true, play the clip backwards. */

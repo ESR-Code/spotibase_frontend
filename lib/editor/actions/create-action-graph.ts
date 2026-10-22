@@ -28,6 +28,8 @@ import type {
 } from "@/lib/editor/types/hotspot-action";
 import { HTTP_METHODS, TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
 import {
+  asPlayAnimationMode,
+  asPlayAnimationStopBehavior,
   asPlayAnimationTime,
   clampPlayAnimationSpeed,
   clampSubscribeIntervalMs,
@@ -414,6 +416,9 @@ export function createActionNode(
         type: "playAnimation",
         position: { ...position },
         data: {
+          mode: "once",
+          resumeAfterInterrupt: true,
+          stopBehavior: "hold",
           animationName: "",
           inverse: false,
           speed: PLAY_ANIMATION_SPEED_DEFAULT,
@@ -698,6 +703,12 @@ export function cloneActionGraph(
           type: "playAnimation",
           position: { ...node.position },
           data: {
+            mode: asPlayAnimationMode(node.data.mode),
+            resumeAfterInterrupt: asBoolean(
+              node.data.resumeAfterInterrupt,
+              true,
+            ),
+            stopBehavior: asPlayAnimationStopBehavior(node.data.stopBehavior),
             animationName:
               typeof node.data.animationName === "string"
                 ? node.data.animationName
