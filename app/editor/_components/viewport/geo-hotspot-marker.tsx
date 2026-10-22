@@ -101,7 +101,6 @@ export function GeoHotspotMarker({
           className={cn(
             "editor-geo-marker",
             hotspotShapeClass(resolved.shape),
-            resolved.wick && !styleHidden && "editor-geo-marker-has-wick",
             resolved.pulse && !fullyHidden && !styleHidden && "editor-geo-marker-pulse",
             selected && "editor-geo-marker-selected",
             styleHidden && !isPreview && "editor-geo-marker-ghost",
@@ -115,12 +114,6 @@ export function GeoHotspotMarker({
             } as React.CSSProperties
           }
         >
-          <span
-            className={cn(
-              "editor-geo-marker-stick",
-              (!resolved.wick || styleHidden) && "editor-geo-marker-stick-hidden",
-            )}
-          />
           <span className="editor-geo-marker-core">
             {isPin ? (
               <svg

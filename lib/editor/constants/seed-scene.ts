@@ -139,7 +139,6 @@ export function getSeedHotspots(): Hotspot[] {
   return SEED_SCENE.hotspots.map((h) => ({
     ...h,
     shape: h.shape ?? "circle",
-    wick: h.wick ?? false,
     position: { ...h.position },
     blocks: [...h.blocks],
     enabled: h.enabled ?? true,

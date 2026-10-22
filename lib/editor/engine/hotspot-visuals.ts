@@ -25,11 +25,9 @@ export type HotspotVisual = {
   root: Entity;
   hitProxy: Entity;
   ring: Entity;
-  stick: Entity;
   halo: Entity;
   core: Entity | null;
   ringMat: StandardMaterial;
-  stickMat: StandardMaterial;
   haloMat: StandardMaterial;
   coreMat: StandardMaterial | null;
   coreTexture: Texture | null;
@@ -47,7 +45,6 @@ export function visualStyleKey(h: Hotspot): string {
     h.icon,
     h.markerImage ? h.markerImage.slice(0, 64) : "",
     h.pulse ? "1" : "0",
-    h.wick ? "1" : "0",
   ].join("|");
 }
 
@@ -83,13 +80,6 @@ export function createHotspotVisual(
   ring.enabled = !!hotspot.pulse;
   root.addChild(ring);
 
-  const stickMat = unlitMat(pcModule, color, 0.7);
-  const stick = makeCylinder(pcModule, "Stick", stickMat);
-  stick.setLocalScale(0.024, 0.2, 0.024);
-  stick.setLocalPosition(0, -0.325, 0);
-  stick.enabled = !!hotspot.wick;
-  root.addChild(stick);
-
   const haloMat = unlitMat(pcModule, color, 0);
   const halo = makeSphere(pcModule, "Halo", 0.64, haloMat, {
     castShadows: false,
@@ -103,11 +93,9 @@ export function createHotspotVisual(
     root,
     hitProxy,
     ring,
-    stick,
     halo,
     core: null,
     ringMat,
-    stickMat,
     haloMat,
     coreMat: null,
     coreTexture: null,
@@ -135,9 +123,6 @@ export async function rebuildCore(
   visual.ringMat.emissive.copy(color);
   visual.ringMat.diffuse.copy(color);
   visual.ringMat.update();
-  visual.stickMat.emissive.copy(color);
-  visual.stickMat.diffuse.copy(color);
-  visual.stickMat.update();
   visual.haloMat.emissive.copy(color);
   visual.haloMat.diffuse.copy(color);
   visual.haloMat.update();
@@ -153,7 +138,6 @@ export async function rebuildCore(
 
   const isHidden = isHiddenHotspotStyle(hotspot.style);
   const isImage = hotspot.style === "image";
-  visual.stick.enabled = !!hotspot.wick && !isImage && !isHidden;
   visual.ring.enabled = !!hotspot.pulse && !isHidden;
 
   const requestKey = visualStyleKey(hotspot);
@@ -289,7 +273,6 @@ export async function rebuildCore(
 export function destroyHotspotVisual(visual: HotspotVisual) {
   destroyCore(visual);
   visual.ringMat.destroy();
-  visual.stickMat.destroy();
   visual.haloMat.destroy();
   visual.ringTexture.destroy();
   visual.root.destroy();
@@ -436,23 +419,6 @@ function makeSphere(
   });
   onHotspotLayer(e, pcModule);
   e.setLocalScale(diameter, diameter, diameter);
-  return e;
-}
-
-function makeCylinder(
-  pcModule: typeof pc,
-  name: string,
-  material: StandardMaterial,
-): Entity {
-  const e = new pcModule.Entity(name);
-  e.addComponent("render", {
-    type: "cylinder",
-    castShadows: false,
-    receiveShadows: false,
-    material,
-    layers: [pcModule.LAYERID_UI],
-  });
-  onHotspotLayer(e, pcModule);
   return e;
 }
 

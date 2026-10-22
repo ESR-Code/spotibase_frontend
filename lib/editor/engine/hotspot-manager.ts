@@ -121,8 +121,6 @@ export function createHotspotManager(
       } else {
         const hidden = isHiddenHotspotStyle(resolved.style);
         existing.ring.enabled = !!resolved.pulse && !hidden;
-        existing.stick.enabled =
-          !!resolved.wick && resolved.style !== "image" && !hidden;
       }
     }
   };

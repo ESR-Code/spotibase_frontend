@@ -238,7 +238,6 @@ export function applySpawnHotspots(
     icon: interpolateOptional(template.icon) || template.icon,
     markerImage: interpolateOptional(template.markerImage),
     pulse: template.pulse,
-    wick: template.wick,
     category: interpolateOptional(template.category),
     legendName: interpolateOptional(template.legendName) || title,
     blocks: interpolateBlocks(template.blocks),

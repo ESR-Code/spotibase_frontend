@@ -317,7 +317,6 @@ export type SpawnHotspotTemplate = {
   markerImage: string;
   image: string;
   pulse: boolean;
-  wick: boolean;
   category: string;
   legendName: string;
   positionX: string;

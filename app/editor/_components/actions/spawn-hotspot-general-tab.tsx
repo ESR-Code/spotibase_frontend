@@ -243,12 +243,6 @@ export function SpawnHotspotGeneralTab({
           checked={template.pulse}
           onChange={(pulse) => onChange({ pulse })}
         />
-        <SwitchField
-          label="Wick"
-          description="Show a short pin under the marker"
-          checked={template.wick}
-          onChange={(wick) => onChange({ wick })}
-        />
       </SettingsSection>
 
       <SettingsSection
