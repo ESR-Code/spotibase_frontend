@@ -17,6 +17,7 @@ const MODEL_TYPE: SceneTypeDescriptor = {
   subjectControls: {
     scale: true,
     rotation: true,
+    verticalMove: true,
     reflection: true,
   },
   settingsSections: {
@@ -49,6 +50,7 @@ const IMAGE_TYPE: SceneTypeDescriptor = {
   subjectControls: {
     scale: true,
     rotation: true,
+    verticalMove: false,
     reflection: false,
   },
   settingsSections: {
@@ -81,6 +83,7 @@ const GEO_TYPE: SceneTypeDescriptor = {
   subjectControls: {
     scale: false,
     rotation: false,
+    verticalMove: false,
     reflection: false,
   },
   settingsSections: {

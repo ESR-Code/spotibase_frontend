@@ -46,6 +46,7 @@ import {
 import { useEffectsStore } from "@/lib/editor/state/effects-store";
 import { useEnvironmentStore } from "@/lib/editor/state/environment-store";
 import {
+  DEFAULT_MODEL_OFFSET_Y,
   DEFAULT_MODEL_REFLECTION,
   DEFAULT_MODEL_ROTATION,
   DEFAULT_MODEL_SCALE,
@@ -239,7 +240,11 @@ export function usePlayCanvasEditor() {
 
         const applyStoredModelPose = () => {
           const model = useModelStore.getState();
-          models.applyTransform(model.modelScale, model.modelRotation);
+          models.applyTransform(
+            model.modelScale,
+            model.modelRotation,
+            model.modelOffsetY,
+          );
           models.applyReflection(
             model.modelReflection ?? DEFAULT_MODEL_REFLECTION,
           );
@@ -530,6 +535,7 @@ export function usePlayCanvasEditor() {
             state.wireframe !== prev.wireframe ||
             state.modelScale !== prev.modelScale ||
             state.modelRotation !== prev.modelRotation ||
+            state.modelOffsetY !== prev.modelOffsetY ||
             state.modelReflection !== prev.modelReflection ||
             state.meshes !== prev.meshes ||
             state.animations !== prev.animations
@@ -543,9 +549,14 @@ export function usePlayCanvasEditor() {
             state.modelScale !== prev.modelScale ||
             state.modelRotation.x !== prev.modelRotation.x ||
             state.modelRotation.y !== prev.modelRotation.y ||
-            state.modelRotation.z !== prev.modelRotation.z
+            state.modelRotation.z !== prev.modelRotation.z ||
+            state.modelOffsetY !== prev.modelOffsetY
           ) {
-            models.applyTransform(state.modelScale, state.modelRotation);
+            models.applyTransform(
+              state.modelScale,
+              state.modelRotation,
+              state.modelOffsetY,
+            );
             scene.invalidateStaticShadows();
           }
           if (state.modelReflection !== prev.modelReflection) {
@@ -681,12 +692,17 @@ export function usePlayCanvasEditor() {
             models.applyTransform(
               targetScene.model.scale,
               targetScene.model.rotation,
+              targetScene.model.offsetY ?? DEFAULT_MODEL_OFFSET_Y,
             );
             models.applyReflection(
               targetScene.model.reflection ?? DEFAULT_MODEL_REFLECTION,
             );
           } else {
-            models.applyTransform(DEFAULT_MODEL_SCALE, DEFAULT_MODEL_ROTATION);
+            models.applyTransform(
+              DEFAULT_MODEL_SCALE,
+              DEFAULT_MODEL_ROTATION,
+              DEFAULT_MODEL_OFFSET_Y,
+            );
             models.applyReflection(DEFAULT_MODEL_REFLECTION);
           }
 

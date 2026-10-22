@@ -57,7 +57,11 @@ export type ModelManager = {
   ) => Promise<Entity | null>;
   unloadCurrent: () => void;
   setWireframe: (enabled: boolean) => void;
-  applyTransform: (scale: number, rotation: ModelRotation) => void;
+  applyTransform: (
+    scale: number,
+    rotation: ModelRotation,
+    offsetY: number,
+  ) => void;
   applyReflection: (amount: number) => void;
   applyMeshVisibility: (disabledMeshIds: string[]) => void;
   getMeshes: () => CollectedModelMesh[];
@@ -84,9 +88,14 @@ export function createModelManager(
     asset.unload();
   };
 
-  const applyTransform = (scale: number, rotation: ModelRotation) => {
+  const applyTransform = (
+    scale: number,
+    rotation: ModelRotation,
+    offsetY: number,
+  ) => {
     modelRoot.setLocalScale(scale, scale, scale);
     modelRoot.setLocalEulerAngles(rotation.x, rotation.y, rotation.z);
+    modelRoot.setLocalPosition(0, Math.max(0, offsetY), 0);
   };
 
   const applyMeshVisibility = (disabledMeshIds: string[]) => {
@@ -258,8 +267,8 @@ export function createModelManager(
     const plane = buildImagePlane(pcModule, null, 16 / 9);
     modelRoot.addChild(plane);
 
-    const { modelScale, modelRotation } = useModelStore.getState();
-    applyTransform(modelScale, modelRotation);
+    const { modelScale, modelRotation, modelOffsetY } = useModelStore.getState();
+    applyTransform(modelScale, modelRotation, modelOffsetY);
 
     useModelStore.getState().setStats(useModelStore.getState().fps, 2);
     syncMeshCatalog();
@@ -282,8 +291,8 @@ export function createModelManager(
     releaseContainerAsset();
     destroyOwnedTexture();
     const entity = buildDefaultBox(app, pcModule, modelRoot);
-    const { modelScale, modelRotation } = useModelStore.getState();
-    applyTransform(modelScale, modelRotation);
+    const { modelScale, modelRotation, modelOffsetY } = useModelStore.getState();
+    applyTransform(modelScale, modelRotation, modelOffsetY);
     syncAppearanceFromStore();
     syncMeshCatalog();
     return entity;
@@ -336,7 +345,7 @@ export function createModelManager(
       if (options.resetTransform) {
         useModelStore.getState().resetModelTransform();
         useModelStore.getState().setModelReflection(DEFAULT_MODEL_REFLECTION);
-        applyTransform(1, { x: 0, y: 0, z: 0 });
+        applyTransform(1, { x: 0, y: 0, z: 0 }, 0);
       }
 
       const resource = incoming.resource as {
@@ -408,7 +417,7 @@ export function createModelManager(
 
       if (options.resetTransform) {
         useModelStore.getState().resetModelTransform();
-        applyTransform(1, { x: 0, y: 0, z: 0 });
+        applyTransform(1, { x: 0, y: 0, z: 0 }, 0);
       }
 
       const plane = buildImagePlane(pcModule, texture, aspect);
@@ -520,6 +529,7 @@ export function createModelManager(
     materialBaselines = [];
     modelRoot.setLocalScale(1, 1, 1);
     modelRoot.setLocalEulerAngles(0, 0, 0);
+    modelRoot.setLocalPosition(0, 0, 0);
     // Viewport-only. Name, size text, and transform stay authored until hydrate.
     useModelStore.setState({ triangleCount: 0, meshes: [], animations: [] });
     syncMeshCatalog();

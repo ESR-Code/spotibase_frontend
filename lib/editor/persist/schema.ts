@@ -67,6 +67,7 @@ export const sceneDataSchema = z
         hasUserModel: z.boolean(),
         scale: z.number(),
         rotation: vec3,
+        offsetY: z.number().default(0),
         reflection: z.number(),
         subjectAssetId: z.string().nullable().default(null),
       })

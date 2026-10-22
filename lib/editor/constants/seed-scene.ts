@@ -17,6 +17,7 @@ import {
 import { DEMO_HOTSPOTS } from "@/lib/editor/constants/demo-hotspots";
 import { getSceneType } from "@/lib/editor/scene-types/registry";
 import {
+  DEFAULT_MODEL_OFFSET_Y,
   DEFAULT_MODEL_REFLECTION,
   DEFAULT_MODEL_ROTATION,
   DEFAULT_MODEL_SCALE,
@@ -58,6 +59,7 @@ export function createEmptyModelState(
     hasUserModel: false,
     scale: DEFAULT_MODEL_SCALE,
     rotation: { ...DEFAULT_MODEL_ROTATION },
+    offsetY: DEFAULT_MODEL_OFFSET_Y,
     reflection: DEFAULT_MODEL_REFLECTION,
     subjectAssetId: null,
   };

@@ -23,6 +23,11 @@ export type SceneModelState = {
   hasUserModel: boolean;
   scale: number;
   rotation: ModelRotation;
+  /**
+   * Vertical lift of the subject root in scene units.
+   * 0 keeps the normalized base on the ground; never negative.
+   */
+  offsetY: number;
   /** 0 = matte, 1 = full original material reflection/gloss. */
   reflection: number;
   /** Project asset holding the imported GLB / image; null = default subject. */

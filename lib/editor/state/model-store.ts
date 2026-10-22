@@ -6,6 +6,15 @@ export type { ModelRotation };
 
 export const DEFAULT_MODEL_SCALE = 1;
 export const DEFAULT_MODEL_ROTATION: ModelRotation = { x: 0, y: 0, z: 0 };
+/** Subject base sits on the ground. The slider cannot go below this. */
+export const DEFAULT_MODEL_OFFSET_Y = 0;
+/** Scene units. A normalized subject is about 6 units on its longest axis. */
+export const MAX_MODEL_OFFSET_Y = 10;
+
+export function clampModelOffsetY(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_MODEL_OFFSET_Y;
+  return Math.min(MAX_MODEL_OFFSET_Y, Math.max(0, value));
+}
 /** Full original gloss/specular from the imported materials. */
 export const DEFAULT_MODEL_REFLECTION = 1;
 
@@ -37,6 +46,8 @@ type ModelState = {
   hasUserModel: boolean;
   modelScale: number;
   modelRotation: ModelRotation;
+  /** Vertical lift in scene units. Never below the ground. */
+  modelOffsetY: number;
   modelReflection: number;
   /** Library asset of the loaded subject; null until the upload commits. */
   subjectAssetId: string | null;
@@ -50,6 +61,7 @@ type ModelState = {
   setModelMeta: (name: string, info: string, hasUserModel?: boolean) => void;
   setModelScale: (scale: number) => void;
   setModelRotation: (axis: keyof ModelRotation, value: number) => void;
+  setModelOffsetY: (offsetY: number) => void;
   setModelReflection: (reflection: number) => void;
   setSubjectAssetId: (assetId: string | null) => void;
   resetModelTransform: () => void;
@@ -69,6 +81,7 @@ export const useModelStore = create<ModelState>((set) => ({
   hasUserModel: DEFAULT_MODEL_META.hasUserModel,
   modelScale: DEFAULT_MODEL_SCALE,
   modelRotation: { ...DEFAULT_MODEL_ROTATION },
+  modelOffsetY: DEFAULT_MODEL_OFFSET_Y,
   modelReflection: DEFAULT_MODEL_REFLECTION,
   subjectAssetId: null,
   wireframe: false,
@@ -90,6 +103,8 @@ export const useModelStore = create<ModelState>((set) => ({
     set((state) => ({
       modelRotation: { ...state.modelRotation, [axis]: value },
     })),
+  setModelOffsetY: (modelOffsetY) =>
+    set({ modelOffsetY: clampModelOffsetY(modelOffsetY) }),
   setModelReflection: (modelReflection) =>
     set({
       modelReflection: Math.min(1, Math.max(0, modelReflection)),
@@ -99,6 +114,7 @@ export const useModelStore = create<ModelState>((set) => ({
     set({
       modelScale: DEFAULT_MODEL_SCALE,
       modelRotation: { ...DEFAULT_MODEL_ROTATION },
+      modelOffsetY: DEFAULT_MODEL_OFFSET_Y,
     }),
   setWireframe: (wireframe) => set({ wireframe }),
   setStats: (fps, triangleCount) =>
@@ -118,6 +134,7 @@ export const useModelStore = create<ModelState>((set) => ({
       hasUserModel: false,
       modelScale: DEFAULT_MODEL_SCALE,
       modelRotation: { ...DEFAULT_MODEL_ROTATION },
+      modelOffsetY: DEFAULT_MODEL_OFFSET_Y,
       modelReflection: DEFAULT_MODEL_REFLECTION,
       subjectAssetId: null,
       triangleCount: 0,
@@ -131,6 +148,7 @@ export const useModelStore = create<ModelState>((set) => ({
       hasUserModel: model.hasUserModel,
       modelScale: model.scale,
       modelRotation: { ...model.rotation },
+      modelOffsetY: clampModelOffsetY(model.offsetY ?? DEFAULT_MODEL_OFFSET_Y),
       modelReflection: model.reflection ?? DEFAULT_MODEL_REFLECTION,
       subjectAssetId: model.subjectAssetId ?? null,
     }),

@@ -17,6 +17,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 - Multiple scenes; one primary. Types: **3D Model** (orbit + GLB, including compressed GLB: Draco, meshopt, KTX2 textures), **2D Image** (pan/zoom + PNG/JPG/WebP), **Geo map** (MapLibre globe/flat).
 - Type is fixed at creation. Settings sections and outliner tabs follow the scene-type registry.
 - Subject import via file picker or drag-drop (`import-subject`). Scene subject cache when switching.
+- 3D subject properties include uniform scale, rotation, reflection, and Move Up / Down. The height slider lifts the model in scene units and cannot move it below the ground.
 - Optional scene description (create form + Scene Settings) and thumbnail upload (Scene Settings), including **Use screenshot** which captures the live viewport and stores it as an image asset. Empty description is omitted from lists, not shown as a placeholder.
 - Scene settings: name / description / thumbnail, camera limits (pitch capped at 90° true top view; optional soft "Limit panning to subject", on by default: rubber-bands near the model / image bounds), grid, logo, marker dialog presentation (modal / drawer / infobox, optional drawer inset), optional prev/next buttons in the hotspot dialog (on by default; hidden when the scene has fewer than two hotspots), legend, custom Preview bottom-menu buttons.
 - Environment + lighting (PlayCanvas). SSAO effects (model scenes).

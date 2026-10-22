@@ -26,6 +26,8 @@ export type SceneTypeDescriptor = {
   subjectControls: {
     scale: boolean;
     rotation: boolean;
+    /** Vertical lift. Model scenes only; the subject cannot go below the ground. */
+    verticalMove: boolean;
     reflection: boolean;
   };
   settingsSections: SceneSettingsSections;

@@ -67,6 +67,7 @@ function watchAuthoredStores() {
         s.hasUserModel !== p.hasUserModel ||
         s.modelScale !== p.modelScale ||
         s.modelRotation !== p.modelRotation ||
+        s.modelOffsetY !== p.modelOffsetY ||
         s.modelReflection !== p.modelReflection ||
         s.subjectAssetId !== p.subjectAssetId
       ) {

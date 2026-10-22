@@ -90,6 +90,7 @@ export function snapshotCurrentIntoScene(scene: Scene): Scene {
       hasUserModel: model.hasUserModel,
       scale: model.modelScale,
       rotation: { ...model.modelRotation },
+      offsetY: model.modelOffsetY,
       reflection: model.modelReflection,
       subjectAssetId: model.subjectAssetId,
     },

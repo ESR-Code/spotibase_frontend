@@ -20,9 +20,11 @@ import { openGeoreferenceWorkflow } from "@/app/editor/_components/drawers/geore
 import { importSubjectFile } from "@/lib/editor/io/import-subject";
 import { getSceneType } from "@/lib/editor/scene-types/registry";
 import {
+  DEFAULT_MODEL_OFFSET_Y,
   DEFAULT_MODEL_REFLECTION,
   DEFAULT_MODEL_ROTATION,
   DEFAULT_MODEL_SCALE,
+  MAX_MODEL_OFFSET_Y,
   useModelStore,
 } from "@/lib/editor/state/model-store";
 import { useActiveScene, useScenesStore } from "@/lib/editor/state/scenes-store";
@@ -41,14 +43,17 @@ export function SubjectPanel() {
   const hasUserModel = useModelStore((s) => s.hasUserModel);
   const modelScale = useModelStore((s) => s.modelScale);
   const modelRotation = useModelStore((s) => s.modelRotation);
+  const modelOffsetY = useModelStore((s) => s.modelOffsetY);
   const modelReflection = useModelStore((s) => s.modelReflection);
   const setModelScale = useModelStore((s) => s.setModelScale);
   const setModelRotation = useModelStore((s) => s.setModelRotation);
+  const setModelOffsetY = useModelStore((s) => s.setModelOffsetY);
   const setModelReflection = useModelStore((s) => s.setModelReflection);
   const resetModelTransform = useModelStore((s) => s.resetModelTransform);
 
   const isDefaultTransform =
     modelScale === DEFAULT_MODEL_SCALE &&
+    modelOffsetY === DEFAULT_MODEL_OFFSET_Y &&
     modelRotation.x === DEFAULT_MODEL_ROTATION.x &&
     modelRotation.y === DEFAULT_MODEL_ROTATION.y &&
     modelRotation.z === DEFAULT_MODEL_ROTATION.z;
@@ -178,7 +183,10 @@ export function SubjectPanel() {
           </EditorButton>
         ) : null}
 
-        {controls.scale || controls.rotation || controls.reflection ? (
+        {controls.scale ||
+        controls.rotation ||
+        controls.verticalMove ||
+        controls.reflection ? (
           <SettingsSection
             title="Subject properties"
             icon={<SlidersHorizontal className="h-3.5 w-3.5" />}
@@ -193,6 +201,18 @@ export function SubjectPanel() {
                 max={3}
                 step={0.05}
                 onChange={setModelScale}
+              />
+            ) : null}
+
+            {controls.verticalMove ? (
+              <SliderField
+                label="Move Up / Down"
+                value={modelOffsetY}
+                display={modelOffsetY.toFixed(2)}
+                min={0}
+                max={MAX_MODEL_OFFSET_Y}
+                step={0.05}
+                onChange={setModelOffsetY}
               />
             ) : null}
 
@@ -250,13 +270,13 @@ export function SubjectPanel() {
               </div>
             ) : null}
 
-            {controls.scale || controls.rotation ? (
+            {controls.scale || controls.rotation || controls.verticalMove ? (
               <EditorButton
                 type="button"
                 variant="ghost"
                 className="w-full justify-center text-[12px]"
                 disabled={isDefaultTransform}
-                title="Reset size and rotation"
+                title="Reset size, height, and rotation"
                 onClick={resetModelTransform}
               >
                 <RotateCcw className="h-3.5 w-3.5" />
