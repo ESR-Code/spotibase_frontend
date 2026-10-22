@@ -44,6 +44,7 @@ function toFormValues(
     markerDialogResetCameraOnClose: settings.markerDialogResetCameraOnClose,
     markerDialogPrevNext: settings.markerDialogPrevNext ?? true,
     legendEnabled: settings.legendEnabled,
+    bottomMenuEnabled: settings.bottomMenuEnabled ?? true,
     logoUrl: settings.logoUrl,
     logoScale: settings.logoScale,
   };

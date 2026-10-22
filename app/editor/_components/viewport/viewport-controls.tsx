@@ -34,10 +34,13 @@ export function ViewportControls() {
   const setPreviewShowAllLabels = useUIStore((s) => s.setPreviewShowAllLabels);
   const setSettingsDrawerOpen = useUIStore((s) => s.setSettingsDrawerOpen);
   const customMenuButtons = useSettingsStore((s) => s.customMenuButtons);
+  const bottomMenuEnabled = useSettingsStore((s) => s.bottomMenuEnabled);
   const toggledIds = useCustomMenuToggleStore((s) => s.toggledIds);
   const scene = useActiveScene();
   const isGeo = isGeoSceneType(scene.type);
   const transport = useEditorAnimTransport();
+
+  if (isPreview && !bottomMenuEnabled) return null;
 
   return (
     <div className="editor-viewport-controls editor-glass editor-panel-shadow absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 flex-col items-stretch gap-1.5 rounded-xl px-2 py-2">

@@ -99,6 +99,8 @@ export type EditorSettings = {
   markerDialogPrevNext: boolean;
   /** Show the Legend button and drawer in Preview. */
   legendEnabled: boolean;
+  /** Show the bottom menu (reset, zoom, labels, custom buttons) in Preview. */
+  bottomMenuEnabled: boolean;
   /** User-defined legend categories available for hotspot assignment. */
   legendCategories: LegendCategory[];
   /** Project logo as a data URL or remote URL; empty when unset. */

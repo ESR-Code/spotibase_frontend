@@ -582,6 +582,12 @@ export function SettingsDrawer() {
           title="Custom menu"
           icon={<PanelBottom className="h-3.5 w-3.5" />}
         >
+          <SwitchField
+            label="Enable bottom menu"
+            description="Show the bottom menu in Preview"
+            checked={values.bottomMenuEnabled}
+            onChange={(checked) => form.setValue("bottomMenuEnabled", checked)}
+          />
           <CustomMenuSection />
         </SettingsSection>
 

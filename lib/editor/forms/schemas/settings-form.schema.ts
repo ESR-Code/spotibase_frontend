@@ -28,6 +28,7 @@ export const settingsFormSchema = z.object({
   markerDialogResetCameraOnClose: z.boolean(),
   markerDialogPrevNext: z.boolean(),
   legendEnabled: z.boolean(),
+  bottomMenuEnabled: z.boolean(),
   logoUrl: z.string(),
   logoScale: z.number().min(0.4).max(2.5),
 });

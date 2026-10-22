@@ -42,6 +42,7 @@ function pickSettings(state: SettingsState): EditorSettings {
     markerDialogResetCameraOnClose: state.markerDialogResetCameraOnClose,
     markerDialogPrevNext: state.markerDialogPrevNext,
     legendEnabled: state.legendEnabled,
+    bottomMenuEnabled: state.bottomMenuEnabled,
     legendCategories: state.legendCategories,
     logoUrl: state.logoUrl,
     logoScale: state.logoScale,
