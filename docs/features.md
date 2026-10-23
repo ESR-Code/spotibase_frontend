@@ -32,6 +32,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 - Cloudflare Worker gateway: `/auth` → Neon Auth, `/data` → Neon Data API (user JWT + RLS), `/fn` → 501 until a Neon Function URL is set, `/storage` + `/files` → R2 (presigned uploads, authorized streaming reads, editor assets). Rate limits on auth writes, `/data`, and `/storage`.
 - Auth UI: sign-in, forgot password, reset password. Sign-up form exists but is disabled (Neon config `disable-sign-up` + no submit). Email verification is off.
 - `/projects` studio dashboard (client-only): org create/switch, folder CRUD (name + color), project CRUD (name, description, move between folders), search (⌘K / Ctrl K), sort, tabs (All / Recent / In Folders / Root), grid/list view, workspace overview. Animated dialogs (bottom sheet on mobile), responsive layout.
+- `/settings/organization` and `/settings/account` (client-only, shared settings shell with grouped sidebar / mobile pill nav). Organization: rename and logo upload / remove (owner / admin only; square 512 WebP in R2, shown in the org selector), slug / id / created / your role, read-only member list with roles; API secrets reserved as "Coming soon". Account: edit name, read-only email + verified state, change password (credential accounts only, optional sign-out of other devices), active sessions + sign out other sessions. Entry points: org selector → Organization settings, account menu → Account settings.
 - `/projects/[id]` project detail (client-only): breadcrumb, hero (thumbnail, title, folder · org, description, "Open in Studio Editor" CTA → `/projects/[id]/editor`), URL-synced tabs (`?tab=details|analytics|settings`). Details shows metadata (dates, scenes, library size, asset kind counts, copyable id). Library stats come from `project_asset_stats` (kind counts + total bytes; no asset rows). Settings edits name / description / folder, uploads / removes the project thumbnail (drag-and-drop or browse; cropped to 16:9 WebP, stored in R2, shown on cards and hero), and deletes the project. **Partial:** Analytics is visual-only sample data seeded from the project id (`app/projects/_lib/analytics-preview.ts`).
 
 ### Editor persistence and assets
@@ -128,6 +129,6 @@ These are implied by gaps or comments, not a committed roadmap.
 - Additional hotspot block types beyond heading / text / link / image / video.
 - Wire or replace hotspot-only JSON export with a project-level format.
 - Replace default Next.js metadata / README with product branding.
-- Org admin (invites, roles UI), Cloudflare R2 (files, queues). Re-enable signup and email verification when that UI ships. Neon Function for complex server-side work.
+- Org admin (invites, roles UI, remove member), change sign-in email, profile avatar upload, API secrets, Cloudflare R2 (files, queues). Re-enable signup and email verification when that UI ships. Neon Function for complex server-side work.
 - A viewer route that will be used on prod once a persistent memory (db backend) existed. It will be a lightweight version of editor's preview mode
 

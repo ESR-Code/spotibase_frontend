@@ -1,7 +1,7 @@
 "use client";
 
 import { authClient } from "@/lib/auth/client";
-import type { OrganizationSummary } from "@/lib/projects/types";
+import type { OrganizationMember, OrganizationSummary } from "@/lib/projects/types";
 
 function asOrgList(data: unknown): OrganizationSummary[] {
   if (!Array.isArray(data)) return [];
@@ -55,6 +55,38 @@ export async function createOrganization(name: string) {
   return org;
 }
 
+export async function updateOrganizationName({
+  organizationId,
+  name,
+}: {
+  organizationId: string;
+  name: string;
+}) {
+  const result = await authClient.organization.update({
+    organizationId,
+    data: { name: name.trim() },
+  });
+  if (result.error) {
+    throw new Error(result.error.message || "Failed to update organization");
+  }
+  return result.data as unknown as OrganizationSummary | null;
+}
+
+export async function listOrganizationMembers(
+  organizationId: string,
+): Promise<OrganizationMember[]> {
+  const result = await authClient.organization.listMembers({
+    query: { organizationId },
+  });
+  if (result.error) {
+    throw new Error(result.error.message || "Failed to list members");
+  }
+  return memberListFromUnknown(result.data).filter(
+    (row): row is OrganizationMember =>
+      typeof row.id === "string" && typeof row.userId === "string",
+  );
+}
+
 export async function getActiveOrganizationId(): Promise<string | null> {
   const result = await authClient.getSession();
   if (result.error || !result.data) return null;
@@ -94,15 +126,11 @@ function roleFromUnknown(data: unknown): string | null {
   return null;
 }
 
-function memberListFromUnknown(
-  data: unknown,
-): { userId?: string; role?: string }[] {
-  if (Array.isArray(data)) return data as { userId?: string; role?: string }[];
+function memberListFromUnknown(data: unknown): Partial<OrganizationMember>[] {
+  if (Array.isArray(data)) return data as Partial<OrganizationMember>[];
   if (data && typeof data === "object" && "members" in data) {
     const members = (data as { members?: unknown }).members;
-    return Array.isArray(members)
-      ? (members as { userId?: string; role?: string }[])
-      : [];
+    return Array.isArray(members) ? (members as Partial<OrganizationMember>[]) : [];
   }
   return [];
 }

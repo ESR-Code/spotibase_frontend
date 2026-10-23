@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { handleAssets } from "./assets";
 import { json } from "./http";
+import { handleOrgLogo, isOrgMember, ORG_LOGO_KEY_RE } from "./org-logo";
 import {
 	assetKey,
 	dataApi,
@@ -61,8 +62,12 @@ function isThumbnailKey(project: ProjectAccess, key: unknown): key is string {
 /**
  * `/storage/projects/:id/thumbnail[/upload-url|/upload|/commit]`
  * `/storage/projects/:id/assets/...` (see `assets.ts`)
+ * `/storage/orgs/:id/logo[/upload-url|/upload|/commit]` (see `org-logo.ts`)
  */
 export async function handleStorage(request: Request, path: string, token: string) {
+	const logoMatch = path.match(/^\/orgs\/([^/]+)\/logo(\/upload-url|\/upload|\/commit)?$/);
+	if (logoMatch) return handleOrgLogo(request, logoMatch[1], logoMatch[2] ?? "");
+
 	const assetMatch = path.match(/^\/projects\/([^/]+)\/assets(\/.*)?$/);
 	if (assetMatch) {
 		const project = await projectAccess(token, assetMatch[1]);
@@ -154,15 +159,19 @@ export async function handleFiles(request: Request, path: string, token: string)
 		return json(405, { error: "Method not allowed." });
 	}
 	const key = decodeURIComponent(path.replace(/^\//, ""));
-	const match = key.match(PROJECT_KEY_RE);
-	if (!match || key.includes("..") || key.includes("//")) {
-		return json(404, { error: "Not found." });
-	}
-	const [, orgId, projectId] = match;
+	if (key.includes("..") || key.includes("//")) return json(404, { error: "Not found." });
 
-	const project = await projectAccess(token, projectId);
-	if (!project || project.organization_id.toLowerCase() !== orgId.toLowerCase()) {
-		return json(404, { error: "Not found." });
+	const logoMatch = key.match(ORG_LOGO_KEY_RE);
+	if (logoMatch) {
+		if (!(await isOrgMember(token, logoMatch[1]))) return json(404, { error: "Not found." });
+	} else {
+		const match = key.match(PROJECT_KEY_RE);
+		if (!match) return json(404, { error: "Not found." });
+		const [, orgId, projectId] = match;
+		const project = await projectAccess(token, projectId);
+		if (!project || project.organization_id.toLowerCase() !== orgId.toLowerCase()) {
+			return json(404, { error: "Not found." });
+		}
 	}
 
 	const object = await env.ASSETS.get(key, { onlyIf: request.headers });

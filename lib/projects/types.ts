@@ -33,6 +33,15 @@ export type OrganizationSummary = {
   metadata?: unknown;
 };
 
+/** Org membership row from Neon Auth `organization.listMembers`. */
+export type OrganizationMember = {
+  id: string;
+  userId: string;
+  role: string;
+  createdAt?: string | Date;
+  user?: { name?: string | null; email?: string | null; image?: string | null };
+};
+
 /** Rollup from `public.project_asset_stats` — ready files only. */
 export type ProjectAssetStats = {
   total_bytes: number;

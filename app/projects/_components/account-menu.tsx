@@ -8,6 +8,7 @@ import {
   StudioMenuTrigger,
 } from "@/app/projects/_components/studio-menu";
 import { authClient } from "@/lib/auth/client";
+import { useCurrentAccount } from "@/lib/auth/hooks";
 import {
   useActiveMemberRole,
   useActiveOrganizationId,
@@ -15,7 +16,7 @@ import {
 } from "@/lib/projects/hooks";
 import { ChevronDown, LogOut, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 function formatRole(role: string) {
   return role.charAt(0).toUpperCase() + role.slice(1);
@@ -23,7 +24,7 @@ function formatRole(role: string) {
 
 export function AccountMenu() {
   const router = useRouter();
-  const [user, setUser] = useState<{ name?: string | null; email?: string | null } | null>(null);
+  const user = useCurrentAccount().data?.user ?? null;
   const orgsQuery = useOrganizations();
   const activeQuery = useActiveOrganizationId();
   const orgId = activeQuery.data ?? orgsQuery.data?.[0]?.id ?? null;
@@ -32,16 +33,6 @@ export function AccountMenu() {
     const role = roleQuery.data?.trim();
     return role ? formatRole(role) : null;
   }, [roleQuery.data]);
-
-  useEffect(() => {
-    let cancelled = false;
-    authClient.getSession().then((result) => {
-      if (!cancelled) setUser(result.data?.user ?? null);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const label = user?.name || user?.email || "";
   const initials =
@@ -86,7 +77,7 @@ export function AccountMenu() {
           </div>
         </div>
         <StudioMenuSeparator />
-        <StudioMenuItem disabled>
+        <StudioMenuItem onSelect={() => router.push("/settings/account")}>
           <Settings />
           Account settings
         </StudioMenuItem>

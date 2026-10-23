@@ -19,16 +19,20 @@ import {
 } from "@/lib/projects/api";
 import type { FolderColor } from "@/lib/projects/folder-colors";
 import {
+  removeOrganizationLogo,
   removeProjectAssets,
   removeProjectThumbnail,
+  uploadOrganizationLogo,
   uploadProjectThumbnail,
 } from "@/lib/projects/storage";
 import {
   createOrganization,
   getActiveMemberRole,
   getActiveOrganizationId,
+  listOrganizationMembers,
   listOrganizations,
   setActiveOrganization,
+  updateOrganizationName,
 } from "@/lib/projects/orgs";
 import type {
   OrganizationSummary,
@@ -45,6 +49,8 @@ export const orgKeys = {
   all: ["organizations"] as const,
   active: ["active-organization"] as const,
   role: (orgId: string | null) => ["organization-role", orgId] as const,
+  allMembers: ["organization-members"] as const,
+  members: (orgId: string | null) => ["organization-members", orgId] as const,
 };
 
 export const folderKeys = {
@@ -120,6 +126,45 @@ export function useCreateOrganization() {
       await qc.invalidateQueries({ queryKey: orgKeys.all });
       await qc.invalidateQueries({ queryKey: orgKeys.active });
     },
+  });
+}
+
+export function useUpdateOrganization() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: updateOrganizationName,
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: orgKeys.all });
+    },
+  });
+}
+
+export function useUploadOrganizationLogo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ organizationId, file }: { organizationId: string; file: File }) =>
+      uploadOrganizationLogo(organizationId, file),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: orgKeys.all });
+    },
+  });
+}
+
+export function useRemoveOrganizationLogo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: removeOrganizationLogo,
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: orgKeys.all });
+    },
+  });
+}
+
+export function useOrganizationMembers(organizationId: string | null | undefined) {
+  return useQuery({
+    queryKey: orgKeys.members(organizationId ?? null),
+    queryFn: () => listOrganizationMembers(organizationId!),
+    enabled: Boolean(organizationId),
   });
 }
 

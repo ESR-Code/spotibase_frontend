@@ -81,6 +81,8 @@ RLS on `project_folders` / `projects` / `scenes` / `assets` / `project_versions`
 
 The browser calls same-origin `/gateway/*`. Next proxies that to the Worker (`WORKER_URL`, default `http://127.0.0.1:8787`) so the session cookie stays on the app origin. If the Worker is not running, `GET /gateway/auth/get-session` returns an empty session instead of a 500. The browser never sees Neon URLs or `DATABASE_URL`. `/auth/*` proxies Neon Auth. `/data/*` exchanges the session cookie for the user JWT and forwards to the Neon Data API (RLS is the authorization layer; `neon_auth` is not exposed). `/fn/*` is reserved for a future Neon Function and returns 501 until `NEON_FUNCTION_URL` is set. Run the Worker with `npm run dev:api` beside `npm run dev`, or both at once with `npm run dev:local` (local Worker + simulated R2; Auth, Data API, and Postgres are the linked cloud Neon branch).
 
+**Settings pages.** `/settings/organization` and `/settings/account` (`app/settings/`) read and write identity data only through `authClient` (`lib/projects/orgs.ts`, `lib/auth/account.ts` + `lib/auth/hooks.ts`), never `/data`. Neon Auth enforces org role permissions (for example rename = owner / admin); the UI mirrors that by hiding controls. The org logo is the one exception that goes through `/storage` (R2 upload), but the Worker still writes `organization.logo` via Neon Auth, not SQL. `list-sessions` needs a fresh sign-in (Better Auth `freshAge`, 24h); older sessions get 403 `SESSION_NOT_FRESH` and the UI asks the user to sign in again. They act on the session's active organization (`session.activeOrganizationId`, switched from `/projects`). `/change-password` is in the Worker's rate-limited `AUTH_WRITES`.
+
 ### File storage (Cloudflare R2)
 
 Private bucket `spotibase-assets`, bound to the Worker as `ASSETS`. Keys are tenant-scoped:
@@ -88,6 +90,7 @@ Private bucket `spotibase-assets`, bound to the Worker as `ASSETS`. Keys are ten
 ```
 orgs/{orgId}/projects/{projectId}/thumbnails/{uuid}.webp
 orgs/{orgId}/projects/{projectId}/assets/{assetId}.{ext}   # editor media (immutable)
+orgs/{orgId}/logo/{uuid}.webp                              # org logo (key in neon_auth.organization.logo)
 ```
 
 Postgres stores the **R2 key, never a URL** (`projects.thumbnail_r2_key`, `assets.r2_key`). The browser derives `/gateway/files/<key>` (`lib/projects/storage.ts`, `lib/editor/assets/resolve.ts`).
@@ -105,7 +108,8 @@ Worker routes (`worker/src/storage.ts`, `worker/src/assets.ts`, shared helpers i
 | `POST /storage/projects/:id/assets/gc` | Delete unreferenced ready assets and their objects; pending uploads wait 15 minutes |
 | `DELETE /storage/projects/:id/assets/:assetId` | Delete the row and the object |
 | `DELETE /storage/projects/:id/assets` | Delete every asset object (project delete; rows cascade) |
-| `GET /files/<key>` | Stream from R2 after checking membership; `private, immutable` cache |
+| `POST /storage/orgs/:id/logo/upload-url` · `PUT …/upload` · `POST …/commit` · `DELETE /storage/orgs/:id/logo` | Org logo (`org-logo.ts`). Owner / admin only (role from Neon Auth `get-active-member-role`); commit writes the key through Neon Auth `organization/update` with the user's cookie, then deletes the previous object. WebP ≤ 2 MB |
+| `GET /files/<key>` | Stream from R2 after checking membership (project row under RLS; org logos via `rpc/is_org_member`); `private, immutable` cache |
 
 Upload flow: browser crops/encodes 16:9 WebP → upload-url → `PUT` straight to R2 → commit. Bucket CORS (`worker/r2-cors.json`) allows `PUT` from the app origin. Deleting a project first clears its thumbnail (best-effort). Local dev: with `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` empty, `upload-url` returns a same-origin `PUT /gateway/storage/projects/:id/thumbnail/upload?key=…` and the Worker writes into the simulated bucket (plain `npm run dev:api`, no Cloudflare account needed; inspect with `e` in the dev terminal). With credentials set, uploads are presigned; use `npm run dev:api:r2` (remote `ASSETS` binding) so reads hit the same real bucket. Worker secrets: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`.
 

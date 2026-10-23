@@ -1,5 +1,5 @@
 import { DataApiError } from "@/lib/api/data";
-import type { ProjectRow } from "@/lib/projects/types";
+import type { OrganizationSummary, ProjectRow } from "@/lib/projects/types";
 
 export const PROJECT_THUMBNAIL_PLACEHOLDER = "/projects/preview-placeholder.svg";
 export const MAX_THUMBNAIL_SOURCE_BYTES = 20 * 1024 * 1024;
@@ -8,6 +8,7 @@ const THUMBNAIL_WIDTH = 1920;
 const THUMBNAIL_HEIGHT = 1080;
 const THUMBNAIL_TYPE = "image/webp";
 const THUMBNAIL_QUALITY = 0.86;
+const LOGO_SIZE = 512;
 
 export type UploadTicket = {
   key: string;
@@ -15,6 +16,11 @@ export type UploadTicket = {
   method: "PUT";
   headers: Record<string, string>;
 };
+
+/** Logos are R2 keys (`orgs/<id>/logo/<uuid>.webp`); anything else is ignored. */
+export function organizationLogoSrc(org: Pick<OrganizationSummary, "logo"> | null | undefined) {
+  return org?.logo?.startsWith("orgs/") ? `/gateway/files/${org.logo}` : null;
+}
 
 export function projectThumbnailSrc(project: Pick<ProjectRow, "thumbnail_r2_key">) {
   return project.thumbnail_r2_key
@@ -44,11 +50,11 @@ export async function storageJson<T>(path: string, init?: RequestInit): Promise<
   return (await res.json()) as T;
 }
 
-/** Center-crops to 16:9, downsizes to at most 1920x1080, and encodes WebP. */
-export async function toThumbnailWebp(file: File): Promise<Blob> {
+/** Center-crops to `width`:`height`, downsizes to at most that size, and encodes WebP. */
+async function toCroppedWebp(file: File, maxWidth: number, maxHeight: number): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
   try {
-    const targetRatio = THUMBNAIL_WIDTH / THUMBNAIL_HEIGHT;
+    const targetRatio = maxWidth / maxHeight;
     let sw = bitmap.width;
     let sh = bitmap.height;
     if (sw / sh > targetRatio) sw = Math.round(sh * targetRatio);
@@ -56,7 +62,7 @@ export async function toThumbnailWebp(file: File): Promise<Blob> {
     const sx = Math.round((bitmap.width - sw) / 2);
     const sy = Math.round((bitmap.height - sh) / 2);
 
-    const width = Math.min(THUMBNAIL_WIDTH, sw);
+    const width = Math.min(maxWidth, sw);
     const height = Math.round(width / targetRatio);
     const canvas = document.createElement("canvas");
     canvas.width = width;
@@ -78,9 +84,12 @@ export async function toThumbnailWebp(file: File): Promise<Blob> {
   }
 }
 
-export async function uploadProjectThumbnail(projectId: string, file: File) {
-  const blob = await toThumbnailWebp(file);
-  const base = `projects/${encodeURIComponent(projectId)}/thumbnail`;
+/** Center-crops to 16:9, downsizes to at most 1920x1080, and encodes WebP. */
+export function toThumbnailWebp(file: File): Promise<Blob> {
+  return toCroppedWebp(file, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+}
+
+async function uploadViaTicket<T>(base: string, blob: Blob) {
   const ticket = await storageJson<UploadTicket>(`${base}/upload-url`, { method: "POST" });
 
   const put = await fetch(ticket.url, {
@@ -90,15 +99,33 @@ export async function uploadProjectThumbnail(projectId: string, file: File) {
   });
   if (!put.ok) throw new Error(`Upload failed (${put.status}).`);
 
-  return storageJson<ProjectRow>(`${base}/commit`, {
+  return storageJson<T>(`${base}/commit`, {
     method: "POST",
     body: JSON.stringify({ key: ticket.key }),
   });
 }
 
+export async function uploadProjectThumbnail(projectId: string, file: File) {
+  const blob = await toThumbnailWebp(file);
+  return uploadViaTicket<ProjectRow>(`projects/${encodeURIComponent(projectId)}/thumbnail`, blob);
+}
+
 export async function removeProjectThumbnail(projectId: string) {
   return storageJson<ProjectRow | { ok: true }>(
     `projects/${encodeURIComponent(projectId)}/thumbnail`,
+    { method: "DELETE" },
+  );
+}
+
+/** Square-crops to at most 512x512 WebP and sets it as the organization logo. */
+export async function uploadOrganizationLogo(organizationId: string, file: File) {
+  const blob = await toCroppedWebp(file, LOGO_SIZE, LOGO_SIZE);
+  return uploadViaTicket<OrganizationSummary>(`orgs/${encodeURIComponent(organizationId)}/logo`, blob);
+}
+
+export async function removeOrganizationLogo(organizationId: string) {
+  return storageJson<OrganizationSummary | { ok: true }>(
+    `orgs/${encodeURIComponent(organizationId)}/logo`,
     { method: "DELETE" },
   );
 }

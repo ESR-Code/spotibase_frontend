@@ -14,6 +14,7 @@ export type ProjectAccess = {
 };
 
 export const assetKey = {
+	orgLogo: (orgId: string) => `orgs/${orgId}/logo/${crypto.randomUUID()}.webp`,
 	projectRoot: (orgId: string, projectId: string) =>
 		`orgs/${orgId}/projects/${projectId}/`,
 	projectThumbnail: (orgId: string, projectId: string) =>

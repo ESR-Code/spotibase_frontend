@@ -38,6 +38,7 @@ This is a Next.js 16 / React 19 app. The product is **Spotibase** (“3D Hotspot
 | Geo alignment                             | `lib/editor/coords/`, `lib/editor/types/geo-reference.ts`                           |
 | Neon Auth / projects / Drizzle            | `worker/`, `lib/auth/`, `app/auth/`, `app/projects/`, `lib/projects/`, `lib/db/`, `docs/architecture.md` |
 | R2 file storage (uploads / reads)         | `worker/src/storage.ts`, `worker/src/assets.ts`, `lib/projects/storage.ts`, `docs/architecture.md` |
+| Org / account settings pages             | `app/settings/`, `lib/auth/account.ts`, `lib/auth/hooks.ts`, `lib/projects/orgs.ts` |
 | Editor media library (`asset:<id>` refs)  | `lib/editor/assets/`, `app/editor/_components/assets/` |
 | Editor load / save (scenes, editor_data)  | `lib/editor/persist/`, `app/editor/_components/editor-project-loader.tsx`, `drizzle/0004_*.sql` |
 | Undo / redo | `lib/editor/history/`, `docs/decisions.md` |

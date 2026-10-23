@@ -17,11 +17,35 @@ import {
   useOrganizations,
   useSetActiveOrganization,
 } from "@/lib/projects/hooks";
+import { organizationLogoSrc } from "@/lib/projects/storage";
 import type { OrganizationSummary } from "@/lib/projects/types";
-import { Building2, ChevronDown, Plus } from "lucide-react";
+import { Building2, ChevronDown, Plus, Settings } from "lucide-react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-function OrgAvatar({ name, size = 40 }: { name: string; size?: number }) {
+export function OrgAvatar({
+  name,
+  logo,
+  size = 40,
+}: {
+  name: string;
+  logo?: string | null;
+  size?: number;
+}) {
+  if (logo) {
+    return (
+      <Image
+        src={logo}
+        alt=""
+        width={size}
+        height={size}
+        unoptimized
+        className="shrink-0 rounded-[10px] bg-[var(--studio-sub)] object-cover"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
   return (
     <span
       className="flex shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br from-[#fd4f6a] via-[#a3407a] to-[#3d4bb8] font-extrabold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
@@ -37,6 +61,7 @@ export function OrgSelector({
 }: {
   onActiveOrg: (org: OrganizationSummary | null) => void;
 }) {
+  const router = useRouter();
   const orgsQuery = useOrganizations();
   const activeQuery = useActiveOrganizationId();
   const setActive = useSetActiveOrganization();
@@ -134,7 +159,7 @@ export function OrgSelector({
     <>
       <StudioMenu>
         <StudioMenuTrigger className="group flex w-full min-w-0 items-center gap-3 rounded-xl px-2 py-1.5 text-left outline-none transition-colors hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-[var(--studio-accent)] data-[state=open]:bg-white/[0.05] lg:w-auto lg:max-w-[340px]">
-          <OrgAvatar name={activeOrg?.name ?? "O"} />
+          <OrgAvatar name={activeOrg?.name ?? "O"} logo={organizationLogoSrc(activeOrg)} />
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2">
               <span className="studio-heading truncate text-lg leading-tight">{activeOrg?.name}</span>
@@ -156,7 +181,7 @@ export function OrgSelector({
           >
             {orgs.map((org) => (
               <StudioMenuRadioItem key={org.id} value={org.id} className="py-1.5">
-                <OrgAvatar name={org.name} size={26} />
+                <OrgAvatar name={org.name} logo={organizationLogoSrc(org)} size={26} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate">{org.name}</span>
                   <span className="block truncate text-[11px] font-medium text-[var(--studio-muted)]">@{org.slug}</span>
@@ -165,6 +190,10 @@ export function OrgSelector({
             ))}
           </StudioMenuRadioGroup>
           <StudioMenuSeparator />
+          <StudioMenuItem onSelect={() => router.push("/settings/organization")}>
+            <Settings />
+            Organization settings
+          </StudioMenuItem>
           <StudioMenuItem onSelect={openCreate}>
             <Plus />
             Create organization

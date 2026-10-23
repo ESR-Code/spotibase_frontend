@@ -16,6 +16,7 @@ const AUTH_WRITES = [
 	"/sign-up/email",
 	"/request-password-reset",
 	"/reset-password",
+	"/change-password",
 ];
 
 export default {
