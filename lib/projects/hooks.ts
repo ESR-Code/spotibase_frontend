@@ -32,6 +32,7 @@ import {
   listOrganizationMembers,
   listOrganizations,
   setActiveOrganization,
+  updateMemberRole,
   updateOrganizationName,
 } from "@/lib/projects/orgs";
 import type {
@@ -156,6 +157,21 @@ export function useRemoveOrganizationLogo() {
     mutationFn: removeOrganizationLogo,
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: orgKeys.all });
+    },
+  });
+}
+
+export function useUpdateMemberRole(organizationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ memberId, role }: { memberId: string; role: string }) =>
+      updateMemberRole({ organizationId, memberId, role }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: orgKeys.members(organizationId) }),
+        // The caller may have changed their own role.
+        qc.invalidateQueries({ queryKey: orgKeys.role(organizationId) }),
+      ]);
     },
   });
 }

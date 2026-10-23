@@ -1,7 +1,15 @@
 "use client";
 
 import { OrgAvatar } from "@/app/projects/_components/org-selector";
-import { StudioField, FormError } from "@/app/projects/_components/studio-dialog";
+import { DialogActions, FormError, StudioDialog, StudioField } from "@/app/projects/_components/studio-dialog";
+import {
+  StudioMenu,
+  StudioMenuContent,
+  StudioMenuLabel,
+  StudioMenuRadioGroup,
+  StudioMenuRadioItem,
+  StudioMenuTrigger,
+} from "@/app/projects/_components/studio-menu";
 import {
   errorMessage,
   formatDate,
@@ -20,12 +28,24 @@ import {
   useOrganizationMembers,
   useOrganizations,
   useRemoveOrganizationLogo,
+  useUpdateMemberRole,
   useUpdateOrganization,
   useUploadOrganizationLogo,
 } from "@/lib/projects/hooks";
 import { MAX_THUMBNAIL_SOURCE_BYTES, organizationLogoSrc } from "@/lib/projects/storage";
-import type { OrganizationSummary } from "@/lib/projects/types";
-import { Building2, Check, CloudUpload, Copy, KeyRound, LoaderCircle, Trash2, Users } from "lucide-react";
+import type { OrganizationMember, OrganizationSummary } from "@/lib/projects/types";
+import {
+  Building2,
+  Check,
+  ChevronDown,
+  CloudUpload,
+  Copy,
+  KeyRound,
+  LoaderCircle,
+  ShieldCheck,
+  Trash2,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { useRef, useState, type FormEvent } from "react";
 
@@ -251,11 +271,105 @@ function GeneralSection({
   );
 }
 
-function MembersSection({ orgId }: { orgId: string }) {
-  const members = useOrganizationMembers(orgId);
+const ROLE_OPTIONS: { role: string; description: string }[] = [
+  { role: "owner", description: "Full control, including other owners" },
+  { role: "admin", description: "Manage the organization and its members" },
+  { role: "member", description: "Create and edit projects" },
+];
+
+function hasRole(memberRole: string, role: string) {
+  return memberRole.split(",").map((r) => r.trim()).includes(role);
+}
+
+const ROLE_BADGE =
+  "inline-flex shrink-0 items-center gap-1 rounded-md bg-[rgba(253,79,106,0.16)] px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[var(--studio-accent-2)]";
+
+type RoleChange = { member: OrganizationMember; label: string; role: string; self: boolean };
+
+function RoleChangeDialog({
+  change,
+  orgName,
+  pending,
+  error,
+  onConfirm,
+  onClose,
+}: {
+  change: RoleChange | null;
+  orgName: string;
+  pending: boolean;
+  error: string | null;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  const description = !change ? null : change.self ? (
+    <>
+      Change your own role in <strong className="text-[var(--studio-fg)]">{orgName}</strong> to{" "}
+      <strong className="text-[var(--studio-fg)]">{formatRole(change.role)}</strong>? You may lose access to these
+      settings.
+    </>
+  ) : (
+    <>
+      Change <strong className="text-[var(--studio-fg)]">{change.label}</strong> from {formatRole(change.member.role)}{" "}
+      to <strong className="text-[var(--studio-fg)]">{formatRole(change.role)}</strong>?
+      {change.role === "owner" ? " Owners have full control, including over other owners." : null}
+    </>
+  );
+
+  return (
+    <StudioDialog open={Boolean(change)} title="Change role" description={description} icon={<ShieldCheck />} onClose={onClose}>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          onConfirm();
+        }}
+        className="flex flex-col gap-3"
+      >
+        <FormError error={error} />
+        <DialogActions onCancel={onClose} pending={pending} submitLabel="Change role" pendingLabel="Saving…" />
+      </form>
+    </StudioDialog>
+  );
+}
+
+function MembersSection({
+  org,
+  myRole,
+}: {
+  org: OrganizationSummary;
+  myRole: string | null | undefined;
+}) {
+  const members = useOrganizationMembers(org.id);
+  const updateRole = useUpdateMemberRole(org.id);
   const account = useCurrentAccount();
+  const [change, setChange] = useState<RoleChange | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const myId = account.data?.user.id;
   const rows = members.data ?? [];
+
+  // Mirrors Neon Auth (Better Auth) rules: owners / admins may change roles,
+  // only owners may touch owners, and the last owner cannot step down.
+  const iAmOwner = Boolean(myRole && hasRole(myRole, "owner"));
+  const canManage = Boolean(myRole && MANAGER_ROLES.has(myRole));
+  const ownerCount = rows.filter((m) => hasRole(m.role, "owner")).length;
+  const options = ROLE_OPTIONS.filter((o) => iAmOwner || o.role !== "owner");
+
+  function canEdit(member: OrganizationMember) {
+    if (!canManage) return false;
+    if (hasRole(member.role, "owner") && !iAmOwner) return false;
+    if (member.userId === myId && hasRole(member.role, "owner") && ownerCount <= 1) return false;
+    return true;
+  }
+
+  async function onConfirm() {
+    if (!change) return;
+    setError(null);
+    try {
+      await updateRole.mutateAsync({ memberId: change.member.id, role: change.role });
+      setChange(null);
+    } catch (e) {
+      setError(errorMessage(e, "Failed to change role"));
+    }
+  }
 
   return (
     <SettingsSection
@@ -277,6 +391,7 @@ function MembersSection({ orgId }: { orgId: string }) {
         <ul className="flex flex-col divide-y divide-[var(--studio-line)]">
           {rows.map((member) => {
             const label = member.user?.name || member.user?.email || "Unknown user";
+            const self = member.userId === myId;
             return (
               <li key={member.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#fd4f6a] to-[#4c3ba8] text-xs font-extrabold text-white">
@@ -285,24 +400,70 @@ function MembersSection({ orgId }: { orgId: string }) {
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 truncate text-sm font-bold text-[var(--studio-fg)]">
                     <span className="truncate">{label}</span>
-                    {member.userId === myId ? <span className="studio-pill shrink-0 text-[10px]">You</span> : null}
+                    {self ? <span className="studio-pill shrink-0 text-[10px]">You</span> : null}
                   </p>
                   <p className="truncate text-xs font-semibold text-[var(--studio-muted)]">
                     {member.user?.email ?? "—"}
                     <span className="hidden sm:inline"> · Joined {formatDate(member.createdAt)}</span>
                   </p>
                 </div>
-                <span className="shrink-0 rounded-md bg-[rgba(253,79,106,0.16)] px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[var(--studio-accent-2)]">
-                  {formatRole(member.role)}
-                </span>
+                {canEdit(member) ? (
+                  <StudioMenu>
+                    <StudioMenuTrigger
+                      className={`${ROLE_BADGE} outline-none transition-colors hover:bg-[rgba(253,79,106,0.26)] focus-visible:ring-2 focus-visible:ring-[var(--studio-accent)] data-[state=open]:bg-[rgba(253,79,106,0.26)]`}
+                      aria-label={`Change role for ${label}`}
+                    >
+                      {formatRole(member.role)}
+                      <ChevronDown className="h-3 w-3" />
+                    </StudioMenuTrigger>
+                    <StudioMenuContent align="end" className="w-64">
+                      <StudioMenuLabel>Role</StudioMenuLabel>
+                      <StudioMenuRadioGroup
+                        value={member.role}
+                        onValueChange={(role) => {
+                          if (role === member.role) return;
+                          setError(null);
+                          setChange({ member, label, role, self });
+                        }}
+                      >
+                        {options.map((option) => (
+                          <StudioMenuRadioItem key={option.role} value={option.role} className="py-1.5">
+                            <span className="min-w-0 flex-1">
+                              <span className="block">{formatRole(option.role)}</span>
+                              <span className="block text-[11px] font-medium text-[var(--studio-muted)]">
+                                {option.description}
+                              </span>
+                            </span>
+                          </StudioMenuRadioItem>
+                        ))}
+                      </StudioMenuRadioGroup>
+                    </StudioMenuContent>
+                  </StudioMenu>
+                ) : (
+                  <span className={ROLE_BADGE}>{formatRole(member.role)}</span>
+                )}
               </li>
             );
           })}
         </ul>
       )}
       <p className="mt-4 text-xs font-semibold text-[var(--studio-muted)]">
-        Inviting members and changing roles isn&apos;t available yet.
+        {canManage
+          ? iAmOwner
+            ? "Select a role to change it. An organization always keeps at least one owner."
+            : "Select a role to change it. Only owners can change or grant the owner role."
+          : "Only owners and admins can change member roles."}{" "}
+        Inviting members isn&apos;t available yet.
       </p>
+
+      <RoleChangeDialog
+        change={change}
+        orgName={org.name}
+        pending={updateRole.isPending}
+        error={error}
+        onConfirm={() => void onConfirm()}
+        onClose={() => setChange(null)}
+      />
     </SettingsSection>
   );
 }
@@ -366,7 +527,7 @@ export function OrganizationSettings() {
       ) : (
         <>
           <GeneralSection key={org.id} org={org} role={roleQuery.data} roleLoading={roleQuery.isLoading} />
-          <MembersSection orgId={org.id} />
+          <MembersSection org={org} myRole={roleQuery.data} />
           <ApiSecretsSection />
         </>
       )}

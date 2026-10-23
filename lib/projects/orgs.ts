@@ -72,6 +72,26 @@ export async function updateOrganizationName({
   return result.data as unknown as OrganizationSummary | null;
 }
 
+export async function updateMemberRole({
+  organizationId,
+  memberId,
+  role,
+}: {
+  organizationId: string;
+  memberId: string;
+  role: string;
+}) {
+  const result = await authClient.organization.updateMemberRole({
+    organizationId,
+    memberId,
+    role,
+  });
+  if (result.error) {
+    throw new Error(result.error.message || "Failed to change role");
+  }
+  return result.data;
+}
+
 export async function listOrganizationMembers(
   organizationId: string,
 ): Promise<OrganizationMember[]> {
