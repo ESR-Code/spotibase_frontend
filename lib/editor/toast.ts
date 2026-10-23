@@ -13,6 +13,8 @@ export type ToastOptions = {
   action?: ToastAction;
   /** Milliseconds. `0` keeps the toast until dismissed. */
   duration?: number;
+  /** Stable id: showing the same id again replaces the existing toast. */
+  id?: string;
 };
 
 export type EditorToast = {
@@ -115,6 +117,7 @@ function show(
   options?: ToastOptions,
 ): string {
   return useToastStore.getState().push({
+    id: options?.id,
     variant,
     title,
     description: options?.description,

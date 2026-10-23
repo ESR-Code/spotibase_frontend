@@ -157,11 +157,12 @@ type UIState = {
   closeAllOverlays: () => void;
 };
 
-export const useUIStore = create<UIState>((set, get) => ({
+/**
+ * Overlays and per-session view state. The store outlives the editor route, so
+ * these are reset when the editor unmounts (layout preferences are kept).
+ */
+const TRANSIENT_UI = {
   isLoading: true,
-  outlinerCollapsed: false,
-  outlinerTab: "outliner",
-  hudCollapsed: true,
   propertiesDrawerOpen: false,
   settingsDrawerOpen: false,
   generalSettingsDrawerOpen: false,
@@ -183,6 +184,13 @@ export const useUIStore = create<UIState>((set, get) => ({
   spawnTemplateEditor: null,
   spawnClickActionsEditor: null,
   sceneTransition: null,
+} satisfies Partial<UIState>;
+
+export const useUIStore = create<UIState>((set, get) => ({
+  ...TRANSIENT_UI,
+  outlinerCollapsed: false,
+  outlinerTab: "outliner",
+  hudCollapsed: true,
   setLoading: (isLoading) => set({ isLoading }),
   setOutlinerCollapsed: (outlinerCollapsed) => set({ outlinerCollapsed }),
   setOutlinerTab: (outlinerTab) => set({ outlinerTab }),
@@ -316,3 +324,8 @@ export const useUIStore = create<UIState>((set, get) => ({
     );
   },
 }));
+
+/** Closes every editor overlay; call when leaving the editor. */
+export function resetTransientUI() {
+  useUIStore.setState(TRANSIENT_UI);
+}

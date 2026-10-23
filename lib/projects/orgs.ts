@@ -107,13 +107,22 @@ export async function listOrganizationMembers(
   );
 }
 
+/**
+ * Reads the active org straight from the server. `authClient.getSession()` is
+ * served from the Neon adapter's in-memory cache, which `organization.setActive`
+ * does not invalidate, so it keeps returning the previous org.
+ */
 export async function getActiveOrganizationId(): Promise<string | null> {
-  const result = await authClient.getSession();
-  if (result.error || !result.data) return null;
-  const session = result.data.session as
-    | { activeOrganizationId?: string | null }
-    | undefined;
-  return session?.activeOrganizationId ?? null;
+  const res = await fetch("/gateway/auth/get-session?disableCookieCache=true", {
+    credentials: "include",
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  const body = (await res.json().catch(() => null)) as {
+    session?: { activeOrganizationId?: string | null };
+  } | null;
+  return body?.session?.activeOrganizationId ?? null;
 }
 
 export async function getActiveMemberRole(

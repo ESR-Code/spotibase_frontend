@@ -9,6 +9,8 @@ import {
   bindPersistedProject,
   unbindPersistedProject,
 } from "@/lib/editor/persist/persist-store";
+import { resetTransientUI } from "@/lib/editor/state/ui-store";
+import { toast } from "@/lib/editor/toast";
 
 type LoadState =
   | { status: "loading" }
@@ -53,6 +55,10 @@ export function EditorProjectLoader({ projectId }: { projectId: string }) {
     return () => {
       cancelled = true;
       unbindPersistedProject();
+      // UI and toast stores are module-level; without this, a modal left open
+      // or a toast whose timer died with the editor reappears on the next visit.
+      resetTransientUI();
+      toast.dismiss();
     };
   }, [projectId, attempt]);
 

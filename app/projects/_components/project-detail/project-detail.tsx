@@ -10,11 +10,17 @@ import type { ProjectTabId } from "@/app/projects/_components/project-detail/typ
 import { ProjectsFooter } from "@/app/projects/_components/projects-footer";
 import { ProjectsTopbar } from "@/app/projects/_components/projects-topbar";
 import { StudioLineTabs, StudioTabPanel } from "@/app/projects/_components/studio-line-tabs";
-import { useFolders, useOrganizations, useProject } from "@/lib/projects/hooks";
+import {
+  useActiveOrganizationId,
+  useFolders,
+  useOrganizations,
+  useProject,
+  useSetActiveOrganization,
+} from "@/lib/projects/hooks";
 import { ArrowLeft, SearchX } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 const TABS_ID = "project-detail";
 
@@ -39,6 +45,20 @@ function useProjectTab() {
   return [tab, setTab] as const;
 }
 
+/** Makes the project's org the session's active org, so "back to projects" lands on it. */
+function useActivateProjectOrg(organizationId: string | undefined) {
+  const activeQuery = useActiveOrganizationId();
+  const setActive = useSetActiveOrganization();
+  const requested = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!organizationId || activeQuery.isLoading) return;
+    if (activeQuery.data === organizationId || requested.current === organizationId) return;
+    requested.current = organizationId;
+    setActive.mutate(organizationId);
+  }, [organizationId, activeQuery.isLoading, activeQuery.data, setActive]);
+}
+
 export function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const [tab, setTab] = useProjectTab();
@@ -46,6 +66,7 @@ export function ProjectDetail() {
   const project = projectQuery.data ?? null;
   const foldersQuery = useFolders(project?.organization_id);
   const orgsQuery = useOrganizations();
+  useActivateProjectOrg(project?.organization_id);
 
   const folders = useMemo(() => foldersQuery.data ?? [], [foldersQuery.data]);
   const folder = folders.find((f) => f.id === project?.folder_id) ?? null;

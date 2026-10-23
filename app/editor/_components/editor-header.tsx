@@ -21,6 +21,7 @@ export function EditorHeader() {
   const activeScene = useActiveScene();
   const sceneTypeLabel = getSceneType(activeScene.type).label;
   const projectName = useProjectPersistStore((s) => s.projectName) || PROJECT_NAME;
+  const projectId = useProjectPersistStore((s) => s.projectId);
   const isPreview = useEditorStore((s) => s.isPreview);
   const setScenesModalOpen = useUIStore((s) => s.setScenesModalOpen);
   const setGeneralSettingsDrawerOpen = useUIStore(
@@ -40,7 +41,7 @@ export function EditorHeader() {
           className="flex min-w-0 items-center gap-1.5 text-[13px] font-semibold"
         >
           <Link
-            href="/projects"
+            href={projectId ? `/projects/${projectId}` : "/projects"}
             title={projectName}
             className="min-w-0 truncate rounded-md px-1 py-0.5 hover:bg-white/5 hover:underline"
           >

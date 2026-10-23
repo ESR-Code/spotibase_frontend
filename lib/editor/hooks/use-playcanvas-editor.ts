@@ -739,7 +739,7 @@ export function usePlayCanvasEditor() {
         useUIStore.getState().setLoading(false);
 
         hotspotMgr.syncFromStore();
-        toast.success("Welcome to Spotibase — try Preview mode");
+        toast.success("Welcome to Spotibase — try Preview mode", { id: "editor-welcome" });
 
         cleanup = () => {
           window.removeEventListener("editor:import-subject", onImportSubject);
