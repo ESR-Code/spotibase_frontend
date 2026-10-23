@@ -152,6 +152,10 @@ type ActionsFlowCanvasProps = ActionsFlowProps & {
 
 const ACTION_EDGE_TYPES = { [ACTIONS_EDGE_TYPE]: ActionsEdge };
 
+// Edges stay static: React Flow's `animated` runs an endless CSS dash animation
+// per edge that forces a repaint every frame. Only the selected edge animates.
+const DEFAULT_EDGE_OPTIONS = { type: ACTIONS_EDGE_TYPE };
+
 const NODE_PLACE_WIDTH = 240;
 const NODE_PLACE_Y = 24;
 const NODE_PLACE_GAP = 16;
@@ -327,14 +331,21 @@ function ActionsFlowCanvas({
   const [rawMenu, setRawMenu] = useState<ActionsContextMenuState | null>(null);
   const skipNextPaneClickRef = useRef(false);
   const isolatedLaneRef = useRef(isolatedLane);
-  isolatedLaneRef.current = isolatedLane;
+  useLayoutEffect(() => {
+    isolatedLaneRef.current = isolatedLane;
+  }, [isolatedLane]);
   const scopeKey = isolatedLane
     ? isolatedLane.fenceScopeKey
     : actionFencesScopeKey(activeScene.id);
   const storeFences = useActionFencesStore((s) => s.byScope[scopeKey]);
-  const fences = isolatedLane
-    ? (storeFences ?? [])
-    : (storeFences ?? activeScene.actionFences ?? []);
+  const sceneFences = activeScene.actionFences;
+  const fences = useMemo(
+    () =>
+      isolatedLane
+        ? (storeFences ?? [])
+        : (storeFences ?? sceneFences ?? []),
+    [isolatedLane, sceneFences, storeFences],
+  );
   const pendingCreate = useActionFencesStore((s) => s.pendingCreate);
   const consumeCreateFence = useActionFencesStore((s) => s.consumeCreateFence);
   const addFence = useActionFencesStore((s) => s.addFence);
@@ -521,6 +532,10 @@ function ActionsFlowCanvas({
       });
     }
     return list;
+  // The legend graph is read from the stores (pruned by categories), so
+  // `activeScene.legendActions` and `legendCategories` are refresh triggers even
+  // though the callback doesn't name them.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     activeScene.name,
     activeScene.startActions,
@@ -532,8 +547,9 @@ function ActionsFlowCanvas({
     includeStartGraphs,
     isolatedLane,
     laneOrigins,
-    legendCategories,
     legendEnabled,
+    activeScene.legendActions,
+    legendCategories,
   ]);
 
   const originByOwnerId = useMemo(() => {
@@ -593,7 +609,9 @@ function ActionsFlowCanvas({
     () => new Set(),
   );
   const nodesRef = useRef(nodes);
-  nodesRef.current = nodes;
+  useLayoutEffect(() => {
+    nodesRef.current = nodes;
+  }, [nodes]);
   const graphStructureKey = useMemo(
     () => graphStructureKeyFor(entries),
     [entries],
@@ -636,6 +654,9 @@ function ActionsFlowCanvas({
 
   useEffect(() => {
     const entryByOwner = new Map(entries.map((entry) => [entry.ownerId, entry]));
+    // Local React Flow nodes mirror the stores; returns `current` when nothing
+    // changed, so this can't cascade.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setNodes((current) => {
       let changed = false;
       const next = current.map((node) => {
@@ -678,6 +699,7 @@ function ActionsFlowCanvas({
       storeEdges.map((edge) => ({
         ...edge,
         selected: selectedEdgeIds.has(edge.id),
+        animated: selectedEdgeIds.has(edge.id),
       })),
     [selectedEdgeIds, storeEdges],
   );
@@ -1750,6 +1772,9 @@ function ActionsFlowCanvas({
   }, []);
 
   useEffect(() => {
+    // Keeps fence nodes in sync with the fences store; returns `current` when
+    // nothing changed, so this can't cascade.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setNodes((current) => {
       const fenceIds = new Set(canvasFences.map((fence) => fence.id));
       const fenceById = new Map(canvasFences.map((fence) => [fence.id, fence]));
@@ -1938,10 +1963,8 @@ function ActionsFlowCanvas({
           multiSelectionKeyCode="Shift"
           zoomOnDoubleClick={false}
           proOptions={{ hideAttribution: true }}
-          defaultEdgeOptions={{
-            type: ACTIONS_EDGE_TYPE,
-            animated: true,
-          }}
+          defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
+          onlyRenderVisibleElements
           isValidConnection={(connection) => {
             if (!connection.source || !connection.target) return false;
             const sourceParsed = parseFlowNodeId(connection.source);

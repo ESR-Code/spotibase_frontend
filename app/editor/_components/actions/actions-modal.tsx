@@ -54,7 +54,6 @@ export function ActionsModal() {
       presentation="modal"
       size="fullscreen"
       backdrop
-      backdropBlur
       className="editor-actions-dialog"
     >
       <EditorDialog.Header
