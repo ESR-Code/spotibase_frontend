@@ -1,5 +1,6 @@
 "use client";
 
+import { Avatar } from "@/app/projects/_components/avatar";
 import { NameDialog } from "@/app/projects/_components/studio-dialog";
 import {
   StudioMenu,
@@ -20,7 +21,6 @@ import {
 import { organizationLogoSrc } from "@/lib/projects/storage";
 import type { OrganizationSummary } from "@/lib/projects/types";
 import { Building2, ChevronDown, Plus, Settings } from "lucide-react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -33,27 +33,7 @@ export function OrgAvatar({
   logo?: string | null;
   size?: number;
 }) {
-  if (logo) {
-    return (
-      <Image
-        src={logo}
-        alt=""
-        width={size}
-        height={size}
-        unoptimized
-        className="shrink-0 rounded-[10px] bg-[var(--studio-sub)] object-cover"
-        style={{ width: size, height: size }}
-      />
-    );
-  }
-  return (
-    <span
-      className="flex shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br from-[#fd4f6a] via-[#a3407a] to-[#3d4bb8] font-extrabold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
-      style={{ width: size, height: size, fontSize: size * 0.4 }}
-    >
-      {(name[0] ?? "O").toUpperCase()}
-    </span>
-  );
+  return <Avatar name={name} src={logo} size={size} shape="rounded" initials={(name[0] ?? "O").toUpperCase()} />;
 }
 
 export function OrgSelector({
@@ -180,8 +160,8 @@ export function OrgSelector({
             onValueChange={selectOrg}
           >
             {orgs.map((org) => (
-              <StudioMenuRadioItem key={org.id} value={org.id} className="py-1.5">
-                <OrgAvatar name={org.name} logo={organizationLogoSrc(org)} size={26} />
+              <StudioMenuRadioItem key={org.id} value={org.id} rich>
+                <OrgAvatar name={org.name} logo={organizationLogoSrc(org)} size={32} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate">{org.name}</span>
                   <span className="block truncate text-[11px] font-medium text-[var(--studio-muted)]">@{org.slug}</span>
@@ -190,7 +170,7 @@ export function OrgSelector({
             ))}
           </StudioMenuRadioGroup>
           <StudioMenuSeparator />
-          <StudioMenuItem onSelect={() => router.push("/settings/organization")}>
+          <StudioMenuItem onSelect={() => router.push("/settings/organization/general")}>
             <Settings />
             Organization settings
           </StudioMenuItem>

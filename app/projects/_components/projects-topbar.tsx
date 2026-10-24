@@ -1,7 +1,7 @@
 "use client";
 
 import { AccountMenu } from "@/app/projects/_components/account-menu";
-import { Bell, Settings } from "lucide-react";
+import { Bell } from "lucide-react";
 import Link from "next/link";
 
 export function BrandMark({ compact = false }: { compact?: boolean }) {
@@ -27,9 +27,6 @@ export function ProjectsTopbar() {
         <div className="flex items-center gap-1">
           <button type="button" className="studio-icon-btn" aria-label="Notifications" title="Notifications (coming soon)">
             <Bell />
-          </button>
-          <button type="button" className="studio-icon-btn" aria-label="Settings" title="Settings (coming soon)">
-            <Settings />
           </button>
           <AccountMenu />
         </div>

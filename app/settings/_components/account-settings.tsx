@@ -1,16 +1,17 @@
 "use client";
 
+import { Avatar } from "@/app/projects/_components/avatar";
 import { FormError, StudioField } from "@/app/projects/_components/studio-dialog";
 import {
   errorMessage,
   formatDate,
-  initialsOf,
   SavedNote,
   SettingsError,
   SettingsSection,
   SettingsShell,
   SettingsSkeleton,
 } from "@/app/settings/_components/settings-shell";
+import type { AccountSection } from "@/app/settings/_components/settings-sections";
 import { SessionNotFreshError, type CurrentUser } from "@/lib/auth/account";
 import { authClient } from "@/lib/auth/client";
 import {
@@ -49,12 +50,10 @@ function ProfileSection({ user }: { user: CurrentUser }) {
   }
 
   return (
-    <SettingsSection id="profile" title="Profile" subtitle="How you appear to other members">
+    <SettingsSection id="profile" title="Profile" subtitle="Your name and sign-in email">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <div className="flex items-center gap-4">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#fd4f6a] to-[#4c3ba8] text-lg font-extrabold text-white">
-            {initialsOf(name || user.email)}
-          </span>
+          <Avatar name={name.trim() || user.email} size={56} />
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-[var(--studio-fg)]">{user.name || user.email}</p>
             <p className="text-xs font-semibold text-[var(--studio-muted)]">Member since {formatDate(user.createdAt)}</p>
@@ -75,6 +74,16 @@ function ProfileSection({ user }: { user: CurrentUser }) {
             className="studio-input"
             autoComplete="name"
           />
+        </StudioField>
+
+        <StudioField label="Email address" htmlFor="account-email">
+          <div className="flex items-center gap-2">
+            <input id="account-email" value={user.email} readOnly disabled className="studio-input min-w-0 flex-1" />
+            <span className="studio-pill shrink-0">{user.emailVerified ? "Verified" : "Unverified"}</span>
+          </div>
+          <p className="text-xs font-semibold text-[var(--studio-muted)]">
+            Changing your sign-in email isn&apos;t supported yet. Ask an administrator if you need it updated.
+          </p>
         </StudioField>
 
         <FormError error={error} />
@@ -103,22 +112,6 @@ function ProfileSection({ user }: { user: CurrentUser }) {
           </button>
         </div>
       </form>
-    </SettingsSection>
-  );
-}
-
-function EmailSection({ user }: { user: CurrentUser }) {
-  return (
-    <SettingsSection id="email" title="Email" subtitle="The address you sign in with">
-      <StudioField label="Email address" htmlFor="account-email">
-        <div className="flex items-center gap-2">
-          <input id="account-email" value={user.email} readOnly disabled className="studio-input min-w-0 flex-1" />
-          <span className="studio-pill shrink-0">{user.emailVerified ? "Verified" : "Unverified"}</span>
-        </div>
-      </StudioField>
-      <p className="mt-3 text-xs font-semibold text-[var(--studio-muted)]">
-        Changing your sign-in email isn&apos;t supported yet. Ask an administrator if you need it updated.
-      </p>
     </SettingsSection>
   );
 }
@@ -364,13 +357,14 @@ function SecuritySection({ currentToken }: { currentToken: string | null }) {
   );
 }
 
-export function AccountSettings() {
+export function AccountSettings({ section }: { section: AccountSection }) {
   const account = useCurrentAccount();
   const user = account.data?.user ?? null;
 
   return (
     <SettingsShell
       area="account"
+      section={section}
       title="Account settings"
       description="Manage your profile, sign-in email, and security."
     >
@@ -385,9 +379,8 @@ export function AccountSettings() {
         />
       ) : (
         <>
-          <ProfileSection key={user.id} user={user} />
-          <EmailSection user={user} />
-          <SecuritySection currentToken={account.data?.sessionToken ?? null} />
+          {section === "profile" ? <ProfileSection key={user.id} user={user} /> : null}
+          {section === "security" ? <SecuritySection currentToken={account.data?.sessionToken ?? null} /> : null}
         </>
       )}
     </SettingsShell>

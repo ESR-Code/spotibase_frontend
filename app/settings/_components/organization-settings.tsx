@@ -1,6 +1,8 @@
 "use client";
 
+import { Avatar } from "@/app/projects/_components/avatar";
 import { OrgAvatar } from "@/app/projects/_components/org-selector";
+import { formatRole, RoleBadge } from "@/app/projects/_components/role-badge";
 import { DialogActions, FormError, StudioDialog, StudioField } from "@/app/projects/_components/studio-dialog";
 import {
   StudioMenu,
@@ -13,7 +15,6 @@ import {
 import {
   errorMessage,
   formatDate,
-  initialsOf,
   SavedNote,
   SettingsEmpty,
   SettingsError,
@@ -21,12 +22,12 @@ import {
   SettingsShell,
   SettingsSkeleton,
 } from "@/app/settings/_components/settings-shell";
+import type { OrganizationSection } from "@/app/settings/_components/settings-sections";
+import { useSettingsOrg } from "@/app/settings/_components/use-settings-org";
 import { useCurrentAccount } from "@/lib/auth/hooks";
 import {
   useActiveMemberRole,
-  useActiveOrganizationId,
   useOrganizationMembers,
-  useOrganizations,
   useRemoveOrganizationLogo,
   useUpdateMemberRole,
   useUpdateOrganization,
@@ -37,7 +38,6 @@ import type { OrganizationMember, OrganizationSummary } from "@/lib/projects/typ
 import {
   Building2,
   Check,
-  ChevronDown,
   CloudUpload,
   Copy,
   KeyRound,
@@ -50,11 +50,6 @@ import Link from "next/link";
 import { useRef, useState, type FormEvent } from "react";
 
 const MANAGER_ROLES = new Set(["owner", "admin"]);
-
-function formatRole(role: string | null | undefined) {
-  if (!role) return "—";
-  return role.charAt(0).toUpperCase() + role.slice(1);
-}
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -261,7 +256,7 @@ function GeneralSection({
 
       <dl className="mt-6 grid gap-2.5 sm:grid-cols-2">
         <DetailRow label="Slug">@{org.slug}</DetailRow>
-        <DetailRow label="Your role">{roleLoading ? "…" : formatRole(role)}</DetailRow>
+        <DetailRow label="Your role">{roleLoading ? "…" : role ? <RoleBadge role={role} /> : "—"}</DetailRow>
         <DetailRow label="Created">{formatDate(org.createdAt)}</DetailRow>
         <DetailRow label="Organization ID">
           <CopyId value={org.id} />
@@ -280,9 +275,6 @@ const ROLE_OPTIONS: { role: string; description: string }[] = [
 function hasRole(memberRole: string, role: string) {
   return memberRole.split(",").map((r) => r.trim()).includes(role);
 }
-
-const ROLE_BADGE =
-  "inline-flex shrink-0 items-center gap-1 rounded-md bg-[rgba(253,79,106,0.16)] px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[var(--studio-accent-2)]";
 
 type RoleChange = { member: OrganizationMember; label: string; role: string; self: boolean };
 
@@ -394,9 +386,7 @@ function MembersSection({
             const self = member.userId === myId;
             return (
               <li key={member.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#fd4f6a] to-[#4c3ba8] text-xs font-extrabold text-white">
-                  {initialsOf(label)}
-                </span>
+                <Avatar name={label} size={36} />
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 truncate text-sm font-bold text-[var(--studio-fg)]">
                     <span className="truncate">{label}</span>
@@ -410,11 +400,14 @@ function MembersSection({
                 {canEdit(member) ? (
                   <StudioMenu>
                     <StudioMenuTrigger
-                      className={`${ROLE_BADGE} outline-none transition-colors hover:bg-[rgba(253,79,106,0.26)] focus-visible:ring-2 focus-visible:ring-[var(--studio-accent)] data-[state=open]:bg-[rgba(253,79,106,0.26)]`}
+                      className="group rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[var(--studio-accent)]"
                       aria-label={`Change role for ${label}`}
                     >
-                      {formatRole(member.role)}
-                      <ChevronDown className="h-3 w-3" />
+                      <RoleBadge
+                        role={member.role}
+                        chevron
+                        className="group-hover:brightness-125 group-data-[state=open]:brightness-125"
+                      />
                     </StudioMenuTrigger>
                     <StudioMenuContent align="end" className="w-64">
                       <StudioMenuLabel>Role</StudioMenuLabel>
@@ -427,7 +420,7 @@ function MembersSection({
                         }}
                       >
                         {options.map((option) => (
-                          <StudioMenuRadioItem key={option.role} value={option.role} className="py-1.5">
+                          <StudioMenuRadioItem key={option.role} value={option.role} rich>
                             <span className="min-w-0 flex-1">
                               <span className="block">{formatRole(option.role)}</span>
                               <span className="block text-[11px] font-medium text-[var(--studio-muted)]">
@@ -440,7 +433,7 @@ function MembersSection({
                     </StudioMenuContent>
                   </StudioMenu>
                 ) : (
-                  <span className={ROLE_BADGE}>{formatRole(member.role)}</span>
+                  <RoleBadge role={member.role} />
                 )}
               </li>
             );
@@ -481,19 +474,14 @@ function ApiSecretsSection() {
   );
 }
 
-export function OrganizationSettings() {
-  const orgsQuery = useOrganizations();
-  const activeQuery = useActiveOrganizationId();
-  const orgs = orgsQuery.data ?? [];
-  const orgId = activeQuery.data ?? orgs[0]?.id ?? null;
-  const org = orgs.find((o) => o.id === orgId) ?? orgs[0] ?? null;
+export function OrganizationSettings({ section }: { section: OrganizationSection }) {
+  const { org, orgsQuery, loading } = useSettingsOrg();
   const roleQuery = useActiveMemberRole(org?.id);
-
-  const loading = orgsQuery.isLoading || activeQuery.isLoading;
 
   return (
     <SettingsShell
       area="organization"
+      section={section}
       title="Organization settings"
       description={
         org ? (
@@ -524,12 +512,12 @@ export function OrganizationSettings() {
             </Link>
           </SettingsEmpty>
         </section>
+      ) : section === "general" ? (
+        <GeneralSection key={org.id} org={org} role={roleQuery.data} roleLoading={roleQuery.isLoading} />
+      ) : section === "members" ? (
+        <MembersSection org={org} myRole={roleQuery.data} />
       ) : (
-        <>
-          <GeneralSection key={org.id} org={org} role={roleQuery.data} roleLoading={roleQuery.isLoading} />
-          <MembersSection org={org} myRole={roleQuery.data} />
-          <ApiSecretsSection />
-        </>
+        <ApiSecretsSection />
       )}
     </SettingsShell>
   );

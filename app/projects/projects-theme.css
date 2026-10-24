@@ -228,6 +228,32 @@ html:has(.studio-root) body {
   background: var(--studio-chip);
 }
 
+/* Role pill: owner = amber, admin = teal, everything else neutral. */
+.studio-role {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--studio-fg-2);
+  background: var(--studio-chip);
+  transition: filter 0.12s ease;
+}
+
+.studio-role[data-role="owner"] {
+  color: #f6c065;
+  background: rgba(246, 192, 101, 0.15);
+}
+
+.studio-role[data-role="admin"] {
+  color: var(--studio-teal);
+  background: rgba(76, 215, 246, 0.13);
+}
+
 .studio-kbd {
   display: inline-flex;
   align-items: center;
@@ -580,6 +606,25 @@ textarea.studio-input {
   transition:
     background-color 0.12s ease,
     color 0.12s ease;
+}
+
+/*
+ * Spacing rule for menus: adjacent items are 2px apart (4px for rich items),
+ * the menu pads 6px, separators add 6px. Items with an avatar or a second line
+ * of text use `rich` (StudioMenuItem / StudioMenuRadioItem) for a roomier row.
+ */
+.studio-menu-item + .studio-menu-item {
+  margin-top: 2px;
+}
+
+.studio-menu-item-rich {
+  min-height: 48px;
+  gap: 12px;
+  padding: 8px 12px;
+}
+
+.studio-menu-item-rich + .studio-menu-item-rich {
+  margin-top: 4px;
 }
 
 .studio-menu-item svg {

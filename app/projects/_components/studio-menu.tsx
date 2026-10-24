@@ -36,13 +36,15 @@ export function StudioMenuContent({
 export function StudioMenuItem({
   className,
   danger,
+  rich,
   ...props
-}: ComponentProps<typeof Menu.Item> & { danger?: boolean }) {
+}: ComponentProps<typeof Menu.Item> & { danger?: boolean; rich?: boolean }) {
   return (
     <Menu.Item
       className={cn(
         "studio-menu-item",
         danger && "studio-menu-item-danger",
+        rich && "studio-menu-item-rich",
         className,
       )}
       {...props}
@@ -53,10 +55,11 @@ export function StudioMenuItem({
 export function StudioMenuRadioItem({
   className,
   children,
+  rich,
   ...props
-}: ComponentProps<typeof Menu.RadioItem>) {
+}: ComponentProps<typeof Menu.RadioItem> & { rich?: boolean }) {
   return (
-    <Menu.RadioItem className={cn("studio-menu-item", className)} {...props}>
+    <Menu.RadioItem className={cn("studio-menu-item", rich && "studio-menu-item-rich", className)} {...props}>
       {children}
       <Menu.ItemIndicator className="studio-menu-check">
         <Check />

@@ -1,16 +1,20 @@
 "use client";
 
+import { OrgAvatar } from "@/app/projects/_components/org-selector";
 import { PanelHeader } from "@/app/projects/_components/panel-header";
 import { ProjectsFooter } from "@/app/projects/_components/projects-footer";
 import { ProjectsTopbar } from "@/app/projects/_components/projects-topbar";
+import type { AccountSection, OrganizationSection } from "@/app/settings/_components/settings-sections";
+import { useSettingsOrg } from "@/app/settings/_components/use-settings-org";
+import { organizationLogoSrc } from "@/lib/projects/storage";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Building2, CircleUser, KeyRound, Mail, ShieldCheck, Users, UserRound } from "lucide-react";
+import { ArrowLeft, Building2, CircleUser, KeyRound, ShieldCheck, Users, UserRound } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 export type SettingsArea = "organization" | "account";
 
-type NavItem = { id: string; label: string; icon: ReactNode; soon?: boolean };
+type NavItem = { id: OrganizationSection | AccountSection; label: string; icon: ReactNode; soon?: boolean };
 
 const NAV: { area: SettingsArea; label: string; href: string; items: NavItem[] }[] = [
   {
@@ -29,13 +33,27 @@ const NAV: { area: SettingsArea; label: string; href: string; items: NavItem[] }
     href: "/settings/account",
     items: [
       { id: "profile", label: "Profile", icon: <UserRound /> },
-      { id: "email", label: "Email", icon: <Mail /> },
       { id: "security", label: "Security", icon: <ShieldCheck /> },
     ],
   },
 ];
 
-function SettingsNav({ area }: { area: SettingsArea }) {
+function OrgHeader() {
+  const { org, loading } = useSettingsOrg();
+  if (loading) return <div className="studio-skeleton mx-3 mb-1 hidden h-10 lg:block" />;
+  if (!org) return null;
+  return (
+    <div className="mx-3 mb-1 hidden items-center gap-2.5 lg:flex">
+      <OrgAvatar name={org.name} logo={organizationLogoSrc(org)} size={32} />
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-extrabold text-[var(--studio-fg)]">{org.name}</span>
+        <span className="block truncate text-xs font-semibold text-[var(--studio-muted)]">@{org.slug}</span>
+      </span>
+    </div>
+  );
+}
+
+function SettingsNav({ area, section }: { area: SettingsArea; section: string }) {
   return (
     <nav aria-label="Settings" className="lg:sticky lg:top-24">
       {/* Mobile: one scrollable row of pills. Desktop: grouped vertical list. */}
@@ -43,16 +61,18 @@ function SettingsNav({ area }: { area: SettingsArea }) {
         {NAV.map((group) => (
           <div key={group.area} className="flex shrink-0 gap-1 lg:flex-col">
             <p className="studio-eyebrow hidden px-3 pb-1 lg:block">{group.label}</p>
+            {group.area === "organization" ? <OrgHeader /> : null}
             {group.items.map((item) => {
-              const current = group.area === area;
+              const current = group.area === area && item.id === section;
               return (
                 <Link
                   key={item.id}
-                  href={`${group.href}#${item.id}`}
+                  href={`${group.href}/${item.id}`}
+                  aria-current={current ? "page" : undefined}
                   className={cn(
                     "flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-bold transition-colors [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0",
                     current
-                      ? "text-[var(--studio-fg)] hover:bg-white/[0.05]"
+                      ? "bg-white/[0.07] text-[var(--studio-fg)]"
                       : "text-[var(--studio-muted)] hover:bg-white/[0.04] hover:text-[var(--studio-fg-2)]",
                   )}
                 >
@@ -71,11 +91,13 @@ function SettingsNav({ area }: { area: SettingsArea }) {
 
 export function SettingsShell({
   area,
+  section,
   title,
   description,
   children,
 }: {
   area: SettingsArea;
+  section: string;
   title: string;
   description: ReactNode;
   children: ReactNode;
@@ -85,22 +107,18 @@ export function SettingsShell({
       <ProjectsTopbar />
       <main className="mx-auto flex w-full max-w-[1320px] flex-1 flex-col gap-6 px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
         <div className="studio-enter flex flex-col gap-3">
-          <Link
-            href="/projects"
-            className="inline-flex w-fit items-center gap-1.5 text-xs font-bold text-[var(--studio-muted)] transition-colors hover:text-[var(--studio-fg)]"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Projects
+          <Link href="/projects" className="studio-btn studio-btn-ghost w-fit">
+            <ArrowLeft />
+            Back to projects
           </Link>
           <div>
-            <p className="studio-eyebrow">Settings</p>
-            <h1 className="studio-heading mt-1 text-2xl leading-tight sm:text-3xl">{title}</h1>
+            <h1 className="studio-heading text-2xl leading-tight sm:text-3xl">{title}</h1>
             <p className="mt-1.5 text-sm font-semibold text-[var(--studio-muted)]">{description}</p>
           </div>
         </div>
 
         <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-8">
-          <SettingsNav area={area} />
+          <SettingsNav area={area} section={section} />
           <div className="studio-enter flex min-w-0 flex-col gap-5" style={{ animationDelay: "60ms" }}>
             {children}
           </div>
@@ -178,17 +196,6 @@ export function formatDate(value: string | Date | null | undefined) {
   return Number.isNaN(date.getTime())
     ? "—"
     : date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-}
-
-export function initialsOf(label: string) {
-  return (
-    label
-      .split(/[\s@._-]+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join("") || "U"
-  );
 }
 
 export function errorMessage(error: unknown, fallback: string) {
