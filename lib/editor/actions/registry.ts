@@ -108,6 +108,12 @@ export type ActionRunContext = {
   runPath?: readonly string[];
   /** `cancelPendingWaits` generation this run started under; a newer one cancels it. */
   runGeneration?: number;
+  /**
+   * Hotspots whose actions led to this run through Open Modal onClose /
+   * Go To Hotspot hand-offs. A hand-off back into one of them is a loop.
+   * A fresh click starts a new chain.
+   */
+  hotspotChain?: readonly number[];
   /** For Each item this run executes for. Travels with the run, never global. */
   itemScope?: ActionItemScope;
 };
@@ -174,6 +180,7 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
         nodeId: node.id,
         hotspotId: ctx.hotspotId,
         ownerKey: ctx.ownerKey,
+        hotspotChain: ctx.hotspotChain ?? [ctx.ownerId],
       });
 
       const { findHotspot } = await import(
@@ -229,9 +236,9 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
       if (node.type !== "goToHotspot") return null;
       return validateGoToHotspotData(node.data);
     },
-    run: (node) => {
+    run: (node, ctx) => {
       if (node.type !== "goToHotspot") return;
-      return applyGoToHotspot(node.data);
+      return applyGoToHotspot(node.data, ctx);
     },
   },
   openUrl: {

@@ -28,6 +28,7 @@ import {
   shapeSourceId,
 } from "@/lib/editor/layers/overlay-ids";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { toast } from "@/lib/editor/toast";
 import { useLayersStore } from "@/lib/editor/state/layers-store";
 import { useShapeDrawStore } from "@/lib/editor/state/shape-draw-store";
 import {
@@ -144,6 +145,8 @@ export function GeoOverlayLayers() {
   const disabledLayerIds = usePreviewVisibilityStore((s) => s.disabledLayerIds);
   const isPreview = useEditorStore((s) => s.isPreview);
   const contentKeysRef = useRef(new Map<string, string>());
+  // `layerId:contentKey` pairs whose image already failed (toast once, no retry loop).
+  const failedKeysRef = useRef(new Set<string>());
 
   useEffect(() => {
     if (!map || !isLoaded) return;
@@ -217,10 +220,24 @@ export function GeoOverlayLayers() {
           continue;
         }
 
-        const image = await overlaySourceImage(
-          resolveAssetSrc(layer.imageSrc),
-          layer.blend ?? 0,
-        );
+        // One layer's image may fail (404, blocked, bad file). Skip it, say so
+        // once, and keep syncing the other layers and the stack order.
+        const failKey = `${layer.id}:${contentKey}`;
+        if (failedKeysRef.current.has(failKey)) continue;
+        let image: Awaited<ReturnType<typeof overlaySourceImage>>;
+        try {
+          image = await overlaySourceImage(
+            resolveAssetSrc(layer.imageSrc),
+            layer.blend ?? 0,
+          );
+        } catch (error) {
+          console.error("Overlay image failed to load", layer.id, error);
+          failedKeysRef.current.add(failKey);
+          toast.error("An image overlay could not be loaded", {
+            description: "Check that the image still exists in the Assets library.",
+          });
+          continue;
+        }
         if (cancelled) return;
         if (source) {
           source.setCoordinates(quad);
@@ -291,7 +308,7 @@ export function GeoOverlayLayers() {
       }
     };
 
-    void sync();
+    sync().catch((error) => console.error("Overlay sync failed", error));
     return () => {
       cancelled = true;
     };

@@ -44,7 +44,7 @@ const MB = 1024 * 1024;
 const ASSET_RULES: Record<AssetKind, { types: Record<string, string>; maxBytes: number }> = {
 	model: {
 		types: { "model/gltf-binary": "glb" },
-		maxBytes: 100 * MB,
+		maxBytes: 150 * MB,
 	},
 	image: {
 		types: {
@@ -177,8 +177,19 @@ export async function handleAssets(
 		if (request.headers.get("content-type") !== row.content_type) {
 			return json(415, { error: "Content type does not match the asset." });
 		}
+		const maxBytes = ASSET_RULES[row.kind].maxBytes;
+		const length = Number(request.headers.get("content-length"));
+		if (length > maxBytes) return json(413, { error: "File is too large." });
+		// Stream into the bucket when the length is known: a 150 MB model must
+		// not be buffered in the Worker (128 MB memory limit).
+		if (request.body && Number.isFinite(length) && length > 0) {
+			await env.ASSETS.put(key, request.body, {
+				httpMetadata: { contentType: row.content_type },
+			});
+			return json(200, { ok: true });
+		}
 		const body = await request.arrayBuffer();
-		if (body.byteLength > ASSET_RULES[row.kind].maxBytes) {
+		if (body.byteLength > maxBytes) {
 			return json(413, { error: "File is too large." });
 		}
 		await env.ASSETS.put(key, body, { httpMetadata: { contentType: row.content_type } });

@@ -15,7 +15,7 @@ const MB = 1024 * 1024;
 
 /** Mirrors the Worker allowlist (`worker/src/assets.ts`). */
 export const ASSET_LIMITS: Record<EditorAssetKind, { maxBytes: number; types: string[] }> = {
-  model: { maxBytes: 100 * MB, types: ["model/gltf-binary"] },
+  model: { maxBytes: 150 * MB, types: ["model/gltf-binary"] },
   image: {
     maxBytes: 25 * MB,
     types: ["image/png", "image/jpeg", "image/webp", "image/gif", "image/svg+xml"],

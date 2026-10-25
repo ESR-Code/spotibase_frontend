@@ -11,6 +11,8 @@ export type OpenModalCloseRegistration = {
   nodeId: string;
   hotspotId: number;
   ownerKey: string;
+  /** Hand-off chain of the run that opened the modal (see ActionRunContext). */
+  hotspotChain?: readonly number[];
 };
 
 let pendingClose: OpenModalCloseRegistration | null = null;
@@ -77,6 +79,7 @@ async function fireOpenModalClose(
     hotspotId: registration.hotspotId,
     ownerId: registration.ownerId,
     ownerKey: registration.ownerKey || ownerKeyFor(registration.ownerId),
+    hotspotChain: registration.hotspotChain,
     itemScope: spawned
       ? { item: spawned.item, index: spawned.index }
       : undefined,

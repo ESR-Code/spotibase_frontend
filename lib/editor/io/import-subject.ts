@@ -3,11 +3,32 @@ import {
   getSceneType,
   isValidSubjectExtension,
 } from "@/lib/editor/scene-types/registry";
+import { ASSET_LIMITS, formatAssetSize } from "@/lib/editor/assets/api";
 import { uploadAsset } from "@/lib/editor/assets/upload-asset";
+import { useAlignmentSessionStore } from "@/lib/editor/state/alignment-session-store";
+import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useModelStore } from "@/lib/editor/state/model-store";
 import { sceneSubjectCache } from "@/lib/editor/state/scene-subject-cache";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
+
+/**
+ * Longest side of a 2D subject image. The file is decoded into one GPU texture
+ * (RGBA, plus mips): 8192 px is ~350 MB of video memory and the safe ceiling
+ * on common GPUs.
+ */
+export const SUBJECT_IMAGE_MAX_SIDE = 8192;
+
+async function imageSideLength(file: File): Promise<number | null> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const side = Math.max(bitmap.width, bitmap.height);
+    bitmap.close();
+    return side;
+  } catch {
+    return null;
+  }
+}
 
 export type ImportSubjectDetail = {
   file: File;
@@ -32,6 +53,36 @@ export async function importSubjectFile(file: File) {
     const formats = descriptor.extensions.map((e) => `.${e}`).join(", ");
     toast.error(`Unsupported format for ${descriptor.label}. Use ${formats}`);
     return;
+  }
+
+  // Replacing the subject under a running Preview or a half-picked alignment
+  // would leave the session (and the control points) pointing at the old one.
+  if (useEditorStore.getState().isPreview) {
+    toast.error("Exit Preview to replace the subject");
+    return;
+  }
+  if (useAlignmentSessionStore.getState().open) {
+    toast.error("Finish or cancel the georeference alignment first");
+    return;
+  }
+
+  // Same limit the project library enforces on upload, checked before the file
+  // is read into memory and decoded.
+  const limit = ASSET_LIMITS[type === "image" ? "image" : "model"].maxBytes;
+  if (file.size > limit) {
+    toast.error(
+      `${file.name} is ${formatAssetSize(file.size)}. The limit is ${formatAssetSize(limit)}.`,
+    );
+    return;
+  }
+  if (type === "image") {
+    const side = await imageSideLength(file);
+    if (side != null && side > SUBJECT_IMAGE_MAX_SIDE) {
+      toast.error(
+        `${file.name} is ${side}px wide or tall. The limit is ${SUBJECT_IMAGE_MAX_SIDE}px; scale it down first.`,
+      );
+      return;
+    }
   }
 
   window.dispatchEvent(

@@ -8,7 +8,7 @@ import { align2Point } from "@/lib/editor/coords/align-2point";
 import { align3Point } from "@/lib/editor/coords/align-3point";
 import { geoToWorld } from "@/lib/editor/coords/enu";
 import { mat4TransformPoint } from "@/lib/editor/coords/mat4";
-import { vec3Dist } from "@/lib/editor/coords/vec3";
+import { vec3Cross, vec3Dist, vec3Len, vec3Sub } from "@/lib/editor/coords/vec3";
 import { validateControlPoints } from "@/lib/editor/coords/validate";
 
 export type BuildGeoReferenceInput = {
@@ -18,7 +18,13 @@ export type BuildGeoReferenceInput = {
 };
 
 export type BuildGeoReferenceResult =
-  | { ok: true; geoReference: GeoReference; residualRms: number }
+  | {
+      ok: true;
+      geoReference: GeoReference;
+      residualRms: number;
+      /** Fit-quality concerns. The fit is valid; the author should confirm it. */
+      warnings: string[];
+    }
   | { ok: false; error: string };
 
 export function residualRms(
@@ -35,6 +41,45 @@ export function residualRms(
     sum += d * d;
   }
   return Math.sqrt(sum / points.length);
+}
+
+/** Residual above this share of the span between the map points is suspicious. */
+const RESIDUAL_WARN_RATIO = 0.05;
+/** sin(angle) between the first two map-point directions below this is "nearly straight". */
+const NEAR_COLLINEAR_SIN = 0.05;
+
+function fitWarnings(
+  method: AlignmentMethod,
+  enu: readonly { x: number; y: number; z: number }[],
+  rms: number,
+): string[] {
+  const warnings: string[] = [];
+  let span = 0;
+  for (let i = 0; i < enu.length; i++) {
+    for (let j = i + 1; j < enu.length; j++) {
+      span = Math.max(span, vec3Dist(enu[i]!, enu[j]!));
+    }
+  }
+  if (span > 0 && rms / span > RESIDUAL_WARN_RATIO) {
+    warnings.push(
+      `The points do not fit well (RMS ${rms.toFixed(2)} m over ${span.toFixed(1)} m). Placements will be off.`,
+    );
+  }
+  if (method === "3-point" && enu.length === 3) {
+    const ab = vec3Sub(enu[1]!, enu[0]!);
+    const ac = vec3Sub(enu[2]!, enu[0]!);
+    const lenAb = vec3Len(ab);
+    const lenAc = vec3Len(ac);
+    if (lenAb > 0 && lenAc > 0) {
+      const sin = vec3Len(vec3Cross(ab, ac)) / (lenAb * lenAc);
+      if (sin < NEAR_COLLINEAR_SIN) {
+        warnings.push(
+          "The three map points are almost in a straight line. Rotation and scale are poorly constrained; pick points that form a triangle.",
+        );
+      }
+    }
+  }
+  return warnings;
 }
 
 export function buildGeoReference(
@@ -59,6 +104,7 @@ export function buildGeoReference(
   return {
     ok: true,
     residualRms: rms,
+    warnings: fitWarnings(input.alignmentMethod, enu, rms),
     geoReference: {
       geoSceneId: input.geoSceneId,
       alignmentMethod: input.alignmentMethod,

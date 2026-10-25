@@ -1,4 +1,6 @@
 import {
+  beginSceneTransitionToken,
+  isSceneTransitionTokenCurrent,
   recordAutomaticSceneHop,
   resetSceneTransitionChain,
 } from "@/lib/editor/actions/scene-transition-chain";
@@ -8,8 +10,6 @@ import { toast } from "@/lib/editor/toast";
 
 const FADE_MS = 420;
 const HOLD_MS = 380;
-
-let transitionToken = 0;
 
 /**
  * Fade to a splash showing the target scene name, switch scenes while
@@ -46,12 +46,12 @@ export function transitionToScene(
     resetSceneTransitionChain();
   }
 
-  const token = ++transitionToken;
+  const token = beginSceneTransitionToken();
   const ui = useUIStore.getState();
   ui.startSceneTransition(scene.name);
 
   window.setTimeout(() => {
-    if (token !== transitionToken) return;
+    if (!isSceneTransitionTokenCurrent(token)) return;
 
     const latestUi = useUIStore.getState();
     latestUi.setPreviewModalOpen(false);
@@ -66,11 +66,11 @@ export function transitionToScene(
     latestUi.holdSceneTransition();
 
     window.setTimeout(() => {
-      if (token !== transitionToken) return;
+      if (!isSceneTransitionTokenCurrent(token)) return;
       useUIStore.getState().beginSceneTransitionOut();
 
       window.setTimeout(() => {
-        if (token !== transitionToken) return;
+        if (!isSceneTransitionTokenCurrent(token)) return;
         useUIStore.getState().endSceneTransition();
       }, FADE_MS);
     }, HOLD_MS);

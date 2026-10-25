@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { unbindSubjectSurface } from "@/lib/editor/engine/subject-surface";
 import { toast } from "@/lib/editor/toast";
 import { createCameraController } from "@/lib/editor/engine/camera-controller";
 import { captureViewportPreview } from "@/lib/editor/engine/capture-viewport-preview";
@@ -93,6 +94,37 @@ function getActiveSceneType(): SceneTypeId {
   );
 }
 
+/**
+ * A replaced subject leaves things that were authored against the old one:
+ * the georeference control points are in the old subject's coordinates, and
+ * hotspot positions / the saved Reset view keep their old world positions.
+ * Invalidate the georeference (it would silently misplace spawned pins) and
+ * tell the author about the rest.
+ */
+function warnAboutSubjectDependents(sceneId: string) {
+  const scenes = useScenesStore.getState();
+  const scene = scenes.scenes.find((s) => s.id === sceneId);
+  if (!scene) return;
+  const notes: string[] = [];
+  if (scene.geoReference && scene.geoReference.status === "aligned") {
+    scenes.setSceneGeoReference(sceneId, {
+      ...scene.geoReference,
+      status: "invalid",
+      error: "The subject was replaced. Run the alignment again.",
+    });
+    notes.push("The georeference was invalidated: align the new subject again.");
+  }
+  if (useEditorStore.getState().hotspots.length > 0) {
+    notes.push("Hotspots keep their old positions: check they still sit on the new subject.");
+  }
+  if (useSettingsStore.getState().resetPosition) {
+    notes.push("The saved Reset view position was kept: check it frames the new subject.");
+  }
+  if (notes.length > 0) {
+    toast.message("Subject replaced", { description: notes.join("\n"), duration: 9000 });
+  }
+}
+
 export function usePlayCanvasEditor() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -103,11 +135,16 @@ export function usePlayCanvasEditor() {
     let destroyed = false;
     let cleanup: (() => void) | undefined;
     let unbindInvalidator: (() => void) | undefined;
+    // Set once the controllers exist, so an unmount or a failure during the
+    // first (long) subject load releases them too, not just the finished editor.
+    let disposeCore: (() => void) | undefined;
+    let destroyApp: (() => void) | undefined;
 
     const init = async () => {
       try {
         const pc = await import("playcanvas");
         const { app, destroy } = await createPlayCanvasAppAsync(canvas);
+        destroyApp = destroy;
         if (destroyed) {
           destroy();
           return;
@@ -157,6 +194,39 @@ export function usePlayCanvasEditor() {
           scene.camera,
           () => models.getMeshes(),
         );
+
+        // WebGL context loss (GPU reset, driver crash, tab memory pressure):
+        // tell the author, and redraw once the browser gives the context back.
+        const onDeviceLost = () => {
+          useModelStore
+            .getState()
+            .setEngineError(
+              "The graphics context was lost. The view returns if the browser restores it; otherwise reload the editor.",
+            );
+        };
+        const onDeviceRestored = () => {
+          useModelStore.getState().setEngineError(null);
+          invalidate();
+        };
+        app.graphicsDevice.on("devicelost", onDeviceLost);
+        app.graphicsDevice.on("devicerestored", onDeviceRestored);
+
+        const disposeDeviceListeners = () => {
+          app.graphicsDevice.off("devicelost", onDeviceLost);
+          app.graphicsDevice.off("devicerestored", onDeviceRestored);
+        };
+        disposeCore = () => {
+          // A load still in flight must neither mount nor toast after unmount.
+          models.cancelPendingLoads();
+          disposeDeviceListeners();
+          picking.dispose();
+          unbindModelMeshQueries();
+          unbindSubjectSurface();
+          hotspotMgr.dispose();
+          meshHighlight.destroy();
+          effectsMgr.destroy();
+          cameraCtrl.dispose();
+        };
 
         const applyScenePresentation = (type: SceneTypeId) => {
           cameraCtrl.setMode(getCameraModeForSceneType(type));
@@ -226,7 +296,7 @@ export function usePlayCanvasEditor() {
               if (!entity) models.loadDefault(sceneType);
             } catch (error) {
               console.error(error);
-              if (token !== subjectLoadToken) return;
+              if (destroyed || token !== subjectLoadToken) return;
               toast.error(`Could not load ${fileName}`, {
                 description: error instanceof Error ? error.message : undefined,
               });
@@ -260,6 +330,7 @@ export function usePlayCanvasEditor() {
           setEngineActive(false);
         }
         if (destroyed) {
+          disposeCore?.();
           unbindInvalidator();
           destroy();
           return;
@@ -409,8 +480,11 @@ export function usePlayCanvasEditor() {
 
           const camPos = scene.camera.getPosition();
           const camRot = scene.camera.getRotation();
+          // A non-finite pose never equals itself: it would count as "moved" and
+          // redraw every frame forever, so it is ignored.
           const cameraMoved =
-            !camPos.equals(lastCamPos) || !camRot.equals(lastCamRot);
+            Number.isFinite(camPos.x + camPos.y + camPos.z) &&
+            (!camPos.equals(lastCamPos) || !camRot.equals(lastCamRot));
           if (cameraMoved) {
             lastCamPos.copy(camPos);
             lastCamRot.copy(camRot);
@@ -591,6 +665,7 @@ export function usePlayCanvasEditor() {
             cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
             syncKeyLightShadowMode();
             void uploadSubjectAsset(detail.file, type, sceneId);
+            warnAboutSubjectDependents(sceneId);
           }
         };
         const onResetCamera = () => {
@@ -812,12 +887,7 @@ export function usePlayCanvasEditor() {
           unsubWire();
           app.off("update", onUpdate);
           unbindResize();
-          picking.dispose();
-          unbindModelMeshQueries();
-          hotspotMgr.dispose();
-          meshHighlight.destroy();
-          effectsMgr.destroy();
-          cameraCtrl.dispose();
+          disposeCore?.();
           unbindModelAnimation();
           destroy();
         };
@@ -829,6 +899,12 @@ export function usePlayCanvasEditor() {
             : "Failed to initialize 3D engine";
         useModelStore.getState().setEngineError(message);
         useUIStore.getState().setLoading(false);
+        // A failure after the controllers were built must not leave them live.
+        if (!cleanup) {
+          disposeCore?.();
+          unbindInvalidator?.();
+          destroyApp?.();
+        }
       }
     };
 

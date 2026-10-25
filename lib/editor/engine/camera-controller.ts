@@ -389,6 +389,23 @@ export function createCameraController(
       }
     });
 
+    // A corrupt model can report NaN / infinite bounds: frame the default box
+    // instead of poisoning the camera (a NaN pose never settles and the
+    // viewport redraws every frame).
+    if (
+      hasMesh &&
+      ![
+        bbox.center.x,
+        bbox.center.y,
+        bbox.center.z,
+        bbox.halfExtents.x,
+        bbox.halfExtents.y,
+        bbox.halfExtents.z,
+      ].every(Number.isFinite)
+    ) {
+      hasMesh = false;
+    }
+
     if (!hasMesh) {
       bbox.center.set(0, state.mode === "panZoom" ? 0 : 1, 0);
       bbox.halfExtents.set(1, 1, 1);
@@ -413,7 +430,9 @@ export function createCameraController(
 
     const minDistance = Math.max(0.4, +(span * 0.12).toFixed(2));
     const maxDistance = Math.max(20, +(span * 6).toFixed(1));
-    distance = clamp(distance, minDistance, maxDistance);
+    distance = Number.isFinite(distance)
+      ? clamp(distance, minDistance, maxDistance)
+      : minDistance;
 
     const frontal = state.mode === "panZoom";
     return {

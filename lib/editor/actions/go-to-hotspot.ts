@@ -1,5 +1,6 @@
 import { ownerKeyFor } from "@/lib/editor/actions/action-owners";
 import { getActionGraph } from "@/lib/editor/actions/create-action-graph";
+import type { ActionRunContext } from "@/lib/editor/actions/registry";
 import {
   hasFieldTokens,
   interpolatePlainText,
@@ -130,6 +131,7 @@ export function resolveGoToHotspotId(
  */
 export async function applyGoToHotspot(
   data: GoToHotspotActionNode["data"],
+  ctx?: ActionRunContext,
 ): Promise<void> {
   const baseId = resolveHotspotRefToId(data.hotspotRef, { interpolate: true });
   if (baseId == null) {
@@ -152,6 +154,15 @@ export async function applyGoToHotspot(
     return;
   }
 
+  // Open Modal onClose -> Go To Hotspot -> Open Modal ... would reopen the
+  // dialog every time the user closes it. A hand-off back into a hotspot that
+  // is already part of this chain (including the one running now) is a loop.
+  const chain = ctx?.hotspotChain ?? (ctx ? [ctx.ownerId] : []);
+  if (chain.includes(targetId)) {
+    toast.error("Go To Hotspot: skipped, it would loop back to a hotspot already in this chain");
+    return;
+  }
+
   const hotspot = findHotspot(targetId);
   if (!hotspot) return;
 
@@ -164,6 +175,7 @@ export async function applyGoToHotspot(
       hotspotId: targetId,
       ownerId: targetId,
       ownerKey: ownerKeyFor(targetId),
+      hotspotChain: [...chain, targetId],
     });
   } finally {
     runningTargetActionIds.delete(targetId);

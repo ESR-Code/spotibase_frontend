@@ -5,7 +5,10 @@ import {
   remintActionGraph,
   rewriteNodeRefs,
 } from "@/lib/editor/actions/create-action-graph";
-import { resetSceneTransitionChain } from "@/lib/editor/actions/scene-transition-chain";
+import {
+  cancelSceneTransitionToken,
+  resetSceneTransitionChain,
+} from "@/lib/editor/actions/scene-transition-chain";
 import { clearHttpRequestCache } from "@/lib/editor/actions/http-request";
 import { clearPostMessageListeners } from "@/lib/editor/actions/send-post-message";
 import { clearSubscribePolls } from "@/lib/editor/actions/subscribe";
@@ -113,6 +116,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (mode === "preview") {
       const isPreview = !get().isPreview;
       resetSceneTransitionChain();
+      // A Go To Scene fade still in flight must not switch scenes (or leave
+      // its splash up) after Preview is toggled.
+      cancelSceneTransitionToken();
+      useUIStore.getState().endSceneTransition();
       clearHttpRequestCache();
       clearPostMessageListeners();
       clearSubscribePolls();
@@ -162,6 +169,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       return;
     }
     if (get().isPreview) {
+      cancelSceneTransitionToken();
+      useUIStore.getState().endSceneTransition();
       clearHttpRequestCache();
       clearPostMessageListeners();
       clearSubscribePolls();

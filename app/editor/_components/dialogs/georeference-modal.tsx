@@ -11,6 +11,7 @@ import {
   useMap,
   type MapViewport,
 } from "@/components/ui/map";
+import { confirmDelete } from "@/lib/editor/confirm";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { EditorDialog } from "@/app/editor/_components/ui/editor-dialog";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
@@ -303,6 +304,15 @@ export function GeoreferenceModal() {
                     </div>
                     <div>Scale {fmt(preview.transform.scale, 4)}×</div>
                     <div>RMS residual {fmt(preview.residualRms ?? 0, 3)} m</div>
+                    {(preview.warnings ?? []).map((warning) => (
+                      <div
+                        key={warning}
+                        className="mt-1"
+                        style={{ color: "var(--editor-amber)" }}
+                      >
+                        {warning}
+                      </div>
+                    ))}
                   </>
                 ) : (
                   <div style={{ color: "var(--editor-crimson-2)" }}>
@@ -345,7 +355,22 @@ export function GeoreferenceModal() {
               type="button"
               variant="primary"
               disabled={!canApply}
-              onClick={() => apply()}
+              onClick={() => {
+                const warnings = preview?.ok ? (preview.warnings ?? []) : [];
+                if (warnings.length === 0) {
+                  apply();
+                  return;
+                }
+                void confirmDelete({
+                  subject: "alignment",
+                  title: "Apply a questionable alignment?",
+                  description: `${warnings.join(" ")} Every position placed through this georeference (spawned lat/lon hotspots) will be wrong.`,
+                  confirmLabel: "Apply anyway",
+                  cancelLabel: "Keep editing",
+                }).then((ok) => {
+                  if (ok) apply();
+                });
+              }}
             >
               Apply Alignment
             </EditorButton>

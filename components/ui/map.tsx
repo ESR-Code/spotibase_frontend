@@ -220,6 +220,35 @@ function DefaultLoader() {
   );
 }
 
+/** The map never reached `load` (style / network failure or a hung request). */
+function MapLoadError({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div
+      role="alert"
+      className="bg-background/80 absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 px-6 text-center backdrop-blur-xs"
+    >
+      <div className="text-sm font-semibold">The map could not be loaded</div>
+      <div className="text-muted-foreground max-w-xs text-xs">{message}</div>
+      <button
+        type="button"
+        className="border-border hover:bg-muted rounded-md border px-3 py-1.5 text-xs"
+        onClick={onRetry}
+      >
+        Try again
+      </button>
+    </div>
+  );
+}
+
+/** Give up waiting for the first `load` after this long. */
+const MAP_LOAD_TIMEOUT_MS = 25_000;
+
 function getViewport(map: MapLibreGL.Map): MapViewport {
   const center = map.getCenter();
   return {
@@ -249,6 +278,9 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
   const [mapInstance, setMapInstance] = useState<MapLibreGL.Map | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isStyleLoaded, setIsStyleLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  // Bumped by "Try again": re-runs the init effect with a fresh map.
+  const [attempt, setAttempt] = useState(0);
   const [pendingStyle, setPendingStyle] = useState<MapStyleOption | null>(null);
   const currentStyleRef = useRef<MapStyleOption | null>(null);
   const styleSwapInFlightRef = useRef(false);
@@ -303,7 +335,25 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
       styleSwapInFlightRef.current = false;
       setIsStyleLoaded(true);
     };
-    const loadHandler = () => setIsLoaded(true);
+    let loaded = false;
+    const loadHandler = () => {
+      loaded = true;
+      clearTimeout(loadTimer);
+      setLoadError(null);
+      setIsLoaded(true);
+    };
+    // Style-level failures (no `sourceId`: the style JSON or its sprite / glyphs
+    // could not be fetched) mean `load` never fires. Tile errors are ignored:
+    // the map still loads and simply shows gaps.
+    const errorHandler = (event: MapLibreGL.ErrorEvent & { sourceId?: string }) => {
+      if (loaded || event.sourceId) return;
+      setLoadError(event.error?.message || "The map style could not be fetched.");
+    };
+    const loadTimer = setTimeout(() => {
+      if (!loaded) {
+        setLoadError("The map did not respond. Check your connection.");
+      }
+    }, MAP_LOAD_TIMEOUT_MS);
 
     // Viewport change handler - skip if triggered by internal update
     const handleMove = () => {
@@ -312,12 +362,15 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     };
 
     map.on("load", loadHandler);
+    map.on("error", errorHandler);
     map.on("style.load", styleLoadHandler);
     map.on("move", handleMove);
     setMapInstance(map);
 
     return () => {
+      clearTimeout(loadTimer);
       map.off("load", loadHandler);
+      map.off("error", errorHandler);
       map.off("style.load", styleLoadHandler);
       map.off("move", handleMove);
       map.remove();
@@ -326,7 +379,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
       setMapInstance(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [attempt]);
 
   // Sync controlled viewport to map
   useEffect(() => {
@@ -403,7 +456,17 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
         ref={containerRef}
         className={cn("relative h-full w-full", className)}
       >
-        {(!isLoaded || loading) && <DefaultLoader />}
+        {loadError && !isLoaded ? (
+          <MapLoadError
+            message={loadError}
+            onRetry={() => {
+              setLoadError(null);
+              setAttempt((n) => n + 1);
+            }}
+          />
+        ) : (
+          (!isLoaded || loading) && <DefaultLoader />
+        )}
         {/* SSR-safe: children render only when map is loaded on client */}
         {mapInstance && children}
       </div>

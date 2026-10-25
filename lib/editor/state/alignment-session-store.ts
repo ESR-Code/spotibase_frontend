@@ -28,6 +28,8 @@ export type AlignmentPreview = {
   ok: boolean;
   error?: string;
   residualRms?: number;
+  /** Fit-quality concerns: Apply asks for confirmation when any exist. */
+  warnings?: string[];
   transform?: SceneTransform;
   origin?: GeoPoint;
 };
@@ -96,6 +98,7 @@ function makePreview(
   return {
     ok: true,
     residualRms: built.residualRms,
+    warnings: built.warnings,
     transform: built.geoReference.transform,
     origin: built.geoReference.origin,
   };

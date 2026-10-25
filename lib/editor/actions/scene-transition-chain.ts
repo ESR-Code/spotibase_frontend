@@ -28,3 +28,20 @@ export function recordAutomaticSceneHop(
   chain.push(toSceneId);
   return null;
 }
+
+let transitionToken = 0;
+
+/** Start a new scene transition; older ones see a stale token and stop. */
+export function beginSceneTransitionToken(): number {
+  transitionToken += 1;
+  return transitionToken;
+}
+
+export function isSceneTransitionTokenCurrent(token: number): boolean {
+  return token === transitionToken;
+}
+
+/** Invalidate any in-flight transition (leaving Preview). */
+export function cancelSceneTransitionToken(): void {
+  transitionToken += 1;
+}
