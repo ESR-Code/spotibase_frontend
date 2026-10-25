@@ -23,6 +23,7 @@ import { ConfirmDialogHost } from "@/app/editor/_components/ui/confirm-dialog-ho
 import { EditorToaster } from "@/app/editor/_components/ui/editor-toaster";
 import { SceneTransitionOverlay } from "@/app/editor/_components/viewport/scene-transition-overlay";
 import { useEditorKeyboard } from "@/lib/editor/hooks/use-editor-keyboard";
+import { useLeaveGuard } from "@/lib/editor/hooks/use-leave-guard";
 import { useProjectSaveShortcuts } from "@/lib/editor/hooks/use-project-save-shortcuts";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useGeneralSettingsStore } from "@/lib/editor/state/general-settings-store";
@@ -32,6 +33,7 @@ import { generalStyleToCssVars } from "@/lib/editor/theme/preview-style-vars";
 export function EditorShell() {
   useEditorKeyboard();
   useProjectSaveShortcuts();
+  useLeaveGuard();
   const outlinerCollapsed = useUIStore((s) => s.outlinerCollapsed);
   const isPreview = useEditorStore((s) => s.isPreview);
   const generalStyle = useGeneralSettingsStore((s) => s.style);

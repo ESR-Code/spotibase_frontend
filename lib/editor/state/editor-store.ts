@@ -2,7 +2,10 @@ import { create } from "zustand";
 import {
   cloneActionGraph,
   createDefaultActionGraph,
+  remintActionGraph,
+  rewriteNodeRefs,
 } from "@/lib/editor/actions/create-action-graph";
+import { resetSceneTransitionChain } from "@/lib/editor/actions/scene-transition-chain";
 import { clearHttpRequestCache } from "@/lib/editor/actions/http-request";
 import { clearPostMessageListeners } from "@/lib/editor/actions/send-post-message";
 import { clearSubscribePolls } from "@/lib/editor/actions/subscribe";
@@ -109,6 +112,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setMode: (mode) => {
     if (mode === "preview") {
       const isPreview = !get().isPreview;
+      resetSceneTransitionChain();
       clearHttpRequestCache();
       clearPostMessageListeners();
       clearSubscribePolls();
@@ -255,6 +259,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (!source) return;
     const { id: _id, position, ...rest } = source;
     const title = `${rest.title} (copy)`;
+    // The copy is its own action owner: new node ids, tokens follow them.
+    const idMap = new Map<string, string>();
+    const actions = source.actions
+      ? remintActionGraph(source.actions, idMap)
+      : source.actions;
     get().addHotspot(
       {
         x: position.x + 0.5,
@@ -268,10 +277,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         // One hotspot per mesh: a copy is a plain marker hotspot.
         meshId: undefined,
         // The copy is a new canvas owner: drop the lane origin so it gets a free lane.
-        actions: source.actions
-          ? { ...source.actions, laneY: undefined }
-          : source.actions,
-        blocks: cloneHotspotBlocks(source.blocks, true),
+        actions: actions ? { ...actions, laneY: undefined } : actions,
+        blocks: rewriteNodeRefs(
+          cloneHotspotBlocks(source.blocks, true),
+          idMap,
+        ),
       },
     );
   },

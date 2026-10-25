@@ -117,7 +117,8 @@ export function chainFrom(
 ): ActionNode[] {
   const byId = new Map(graph.nodes.map((node) => [node.id, node]));
   const chain: ActionNode[] = [];
-  const visited = new Set<string>();
+  // The start node never re-enters its own chain (legacy saves can hold a cycle).
+  const visited = new Set<string>([startId]);
 
   let currentId = nextAlongHandle(graph, startId, handle);
   while (currentId && !visited.has(currentId)) {
@@ -159,6 +160,32 @@ export function nodesReachableFrom(
     }
   }
   return result;
+}
+
+/**
+ * Whether adding `source → target` would close a loop, i.e. `source` is
+ * already reachable from `target` through any outgoing edge (every Switch
+ * case, Open Modal branch, ...).
+ */
+export function wouldCreateCycle(
+  graph: HotspotActionGraph,
+  source: string,
+  target: string,
+): boolean {
+  if (source === target) return true;
+  const visited = new Set<string>([target]);
+  const queue = [target];
+  while (queue.length > 0) {
+    const id = queue.pop()!;
+    for (const edge of graph.edges) {
+      if (edge.source !== id) continue;
+      if (edge.target === source) return true;
+      if (visited.has(edge.target)) continue;
+      visited.add(edge.target);
+      queue.push(edge.target);
+    }
+  }
+  return false;
 }
 
 /**
@@ -207,6 +234,7 @@ export function connect(
     return graph;
   }
   if (!graph.nodes.some((n) => n.id === target)) return graph;
+  if (wouldCreateCycle(graph, source, target)) return graph;
 
   const targetNode = graph.nodes.find((n) => n.id === target);
   if (targetNode?.type === "forEach") {

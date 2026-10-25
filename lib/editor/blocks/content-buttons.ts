@@ -1,5 +1,6 @@
 import {
   cloneActionGraph,
+  remintActionGraph,
   createEmptyActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
 import {
@@ -149,8 +150,10 @@ export function cloneButtonBlock(
   block: ButtonBlock,
   remintOwner = false,
 ): ButtonBlock {
-  const actions = cloneActionGraph(block.actions ?? createEmptyActionGraph());
-  // A reminted copy is a new canvas owner: let the canvas give it a free lane.
+  const source = block.actions ?? createEmptyActionGraph();
+  // A reminted copy is a new canvas owner: fresh node ids, and let the canvas
+  // give it a free lane.
+  const actions = remintOwner ? remintActionGraph(source) : cloneActionGraph(source);
   if (remintOwner) delete actions.laneY;
   return {
     ...block,

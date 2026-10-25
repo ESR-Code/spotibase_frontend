@@ -63,6 +63,10 @@ Only decisions that constrain how new work should be done.
   - Editor Select/Add can scrub the same clips via the viewport transport without waiting or continuing the graph.
 - **Wait** pauses the primary walk for `durationSeconds` (0–300, default 1) then continues. Available on every owner including App Start. Leave Preview or scene switch cancels in-flight waits (`"stop"`).
 
+- **Action graphs are acyclic.** `connect` and the canvas `isValidConnection` reject any edge that would close a loop (`wouldCreateCycle`, all branches). Legacy saves with a cycle are contained at run time: `chainFrom` never re-enters its start node, and `runActionNodeList` tracks `ctx.runPath` (node ids executing up the call stack) and stops with a toast when a node re-enters itself.
+- **Start-graph scene hops are loop-guarded.** Go To Scene run from App Start / Scene Start is "automatic": `scene-transition-chain.ts` refuses a hop back into a scene already visited by the chain (hops closer than 5 s apart; slower, deliberate Wait-driven slideshows are fine). A user-initiated transition or toggling Preview resets the chain.
+- **Copied action graphs get fresh ids.** Duplicated hotspots, their action-button blocks, and spawned hotspots use `remintActionGraph` (new node + edge ids; `{{path@nodeId}}` tokens follow). Owner lookup, HTTP caches and Spawn pass keys are keyed by node id, so copies must not share them. Plain `cloneActionGraph` keeps ids and is for same-owner snapshots.
+
 ## Geo and coordinates
 
 - **Canonical local frame is ENU:** +X east, +Y north, +Z up (meters). Control points are source of truth; the 4×4 is derived.
@@ -125,6 +129,11 @@ Only decisions that constrain how new work should be done.
 - **Assets referenced by the draft or any retained version are kept.** The Worker GC adds `project_versions.asset_ids` to its keep set; asset delete is refused with 409 while a retained version references the file. Pruning only drops the version row, so GC reclaims files on a later sweep.
 - **Password hash lives in `project_publish_secrets`** (RLS on, no policies or grants), not on `projects`, because `projects` is fully readable by org members. `projects.publish_password_protected` is the readable flag.
 - **Publish saves first.** A dirty draft is saved, then the fresh revision is published. Uploads in flight block publishing, like Save.
+
+## Leaving and crashing the editor
+
+- **Leave guard** (`use-leave-guard.ts`): `beforeunload` only covers tab close/reload. A capture-phase click listener asks before any same-origin link navigates away with unsaved changes, and once the project is dirty an extra same-URL history entry lets the Back button be asked too. Programmatic `router.push` is not intercepted. `hasUnsavedChanges()` flushes the 400 ms dirty debounce, so an edit made a moment ago still counts.
+- **Editor error boundary** (`editor-error-boundary.tsx`) sits inside the loader, which owns the stores, so a render error keeps the project in memory and offers Save now / Download backup (serialized project JSON) / Try again.
 
 ## Undo / redo
 

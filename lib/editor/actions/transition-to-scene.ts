@@ -1,3 +1,7 @@
+import {
+  recordAutomaticSceneHop,
+  resetSceneTransitionChain,
+} from "@/lib/editor/actions/scene-transition-chain";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import { toast } from "@/lib/editor/toast";
@@ -12,7 +16,10 @@ let transitionToken = 0;
  * covered, then fade out. Returns `"stop"` so later action nodes do not
  * run against a disappearing hotspot/scene.
  */
-export function transitionToScene(sceneId: string): "stop" {
+export function transitionToScene(
+  sceneId: string,
+  options: { automatic?: boolean } = {},
+): "stop" {
   const scenesState = useScenesStore.getState();
   const scene = scenesState.scenes.find((s) => s.id === sceneId);
   if (!scene) {
@@ -22,6 +29,21 @@ export function transitionToScene(sceneId: string): "stop" {
 
   if (scenesState.activeSceneId === sceneId) {
     return "stop";
+  }
+
+  if (options.automatic) {
+    const loop = recordAutomaticSceneHop(scenesState.activeSceneId, sceneId);
+    if (loop) {
+      const names = loop.map(
+        (id) => scenesState.scenes.find((s) => s.id === id)?.name ?? "?",
+      );
+      toast.error(
+        `Go To Scene loop stopped: ${names.join(" → ")}. Remove one of the Start-graph jumps.`,
+      );
+      return "stop";
+    }
+  } else {
+    resetSceneTransitionChain();
   }
 
   const token = ++transitionToken;

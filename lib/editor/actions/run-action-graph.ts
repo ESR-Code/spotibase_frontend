@@ -56,6 +56,13 @@ export async function runActionNodeList(
     if (visited.has(node.id)) break;
     visited.add(node.id);
 
+    if (ctx.runPath?.includes(node.id)) {
+      toast.error(
+        "Action loop detected: a node leads back to itself. Run stopped.",
+      );
+      break;
+    }
+
     const meta = ACTION_NODE_META[node.type];
     const error = meta.validate(node);
     if (error) {
@@ -111,7 +118,9 @@ export async function runActionNodeList(
       break;
     }
 
-    const result = await Promise.resolve(meta.run(node, ctx));
+    const result = await Promise.resolve(
+      meta.run(node, { ...ctx, runPath: [...(ctx.runPath ?? []), node.id] }),
+    );
     if (result === "stop") break;
   }
 }

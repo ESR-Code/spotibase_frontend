@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { EditorErrorBoundary } from "@/app/editor/_components/editor-error-boundary";
 import { EditorApp } from "@/app/editor/_components/editor-app";
 import { loadEditorProject } from "@/lib/editor/persist/api";
 import { hydrateProject } from "@/lib/editor/persist/hydrate";
@@ -62,7 +63,13 @@ export function EditorProjectLoader({ projectId }: { projectId: string }) {
     };
   }, [projectId, attempt]);
 
-  if (state.status === "ready") return <EditorApp />;
+  if (state.status === "ready") {
+    return (
+      <EditorErrorBoundary projectId={projectId}>
+        <EditorApp />
+      </EditorErrorBoundary>
+    );
+  }
 
   return (
     <div

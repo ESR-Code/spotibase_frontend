@@ -101,6 +101,7 @@ import {
   removeEdge,
   removeNode,
   updateNodeData,
+  wouldCreateCycle,
 } from "@/lib/editor/actions/graph-ops";
 import { canConnectToForEach } from "@/lib/editor/actions/for-each";
 import {
@@ -1981,6 +1982,17 @@ function ActionsFlowCanvas({
               return false;
             }
             if (sourceParsed.hotspotId === targetParsed.hotspotId) {
+              const laneGraph = getOwnedActionGraph(sourceParsed.hotspotId);
+              if (
+                laneGraph &&
+                wouldCreateCycle(
+                  laneGraph,
+                  sourceParsed.nodeId,
+                  targetParsed.nodeId,
+                )
+              ) {
+                return false;
+              }
               if (targetParsed.nodeId !== TRIGGER_NODE_ID) {
                 const targetNode = nodesRef.current.find(
                   (node) => node.id === connection.target,

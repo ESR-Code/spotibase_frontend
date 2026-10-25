@@ -461,6 +461,58 @@ export function createEmptyActionGraph(): HotspotActionGraph {
   };
 }
 
+/** Rewrites `{{path@nodeId}}` field tokens whose node id was reminted. */
+export function rewriteNodeRefs<T>(value: T, idMap: Map<string, string>): T {
+  if (idMap.size === 0) return value;
+  if (typeof value === "string") {
+    let next: string = value;
+    for (const [from, to] of idMap) {
+      if (next.includes(`@${from}}}`)) {
+        next = next.split(`@${from}}}`).join(`@${to}}}`);
+      }
+    }
+    return next as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => rewriteNodeRefs(item, idMap)) as T;
+  }
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(value)) {
+      out[key] = rewriteNodeRefs(item, idMap);
+    }
+    return out as T;
+  }
+  return value;
+}
+
+/**
+ * Deep copy with fresh node and edge ids. A graph copied to a new owner
+ * (duplicated hotspot, spawned hotspot) must not share ids with the original:
+ * owner lookups, HTTP caches and Spawn pass keys are all keyed by node id.
+ * Field tokens that point at a node in this graph follow it to its new id;
+ * pass `idMap` to reuse the mapping for text outside the graph.
+ */
+export function remintActionGraph(
+  graph: HotspotActionGraph,
+  idMap: Map<string, string> = new Map(),
+): HotspotActionGraph {
+  const cloned = cloneActionGraph(graph);
+  for (const node of cloned.nodes) idMap.set(node.id, newActionId());
+  const mapId = (id: string) => idMap.get(id) ?? id;
+  const next: HotspotActionGraph = {
+    ...cloned,
+    nodes: cloned.nodes.map((node) => ({ ...node, id: mapId(node.id) })),
+    edges: cloned.edges.map((edge) => ({
+      ...edge,
+      id: newActionId(),
+      source: mapId(edge.source),
+      target: mapId(edge.target),
+    })),
+  };
+  return rewriteNodeRefs(next, idMap);
+}
+
 export function cloneActionGraph(
   graph: HotspotActionGraph,
 ): HotspotActionGraph {

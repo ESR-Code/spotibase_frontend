@@ -1,4 +1,7 @@
-import { findOwnedActionNode } from "@/lib/editor/actions/action-owners";
+import {
+  findOwnedActionNode,
+  isStartOwnerId,
+} from "@/lib/editor/actions/action-owners";
 import { createActionNode, getActionGraph } from "@/lib/editor/actions/create-action-graph";
 import {
   applyChangeHotspotColor,
@@ -92,6 +95,11 @@ export type ActionRunContext = {
   ownerId: number;
   /** Stable cache / response key prefix. */
   ownerKey: string;
+  /**
+   * Node ids currently executing up this call stack (set by the runner).
+   * A node that shows up again is a loop and stops the run.
+   */
+  runPath?: readonly string[];
 };
 
 export type ActionRunResult = void | "stop";
@@ -186,9 +194,11 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
       }
       return null;
     },
-    run: (node) => {
+    run: (node, ctx) => {
       if (node.type !== "goToScene") return;
-      return transitionToScene(node.data.sceneId);
+      return transitionToScene(node.data.sceneId, {
+        automatic: isStartOwnerId(ctx.ownerId),
+      });
     },
   },
   goToHotspot: {

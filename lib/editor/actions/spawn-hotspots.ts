@@ -9,7 +9,11 @@ import {
   interpolateRichTextHtml,
   peekActionItemScope,
 } from "@/lib/editor/actions/interpolate-fields";
-import { cloneActionGraph, createDefaultActionGraph } from "@/lib/editor/actions/create-action-graph";
+import {
+  cloneActionGraph,
+  createDefaultActionGraph,
+  remintActionGraph,
+} from "@/lib/editor/actions/create-action-graph";
 import { nextContentButtonOwnerId } from "@/lib/editor/blocks/content-buttons";
 import { geoToScene } from "@/lib/editor/coords/scene-coords";
 import {
@@ -241,7 +245,7 @@ export function applySpawnHotspots(
     category: interpolateOptional(template.category),
     legendName: interpolateOptional(template.legendName) || title,
     blocks: interpolateBlocks(template.blocks),
-    actions: cloneActionGraph(
+    actions: remintActionGraph(
       template.actions ?? createDefaultActionGraph(),
     ),
   };

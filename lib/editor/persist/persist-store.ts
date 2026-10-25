@@ -55,6 +55,18 @@ function scheduleDirtyCheck() {
   }, DIRTY_CHECK_MS);
 }
 
+/**
+ * Unsaved changes right now, without waiting for the debounced check: an edit
+ * made less than `DIRTY_CHECK_MS` ago still counts. Use for leave / publish guards.
+ */
+export function hasUnsavedChanges(): boolean {
+  const state = useProjectPersistStore.getState();
+  if (!state.projectId) return false;
+  if (state.dirty || state.status === "saving") return true;
+  if (!checkTimer) return false;
+  return fingerprintProject(serializeProject()) !== baseline;
+}
+
 /** Only authored fields; selection, hover, fps, etc. must not mark dirty. */
 function watchAuthoredStores() {
   return [

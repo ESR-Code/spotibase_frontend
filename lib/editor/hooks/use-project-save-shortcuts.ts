@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { saveProject, useProjectPersistStore } from "@/lib/editor/persist/persist-store";
+import { hasUnsavedChanges, saveProject } from "@/lib/editor/persist/persist-store";
 
 /** Ctrl/Cmd+S saves (also from text fields); unsaved changes warn on unload. */
 export function useProjectSaveShortcuts() {
@@ -13,10 +13,7 @@ export function useProjectSaveShortcuts() {
       }
     };
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      const persist = useProjectPersistStore.getState();
-      if (persist.dirty || persist.status === "saving") {
-        e.preventDefault();
-      }
+      if (hasUnsavedChanges()) e.preventDefault();
     };
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("beforeunload", onBeforeUnload);

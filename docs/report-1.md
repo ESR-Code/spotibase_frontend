@@ -5,6 +5,10 @@ Method: static code audit by four parallel reviewers (persistence/state, action 
 
 Severity: **Critical** = hangs or destroys work in a normal flow. **High** = data loss / wrong data / broken workflow with a plausible trigger. **Medium** = real bug, narrower trigger or recoverable.
 
+## Status
+
+Batch 1 fixed: **1, 2, 3, 4, 7** (see `docs/decisions.md`: acyclic graphs, Start-hop guard, leave guard, error boundary, reminted ids). Corrections found while fixing: in #7 the action graph was already deep-cloned (no shared arrays), only the node ids were shared. #3 does not cover programmatic `router.push` (for example account-menu sign-out). #2 does not cancel an in-flight transition when Preview exits (still #22). Not yet manually tested in a browser.
+
 ## Summary
 
 | # | Sev | Area | Title |
