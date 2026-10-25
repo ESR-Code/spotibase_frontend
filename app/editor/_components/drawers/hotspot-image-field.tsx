@@ -34,25 +34,9 @@ type HotspotImageFieldProps = {
   extraActions?: ReactNode;
 };
 
-export function HotspotImageField({
-  value,
-  onChange,
-  uploadLabel = "Upload image",
-  emptyLabel = "No image",
-  hint = "PNG / JPG / WebP / SVG / GIF, up to 25 MB.",
-  clearTitle = "Clear image",
-  successMessage = "Image applied",
-  className,
-  layout = "stack",
-  urlInput,
-  extraActions,
-}: HotspotImageFieldProps) {
+/** Upload a file into the project library and hand back its `asset:` ref. */
+export function useImageUpload(onChange: (value: string) => void, successMessage: string) {
   const [uploading, setUploading] = useState(false);
-  const src = useAssetSrc(value);
-  const missing = useIsMissingAssetRef(value);
-  const isUploaded = value.startsWith("data:") || isAssetRef(value);
-  const showUrlInput = Boolean(urlInput) && !isUploaded;
-
   const handleFile = (file: File) => {
     setUploading(true);
     const sceneId = useScenesStore.getState().activeSceneId;
@@ -66,6 +50,27 @@ export function HotspotImageField({
       })
       .finally(() => setUploading(false));
   };
+  return { uploading, handleFile };
+}
+
+export function HotspotImageField({
+  value,
+  onChange,
+  uploadLabel = "Upload image",
+  emptyLabel = "No image",
+  hint = "PNG / JPG / WebP / SVG / GIF, up to 25 MB.",
+  clearTitle = "Clear image",
+  successMessage = "Image applied",
+  className,
+  layout = "stack",
+  urlInput,
+  extraActions,
+}: HotspotImageFieldProps) {
+  const { uploading, handleFile } = useImageUpload(onChange, successMessage);
+  const src = useAssetSrc(value);
+  const missing = useIsMissingAssetRef(value);
+  const isUploaded = value.startsWith("data:") || isAssetRef(value);
+  const showUrlInput = Boolean(urlInput) && !isUploaded;
 
   const controls = (
     <div className="min-w-0">

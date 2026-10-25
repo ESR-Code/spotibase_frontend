@@ -352,7 +352,7 @@ Already confirmed by hand: batch 1 to 3, the Allowed senders field (#21), and th
 
 ### Batch 7: HTTP safety (#20)
 
-- [ ] An HTTP node pointed at `/http_request_node_test` and a Subscribe at `/subscribe_node_test` still return data.
+- [x] An HTTP node pointed at `/http_request_node_test` and a Subscribe at `/subscribe_node_test` still return data.
 - [ ] A node that POSTs to `/gateway/...` shows a validation error.
 - [ ] A URL that never answers fails after about 15 seconds; Subscribe keeps polling afterwards.
 - [ ] Start a slow request in Preview and leave Preview: no error toast afterwards.

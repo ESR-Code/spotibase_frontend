@@ -168,6 +168,7 @@ export async function rebuildCore(
         pcModule,
         app.graphicsDevice,
         resolveAssetSrc(hotspot.markerImage),
+        { flipY: true },
       );
       // Another rebuild may have started while the image loaded
       if (visual.styleKey !== requestKey) {

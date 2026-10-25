@@ -5931,3 +5931,73 @@
     animation: none;
   }
 }
+
+/* Marker image field (Hotspot Editor → Marker → image style) */
+.editor-root .editor-btn.editor-btn-sm {
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  font-size: 12px;
+}
+
+.editor-root .editor-btn.editor-btn-remove:hover {
+  color: #ffb4ba;
+  background: rgba(230, 57, 70, 0.12);
+}
+
+.editor-root .editor-marker-image-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--editor-line);
+  background-color: var(--editor-input-bg);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.editor-root .editor-marker-image-field.is-dragging {
+  border-color: var(--editor-crimson);
+  background-color: rgba(230, 57, 70, 0.08);
+}
+
+.editor-root .editor-marker-image-tile {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--editor-line);
+  background-color: var(--editor-panel-2);
+  color: var(--editor-muted);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.editor-root .editor-marker-image-tile:hover:not(:disabled) {
+  border-color: #2f4d7a;
+  color: var(--editor-fg);
+}
+
+.editor-root .editor-marker-image-tile.is-empty {
+  border-style: dashed;
+}
+
+.editor-root .editor-marker-image-tile.is-missing {
+  border-color: rgba(230, 57, 70, 0.5);
+  color: var(--editor-crimson);
+}
+
+/* Transparency backdrop: longhand properties only, never mixed with `background`. */
+.editor-root .editor-checkerboard {
+  background-color: #1b2740;
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.07) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.07) 75%),
+    linear-gradient(45deg, rgba(255, 255, 255, 0.07) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.07) 75%);
+  background-size: 12px 12px;
+  background-position: 0 0, 6px 6px;
+}

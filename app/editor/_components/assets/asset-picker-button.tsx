@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { AssetThumb } from "@/app/editor/_components/assets/asset-thumb";
 import { EditorDialog } from "@/app/editor/_components/ui/editor-dialog";
 import { getEditorPortalHost } from "@/app/editor/_components/ui/fixed-portal-menu";
+import { cn } from "@/lib/utils";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import {
   formatAssetSize,
@@ -18,6 +19,9 @@ type AssetPickerButtonProps = {
   kind: EditorAssetKind;
   onPick: (asset: EditorAsset) => void;
   title?: string;
+  /** Render a labelled text button (with this label) instead of an icon button. */
+  label?: string;
+  className?: string;
 };
 
 /** Icon button that opens the project library filtered to one asset kind. */
@@ -25,13 +29,27 @@ export function AssetPickerButton({
   kind,
   onPick,
   title = "Choose from library",
+  label,
+  className,
 }: AssetPickerButtonProps) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <IconButton title={title} onClick={() => setOpen(true)}>
-        <FolderOpen />
-      </IconButton>
+      {label ? (
+        <button
+          type="button"
+          title={title}
+          className={cn("editor-btn", className)}
+          onClick={() => setOpen(true)}
+        >
+          <FolderOpen className="h-3.5 w-3.5 shrink-0" />
+          {label}
+        </button>
+      ) : (
+        <IconButton title={title} onClick={() => setOpen(true)}>
+          <FolderOpen />
+        </IconButton>
+      )}
       <AssetPickerDialog
         open={open}
         kind={kind}

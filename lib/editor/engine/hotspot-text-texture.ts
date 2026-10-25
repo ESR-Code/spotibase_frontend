@@ -425,6 +425,14 @@ export function createImageTexture(
   pcModule: typeof pc,
   appGraphicsDevice: pc.GraphicsDevice,
   dataUrl: string,
+  options: {
+    /**
+     * Flip vertically on upload. Hotspot billboards are rotated planes whose
+     * UVs run the other way from the flat subject-image plane, so they need
+     * this (every other hotspot texture here sets it); the subject plane does not.
+     */
+    flipY?: boolean;
+  } = {},
 ): Promise<{ texture: Texture; aspect: number }> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -434,6 +442,7 @@ export function createImageTexture(
         height: img.height,
         format: pcModule.PIXELFORMAT_SRGBA,
         mipmaps: true,
+        flipY: options.flipY ?? false,
       });
       texture.setSource(img);
       texture.upload();
