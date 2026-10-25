@@ -102,6 +102,49 @@ export function extractPostMessagePayload(
   return undefined;
 }
 
+/**
+ * Parse a receive node's allowed origins. Entries are normalized to
+ * `scheme://host[:port]`; invalid ones are dropped; `*` is kept as is.
+ */
+export function parseAllowedOrigins(raw: string | undefined): string[] {
+  const out: string[] = [];
+  for (const part of (raw ?? "").split(/[\s,]+/)) {
+    const entry = part.trim();
+    if (!entry) continue;
+    if (entry === "*") {
+      out.push("*");
+      continue;
+    }
+    try {
+      const origin = new URL(entry).origin;
+      if (origin && origin !== "null") out.push(origin);
+    } catch {
+      /* not a URL: ignore */
+    }
+  }
+  return out;
+}
+
+/**
+ * Whether a received message may run the receive chain. The page itself
+ * (the Preview tester posts to its own window) is always allowed; anything
+ * else must come from a listed origin, or the node must list `*`.
+ */
+export function isPostMessageSenderAllowed(
+  event: Pick<MessageEvent, "origin" | "source">,
+  allowedOrigins: string[],
+): boolean {
+  if (
+    typeof window !== "undefined" &&
+    event.source === window &&
+    event.origin === window.location.origin
+  ) {
+    return true;
+  }
+  if (allowedOrigins.includes("*")) return true;
+  return allowedOrigins.includes(event.origin);
+}
+
 export function clearPostMessageListeners(keyPrefix?: string): void {
   if (typeof window === "undefined") return;
   for (const [key, entry] of [...listeners.entries()]) {
@@ -118,6 +161,8 @@ export function clearPostMessageListeners(keyPrefix?: string): void {
 export function registerPostMessageReceive(options: {
   listenerKey: string;
   eventName: string;
+  /** Raw `allowedOrigins` from the node (see `parseAllowedOrigins`). */
+  allowedOrigins?: string;
   onPayload: (payload: unknown) => void;
 }): string | null {
   if (typeof window === "undefined") return "Window unavailable";
@@ -130,7 +175,9 @@ export function registerPostMessageReceive(options: {
     listeners.delete(options.listenerKey);
   }
 
+  const allowedOrigins = parseAllowedOrigins(options.allowedOrigins);
   const handler = (event: MessageEvent) => {
+    if (!isPostMessageSenderAllowed(event, allowedOrigins)) return;
     const payload = extractPostMessagePayload(event, eventName);
     if (payload === undefined) return;
     options.onPayload(payload);

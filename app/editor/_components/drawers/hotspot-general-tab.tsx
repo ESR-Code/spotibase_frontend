@@ -25,6 +25,7 @@ import { TypePill } from "@/app/editor/_components/ui/type-pill";
 import type { HotspotFormValues } from "@/lib/editor/forms/schemas/hotspot-form.schema";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useActiveScene } from "@/lib/editor/state/scenes-store";
+import { setLegendCategories } from "@/lib/editor/state/legend-categories";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { markerColorSwatches } from "@/lib/editor/theme/tokens";
 import {
@@ -42,7 +43,6 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
   const updateHotspot = useEditorStore((s) => s.updateHotspot);
   const legendEnabled = useSettingsStore((s) => s.legendEnabled);
   const legendCategories = useSettingsStore((s) => s.legendCategories);
-  const setSettings = useSettingsStore((s) => s.setSettings);
   const values = form.watch();
   const scene = useActiveScene();
   const isGeo = scene.type === "geo";
@@ -56,20 +56,10 @@ export function HotspotGeneralTab({ form, selected }: HotspotGeneralTabProps) {
   const handleCategoriesChange = (
     categories: typeof legendCategories,
   ) => {
-    const removedIds = legendCategories
-      .filter((c) => !categories.some((next) => next.id === c.id))
-      .map((c) => c.id);
-    setSettings({ legendCategories: categories });
-    if (removedIds.length === 0) return;
-
-    const { hotspots } = useEditorStore.getState();
-    for (const hotspot of hotspots) {
-      if (removedIds.includes(hotspot.category)) {
-        useEditorStore.getState().updateHotspot(hotspot.id, { category: "" });
-        if (hotspot.id === selected.id) {
-          form.setValue("category", "");
-        }
-      }
+    const removedIds = setLegendCategories(categories);
+    // The form writes every field back on change: keep it in step.
+    if (removedIds.includes(form.getValues("category"))) {
+      form.setValue("category", "");
     }
   };
 

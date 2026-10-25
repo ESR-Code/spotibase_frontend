@@ -106,6 +106,7 @@ export async function runActionNodeList(
         const registerError = registerPostMessageReceive({
           listenerKey,
           eventName: event.eventName,
+          allowedOrigins: node.data.allowedOrigins,
           onPayload: (payload) => {
             markHttpRequestCached(
               httpRequestCacheKey(ctx.ownerKey, node.id),

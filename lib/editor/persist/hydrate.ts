@@ -31,7 +31,10 @@ import { useGeoStore } from "@/lib/editor/state/geo-store";
 import { useLayersStore } from "@/lib/editor/state/layers-store";
 import { useModelStore } from "@/lib/editor/state/model-store";
 import { sceneSubjectCache } from "@/lib/editor/state/scene-subject-cache";
-import { useScenesStore } from "@/lib/editor/state/scenes-store";
+import {
+  snapshotCurrentIntoScene,
+  useScenesStore,
+} from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import type { EditorSettings } from "@/lib/editor/types/editor-settings";
 import type { GeneralStyleSettings } from "@/lib/editor/types/general-style";
@@ -131,6 +134,18 @@ export function hydrateProject(input: {
   const active = scenes.find((s) => s.isPrimary) ?? scenes[0]!;
   if (!active.isPrimary) active.isPrimary = true;
 
+  // Normalize inactive scenes exactly as a scene switch would (round-trip
+  // through the live stores), before the dirty baseline is taken. Otherwise
+  // an older save loads clean and the first switch fills in defaults
+  // (hotspot `enabled` / `shape` / `actions`, model offset, ...) and shows
+  // the project as unsaved.
+  for (let i = 0; i < scenes.length; i++) {
+    const scene = scenes[i]!;
+    if (scene.id === active.id) continue;
+    hydrateLiveStores(scene);
+    scenes[i] = snapshotCurrentIntoScene(scene);
+  }
+
   useAssetsStore.getState().setProject(input.projectId, input.assets);
   sceneSubjectCache.clear();
 
@@ -152,11 +167,16 @@ export function hydrateProject(input: {
   general.setSceneExplorerEnabled(editorData?.sceneExplorerEnabled ?? false);
 
   useEditorStore.getState().setMode("select");
-  useEditorStore.getState().loadScene(active.hotspots, active.nextHotspotId);
-  useModelStore.getState().hydrateFromScene(active.model);
-  useSettingsStore.getState().hydrateSettings(active.settings);
-  useEnvironmentStore.getState().hydrateEnvironment(active.environment);
-  useEffectsStore.getState().hydrateEffects(active.effects);
-  useGeoStore.getState().hydrateGeo(active.geo);
-  useLayersStore.getState().hydrateLayers(active.layers);
+  hydrateLiveStores(active);
+}
+
+/** Load one scene into the live (active-scene) stores. */
+function hydrateLiveStores(scene: Scene) {
+  useEditorStore.getState().loadScene(scene.hotspots, scene.nextHotspotId);
+  useModelStore.getState().hydrateFromScene(scene.model);
+  useSettingsStore.getState().hydrateSettings(scene.settings);
+  useEnvironmentStore.getState().hydrateEnvironment(scene.environment);
+  useEffectsStore.getState().hydrateEffects(scene.effects);
+  useGeoStore.getState().hydrateGeo(scene.geo);
+  useLayersStore.getState().hydrateLayers(scene.layers);
 }

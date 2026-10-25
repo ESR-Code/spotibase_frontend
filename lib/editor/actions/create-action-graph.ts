@@ -292,6 +292,7 @@ export function createActionNode(
           payloadFields: [],
           lastPayloadJson: "",
           receiveEvents: [],
+          allowedOrigins: "",
         },
       };
     case "httpRequest":
@@ -589,6 +590,7 @@ export function cloneActionGraph(
               node.data.lastPayloadJson ||
               "",
             receiveEvents,
+            allowedOrigins: node.data.allowedOrigins ?? "",
           },
         };
       }

@@ -116,6 +116,12 @@ export type SendPostMessageActionNode = ActionNodeBase<
      * Empty / omitted is treated as a single legacy event from `eventName`.
      */
     receiveEvents: PostMessageReceiveEvent[];
+    /**
+     * Receive mode: origins allowed to send (whitespace / comma separated,
+     * e.g. `https://host.example`). Empty accepts only this page itself (the
+     * Preview tester); `*` accepts any sender. Older saves omit it.
+     */
+    allowedOrigins?: string;
   }
 >;
 export type HttpRequestActionNode = ActionNodeBase<

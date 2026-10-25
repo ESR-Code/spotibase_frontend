@@ -8,7 +8,8 @@ const UNDO_TOAST_MS = 6000;
 
 const ASSET_REF_RE = /asset:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/gi;
 
-function assetIdsIn(...jsons: string[]): string[] {
+/** Library asset ids (`asset:<uuid>`) mentioned in JSON snapshots. */
+export function assetIdsIn(...jsons: string[]): string[] {
   const ids = new Set<string>();
   for (const json of jsons) {
     for (const match of json.matchAll(ASSET_REF_RE)) {

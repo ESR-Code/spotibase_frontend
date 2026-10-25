@@ -58,6 +58,7 @@ const EMPTY_DATA: SendPostMessageActionNode["data"] = {
   payloadFields: [],
   lastPayloadJson: "",
   receiveEvents: [],
+  allowedOrigins: "",
 };
 
 function newFieldRowId(): string {
@@ -124,6 +125,7 @@ export function SendPostMessageNode({
           payloadFields: ownedNode.data.payloadFields ?? [],
           lastPayloadJson: ownedNode.data.lastPayloadJson ?? "",
           receiveEvents: ownedNode.data.receiveEvents ?? [],
+          allowedOrigins: ownedNode.data.allowedOrigins ?? "",
         }
       : EMPTY_DATA;
   const hotspots = useEditorStore((s) => s.hotspots);
@@ -683,6 +685,30 @@ export function SendPostMessageNode({
               <code>items[0].id</code>). Values resolve from the received
               payload in Preview.
             </div>
+            <label className="block">
+              <span
+                className="mb-1 block text-[10px] font-semibold uppercase tracking-wider"
+                style={{ color: "var(--editor-muted-2)" }}
+              >
+                Allowed senders
+              </span>
+              <input
+                className={fieldClass}
+                placeholder="https://host.example (empty: this page only)"
+                value={live.allowedOrigins ?? ""}
+                onChange={(e) => patch({ allowedOrigins: e.target.value })}
+                {...stop}
+              />
+              <span
+                className="mt-1 block text-[10px] leading-relaxed"
+                style={{ color: "var(--editor-muted)" }}
+              >
+                Origins of pages allowed to send these events (space or comma
+                separated). Messages from anywhere else are ignored. Use{" "}
+                <code>*</code> to accept any page. Test in Preview always works:
+                the tester sends from this page itself.
+              </span>
+            </label>
             <ReceiveTestSwitch ownerId={ownerId} nodeId={actionNodeId} />
           </div>
         )}

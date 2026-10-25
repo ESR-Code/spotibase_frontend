@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
-import { confirmDelete } from "@/lib/editor/confirm";
 import { EditorChip } from "@/app/editor/_components/ui/editor-chip";
 import { EditorDialog } from "@/app/editor/_components/ui/editor-dialog";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
@@ -30,6 +29,7 @@ import {
   readEnvironmentSnapshot,
 } from "@/lib/editor/state/environment-store";
 import { useModelStore } from "@/lib/editor/state/model-store";
+import { deleteSceneWithConfirm } from "@/lib/editor/state/scene-delete";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import {
   readEditorSettingsSnapshot,
@@ -93,7 +93,6 @@ export function ScenesModal() {
   const scenes = useScenesStore((s) => s.scenes);
   const activeSceneId = useScenesStore((s) => s.activeSceneId);
   const addScene = useScenesStore((s) => s.addScene);
-  const removeScene = useScenesStore((s) => s.removeScene);
   const renameScene = useScenesStore((s) => s.renameScene);
   const setPrimaryScene = useScenesStore((s) => s.setPrimaryScene);
   const switchScene = useScenesStore((s) => s.switchScene);
@@ -183,7 +182,7 @@ export function ScenesModal() {
             }}
             onSelect={() => handleSelect(scene.id)}
             onSetPrimary={() => setPrimaryScene(scene.id)}
-            onDelete={() => removeScene(scene.id)}
+            onDelete={() => void deleteSceneWithConfirm(scene.id)}
           />
         ))}
 
@@ -510,9 +509,7 @@ function SceneListItem({
               variant="destructive"
               onSelect={() => {
                 if (!canDelete) return;
-                void confirmDelete("scene").then((ok) => {
-                  if (ok) onDelete();
-                });
+                onDelete();
               }}
             >
               <Trash2 className="h-3.5 w-3.5" />

@@ -442,6 +442,10 @@ function patchSendPostMessageData(
         ? patch.lastPayloadJson
         : (data.lastPayloadJson ?? ""),
     receiveEvents,
+    allowedOrigins:
+      typeof patch.allowedOrigins === "string"
+        ? patch.allowedOrigins
+        : (data.allowedOrigins ?? ""),
   };
 
   if (mode === "receive") {

@@ -7,6 +7,8 @@ Severity: **Critical** = hangs or destroys work in a normal flow. **High** = dat
 
 ## Status
 
+Batch 8 fixed: **16, 17, 18, 19, 21**. 21: receive nodes get an Allowed senders field; strict by default, including older saves (no viewer embeds exist yet). 17: impact-aware confirm, deterministic new primary, Undo toast; Go To Scene nodes are flagged, not rewritten. 18: Saved elsewhere menu (download / overwrite / reload); still no merge. 16: inactive scenes normalized at load (verified: a switch on an older-format project kept the fingerprint; before the fix it changed). 19: shared `setLegendCategories` also clears Spawn templates. Not tested in a browser.
+
 Batch 7 fixed: **20** (`http-request.ts`: 15 s timeout, 5 MB cap, `credentials: "omit"`, same-origin GET/HEAD only and never `/gateway/`; in-flight requests abort when the run is cancelled). Behavior change: HTTP / Subscribe nodes no longer send cookies, and can no longer POST to this app's own origin. Checked with a throwaway script against a stubbed `fetch` (credentials, blocked routes, declared and streamed oversize, abort); the 15 s timeout path was not exercised. Not tested in the browser.
 
 Batch 6 fixed: **13, 14** (`hydrateProject` resets the fences store; Publish uses `hasUnsavedChanges()` and says "Still saving" instead of silently doing nothing). Not yet tested in a browser.
@@ -40,12 +42,12 @@ Batch 1 fixed: **1, 2, 3, 4, 7** (see `docs/decisions.md`: acyclic graphs, Start
 | 13 | High | Fixed (batch 6) | Persistence | Action fences leak across project reloads and re-save stale data |
 | 14 | Medium | Fixed (batch 6) | Persistence | Publish can skip the save (dirty flag is debounced 400 ms) |
 | 15 | Medium | Fixed (batch 2) | Persistence | Asset store not refreshed after GC; undo restores deleted asset refs |
-| 16 | Medium | Open | Persistence | Legacy scenes load un-normalized, scene switch marks project dirty |
-| 17 | Medium | Open | UI | Scene delete: generic confirm, dangling Go To Scene, arbitrary new primary |
-| 18 | Medium | Open | UI | Save conflict is a dead end (only "Reload") |
-| 19 | Medium | Open | UI | Legend category delete in Spawn drawer leaves stale ids |
+| 16 | Medium | Fixed (batch 8) | Persistence | Legacy scenes load un-normalized, scene switch marks project dirty |
+| 17 | Medium | Fixed (batch 8) | UI | Scene delete: generic confirm, dangling Go To Scene, arbitrary new primary |
+| 18 | Medium | Fixed (batch 8) | UI | Save conflict is a dead end (only "Reload") |
+| 19 | Medium | Fixed (batch 8) | UI | Legend category delete in Spawn drawer leaves stale ids |
 | 20 | Medium | Fixed (batch 7) | Actions | HTTP/Subscribe: no timeout, size cap, abort; credentialed same-origin |
-| 21 | Medium | Open | Actions | Post Message receive accepts any origin |
+| 21 | Medium | Fixed (batch 8) | Actions | Post Message receive accepts any origin |
 | 22 | Medium | Open | Actions | Go To Scene transition completes after leaving Preview |
 | 23 | Medium | Open | Actions | Open Modal onClose / Go To Hotspot self-loop traps user |
 | 24 | Medium | Open | Engine | Geo viewport stuck on loader if style/tiles fail |
@@ -55,7 +57,7 @@ Batch 1 fixed: **1, 2, 3, 4, 7** (see `docs/decisions.md`: acyclic graphs, Start
 | 28 | Medium | Open | Engine | Controller/listener leak when unmounting during first load; no WebGL context-loss handling; NaN bounds → continuous render |
 | 29 | Medium | Fixed (batch 3) | UI | Modifier keys trigger shortcuts (Ctrl+A / Ctrl+V / Ctrl+P) |
 
-Recommended fix order before the viewer: ~~1, 2, 3, 4, 7, 5/6/15, 12, 29, 10/11, 8/9~~ (done), 13, 14, 20 (done), then the rest.
+Recommended fix order before the viewer: ~~1, 2, 3, 4, 7, 5/6/15, 12, 29, 10/11, 8/9~~ (done), 13, 14, 20, 16-19, 21 (done). Remaining: 22-28.
 
 ---
 

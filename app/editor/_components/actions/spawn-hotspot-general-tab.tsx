@@ -18,6 +18,7 @@ import {
   spawnUsesLatLon,
 } from "@/lib/editor/actions/spawn-hotspots";
 import type { HttpFieldSource } from "@/lib/editor/blocks/http-field-sources";
+import { setLegendCategories } from "@/lib/editor/state/legend-categories";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { markerColorSwatches } from "@/lib/editor/theme/tokens";
 import {
@@ -81,7 +82,6 @@ export function SpawnHotspotGeneralTab({
 }: SpawnHotspotGeneralTabProps) {
   const legendEnabled = useSettingsStore((s) => s.legendEnabled);
   const legendCategories = useSettingsStore((s) => s.legendCategories);
-  const setSettings = useSettingsStore((s) => s.setSettings);
   const isCustomColor = !markerColorSwatches.includes(
     template.color as (typeof markerColorSwatches)[number],
   );
@@ -125,9 +125,9 @@ export function SpawnHotspotGeneralTab({
             categories={legendCategories}
             allowClear
             onChange={(category) => onChange({ category })}
-            onCategoriesChange={(categories) =>
-              setSettings({ legendCategories: categories })
-            }
+            onCategoriesChange={(categories) => {
+              setLegendCategories(categories);
+            }}
           />
         </SettingsSection>
       ) : null}

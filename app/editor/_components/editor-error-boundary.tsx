@@ -7,7 +7,7 @@ import {
   saveProject,
   useProjectPersistStore,
 } from "@/lib/editor/persist/persist-store";
-import { serializeProject } from "@/lib/editor/persist/serialize";
+import { downloadProjectBackup } from "@/lib/editor/persist/backup";
 
 type Props = { projectId: string; children: ReactNode };
 type State = {
@@ -55,17 +55,7 @@ export class EditorErrorBoundary extends Component<Props, State> {
   };
 
   private downloadBackup = () => {
-    try {
-      const json = JSON.stringify(serializeProject(), null, 2);
-      const url = URL.createObjectURL(
-        new Blob([json], { type: "application/json" }),
-      );
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `spotibase-backup-${this.props.projectId}.json`;
-      link.click();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch {
+    if (!downloadProjectBackup(this.props.projectId)) {
       this.setState({ note: "The project state could not be read for a backup." });
     }
   };

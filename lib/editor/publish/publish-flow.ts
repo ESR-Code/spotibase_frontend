@@ -42,7 +42,7 @@ export async function publishCurrentProject(): Promise<number | null> {
     if (error instanceof ProjectConflictError) {
       useProjectPersistStore.setState({ status: "conflict", error: error.message });
       toast.error("Not published: this project changed elsewhere", {
-        description: "Reload the editor to get the latest version.",
+        description: "Open the “Saved elsewhere” menu to download, overwrite, or reload.",
       });
       return null;
     }

@@ -1,9 +1,22 @@
 "use client";
 
-import { Loader2, Save } from "lucide-react";
+import { Download, Loader2, RefreshCw, Save, Upload } from "lucide-react";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAssetsStore } from "@/lib/editor/assets/assets-store";
-import { saveProject, useProjectPersistStore } from "@/lib/editor/persist/persist-store";
+import { confirmDelete } from "@/lib/editor/confirm";
+import { downloadProjectBackup } from "@/lib/editor/persist/backup";
+import {
+  overwriteSavedProject,
+  saveProject,
+  useProjectPersistStore,
+} from "@/lib/editor/persist/persist-store";
+import { toast } from "@/lib/editor/toast";
 
 function savedAgo(at: number): string {
   const minutes = Math.max(0, Math.round((Date.now() - at) / 60000));
@@ -44,7 +57,7 @@ export function SaveButton() {
               : "Saved";
 
   const title = conflict
-    ? "This project was saved elsewhere. Reload to get the latest version."
+    ? "This project was saved elsewhere. Choose how to continue."
     : failed
       ? (error ?? "Could not save the project")
       : uploading
@@ -62,16 +75,7 @@ export function SaveButton() {
   return (
     <div className="flex items-center gap-2.5">
       {conflict ? (
-        <button
-          type="button"
-          className="editor-header-save-status is-error is-action"
-          title={title}
-          aria-label="Reload to sync"
-          onClick={() => window.location.reload()}
-        >
-          <span className="editor-header-save-dot" />
-          <span className="editor-header-save-text">Reload to sync</span>
-        </button>
+        <ConflictMenu title={title} />
       ) : (
         <span
           className={`editor-header-save-status ${tone}`}
@@ -98,5 +102,71 @@ export function SaveButton() {
         <span className="editor-header-btn-label">Save</span>
       </EditorButton>
     </div>
+  );
+}
+
+/**
+ * A save conflict used to offer only Reload, which drops this editor's work.
+ * The author can now keep a copy, overwrite the other save, or reload.
+ */
+function ConflictMenu({ title }: { title: string }) {
+  const projectId = useProjectPersistStore((s) => s.projectId);
+
+  const overwrite = async () => {
+    const ok = await confirmDelete({
+      subject: "changes",
+      title: "Overwrite the other save?",
+      description:
+        "Someone (or another tab) saved this project after you opened it. Saving now replaces their version with yours, including scenes they added. Download a copy first if unsure.",
+      confirmLabel: "Overwrite",
+      cancelLabel: "Cancel",
+    });
+    if (ok) await overwriteSavedProject();
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="editor-header-save-status is-error is-action"
+          title={title}
+          aria-label="Resolve save conflict"
+        >
+          <span className="editor-header-save-dot" />
+          <span className="editor-header-save-text">Saved elsewhere</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="editor-dropdown-menu">
+        <DropdownMenuItem
+          className="editor-dropdown-menu-item"
+          onSelect={() => {
+            if (downloadProjectBackup(projectId)) {
+              toast.success("Your version was downloaded");
+            } else {
+              toast.error("Could not create the download");
+            }
+          }}
+        >
+          <Download className="h-3.5 w-3.5" />
+          Download my version
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="editor-dropdown-menu-item"
+          onSelect={() => void overwrite()}
+        >
+          <Upload className="h-3.5 w-3.5" />
+          Keep mine (overwrite)
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="editor-dropdown-menu-item editor-dropdown-menu-item-danger"
+          variant="destructive"
+          onSelect={() => window.location.reload()}
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Reload latest (discard mine)
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

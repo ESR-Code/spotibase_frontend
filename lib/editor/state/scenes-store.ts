@@ -247,13 +247,17 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
 
     set((current) => {
       const remaining = current.scenes.filter((s) => s.id !== id);
-      const needsPrimary = !remaining.some((s) => s.isPrimary);
+      // Deleting the primary promotes the first scene in list order, not
+      // whichever scene happens to be open (the confirm names it up front).
+      const newPrimaryId = remaining.some((s) => s.isPrimary)
+        ? null
+        : (remaining[0]?.id ?? null);
       const activeId =
         current.activeSceneId === id ? nextActiveId : current.activeSceneId;
       return {
         scenes: remaining.map((s) => {
           let next = s;
-          if (needsPrimary && s.id === activeId) {
+          if (s.id === newPrimaryId) {
             next = { ...next, isPrimary: true };
           }
           if (next.geoReference?.geoSceneId === id) {

@@ -53,6 +53,18 @@ export async function loadEditorProject(projectId: string): Promise<LoadedEditor
   return { project, sceneRows, assets };
 }
 
+/** Current saved revision of the project, or null when it cannot be read. */
+export async function fetchEditorRevision(projectId: string): Promise<number | null> {
+  const q = new URLSearchParams({
+    id: `eq.${projectId}`,
+    select: "editor_revision",
+    limit: "1",
+  });
+  const rows = await dataJson<{ editor_revision: number }[]>(`projects?${q}`);
+  const revision = rows[0]?.editor_revision;
+  return typeof revision === "number" ? revision : null;
+}
+
 /** Atomic save via `public.save_editor_project`; returns the new revision. */
 export async function saveEditorProject(input: {
   projectId: string;

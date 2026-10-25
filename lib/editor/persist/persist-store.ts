@@ -2,7 +2,11 @@ import { create } from "zustand";
 import { useAssetsStore } from "@/lib/editor/assets/assets-store";
 import { collectOrphanAssets } from "@/lib/editor/assets/api";
 import { liveAssetKeepIds } from "@/lib/editor/assets/live-asset-refs";
-import { ProjectConflictError, saveEditorProject } from "@/lib/editor/persist/api";
+import {
+  fetchEditorRevision,
+  ProjectConflictError,
+  saveEditorProject,
+} from "@/lib/editor/persist/api";
 import { fingerprintProject, serializeProject } from "@/lib/editor/persist/serialize";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useEffectsStore } from "@/lib/editor/state/effects-store";
@@ -125,12 +129,36 @@ export function unbindPersistedProject() {
   useProjectPersistStore.setState({ projectId: null, dirty: false, status: "idle" });
 }
 
+/**
+ * Conflict resolution "keep mine": adopt the newest saved revision and save
+ * this editor's state over it. Whatever the other session saved is replaced
+ * (scenes it added and this editor does not have are deleted by the save).
+ */
+export async function overwriteSavedProject(): Promise<boolean> {
+  const persist = useProjectPersistStore.getState();
+  if (!persist.projectId || persist.status !== "conflict") return false;
+  let revision: number | null;
+  try {
+    revision = await fetchEditorRevision(persist.projectId);
+  } catch {
+    revision = null;
+  }
+  if (revision == null) {
+    toast.error("Could not read the saved project", {
+      description: "Check your connection and try again.",
+    });
+    return false;
+  }
+  useProjectPersistStore.setState({ revision, status: "idle", error: null });
+  return saveProject();
+}
+
 export async function saveProject(): Promise<boolean> {
   const persist = useProjectPersistStore.getState();
   if (!persist.projectId || persist.status === "saving") return false;
   if (persist.status === "conflict") {
     toast.error("This project changed elsewhere", {
-      description: "Reload the editor to get the latest version before saving.",
+      description: "Open the “Saved elsewhere” menu to download, overwrite, or reload.",
     });
     return false;
   }
@@ -172,7 +200,7 @@ export async function saveProject(): Promise<boolean> {
     if (error instanceof ProjectConflictError) {
       useProjectPersistStore.setState({ status: "conflict", error: error.message });
       toast.error("Not saved: this project changed elsewhere", {
-        description: "Reload the editor to get the latest version.",
+        description: "Open the “Saved elsewhere” menu to download, overwrite, or reload.",
       });
       return false;
     }
