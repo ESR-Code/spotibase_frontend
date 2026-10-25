@@ -19,7 +19,6 @@ import { confirmDelete } from "@/lib/editor/confirm";
 import { EditorDialog } from "@/app/editor/_components/ui/editor-dialog";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import {
-  collectAssetRefs,
   deleteProjectAsset,
   formatAssetSize,
   renameProjectAsset,
@@ -28,8 +27,7 @@ import {
   type EditorAsset,
   type EditorAssetKind,
 } from "@/lib/editor/assets";
-import { useGeneralSettingsStore } from "@/lib/editor/state/general-settings-store";
-import { readLiveScenes, useScenesStore } from "@/lib/editor/state/scenes-store";
+import { readLiveAssetRefs } from "@/lib/editor/assets/live-asset-refs";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import { toast } from "@/lib/editor/toast";
 
@@ -40,16 +38,6 @@ const KIND_FILTERS: { id: KindFilter; label: string; Icon: LucideIcon }[] = [
   { id: "image", label: "Images", Icon: ImageIcon },
   { id: "model", label: "Models", Icon: Box },
 ];
-
-function readProjectRefs() {
-  return collectAssetRefs({
-    scenes: readLiveScenes(),
-    project: {
-      appStartActions: useScenesStore.getState().appStartActions,
-      generalStyle: useGeneralSettingsStore.getState().style,
-    },
-  });
-}
 
 export function AssetLibraryDialog() {
   const open = useUIStore((s) => s.assetLibraryOpen);
@@ -65,7 +53,7 @@ function AssetLibrary({ onClose }: { onClose: () => void }) {
   // Re-read references whenever the library changes (upload, delete).
   const refs = useMemo(() => {
     void assets;
-    return readProjectRefs();
+    return readLiveAssetRefs();
   }, [assets]);
 
   const list = useMemo(() => {
@@ -167,7 +155,7 @@ function AssetCard({ asset, usages }: { asset: EditorAsset; usages: AssetUsage[]
 
   const remove = async () => {
     // Re-check against the live project: the card may be stale.
-    const live = readProjectRefs().get(asset.id) ?? [];
+    const live = readLiveAssetRefs().get(asset.id) ?? [];
     if (live.length > 0) {
       toast.error(`${asset.name} is still in use`, {
         description: live.map((u) => `${u.sceneName}: ${u.where}`).slice(0, 4).join("\n"),

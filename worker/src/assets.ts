@@ -124,8 +124,14 @@ function assetIdFromKey(project: ProjectAccess, key: unknown) {
 	return key.slice(prefix.length).match(ASSET_FILE_RE)?.[1] ?? null;
 }
 
-/** Pending rows younger than this may still be inside the 5-minute upload window. */
-const PENDING_GRACE_MS = 15 * 60 * 1000;
+/**
+ * Rows younger than this are never swept. A pending row may still be inside
+ * the 5-minute upload window; a ready one may be uploaded but not saved yet
+ * (this tab between upload and save, or another tab of the same project).
+ */
+const NEW_ASSET_GRACE_MS = 15 * 60 * 1000;
+/** Most extra ids the client may ask to protect in one sweep. */
+const GC_MAX_CLIENT_KEEP = 5000;
 const GC_PAGE_SIZE = 500;
 const ASSET_REF_RE = new RegExp(`asset:(${UUID})`, "gi");
 const RAW_ID_FIELDS = new Set(["subjectAssetId"]);
@@ -146,9 +152,9 @@ type GcSceneRow = {
  * `/storage/projects/:id/assets` sub-routes:
  * - `POST /upload-url` reserve a pending row (or reuse one with the same sha256)
  * - `PUT /upload?key=` local-dev direct upload into the simulated bucket
- * - `POST /gc` delete ready assets neither the draft nor a retained version references; pending rows wait out the upload window
+ * - `POST /gc` delete assets neither the draft, a retained version, nor the client's `keep` list references; rows younger than 15 minutes are never swept
  * - `POST /:assetId/commit` validate the object and mark the row ready
- * - `DELETE /:assetId` drop the row and the object (409 while a retained version uses it)
+ * - `DELETE /:assetId` drop the row and the object (409 while the saved draft or a retained version uses it)
  * - `DELETE ""` remove every asset object (project delete; rows cascade)
  */
 export async function handleAssets(
@@ -180,7 +186,7 @@ export async function handleAssets(
 	}
 
 	if (path === "/gc" && request.method === "POST") {
-		return collectUnreferencedAssets(project, token);
+		return collectUnreferencedAssets(request, project, token);
 	}
 
 	if (path === "" && request.method === "DELETE") {
@@ -206,6 +212,15 @@ export async function handleAssets(
 			return commitUpload(request, row, token);
 		}
 		if (action === "" && request.method === "DELETE") {
+			// The editor only knows its live state; the saved draft is what a
+			// reload, a conflict or a crash brings back, so it must not point here.
+			const draftRefs = await readDraftRefs(project, token);
+			if (!draftRefs) return json(403, { error: "Could not read the project." });
+			if (draftRefs.has(row.id.toLowerCase())) {
+				return json(409, {
+					error: "Still used by the saved project. Save your changes, then delete it.",
+				});
+			}
 			const inVersion = await dataApi(
 				token,
 				`/project_versions?project_id=eq.${project.id}&asset_ids=cs.{${row.id}}&select=id&limit=1`,
@@ -345,18 +360,13 @@ async function listPages<T>(token: string, path: string): Promise<T[] | null> {
 }
 
 function isCollectable(row: GcAssetRow, now: number) {
-	if (row.status !== "pending") return true;
 	const created = Date.parse(row.created_at);
 	if (!Number.isFinite(created)) return false;
-	return now - created >= PENDING_GRACE_MS;
+	return now - created >= NEW_ASSET_GRACE_MS;
 }
 
-/**
- * Deletes asset rows the saved project does not reference, then their objects.
- * A failed row delete leaves the object in place for the next sweep. A failed
- * object delete is logged; the row is already gone.
- */
-async function collectUnreferencedAssets(project: ProjectAccess, token: string) {
+/** Ids the saved draft (scenes, thumbnails, project editor data) points at; null if unreadable. */
+async function readDraftRefs(project: ProjectAccess, token: string) {
 	const sceneQuery = new URLSearchParams({
 		project_id: `eq.${project.id}`,
 		select: "data,thumbnail_asset_id",
@@ -366,18 +376,55 @@ async function collectUnreferencedAssets(project: ProjectAccess, token: string) 
 		id: `eq.${project.id}`,
 		select: "editor_data",
 	});
+	const [scenes, projects] = await Promise.all([
+		listPages<GcSceneRow>(token, `/scenes?${sceneQuery}`),
+		listPages<{ editor_data: unknown }>(token, `/projects?${projectQuery}`),
+	]);
+	if (!scenes || !projects) return null;
+	const refs = new Set<string>();
+	for (const scene of scenes) {
+		collectReferencedIds(scene.data, refs);
+		if (scene.thumbnail_asset_id && UUID_RE.test(scene.thumbnail_asset_id)) {
+			refs.add(scene.thumbnail_asset_id.toLowerCase());
+		}
+	}
+	collectReferencedIds(projects[0]?.editor_data, refs);
+	return refs;
+}
+
+/** Extra ids the editor asks to keep (live state, undo history). Only ever protects more. */
+async function readClientKeep(request: Request) {
+	const input = await readJson<{ keep: unknown }>(request);
+	const ids = new Set<string>();
+	if (!Array.isArray(input.keep)) return ids;
+	for (const id of input.keep.slice(0, GC_MAX_CLIENT_KEEP)) {
+		if (typeof id === "string" && UUID_RE.test(id)) ids.add(id.toLowerCase());
+	}
+	return ids;
+}
+
+/**
+ * Deletes asset rows the saved project does not reference, then their objects.
+ * A failed row delete leaves the object in place for the next sweep. A failed
+ * object delete is logged; the row is already gone.
+ */
+async function collectUnreferencedAssets(
+	request: Request,
+	project: ProjectAccess,
+	token: string,
+) {
 	const assetQuery = new URLSearchParams({
 		project_id: `eq.${project.id}`,
 		select: "id,status,r2_key,created_at",
 		order: "id.asc",
 	});
 
-	const [scenes, projects, assets] = await Promise.all([
-		listPages<GcSceneRow>(token, `/scenes?${sceneQuery}`),
-		listPages<{ editor_data: unknown }>(token, `/projects?${projectQuery}`),
+	const [draftRefs, assets, clientKeep] = await Promise.all([
+		readDraftRefs(project, token),
 		listPages<GcAssetRow>(token, `/assets?${assetQuery}`),
+		readClientKeep(request),
 	]);
-	if (!scenes || !projects || !assets) {
+	if (!draftRefs || !assets) {
 		return json(403, { error: "Could not read the project." });
 	}
 	// Read versions after the draft: a version is built from a draft that
@@ -394,20 +441,13 @@ async function collectUnreferencedAssets(project: ProjectAccess, token: string) 
 	);
 	if (!versions) return json(403, { error: "Could not read the project versions." });
 
-	const keep = new Set<string>();
-	for (const scene of scenes) {
-		collectReferencedIds(scene.data, keep);
-		if (scene.thumbnail_asset_id && UUID_RE.test(scene.thumbnail_asset_id)) {
-			keep.add(scene.thumbnail_asset_id.toLowerCase());
-		}
-	}
-	collectReferencedIds(projects[0]?.editor_data, keep);
+	const keep = new Set<string>([...draftRefs, ...clientKeep]);
 	for (const version of versions) {
 		for (const id of version.asset_ids ?? []) keep.add(id.toLowerCase());
 	}
 
 	const now = Date.now();
-	let deleted = 0;
+	const ids: string[] = [];
 	for (const row of assets) {
 		if (keep.has(row.id.toLowerCase())) continue;
 		if (!isCollectable(row, now)) continue;
@@ -421,9 +461,9 @@ async function collectUnreferencedAssets(project: ProjectAccess, token: string) 
 			continue;
 		}
 		await deleteObject(row.r2_key);
-		deleted += 1;
+		ids.push(row.id);
 	}
-	return json(200, { deleted });
+	return json(200, { deleted: ids.length, ids });
 }
 
 async function commitUpload(request: Request, row: AssetRow, token: string) {

@@ -8,6 +8,11 @@ export type HistoryEntry = {
   label: string;
   undo: () => void;
   redo: () => void;
+  /**
+   * Library asset ids the snapshots behind this entry reference. Undo can put
+   * them back, so the asset sweep must not delete them while the entry lives.
+   */
+  assetIds?: readonly string[];
 };
 
 type Stack = { past: HistoryEntry[]; future: HistoryEntry[] };
@@ -91,6 +96,17 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     });
   },
 }));
+
+/** Asset ids that undo / redo of any live history entry could bring back. */
+export function historyAssetIds(): Set<string> {
+  const ids = new Set<string>();
+  for (const stack of Object.values(useHistoryStore.getState().stacks)) {
+    for (const entry of [...stack.past, ...stack.future]) {
+      for (const id of entry.assetIds ?? []) ids.add(id);
+    }
+  }
+  return ids;
+}
 
 /** Imperative access for event handlers and shortcuts. */
 export const history = {

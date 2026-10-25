@@ -6,6 +6,18 @@ import { toast } from "@/lib/editor/toast";
 
 const UNDO_TOAST_MS = 6000;
 
+const ASSET_REF_RE = /asset:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/gi;
+
+function assetIdsIn(...jsons: string[]): string[] {
+  const ids = new Set<string>();
+  for (const json of jsons) {
+    for (const match of json.matchAll(ASSET_REF_RE)) {
+      ids.add(match[1]!.toLowerCase());
+    }
+  }
+  return [...ids];
+}
+
 /** Toast with an Undo button; it only undoes `entry` while it is the latest change. */
 export function toastUndo(
   scope: string,
@@ -47,11 +59,14 @@ export function recordSnapshotChange<S>(
   change: SnapshotChange<S>,
 ): HistoryEntry | null {
   const { scope, label, before, after, restore } = change;
-  if (JSON.stringify(before) === JSON.stringify(after)) return null;
+  const beforeJson = JSON.stringify(before);
+  const afterJson = JSON.stringify(after);
+  if (beforeJson === afterJson) return null;
   const entry: HistoryEntry = {
     label,
     undo: () => restore(before, after),
     redo: () => restore(after, before),
+    assetIds: assetIdsIn(beforeJson, afterJson),
   };
   history.record(scope, entry);
   if (change.toast) toastUndo(scope, entry, change.toast);

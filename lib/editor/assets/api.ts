@@ -5,6 +5,7 @@ import {
   type EditorAsset,
   type EditorAssetKind,
 } from "@/lib/editor/assets/types";
+import { useAssetsStore } from "@/lib/editor/assets/assets-store";
 import { storageJson, type UploadTicket } from "@/lib/projects/storage";
 
 const ASSET_COLUMNS =
@@ -70,13 +71,21 @@ export async function deleteProjectAsset(projectId: string, assetId: string) {
   );
 }
 
-/** Drops ready assets the saved project does not reference. Failure is ignored. */
-export async function collectOrphanAssets(projectId: string): Promise<void> {
+/**
+ * Drops assets neither the saved project nor `keep` references, and removes
+ * them from the library store so pickers stop offering them. `keep` protects
+ * what only the live editor knows (unsaved edits, undo history). Failure is ignored.
+ */
+export async function collectOrphanAssets(
+  projectId: string,
+  keep: Iterable<string> = [],
+): Promise<void> {
   try {
-    await storageJson<{ deleted: number }>(
+    const { ids } = await storageJson<{ deleted: number; ids?: string[] }>(
       `projects/${encodeURIComponent(projectId)}/assets/gc`,
-      { method: "POST" },
+      { method: "POST", body: JSON.stringify({ keep: [...keep] }) },
     );
+    for (const id of ids ?? []) useAssetsStore.getState().removeAsset(id);
   } catch (error) {
     console.error("Asset sweep failed", error);
   }

@@ -7,6 +7,8 @@ Severity: **Critical** = hangs or destroys work in a normal flow. **High** = dat
 
 ## Status
 
+Batch 2 fixed: **5, 6, 15** (asset lifecycle: GC `keep` list + 15-minute grace for all new rows, delete checks the saved draft, store pruned after GC, undo history protects its assets). Residual: a manual library delete of an asset only referenced by undo history is still allowed, so a later Undo restores a missing-asset placeholder. Not yet tested in a browser.
+
 Batch 1 fixed: **1, 2, 3, 4, 7** (see `docs/decisions.md`: acyclic graphs, Start-hop guard, leave guard, error boundary, reminted ids). Corrections found while fixing: in #7 the action graph was already deep-cloned (no shared arrays), only the node ids were shared. #3 does not cover programmatic `router.push` (for example account-menu sign-out). #2 does not cancel an in-flight transition when Preview exits (still #22). Not yet manually tested in a browser.
 
 ## Summary

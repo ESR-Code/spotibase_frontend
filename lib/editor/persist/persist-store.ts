@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { useAssetsStore } from "@/lib/editor/assets/assets-store";
 import { collectOrphanAssets } from "@/lib/editor/assets/api";
+import { liveAssetKeepIds } from "@/lib/editor/assets/live-asset-refs";
 import { ProjectConflictError, saveEditorProject } from "@/lib/editor/persist/api";
 import { fingerprintProject, serializeProject } from "@/lib/editor/persist/serialize";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -165,7 +166,7 @@ export async function saveProject(): Promise<boolean> {
     });
     scheduleDirtyCheck();
     toast.success("Project saved");
-    void collectOrphanAssets(persist.projectId);
+    void collectOrphanAssets(persist.projectId, liveAssetKeepIds());
     return true;
   } catch (error) {
     if (error instanceof ProjectConflictError) {

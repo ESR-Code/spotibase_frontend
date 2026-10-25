@@ -105,8 +105,8 @@ Worker routes (`worker/src/storage.ts`, `worker/src/assets.ts`, shared helpers i
 | `POST /storage/projects/:id/assets/upload-url` | Validate kind / type / size, reserve a `pending` asset row (or return the existing one with the same `sha256`), mint the upload URL |
 | `PUT /storage/projects/:id/assets/upload?key=` | Local dev only: write into the simulated bucket |
 | `POST /storage/projects/:id/assets/:assetId/commit` | `head` the object, mark the row `ready` |
-| `POST /storage/projects/:id/assets/gc` | Delete unreferenced ready assets and their objects; pending uploads wait 15 minutes |
-| `DELETE /storage/projects/:id/assets/:assetId` | Delete the row and the object |
+| `POST /storage/projects/:id/assets/gc` | Delete assets the saved draft, retained versions and the body's `keep` ids don't reference (rows under 15 minutes old are skipped); returns `{ deleted, ids }` |
+| `DELETE /storage/projects/:id/assets/:assetId` | Delete the row and the object; 409 while the saved draft or a retained version uses it |
 | `DELETE /storage/projects/:id/assets` | Delete every asset object (project delete; rows cascade) |
 | `POST /storage/orgs/:id/logo/upload-url` · `PUT …/upload` · `POST …/commit` · `DELETE /storage/orgs/:id/logo` | Org logo (`org-logo.ts`). Owner / admin only (role from Neon Auth `get-active-member-role`); commit writes the key through Neon Auth `organization/update` with the user's cookie, then deletes the previous object. WebP ≤ 2 MB |
 | `GET /files/<key>` | Stream from R2 after checking membership (project row under RLS; org logos via `rpc/is_org_member`); `private, immutable` cache |
