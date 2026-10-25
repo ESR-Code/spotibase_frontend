@@ -18,16 +18,20 @@ import {
 } from "@/lib/editor/actions/http-request";
 import {
   ACTION_NODE_META,
+  freshRunContext,
   type ActionRunContext,
 } from "@/lib/editor/actions/registry";
 import {
   clearPostMessageListeners,
   registerPostMessageReceive,
 } from "@/lib/editor/actions/send-post-message";
-import { cancelPendingWaits } from "@/lib/editor/actions/wait";
+import {
+  cancelPendingWaits,
+  currentRunGeneration,
+} from "@/lib/editor/actions/wait";
 import { useCustomMenuToggleStore } from "@/lib/editor/state/custom-menu-toggle-store";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
-import { withActionItemScope } from "@/lib/editor/actions/interpolate-fields";
+import { withItemScope } from "@/lib/editor/actions/interpolate-fields";
 import { usePreviewSpawnedHotspotsStore } from "@/lib/editor/state/preview-spawned-hotspots-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
@@ -50,9 +54,14 @@ export async function runActionNodeList(
   ctx: ActionRunContext,
 ): Promise<void> {
   const visited = new Set<string>();
+  // A run belongs to the generation it started under. Leaving / entering
+  // Preview or switching scene bumps it and the run stops before its next node.
+  const generation = ctx.runGeneration ?? currentRunGeneration();
+  ctx = ctx.runGeneration === generation ? ctx : { ...ctx, runGeneration: generation };
 
   for (let index = 0; index < nodes.length; index++) {
     const node = nodes[index]!;
+    if (generation !== currentRunGeneration()) break;
     if (visited.has(node.id)) break;
     visited.add(node.id);
 
@@ -64,7 +73,7 @@ export async function runActionNodeList(
     }
 
     const meta = ACTION_NODE_META[node.type];
-    const error = meta.validate(node);
+    const error = withItemScope(ctx.itemScope, () => meta.validate(node));
     if (error) {
       toast.error(`${meta.label}: ${error}`);
       break;
@@ -107,7 +116,8 @@ export async function runActionNodeList(
             const latestGraph = getOwnedActionGraph(ctx.ownerId);
             if (!latestGraph) return;
             const chain = chainFrom(latestGraph, node.id, handleId);
-            void runActionNodeList(chain, ctx);
+            // A received message starts a new run (App Start listeners outlive scenes).
+            void runActionNodeList(chain, freshRunContext(ctx));
           },
         });
         if (registerError) {
@@ -118,9 +128,13 @@ export async function runActionNodeList(
       break;
     }
 
+    // Only the synchronous start of `run` sees the item scope as ambient
+    // state; later reads must use ctx.itemScope (see withItemScope callers).
+    const nodeCtx = { ...ctx, runPath: [...(ctx.runPath ?? []), node.id] };
     const result = await Promise.resolve(
-      meta.run(node, { ...ctx, runPath: [...(ctx.runPath ?? []), node.id] }),
+      withItemScope(ctx.itemScope, () => meta.run(node, nodeCtx)),
     );
+    if (generation !== currentRunGeneration()) break;
     if (result === "stop") break;
   }
 }
@@ -147,18 +161,13 @@ export async function runHotspotActions(hotspotId: number) {
 
   focusHotspotCamera(hotspotId);
 
-  const ctx = {
+  const spawned = usePreviewSpawnedHotspotsStore.getState().findEntry(hotspotId);
+  await runActionGraph(getActionGraph(hotspot), {
     hotspotId,
     ownerId: hotspotId,
     ownerKey: ownerKeyFor(hotspotId),
-  };
-  const run = () => runActionGraph(getActionGraph(hotspot), ctx);
-  const spawned = usePreviewSpawnedHotspotsStore.getState().findEntry(hotspotId);
-  if (spawned) {
-    await withActionItemScope(spawned.item, spawned.index, run);
-    return;
-  }
-  await run();
+    itemScope: spawned ? { item: spawned.item, index: spawned.index } : undefined,
+  });
 }
 
 export async function runAppStartActions() {

@@ -7,7 +7,6 @@ import { getHttpRequestCachedForNode } from "@/lib/editor/actions/http-request";
 import {
   resolveActionFieldValue,
   unwrapFieldPath,
-  withActionItemScope,
 } from "@/lib/editor/actions/interpolate-fields";
 import {
   getValueByPath,
@@ -234,6 +233,8 @@ export function validateForEachData(
 export async function runForEach(
   node: ForEachActionNode,
   runTail: (item: unknown, index: number) => Promise<void>,
+  /** True once the run was cancelled (Preview left, scene switched): stop between items. */
+  isCancelled: () => boolean = () => false,
 ): Promise<"stop"> {
   const owner = findActionNodeOwner(node.id);
   const items = resolveForEachItems(
@@ -256,9 +257,8 @@ export async function runForEach(
       );
     }
     for (let index = 0; index < limited.length; index++) {
-      await withActionItemScope(limited[index], index, () =>
-        runTail(limited[index], index),
-      );
+      if (isCancelled()) break;
+      await runTail(limited[index], index);
     }
   } finally {
     commitSpawnReplacePasses();

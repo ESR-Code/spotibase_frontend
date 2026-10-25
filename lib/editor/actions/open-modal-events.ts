@@ -67,26 +67,21 @@ async function fireOpenModalClose(
   const { runActionNodeList } = await import(
     "@/lib/editor/actions/run-action-graph"
   );
-  const { withActionItemScope } = await import(
-    "@/lib/editor/actions/interpolate-fields"
-  );
   const { usePreviewSpawnedHotspotsStore } = await import(
     "@/lib/editor/state/preview-spawned-hotspots-store"
   );
+  const spawned = usePreviewSpawnedHotspotsStore
+    .getState()
+    .findEntry(registration.hotspotId);
   const ctx: ActionRunContext = {
     hotspotId: registration.hotspotId,
     ownerId: registration.ownerId,
     ownerKey: registration.ownerKey || ownerKeyFor(registration.ownerId),
+    itemScope: spawned
+      ? { item: spawned.item, index: spawned.index }
+      : undefined,
   };
-  const run = () => runActionNodeList(chain, ctx);
-  const spawned = usePreviewSpawnedHotspotsStore
-    .getState()
-    .findEntry(registration.hotspotId);
-  if (spawned) {
-    await withActionItemScope(spawned.item, spawned.index, run);
-    return;
-  }
-  await run();
+  await runActionNodeList(chain, ctx);
 }
 
 /** Call when the preview modal / drawer / infobox transitions open → closed. */

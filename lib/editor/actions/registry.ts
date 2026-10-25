@@ -49,6 +49,8 @@ import {
 import {
   interpolateHttpRequestFields,
   interpolatePostMessageFields,
+  withItemScope,
+  type ActionItemScope,
 } from "@/lib/editor/actions/interpolate-fields";
 import {
   clampSubscribeIntervalMs,
@@ -70,7 +72,11 @@ import {
   applyPlayAnimation,
   validatePlayAnimationData,
 } from "@/lib/editor/actions/play-animation";
-import { applyWait, validateWaitData } from "@/lib/editor/actions/wait";
+import {
+  applyWait,
+  currentRunGeneration,
+  validateWaitData,
+} from "@/lib/editor/actions/wait";
 import { transitionToScene } from "@/lib/editor/actions/transition-to-scene";
 import { openHotspotInPreview } from "@/lib/editor/preview/open-hotspot-in-preview";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -100,7 +106,20 @@ export type ActionRunContext = {
    * A node that shows up again is a loop and stops the run.
    */
   runPath?: readonly string[];
+  /** `cancelPendingWaits` generation this run started under; a newer one cancels it. */
+  runGeneration?: number;
+  /** For Each item this run executes for. Travels with the run, never global. */
+  itemScope?: ActionItemScope;
 };
+
+/**
+ * Context for a run that starts from an event (Post Message, Subscribe poll):
+ * it is a new run, so it must not inherit the generation or call stack of the
+ * run that registered the listener.
+ */
+export function freshRunContext(ctx: ActionRunContext): ActionRunContext {
+  return { ...ctx, runGeneration: undefined, runPath: undefined };
+}
 
 export type ActionRunResult = void | "stop";
 
@@ -381,7 +400,8 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
           if (!graph) return;
           const tail = chainFrom(graph, node.id);
           if (tail.length === 0) return;
-          await runActionNodeList(tail, ctx);
+          // A poll payload starts a new run, not a continuation of this one.
+          await runActionNodeList(tail, freshRunContext(ctx));
         },
       });
       return "stop";
@@ -495,10 +515,9 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
         "@/lib/editor/actions/run-action-graph"
       );
       const graph = getOwnedActionGraph(ctx.ownerId);
-      const items = resolveForEachItems(
-        node.data.itemsPath,
-        graph ?? undefined,
-        node.id,
+      // Reads below happen after awaits: restore this run's scope for them.
+      const items = withItemScope(ctx.itemScope, () =>
+        resolveForEachItems(node.data.itemsPath, graph ?? undefined, node.id),
       );
       if (items == null) {
         toast.error("For Each: items path did not resolve to an array");
@@ -506,9 +525,18 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
       }
       if (!graph) return "stop";
       const tail = chainFrom(graph, node.id);
-      return runForEach(node, async () => {
-        await runActionNodeList(tail, ctx);
-      });
+      return withItemScope(ctx.itemScope, () =>
+        runForEach(
+          node,
+          async (item, index) => {
+            await runActionNodeList(tail, {
+              ...ctx,
+              itemScope: { item, index },
+            });
+          },
+          () => ctx.runGeneration !== currentRunGeneration(),
+        ),
+      );
     },
   },
   spawnHotspots: {
@@ -540,11 +568,14 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
       );
       const graph = getOwnedActionGraph(ctx.ownerId);
       if (!graph) return "stop";
-      return runSwitch(node, async (handle) => {
-        const branch = chainFrom(graph, node.id, handle);
-        if (branch.length === 0) return;
-        await runActionNodeList(branch, ctx);
-      });
+      // The case subject is read synchronously inside runSwitch, after awaits above.
+      return withItemScope(ctx.itemScope, () =>
+        runSwitch(node, async (handle) => {
+          const branch = chainFrom(graph, node.id, handle);
+          if (branch.length === 0) return;
+          await runActionNodeList(branch, ctx);
+        }),
+      );
     },
   },
   playAnimation: {

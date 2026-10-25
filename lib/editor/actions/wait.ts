@@ -31,7 +31,19 @@ export function validateWaitData(
   return null;
 }
 
-/** Cancel in-flight Wait nodes so leftover chains do not resume. */
+/**
+ * Run generation. Every in-flight action run remembers the value it started
+ * under; once `cancelPendingWaits` bumps it (leaving Preview, entering Preview,
+ * a scene switch) those runs stop before their next node / For Each item.
+ */
+export function currentRunGeneration(): number {
+  return generation;
+}
+
+/**
+ * Cancel in-flight Wait nodes and invalidate every running chain, so leftover
+ * chains do not resume into the next scene or Preview session.
+ */
 export function cancelPendingWaits(): void {
   generation += 1;
   const waiting = [...pending];

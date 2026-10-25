@@ -40,22 +40,28 @@ export function buildFieldToken(
     : `{{${source.path}}}`;
 }
 
-type ActionItemScope = {
+export type ActionItemScope = {
   item: unknown;
   index: number;
 };
 
+/**
+ * Ambient scope read by the `interpolate*` helpers. It is only ever set for a
+ * synchronous stretch (the runner wraps each node's validate / run prefix), so
+ * concurrent async runs cannot see each other's item. The scope itself travels
+ * with the run in `ActionRunContext.itemScope`.
+ */
 const itemScopeStack: ActionItemScope[] = [];
 
-/** Run `fn` with the current For Each item as the first interpolation scope. */
-export async function withActionItemScope<T>(
-  item: unknown,
-  index: number,
-  fn: () => T | Promise<T>,
-): Promise<T> {
-  itemScopeStack.push({ item, index });
+/** Run `fn` synchronously with `scope` (when given) as the interpolation scope. */
+export function withItemScope<T>(
+  scope: ActionItemScope | undefined,
+  fn: () => T,
+): T {
+  if (!scope) return fn();
+  itemScopeStack.push(scope);
   try {
-    return await fn();
+    return fn();
   } finally {
     itemScopeStack.pop();
   }

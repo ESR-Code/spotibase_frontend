@@ -7,6 +7,8 @@ Severity: **Critical** = hangs or destroys work in a normal flow. **High** = dat
 
 ## Status
 
+Batch 5 fixed: **8, 9** (`ActionRunContext.runGeneration` + `itemScope`, `withItemScope`, `freshRunContext`; see `docs/decisions.md`). Behavior change: a scene switch now also stops the remainder of any chain that is still running (previously only the current Wait ended), e.g. an App Start chain that is mid-run. In-flight HTTP responses are ignored rather than aborted (aborting is #20). Checked with a throwaway script (cancel mid-chain stops later nodes; concurrent runs keep separate item scopes); not tested in the browser.
+
 Batch 4 fixed: **10, 11** (`model-manager.ts` load sequence + stale discard, `use-playcanvas-editor.ts` newest-switch-wins, post-init scene reconcile, import bound to its scene; see `docs/decisions.md`). Behavior change: switching scenes (or starting a second import) while an import is still decoding cancels that import with a toast instead of applying it somewhere else. Not yet tested in a browser.
 
 Batch 3 fixed: **12, 29** (`use-editor-keyboard.ts`: shortcuts yield to the Scenes / Assets / Publish / Actions dialogs, an open confirm dialog and an alignment session; Delete/Backspace also stays off while Scene or General settings drawers are open; Ctrl/Cmd/Alt combos, key repeat and IME composition are ignored). `P` with General settings open is still allowed on purpose (Preview keeps that drawer open). Not yet tested in a browser.
@@ -26,8 +28,8 @@ Batch 1 fixed: **1, 2, 3, 4, 7** (see `docs/decisions.md`: acyclic graphs, Start
 | 5 | High | Fixed (batch 2) | Persistence | Asset GC after Save can delete an asset still in use |
 | 6 | High | Fixed (batch 2) | UI | Asset delete only checks live editor, not saved draft |
 | 7 | High | Fixed (batch 1) | Actions | Duplicated hotspot shares action graph (same node ids, same object) |
-| 8 | High | Open | Actions | Cancelled/left Preview does not cancel running chains |
-| 9 | High | Open | Actions | For Each item scope is a global stack shared across async runs |
+| 8 | High | Fixed (batch 5) | Actions | Cancelled/left Preview does not cancel running chains |
+| 9 | High | Fixed (batch 5) | Actions | For Each item scope is a global stack shared across async runs |
 | 10 | High | Fixed (batch 4) | Engine | Async model load / import lands in the wrong scene |
 | 11 | High | Fixed (batch 4) | Engine | Scene switch during engine init is lost |
 | 12 | High | Fixed (batch 3) | UI | Delete / P / V / A shortcuts fire behind open dialogs |
@@ -49,7 +51,7 @@ Batch 1 fixed: **1, 2, 3, 4, 7** (see `docs/decisions.md`: acyclic graphs, Start
 | 28 | Medium | Open | Engine | Controller/listener leak when unmounting during first load; no WebGL context-loss handling; NaN bounds → continuous render |
 | 29 | Medium | Fixed (batch 3) | UI | Modifier keys trigger shortcuts (Ctrl+A / Ctrl+V / Ctrl+P) |
 
-Recommended fix order before the viewer: ~~1, 2, 3, 4, 7, 5/6/15, 12, 29, 10/11~~ (done), then **8/9**, then the rest.
+Recommended fix order before the viewer: ~~1, 2, 3, 4, 7, 5/6/15, 12, 29, 10/11, 8/9~~ (done), then the rest (13 and 14 are the cheapest, 20 matters before the viewer ships).
 
 ---
 
