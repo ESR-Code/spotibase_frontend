@@ -56,6 +56,8 @@ export type ModelManager = {
     blob: Blob,
   ) => Promise<Entity | null>;
   unloadCurrent: () => void;
+  /** Mark every in-flight subject load stale so it discards its result. */
+  cancelPendingLoads: () => void;
   setWireframe: (enabled: boolean) => void;
   applyTransform: (
     scale: number,
@@ -257,7 +259,23 @@ export function createModelManager(
     applyReflection(useModelStore.getState().modelReflection);
   };
 
+  // Subject loads are async. Whatever replaces or clears the viewport content
+  // (a newer load, a scene change, unload, the default box) bumps this, and an
+  // older load that finishes late sees it is stale and discards its result
+  // instead of mounting into the wrong scene.
+  let loadSeq = 0;
+  const cancelPendingLoads = () => {
+    loadSeq += 1;
+  };
+  const beginLoad = (sceneId?: string) => {
+    const seq = ++loadSeq;
+    const startScene = sceneId ?? useScenesStore.getState().activeSceneId;
+    return () =>
+      seq !== loadSeq || useScenesStore.getState().activeSceneId !== startScene;
+  };
+
   const loadDefaultImagePlaceholder = () => {
+    cancelPendingLoads();
     clearChildren(modelRoot);
     releaseContainerAsset();
     destroyOwnedTexture();
@@ -276,6 +294,7 @@ export function createModelManager(
   };
 
   const loadDefault = (type?: SceneTypeId) => {
+    cancelPendingLoads();
     const sceneType = type ?? activeSceneType();
     if (getSceneType(sceneType).engine !== "playcanvas") {
       unloadCurrent();
@@ -318,6 +337,8 @@ export function createModelManager(
       toastOnSuccess: boolean;
       /** User import only. Restore must not rewrite authored name / size text. */
       updateAuthoredMeta: boolean;
+      /** True once a newer load or a scene change superseded this one. */
+      isStale: () => boolean;
     },
   ): Promise<Entity | null> => {
     configureModelDecoders(pcModule);
@@ -336,6 +357,12 @@ export function createModelManager(
         incoming!.on("error", (err: string) => reject(new Error(err)));
         app.assets.load(incoming!);
       });
+
+      if (options.isStale()) {
+        if (app.assets.get(incoming.id)) app.assets.remove(incoming);
+        incoming.unload();
+        return null;
+      }
 
       clearAnimationBinding();
       clearChildren(modelRoot);
@@ -395,6 +422,7 @@ export function createModelManager(
       resetTransform: boolean;
       toastOnSuccess: boolean;
       updateAuthoredMeta: boolean;
+      isStale: () => boolean;
     },
   ): Promise<Entity | null> => {
     const mime = mimeFromFileName(fileName);
@@ -407,6 +435,11 @@ export function createModelManager(
         app.graphicsDevice,
         url,
       );
+
+      if (options.isStale()) {
+        texture.destroy();
+        return null;
+      }
 
       clearChildren(modelRoot);
       releaseContainerAsset();
@@ -454,23 +487,39 @@ export function createModelManager(
     }
     toast.message(`Importing ${file.name}...`);
 
+    // The import belongs to the scene that was active when it started.
+    const sceneId = useScenesStore.getState().activeSceneId;
+    const isStale = beginLoad(sceneId);
+
     try {
       const buffer = await file.arrayBuffer();
+      if (isStale()) {
+        toast.message(
+          `Import of ${file.name} cancelled: the scene changed or a newer import started`,
+        );
+        return null;
+      }
       const entity =
         type === "image"
           ? await instantiateImageFromBuffer(file.name, buffer, {
               resetTransform: true,
               toastOnSuccess: true,
               updateAuthoredMeta: true,
+              isStale,
             })
           : await instantiateModelFromBuffer(file.name, buffer, {
               resetTransform: true,
               toastOnSuccess: true,
               updateAuthoredMeta: true,
+              isStale,
             });
 
+      if (!entity && isStale()) {
+        toast.message(
+          `Import of ${file.name} cancelled: the scene changed or a newer import started`,
+        );
+      }
       if (entity) {
-        const sceneId = useScenesStore.getState().activeSceneId;
         sceneSubjectCache.set(sceneId, {
           kind: type,
           fileName: file.name,
@@ -495,22 +544,28 @@ export function createModelManager(
     fileName: string,
     blob: Blob,
   ): Promise<Entity | null> => {
+    const isStale = beginLoad();
     try {
       const buffer = await blob.arrayBuffer();
+      if (isStale()) return null;
       if (kind === "image") {
         return await instantiateImageFromBuffer(fileName, buffer, {
           resetTransform: false,
           toastOnSuccess: false,
           updateAuthoredMeta: false,
+          isStale,
         });
       }
       return await instantiateModelFromBuffer(fileName, buffer, {
         resetTransform: false,
         toastOnSuccess: false,
         updateAuthoredMeta: false,
+        isStale,
       });
     } catch (error) {
       console.error(error);
+      // A superseded load must not toast or reset the newer scene's content.
+      if (isStale()) return null;
       toast.error(
         kind === "image"
           ? "Failed to restore scene image"
@@ -522,6 +577,7 @@ export function createModelManager(
   };
 
   const unloadCurrent = () => {
+    cancelPendingLoads();
     clearAnimationBinding();
     clearChildren(modelRoot);
     releaseContainerAsset();
@@ -541,6 +597,7 @@ export function createModelManager(
     replaceFromGlb,
     restoreFromCache,
     unloadCurrent,
+    cancelPendingLoads,
     setWireframe,
     applyTransform,
     applyReflection,

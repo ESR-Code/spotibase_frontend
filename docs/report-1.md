@@ -1,11 +1,15 @@
 # QA Report 1 — Editor pre-viewer audit
 
 Scope: `/projects/[id]/editor` (state, persistence, action graphs/Preview runtime, viewport engines, UI workflows).
-Method: static code audit by four parallel reviewers (persistence/state, action runtime, viewport engines, UI/workflows). Top findings were re-checked against the code; **nothing was reproduced in a running editor**. Small/cosmetic issues are deliberately skipped. No code was changed.
+Method: static code audit by four parallel reviewers (persistence/state, action runtime, viewport engines, UI/workflows). Top findings were re-checked against the code; **nothing was reproduced in a running editor**. Small/cosmetic issues are deliberately skipped. The audit itself changed no code; fixes are tracked in the Status column and section below.
 
 Severity: **Critical** = hangs or destroys work in a normal flow. **High** = data loss / wrong data / broken workflow with a plausible trigger. **Medium** = real bug, narrower trigger or recoverable.
 
 ## Status
+
+Batch 4 fixed: **10, 11** (`model-manager.ts` load sequence + stale discard, `use-playcanvas-editor.ts` newest-switch-wins, post-init scene reconcile, import bound to its scene; see `docs/decisions.md`). Behavior change: switching scenes (or starting a second import) while an import is still decoding cancels that import with a toast instead of applying it somewhere else. Not yet tested in a browser.
+
+Batch 3 fixed: **12, 29** (`use-editor-keyboard.ts`: shortcuts yield to the Scenes / Assets / Publish / Actions dialogs, an open confirm dialog and an alignment session; Delete/Backspace also stays off while Scene or General settings drawers are open; Ctrl/Cmd/Alt combos, key repeat and IME composition are ignored). `P` with General settings open is still allowed on purpose (Preview keeps that drawer open). Not yet tested in a browser.
 
 Batch 2 fixed: **5, 6, 15** (asset lifecycle: GC `keep` list + 15-minute grace for all new rows, delete checks the saved draft, store pruned after GC, undo history protects its assets). Residual: a manual library delete of an asset only referenced by undo history is still allowed, so a later Undo restores a missing-asset placeholder. Not yet tested in a browser.
 
@@ -13,39 +17,39 @@ Batch 1 fixed: **1, 2, 3, 4, 7** (see `docs/decisions.md`: acyclic graphs, Start
 
 ## Summary
 
-| # | Sev | Area | Title |
-| --- | --- | --- | --- |
-| 1 | Critical | Actions | Action graph cycles loop forever (Switch, Subscribe) |
-| 2 | High | Actions | Scene Start ↔ Go To Scene ping-pong with no exit |
-| 3 | High | Persistence | In-app navigation discards unsaved work silently |
-| 4 | High | UI | No error boundary: any render error loses unsaved work |
-| 5 | High | Persistence | Asset GC after Save can delete an asset still in use |
-| 6 | High | UI | Asset delete only checks live editor, not saved draft |
-| 7 | High | Actions | Duplicated hotspot shares action graph (same node ids, same object) |
-| 8 | High | Actions | Cancelled/left Preview does not cancel running chains |
-| 9 | High | Actions | For Each item scope is a global stack shared across async runs |
-| 10 | High | Engine | Async model load / import lands in the wrong scene |
-| 11 | High | Engine | Scene switch during engine init is lost |
-| 12 | High | UI | Delete / P / V / A shortcuts fire behind open dialogs |
-| 13 | High | Persistence | Action fences leak across project reloads and re-save stale data |
-| 14 | Medium | Persistence | Publish can skip the save (dirty flag is debounced 400 ms) |
-| 15 | Medium | Persistence | Asset store not refreshed after GC; undo restores deleted asset refs |
-| 16 | Medium | Persistence | Legacy scenes load un-normalized, scene switch marks project dirty |
-| 17 | Medium | UI | Scene delete: generic confirm, dangling Go To Scene, arbitrary new primary |
-| 18 | Medium | UI | Save conflict is a dead end (only "Reload") |
-| 19 | Medium | UI | Legend category delete in Spawn drawer leaves stale ids |
-| 20 | Medium | Actions | HTTP/Subscribe: no timeout, size cap, abort; credentialed same-origin |
-| 21 | Medium | Actions | Post Message receive accepts any origin |
-| 22 | Medium | Actions | Go To Scene transition completes after leaving Preview |
-| 23 | Medium | Actions | Open Modal onClose / Go To Hotspot self-loop traps user |
-| 24 | Medium | Engine | Geo viewport stuck on loader if style/tiles fail |
-| 25 | Medium | Engine | Overlay image failure aborts whole overlay sync |
-| 26 | Medium | Engine | 3-point georeference applies garbage fit with no gate |
-| 27 | Medium | Engine | Subject import: no size limit, allowed in Preview / during alignment |
-| 28 | Medium | Engine | Controller/listener leak when unmounting during first load; no WebGL context-loss handling; NaN bounds → continuous render |
-| 29 | Medium | UI | Modifier keys trigger shortcuts (Ctrl+A / Ctrl+V / Ctrl+P) |
+| # | Sev | Status | Area | Title |
+| --- | --- | --- | --- | --- |
+| 1 | Critical | Fixed (batch 1) | Actions | Action graph cycles loop forever (Switch, Subscribe) |
+| 2 | High | Fixed (batch 1) | Actions | Scene Start ↔ Go To Scene ping-pong with no exit |
+| 3 | High | Fixed (batch 1) | Persistence | In-app navigation discards unsaved work silently |
+| 4 | High | Fixed (batch 1) | UI | No error boundary: any render error loses unsaved work |
+| 5 | High | Fixed (batch 2) | Persistence | Asset GC after Save can delete an asset still in use |
+| 6 | High | Fixed (batch 2) | UI | Asset delete only checks live editor, not saved draft |
+| 7 | High | Fixed (batch 1) | Actions | Duplicated hotspot shares action graph (same node ids, same object) |
+| 8 | High | Open | Actions | Cancelled/left Preview does not cancel running chains |
+| 9 | High | Open | Actions | For Each item scope is a global stack shared across async runs |
+| 10 | High | Fixed (batch 4) | Engine | Async model load / import lands in the wrong scene |
+| 11 | High | Fixed (batch 4) | Engine | Scene switch during engine init is lost |
+| 12 | High | Fixed (batch 3) | UI | Delete / P / V / A shortcuts fire behind open dialogs |
+| 13 | High | Open | Persistence | Action fences leak across project reloads and re-save stale data |
+| 14 | Medium | Open | Persistence | Publish can skip the save (dirty flag is debounced 400 ms) |
+| 15 | Medium | Fixed (batch 2) | Persistence | Asset store not refreshed after GC; undo restores deleted asset refs |
+| 16 | Medium | Open | Persistence | Legacy scenes load un-normalized, scene switch marks project dirty |
+| 17 | Medium | Open | UI | Scene delete: generic confirm, dangling Go To Scene, arbitrary new primary |
+| 18 | Medium | Open | UI | Save conflict is a dead end (only "Reload") |
+| 19 | Medium | Open | UI | Legend category delete in Spawn drawer leaves stale ids |
+| 20 | Medium | Open | Actions | HTTP/Subscribe: no timeout, size cap, abort; credentialed same-origin |
+| 21 | Medium | Open | Actions | Post Message receive accepts any origin |
+| 22 | Medium | Open | Actions | Go To Scene transition completes after leaving Preview |
+| 23 | Medium | Open | Actions | Open Modal onClose / Go To Hotspot self-loop traps user |
+| 24 | Medium | Open | Engine | Geo viewport stuck on loader if style/tiles fail |
+| 25 | Medium | Open | Engine | Overlay image failure aborts whole overlay sync |
+| 26 | Medium | Open | Engine | 3-point georeference applies garbage fit with no gate |
+| 27 | Medium | Open | Engine | Subject import: no size limit, allowed in Preview / during alignment |
+| 28 | Medium | Open | Engine | Controller/listener leak when unmounting during first load; no WebGL context-loss handling; NaN bounds → continuous render |
+| 29 | Medium | Fixed (batch 3) | UI | Modifier keys trigger shortcuts (Ctrl+A / Ctrl+V / Ctrl+P) |
 
-Recommended fix order before the viewer: **1, 2, 3, 4, 7, 5/6/15 (asset lifecycle together), 12, 10/11, 8/9**, then the rest.
+Recommended fix order before the viewer: ~~1, 2, 3, 4, 7, 5/6/15, 12, 29, 10/11~~ (done), then **8/9**, then the rest.
 
 ---
 

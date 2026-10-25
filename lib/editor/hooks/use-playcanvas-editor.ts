@@ -176,6 +176,7 @@ export function usePlayCanvasEditor() {
           ? initialSceneId
           : null;
         let subjectLoadToken = 0;
+        let sceneSwitchSeq = 0;
         let activeSceneType = initialType;
 
         // Geo scenes: `onUpdate` returns early, so nothing is drawn.
@@ -576,9 +577,16 @@ export function usePlayCanvasEditor() {
             .detail;
           if (!detail?.file) return;
           const type = detail.type ?? getActiveSceneType();
+          // The import belongs to the scene active now; `replaceFromFile`
+          // discards itself if the scene changes (or a newer import starts)
+          // before it finishes, so a non-null entity is still this scene's.
           const sceneId = useScenesStore.getState().activeSceneId;
           const entity = await models.replaceFromFile(detail.file, type);
-          if (entity) {
+          if (
+            entity &&
+            !destroyed &&
+            useScenesStore.getState().activeSceneId === sceneId
+          ) {
             applyScenePresentation(type);
             cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
             syncKeyLightShadowMode();
@@ -661,6 +669,9 @@ export function usePlayCanvasEditor() {
             ?.sceneId;
           if (!sceneId) return;
 
+          // Only the newest switch may finish: an older one that was awaiting a
+          // subject must not hydrate its scene over the one that replaced it.
+          const switchSeq = ++sceneSwitchSeq;
           resetModelAnimation();
 
           const targetScene = useScenesStore
@@ -672,6 +683,9 @@ export function usePlayCanvasEditor() {
           // Geo uses a different viewport. Keep the current PlayCanvas subject
           // so returning to this 2D/3D scene does not reload a placeholder.
           if (!isPlayCanvasSceneType(sceneType)) {
+            // Drop any subject still loading for the scene we just left.
+            subjectLoadToken += 1;
+            models.cancelPendingLoads();
             setEngineActive(false);
             return;
           }
@@ -682,8 +696,18 @@ export function usePlayCanvasEditor() {
           const sameSubject = loadedPlayCanvasSceneId === sceneId;
           if (!sameSubject) {
             models.unloadCurrent();
+            // The viewport is empty until the load lands: never report the
+            // previous scene as still loaded (a quick switch back would skip
+            // the reload and show nothing).
+            loadedPlayCanvasSceneId = null;
             await loadPlayCanvasSubject(sceneId, sceneType);
-            if (destroyed) return;
+            if (
+              destroyed ||
+              switchSeq !== sceneSwitchSeq ||
+              useScenesStore.getState().activeSceneId !== sceneId
+            ) {
+              return;
+            }
             loadedPlayCanvasSceneId = sceneId;
           }
 
@@ -739,6 +763,18 @@ export function usePlayCanvasEditor() {
         useUIStore.getState().setLoading(false);
 
         hotspotMgr.syncFromStore();
+
+        // A scene switch while the first subject was loading fired before the
+        // listener above existed. The stores already follow the new scene, so
+        // catch the viewport up to it.
+        const activeAfterInit = useScenesStore.getState().activeSceneId;
+        if (activeAfterInit !== initialSceneId) {
+          void onSceneSwitched(
+            new CustomEvent("editor:scene-switched", {
+              detail: { sceneId: activeAfterInit },
+            }),
+          );
+        }
         toast.success("Welcome to Spotibase — try Preview mode", { id: "editor-welcome" });
 
         cleanup = () => {

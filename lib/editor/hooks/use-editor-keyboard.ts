@@ -1,15 +1,32 @@
 "use client";
 
 import { useEffect } from "react";
-import { confirmDelete } from "@/lib/editor/confirm";
+import { confirmDelete, useConfirmStore } from "@/lib/editor/confirm";
 import { toggleEditorPreview } from "@/lib/editor/preview/toggle-preview";
 import { toast } from "@/lib/editor/toast";
 import { clearEditorSelection } from "@/lib/editor/state/exclusive-selection";
+import { useAlignmentSessionStore } from "@/lib/editor/state/alignment-session-store";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useLayersStore } from "@/lib/editor/state/layers-store";
 import { syncActiveSceneLayers } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
+
+/**
+ * A dialog or flow owns the keyboard: the shortcuts below must not act on the
+ * editor behind it (Delete removing the selected hotspot under the Assets
+ * dialog, P toggling Preview under Publish).
+ */
+function isKeyboardOwnedByDialog(ui: ReturnType<typeof useUIStore.getState>) {
+  return (
+    useConfirmStore.getState().current != null ||
+    ui.actionsModal != null ||
+    ui.scenesModalOpen ||
+    ui.assetLibraryOpen ||
+    ui.publishDialogOpen ||
+    useAlignmentSessionStore.getState().open
+  );
+}
 
 export function useEditorKeyboard() {
   const setMode = useEditorStore((s) => s.setMode);
@@ -21,9 +38,20 @@ export function useEditorKeyboard() {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (isEditableKeyboardTarget(e.target)) return;
+      // Ctrl/Cmd/Alt combos belong to the browser and the OS (Ctrl+A, Ctrl+P, ...),
+      // held keys must not repeat a toggle or stack delete confirmations.
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || e.isComposing) return;
 
       const isPreview = useEditorStore.getState().isPreview;
       const ui = useUIStore.getState();
+      // Escape still closes things; every other shortcut yields to a dialog.
+      if (isKeyboardOwnedByDialog(ui) && e.key !== "Escape") return;
+      if (e.key === "Escape" && useConfirmStore.getState().current) return;
+      // Settings drawers sit beside the viewport: destructive keys stay off.
+      const isDelete = e.key === "Delete" || e.key === "Backspace";
+      if (isDelete && (ui.settingsDrawerOpen || ui.generalSettingsDrawerOpen)) {
+        return;
+      }
       const previewOpen = ui.previewModalOpen;
       const actionsOpen = ui.actionsModal != null;
 
