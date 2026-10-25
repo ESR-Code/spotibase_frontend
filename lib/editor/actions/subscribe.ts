@@ -54,16 +54,22 @@ function resolveSubscribeUrl(raw: string): string {
   return trimmed;
 }
 
-export async function executeSubscribeGet(data: {
-  url: string;
-  headersJson: string;
-}) {
-  return executeHttpRequest({
-    method: "GET",
-    url: data.url,
-    headersJson: data.headersJson,
-    body: "",
-  });
+export async function executeSubscribeGet(
+  data: {
+    url: string;
+    headersJson: string;
+  },
+  options?: { cancelWithRun?: boolean },
+) {
+  return executeHttpRequest(
+    {
+      method: "GET",
+      url: data.url,
+      headersJson: data.headersJson,
+      body: "",
+    },
+    options,
+  );
 }
 
 function fingerprintJson(value: unknown): string {

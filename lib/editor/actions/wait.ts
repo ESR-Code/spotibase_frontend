@@ -1,3 +1,4 @@
+import { abortRunRequests } from "@/lib/editor/actions/request-cancel";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import {
   clampWaitDurationSeconds,
@@ -46,6 +47,7 @@ export function currentRunGeneration(): number {
  */
 export function cancelPendingWaits(): void {
   generation += 1;
+  abortRunRequests();
   const waiting = [...pending];
   pending.clear();
   for (const wait of waiting) {

@@ -1,6 +1,10 @@
 import { useAssetsStore } from "@/lib/editor/assets/assets-store";
 import { ProjectConflictError } from "@/lib/editor/persist/api";
-import { saveProject, useProjectPersistStore } from "@/lib/editor/persist/persist-store";
+import {
+  hasUnsavedChanges,
+  saveProject,
+  useProjectPersistStore,
+} from "@/lib/editor/persist/persist-store";
 import { publishProject } from "@/lib/editor/publish/api";
 import { toast } from "@/lib/editor/toast";
 
@@ -20,7 +24,13 @@ export async function publishCurrentProject(): Promise<number | null> {
     return null;
   }
 
-  if (initial.dirty && !(await saveProject())) return null;
+  if (initial.status === "saving") {
+    toast.message("Still saving", { description: "Publish again once it finishes." });
+    return null;
+  }
+
+  // `dirty` is debounced (400 ms): an edit made just now must still be saved first.
+  if (hasUnsavedChanges() && !(await saveProject())) return null;
 
   const { projectId, revision } = useProjectPersistStore.getState();
   if (!projectId) return null;

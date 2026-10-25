@@ -5,6 +5,7 @@ import type {
   HttpRequestActionNode,
 } from "@/lib/editor/types/hotspot-action";
 import { interpolateHttpRequestFields, substituteTokensForValidation } from "@/lib/editor/actions/interpolate-fields";
+import { trackRunRequest } from "@/lib/editor/actions/request-cancel";
 import { normalizeExternalUrl } from "@/lib/editor/utils/open-external-url";
 
 export type HttpRequestResult = {
@@ -20,6 +21,69 @@ export type HttpRequestResult = {
 };
 
 const METHODS_WITHOUT_BODY = new Set<HttpMethod>(["GET", "HEAD"]);
+
+/** A request that has not finished by now is treated as hung. */
+export const HTTP_REQUEST_TIMEOUT_MS = 15_000;
+/** Larger responses are rejected instead of being read into memory. */
+export const HTTP_MAX_RESPONSE_BYTES = 5 * 1024 * 1024;
+
+class ResponseTooLargeError extends Error {}
+
+/**
+ * Requests run with the author's browser, but never as the signed-in user:
+ * cookies are not sent (see `credentials: "omit"` below), so a project cannot
+ * make a viewer's session perform actions. Beyond that, this app's own
+ * gateway is off limits and its other routes are read-only.
+ */
+export function sameOriginRequestError(
+  url: string | null,
+  method: string | undefined,
+): string | null {
+  if (!url || typeof window === "undefined") return null;
+  let target: URL;
+  try {
+    target = new URL(url);
+  } catch {
+    return null;
+  }
+  if (target.origin !== window.location.origin) return null;
+  if (target.pathname === "/gateway" || target.pathname.startsWith("/gateway/")) {
+    return "Requests to this app's own API are not allowed";
+  }
+  const upper = (method ?? "GET").toUpperCase();
+  if (upper !== "GET" && upper !== "HEAD") {
+    return "Requests to this app can only use GET or HEAD";
+  }
+  return null;
+}
+
+async function readBodyCapped(
+  response: Response,
+  maxBytes: number,
+): Promise<string> {
+  const declared = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    void response.body?.cancel();
+    throw new ResponseTooLargeError();
+  }
+  if (!response.body) return response.text();
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let received = 0;
+  let text = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    received += value.byteLength;
+    if (received > maxBytes) {
+      void reader.cancel();
+      throw new ResponseTooLargeError();
+    }
+    text += decoder.decode(value, { stream: true });
+  }
+  return text + decoder.decode();
+}
 
 export type HttpHeaderRow = {
   id: string;
@@ -105,7 +169,10 @@ export function validateHttpRequestData(
 ): string | null {
   if (!data.url.trim()) return "Enter a URL";
   const urlForCheck = substituteTokensForValidation(data.url, "0");
-  if (!normalizeExternalUrl(urlForCheck)) return "Enter a valid URL";
+  const normalized = normalizeExternalUrl(urlForCheck);
+  if (!normalized) return "Enter a valid URL";
+  const blocked = sameOriginRequestError(normalized, data.method);
+  if (blocked) return blocked;
   const headersRaw = substituteTokensForValidation(data.headersJson, "x");
   const headers = parseHeadersJson(headersRaw);
   if (!headers.ok) return headers.error;
@@ -117,6 +184,10 @@ export async function executeHttpRequest(
     HttpRequestActionNode["data"],
     "method" | "url" | "headersJson" | "body"
   >,
+  options: {
+    /** Abort when the running action chain is cancelled (Preview left, scene switched). */
+    cancelWithRun?: boolean;
+  } = {},
 ): Promise<HttpRequestResult> {
   const started = performance.now();
   const url = normalizeExternalUrl(data.url);
@@ -147,9 +218,34 @@ export async function executeHttpRequest(
     };
   }
 
+  const blocked = sameOriginRequestError(url, data.method);
+  if (blocked) {
+    return {
+      ok: false,
+      status: null,
+      statusText: "",
+      durationMs: 0,
+      headers: {},
+      body: "",
+      error: blocked,
+      json: undefined,
+    };
+  }
+
+  const controller = new AbortController();
+  const untrack = options.cancelWithRun ? trackRunRequest(controller) : null;
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, HTTP_REQUEST_TIMEOUT_MS);
+
   const init: RequestInit = {
     method: data.method,
     headers: headersParsed.value,
+    signal: controller.signal,
+    // Never send the session cookie to whatever URL a project points at.
+    credentials: "omit",
   };
 
   if (!METHODS_WITHOUT_BODY.has(data.method) && data.body.trim()) {
@@ -166,7 +262,7 @@ export async function executeHttpRequest(
 
     let body = "";
     if (data.method !== "HEAD") {
-      body = await response.text();
+      body = await readBodyCapped(response, HTTP_MAX_RESPONSE_BYTES);
     }
 
     return {
@@ -180,6 +276,14 @@ export async function executeHttpRequest(
       json: tryParseJson(body),
     };
   } catch (error) {
+    let message = error instanceof Error ? error.message : "Request failed";
+    if (error instanceof ResponseTooLargeError) {
+      message = `Response is larger than ${HTTP_MAX_RESPONSE_BYTES / (1024 * 1024)} MB`;
+    } else if (timedOut) {
+      message = `Request timed out after ${HTTP_REQUEST_TIMEOUT_MS / 1000} s`;
+    } else if (controller.signal.aborted) {
+      message = "Request cancelled";
+    }
     return {
       ok: false,
       status: null,
@@ -187,9 +291,12 @@ export async function executeHttpRequest(
       durationMs: Math.round(performance.now() - started),
       headers: {},
       body: "",
-      error: error instanceof Error ? error.message : "Request failed",
+      error: message,
       json: undefined,
     };
+  } finally {
+    clearTimeout(timer);
+    untrack?.();
   }
 }
 

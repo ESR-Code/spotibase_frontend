@@ -311,10 +311,15 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
       }
 
       const interpolated = interpolateHttpRequestFields(node.data);
-      const result = await executeHttpRequest({
-        ...node.data,
-        ...interpolated,
-      });
+      const result = await executeHttpRequest(
+        {
+          ...node.data,
+          ...interpolated,
+        },
+        { cancelWithRun: true },
+      );
+      // Preview was left / the scene changed while this was in flight.
+      if (ctx.runGeneration !== currentRunGeneration()) return "stop";
       if (result.error && result.status == null) {
         toast.error(`HTTP Request: ${result.error}`);
         clearHttpRequestCached(key);
@@ -379,7 +384,9 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
           });
           if (error) return { ok: false, json: undefined };
 
-          const result = await executeSubscribeGet(interpolated);
+          const result = await executeSubscribeGet(interpolated, {
+            cancelWithRun: true,
+          });
           if (!result.ok || result.json === undefined) {
             return { ok: false, json: undefined };
           }

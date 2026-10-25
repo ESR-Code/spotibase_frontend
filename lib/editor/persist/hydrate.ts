@@ -22,6 +22,7 @@ import {
   sceneDataSchema,
   type SceneRow,
 } from "@/lib/editor/persist/schema";
+import { useActionFencesStore } from "@/lib/editor/state/action-fences-store";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useEffectsStore } from "@/lib/editor/state/effects-store";
 import { useEnvironmentStore } from "@/lib/editor/state/environment-store";
@@ -102,6 +103,10 @@ export function hydrateProject(input: {
 }) {
   // A freshly loaded project starts with an empty undo history.
   history.clear();
+  // Fences live in a module-level store keyed by scope and are only seeded from
+  // the scene when a scope is first opened. Without this reset, fences edited
+  // (unsaved) in a previous visit would shadow the loaded ones and be re-saved.
+  useActionFencesStore.setState({ byScope: {}, pendingCreate: 0 });
   let editorData = null;
   if (input.editorData != null) {
     const parsed = projectEditorDataSchema.safeParse(input.editorData);

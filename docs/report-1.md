@@ -7,6 +7,10 @@ Severity: **Critical** = hangs or destroys work in a normal flow. **High** = dat
 
 ## Status
 
+Batch 7 fixed: **20** (`http-request.ts`: 15 s timeout, 5 MB cap, `credentials: "omit"`, same-origin GET/HEAD only and never `/gateway/`; in-flight requests abort when the run is cancelled). Behavior change: HTTP / Subscribe nodes no longer send cookies, and can no longer POST to this app's own origin. Checked with a throwaway script against a stubbed `fetch` (credentials, blocked routes, declared and streamed oversize, abort); the 15 s timeout path was not exercised. Not tested in the browser.
+
+Batch 6 fixed: **13, 14** (`hydrateProject` resets the fences store; Publish uses `hasUnsavedChanges()` and says "Still saving" instead of silently doing nothing). Not yet tested in a browser.
+
 Batch 5 fixed: **8, 9** (`ActionRunContext.runGeneration` + `itemScope`, `withItemScope`, `freshRunContext`; see `docs/decisions.md`). Behavior change: a scene switch now also stops the remainder of any chain that is still running (previously only the current Wait ended), e.g. an App Start chain that is mid-run. In-flight HTTP responses are ignored rather than aborted (aborting is #20). Checked with a throwaway script (cancel mid-chain stops later nodes; concurrent runs keep separate item scopes); not tested in the browser.
 
 Batch 4 fixed: **10, 11** (`model-manager.ts` load sequence + stale discard, `use-playcanvas-editor.ts` newest-switch-wins, post-init scene reconcile, import bound to its scene; see `docs/decisions.md`). Behavior change: switching scenes (or starting a second import) while an import is still decoding cancels that import with a toast instead of applying it somewhere else. Not yet tested in a browser.
@@ -33,14 +37,14 @@ Batch 1 fixed: **1, 2, 3, 4, 7** (see `docs/decisions.md`: acyclic graphs, Start
 | 10 | High | Fixed (batch 4) | Engine | Async model load / import lands in the wrong scene |
 | 11 | High | Fixed (batch 4) | Engine | Scene switch during engine init is lost |
 | 12 | High | Fixed (batch 3) | UI | Delete / P / V / A shortcuts fire behind open dialogs |
-| 13 | High | Open | Persistence | Action fences leak across project reloads and re-save stale data |
-| 14 | Medium | Open | Persistence | Publish can skip the save (dirty flag is debounced 400 ms) |
+| 13 | High | Fixed (batch 6) | Persistence | Action fences leak across project reloads and re-save stale data |
+| 14 | Medium | Fixed (batch 6) | Persistence | Publish can skip the save (dirty flag is debounced 400 ms) |
 | 15 | Medium | Fixed (batch 2) | Persistence | Asset store not refreshed after GC; undo restores deleted asset refs |
 | 16 | Medium | Open | Persistence | Legacy scenes load un-normalized, scene switch marks project dirty |
 | 17 | Medium | Open | UI | Scene delete: generic confirm, dangling Go To Scene, arbitrary new primary |
 | 18 | Medium | Open | UI | Save conflict is a dead end (only "Reload") |
 | 19 | Medium | Open | UI | Legend category delete in Spawn drawer leaves stale ids |
-| 20 | Medium | Open | Actions | HTTP/Subscribe: no timeout, size cap, abort; credentialed same-origin |
+| 20 | Medium | Fixed (batch 7) | Actions | HTTP/Subscribe: no timeout, size cap, abort; credentialed same-origin |
 | 21 | Medium | Open | Actions | Post Message receive accepts any origin |
 | 22 | Medium | Open | Actions | Go To Scene transition completes after leaving Preview |
 | 23 | Medium | Open | Actions | Open Modal onClose / Go To Hotspot self-loop traps user |
@@ -51,7 +55,7 @@ Batch 1 fixed: **1, 2, 3, 4, 7** (see `docs/decisions.md`: acyclic graphs, Start
 | 28 | Medium | Open | Engine | Controller/listener leak when unmounting during first load; no WebGL context-loss handling; NaN bounds → continuous render |
 | 29 | Medium | Fixed (batch 3) | UI | Modifier keys trigger shortcuts (Ctrl+A / Ctrl+V / Ctrl+P) |
 
-Recommended fix order before the viewer: ~~1, 2, 3, 4, 7, 5/6/15, 12, 29, 10/11, 8/9~~ (done), then the rest (13 and 14 are the cheapest, 20 matters before the viewer ships).
+Recommended fix order before the viewer: ~~1, 2, 3, 4, 7, 5/6/15, 12, 29, 10/11, 8/9~~ (done), 13, 14, 20 (done), then the rest.
 
 ---
 
