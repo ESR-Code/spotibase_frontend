@@ -144,6 +144,52 @@ Only decisions that constrain how new work should be done.
 - **Password hash lives in `project_publish_secrets`** (RLS on, no policies or grants), not on `projects`, because `projects` is fully readable by org members. `projects.publish_password_protected` is the readable flag.
 - **Publish saves first.** A dirty draft is saved, then the fresh revision is published. Uploads in flight block publishing, like Save.
 
+## Secure API proxy (v2, not built)
+
+Planned so HTTP Request / Subscribe nodes can call authenticated customer APIs. Today they are anonymous and client-side (see "HTTP Request / Subscribe fetches are bounded and anonymous"), so a credential typed into a node is visible to anyone who opens a published tour. These are the constraints for building it; nothing here exists yet.
+
+- **Why a proxy:** a secret must never reach the browser, so authenticated calls in a published tour have to go through the Worker (`/fn` path or a dedicated route). Client-side headers stay the editor/Preview-only escape hatch.
+- **Cost is the main risk, not the secret store.** Naive per-viewer proxying scales as nodes × viewers × polls (one Subscribe at 5 s is about 17k requests/day per viewer). The design must keep cost independent of viewer count:
+  - **Coalesce polls server-side.** One upstream call per project + node + interval, shared by all viewers (Durable Object or Cache API entry keyed by project/node). Viewers read the cached payload.
+  - **Neon is not in the hot path.** Secrets are stored encrypted (RLS-protected table like `project_publish_secrets`, no Data API read), decrypted in the Worker and cached in isolate memory / KV with a short TTL. The DB is hit on secret changes only.
+  - **Minimum proxied interval** (about 15–30 s, stricter than the 5 s anonymous floor), polling paused while the tab is hidden, and per-plan monthly request quotas with a clear error when exceeded.
+  - **Proxy only requests that use a secret.** Public endpoints stay client-side and cost nothing.
+- **Authoring:** secrets are named, org/project-scoped entries (Settings → Organization → API secrets, currently "Coming soon"). Nodes reference a secret by name, never its value; the value is write-only after creation. The Worker injects it into the configured header at request time.
+- **Safety:** the proxy keeps the existing bounds (timeout, response cap, no session cookie) and must block SSRF (private / loopback / metadata IP ranges, redirects re-checked) and restrict the secret to its configured host.
+- **Pricing:** treat it as a paid-tier feature so the request volume is priced in.
+- **No-cost alternative to keep documenting:** Post Message receive. The host portal does its own authenticated fetch and pushes `{ event, data }` into the viewer, so credentials never reach this platform. Prefer it for enterprise embeds; the proxy is the convenience option for standalone links.
+- **Depends on:** the public viewer route and a Neon Function URL / Worker route for the proxy (both listed under Planned in `features.md`).
+
+## Viewer analytics (planned, not built)
+
+Simple analytics for published projects, built after the viewer exists. Nothing here is implemented; `/projects/[id]` Analytics still shows seeded sample data.
+
+- **Cloudflare Workers Analytics Engine (WAE), not Postgres and not a separate NoSQL store.** Events are columnar, written from the Worker with `writeDataPoint` (non-blocking, no DB connection), and read through the WAE SQL API. Postgres is bad at event aggregation and every event would be a billed write; a NoSQL store needs its own aggregation and a sync pipeline. Neon is not involved at write time.
+- **Flow:** the published viewer batches events and sends them with `navigator.sendBeacon` (every ~10 s and on `pagehide`) to a Worker `/analytics/collect` route, which validates that the project is published, rate-limits, filters bots, and writes data points. Batching keeps Worker invocations about 10–50× lower than one request per event.
+- **Only the published viewer emits events.** Never from the editor or Preview.
+- **Event set stays small:** `session_start` (referrer / embed host, device class, country from `cf`), `scene_view`, `hotspot_open`, `action_button`, `dwell` (seconds, at session end). Do not add high-frequency events (pointer, per-frame); data point count, and cost, would grow about 10×.
+- **Data point layout:** index = `projectId` (adaptive sampling is per index, so one busy project cannot crowd out the others; queries use `SUM(_sample_interval)`). Blobs: event type, scene id, hotspot id, country, device, embed host. Doubles: value (e.g. dwell seconds), published version number.
+- **Privacy:** no cookies, no IP stored, random per-tab session id in `sessionStorage`. "Unique viewers" means unique sessions. Numbers are sampled and approximate under load; fine for views, top scenes and hotspots, not billing-grade.
+- **Reads:** a Worker `/analytics/query` route checks org membership against the project row (same check as `/storage`), runs a fixed set of parameterized WAE SQL queries (never browser-supplied SQL), and caches results for a few minutes. It replaces the sample-data source in the Analytics tab.
+- **Long retention:** a daily Worker cron rolls yesterday's counts into a small Postgres table (`project_analytics_daily`: one row per project per day, JSON counts), so long ranges are fast and survive a backend change. WAE's own retention is not stated on its pricing page; verify before promising clients a window.
+- **Escape hatch:** if a client needs exact counts, funnels or session replay, add D1 (exact counts) or PostHog / Tinybird as a paid tier. Do not build it into v1.
+
+### Cost estimate (v1)
+
+Prices from Cloudflare's pricing pages (checked 2026-10-26). Workers Paid is $5/month base and includes 10M requests, 30M CPU ms, 10M WAE data points written and 1M WAE read queries. Overage: $0.30 per 1M requests, $0.02 per 1M CPU ms, $0.25 per 1M data points, $1.00 per 1M read queries. WAE is currently not billed at all, so the numbers below assume billing is switched on.
+
+Assumptions: about 8 data points per session, about 3 collect requests per session (batched), about 2 ms CPU per collect request, and a negligible number of dashboard queries (far below 1M).
+
+| Sessions / month | Data points | Collect requests | CPU ms | Overage | Total (with $5 base) |
+| --- | --- | --- | --- | --- | --- |
+| 10k | 80k | 30k | 60k | $0 | $5 |
+| 100k | 800k | 300k | 600k | $0 | $5 |
+| 1M | 8M | 3M | 6M | $0 | $5 |
+| 10M | 80M | 30M | 60M | about $25 ($17.50 data points + $6 requests + $0.60 CPU) | about $30 |
+
+- **The analytics endpoint is not the main Worker cost.** Each tour load also fetches the GLB, images and thumbnails through `/gateway/files/<key>`, which are Worker requests too: roughly 10–50 per load against 3 for analytics. Budget the viewer's traffic separately (at 1M sessions, about $0–12 of request overage). R2 egress is free; R2 storage and operations are billed separately.
+- The estimate rests on the event assumptions above. More events per session scale data points linearly.
+
 ## Leaving and crashing the editor
 
 - **Leave guard** (`use-leave-guard.ts`): `beforeunload` only covers tab close/reload. A capture-phase click listener asks before any same-origin link navigates away with unsaved changes, and once the project is dirty an extra same-URL history entry lets the Back button be asked too. Programmatic `router.push` is not intercepted. `hasUnsavedChanges()` flushes the 400 ms dirty debounce, so an edit made a moment ago still counts.

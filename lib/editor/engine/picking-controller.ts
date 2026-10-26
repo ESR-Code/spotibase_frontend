@@ -33,6 +33,9 @@ export type PickingController = {
   dispose: () => void;
 };
 
+/** World units a new hotspot is lifted off the surface along its normal. */
+const HOTSPOT_SURFACE_LIFT = 0.1;
+
 export function createPickingController(
   pcModule: typeof pc,
   canvas: HTMLCanvasElement,
@@ -251,12 +254,20 @@ export function createPickingController(
 
     if (editor.mode === "add") {
       const ray = screenRayFromEvent(pcModule, camera, canvas, e.clientX, e.clientY);
-      const hit = raycastMeshes(pcModule, modelRoot, ray);
-      if (hit) {
+      // Exact surface hit; AABB only if the mesh catalog is empty.
+      const surface =
+        meshRaycaster.pickSurfacePoint(e.clientX, e.clientY) ??
+        (() => {
+          const box = raycastMeshes(pcModule, modelRoot, ray);
+          return box ? { point: box.point, normal: null } : null;
+        })();
+      if (surface) {
+        // Small lift along the normal so the marker sits on, not in, the surface.
+        const { point, normal } = surface;
         const position = {
-          x: hit.point.x,
-          y: clampModelFloor(hit.point.y + 0.3),
-          z: hit.point.z,
+          x: point.x + (normal?.x ?? 0) * HOTSPOT_SURFACE_LIFT,
+          y: clampModelFloor(point.y + (normal?.y ?? 0) * HOTSPOT_SURFACE_LIFT),
+          z: point.z + (normal?.z ?? 0) * HOTSPOT_SURFACE_LIFT,
         };
         const created = useEditorStore.getState().addHotspot(position);
         hotspots.syncFromStore();

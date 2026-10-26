@@ -7,6 +7,16 @@ import { screenRayFromEvent } from "@/lib/editor/engine/ray-utils";
 export type MeshRaycaster = {
   /** Catalog id of the model mesh whose surface is nearest under the pointer, or null. */
   pickMeshId: (clientX: number, clientY: number) => string | null;
+  /**
+   * Exact world-space surface point under the pointer, or null when no mesh is
+   * hit (or the catalog is empty). `normal` is the unit surface normal facing
+   * the camera, or null when the hit mesh has no readable triangles. Runs on
+   * click only (Add mode).
+   */
+  pickSurfacePoint: (
+    clientX: number,
+    clientY: number,
+  ) => { point: pc.Vec3; normal: pc.Vec3 | null } | null;
 };
 
 type Candidate = { meshInstance: MeshInstance; entity: Entity; id: string };
@@ -43,6 +53,9 @@ export function createMeshRaycaster(
   const inverse = new pcModule.Mat4();
   const localOrigin = new pcModule.Vec3();
   const localDir = new pcModule.Vec3();
+  /** World normal of the triangle behind the latest `surfaceHit` result. */
+  const hitNormal = new pcModule.Vec3();
+  let hitHasNormal = false;
 
   /** Rebuild the flat instance list only when the mesh catalog changes. */
   const refreshCandidates = () => {
@@ -104,7 +117,11 @@ export function createMeshRaycaster(
       meshInstance.mesh,
       pcModule.PRIMITIVE_TRIANGLES,
     );
-    if (!geometry) return aabbT < maxT ? aabbT : null;
+    if (!geometry) {
+      if (aabbT >= maxT) return null;
+      hitHasNormal = false;
+      return aabbT;
+    }
 
     // The world direction is unit length and transformed (not normalized) into
     // local space, so a local hit `t` is the same distance as in world space.
@@ -121,6 +138,9 @@ export function createMeshRaycaster(
     const p = geometry.positions;
     const tri = geometry.triangles;
     let best = maxT;
+    let nx = 0;
+    let ny = 0;
+    let nz = 0;
     // Möller–Trumbore, double-sided (GLBs often have open or flipped faces).
     for (let i = 0; i < tri.length; i += 3) {
       const a = tri[i]! * 3;
@@ -152,12 +172,38 @@ export function createMeshRaycaster(
       const v = (dx * qx + dy * qy + dz * qz) * invDet;
       if (v < 0 || u + v > 1) continue;
       const t = (e2x * qx + e2y * qy + e2z * qz) * invDet;
-      if (t > MIN_T && t < best) best = t;
+      if (t > MIN_T && t < best) {
+        best = t;
+        nx = e1y * e2z - e1z * e2y;
+        ny = e1z * e2x - e1x * e2z;
+        nz = e1x * e2y - e1y * e2x;
+      }
     }
-    return best < maxT ? best : null;
+    if (best >= maxT) return null;
+
+    // Local normal -> world via the inverse transpose, flipped to face the ray.
+    const m = inverse.data;
+    let wx = m[0]! * nx + m[1]! * ny + m[2]! * nz;
+    let wy = m[4]! * nx + m[5]! * ny + m[6]! * nz;
+    let wz = m[8]! * nx + m[9]! * ny + m[10]! * nz;
+    const len = Math.hypot(wx, wy, wz);
+    hitHasNormal = len > 1e-12;
+    if (hitHasNormal) {
+      const facing = wx * ray.direction.x + wy * ray.direction.y + wz * ray.direction.z;
+      const s = (facing > 0 ? -1 : 1) / len;
+      wx *= s;
+      wy *= s;
+      wz *= s;
+      hitNormal.set(wx, wy, wz);
+    }
+    return best;
   };
 
-  const pickMeshId = (clientX: number, clientY: number): string | null => {
+  /** Nearest surface under the pointer: catalog id and ray distance. */
+  const pickSurface = (
+    clientX: number,
+    clientY: number,
+  ): { id: string; t: number; normal: pc.Vec3 | null } | null => {
     refreshCandidates();
     if (candidates.length === 0 || !camera.camera) return null;
     screenRayFromEvent(pcModule, camera, canvas, clientX, clientY, ray);
@@ -182,6 +228,7 @@ export function createMeshRaycaster(
 
     let bestT = Infinity;
     let bestId: string | null = null;
+    let bestNormal: pc.Vec3 | null = null;
     for (const hit of hits) {
       // Every remaining box starts behind the closest surface found so far.
       if (hit.t >= bestT) break;
@@ -190,10 +237,22 @@ export function createMeshRaycaster(
       if (t != null) {
         bestT = t;
         bestId = candidate.id;
+        if (hitHasNormal) (bestNormal ??= new pcModule.Vec3()).copy(hitNormal);
+        else bestNormal = null;
       }
     }
-    return bestId;
+    return bestId == null ? null : { id: bestId, t: bestT, normal: bestNormal };
   };
 
-  return { pickMeshId };
+  const pickMeshId = (clientX: number, clientY: number): string | null =>
+    pickSurface(clientX, clientY)?.id ?? null;
+
+  const pickSurfacePoint = (clientX: number, clientY: number) => {
+    const hit = pickSurface(clientX, clientY);
+    if (!hit) return null;
+    const point = ray.origin.clone().add(ray.direction.clone().mulScalar(hit.t));
+    return { point, normal: hit.normal };
+  };
+
+  return { pickMeshId, pickSurfacePoint };
 }
