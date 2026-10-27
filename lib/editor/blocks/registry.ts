@@ -40,6 +40,26 @@ export const BLOCK_TYPE_META: Record<
     label: "Action button",
     createDefault: () => createBlock("button"),
   },
+  file: {
+    type: "file",
+    label: "File",
+    createDefault: () => createBlock("file"),
+  },
+  iframe: {
+    type: "iframe",
+    label: "Embed (iframe)",
+    createDefault: () => createBlock("iframe"),
+  },
+  divider: {
+    type: "divider",
+    label: "Divider",
+    createDefault: () => createBlock("divider"),
+  },
+  callout: {
+    type: "callout",
+    label: "Callout",
+    createDefault: () => createBlock("callout"),
+  },
 };
 
 export const BLOCK_TYPE_LIST = Object.values(BLOCK_TYPE_META);

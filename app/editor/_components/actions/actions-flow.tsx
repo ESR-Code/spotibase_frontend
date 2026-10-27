@@ -144,6 +144,8 @@ type ActionsFlowProps = {
   includeStartGraphs?: boolean;
   /** Single-lane editor for a Spawn template click graph. */
   isolatedLane?: IsolatedActionLane;
+  /** Center and select this owner's trigger when the canvas opens. */
+  focusOwnerId?: number;
 };
 
 type ActionsFlowCanvasProps = ActionsFlowProps & {
@@ -317,6 +319,7 @@ function ActionsFlowCanvas({
   hotspots,
   includeStartGraphs = false,
   isolatedLane,
+  focusOwnerId,
   clipboard,
   onClipboardChange,
 }: ActionsFlowCanvasProps) {
@@ -1958,6 +1961,20 @@ function ActionsFlowCanvas({
           }}
           onEdgeClick={() => setRawMenu(null)}
           onInit={(instance) => {
+            const focusId =
+              focusOwnerId != null
+                ? flowNodeId(focusOwnerId, TRIGGER_NODE_ID)
+                : null;
+            if (focusId && instance.getNode(focusId)) {
+              focusFlowNode(focusId);
+              void instance.fitView({
+                nodes: [{ id: focusId }],
+                padding: 1.15,
+                maxZoom: 1.2,
+                minZoom: 0.55,
+              });
+              return;
+            }
             void instance.fitView({ padding: 0.2 });
           }}
           deleteKeyCode={["Backspace", "Delete"]}
@@ -2077,6 +2094,7 @@ export function ActionsFlow({
   hotspots,
   includeStartGraphs = false,
   isolatedLane,
+  focusOwnerId,
 }: ActionsFlowProps) {
   const [clipboard, setClipboard] = useState<ActionNode | null>(null);
   const activeScene = useActiveScene();
@@ -2108,6 +2126,7 @@ export function ActionsFlow({
         hotspots={hotspots}
         includeStartGraphs={includeStartGraphs}
         isolatedLane={isolatedLane}
+        focusOwnerId={focusOwnerId}
         clipboard={clipboard}
         onClipboardChange={setClipboard}
       />

@@ -6,7 +6,11 @@ export type HotspotBlockType =
   | "link"
   | "image"
   | "video"
-  | "button";
+  | "button"
+  | "file"
+  | "iframe"
+  | "divider"
+  | "callout";
 
 export type HotspotBlockBase = {
   id: string;
@@ -48,6 +52,16 @@ export type VideoBlock = HotspotBlockBase & {
   url: string;
 };
 
+/** Preset fill for Action button blocks (see `BUTTON_BLOCK_COLORS`). */
+export type ButtonBlockColor =
+  | "neutral"
+  | "accent"
+  | "blue"
+  | "green"
+  | "amber"
+  | "red"
+  | "purple";
+
 export type ButtonBlock = HotspotBlockBase & {
   type: "button";
   /** Lucide icon name from CATEGORY_ICONS. */
@@ -55,9 +69,50 @@ export type ButtonBlock = HotspotBlockBase & {
   label: string;
   /** Optional italic line under the label in Preview. */
   description: string;
+  /** Missing on blocks saved before colors existed: those keep the accent look. */
+  color?: ButtonBlockColor;
   /** Synthetic action-graph owner id (content-button range). */
   ownerId: number;
   actions: HotspotActionGraph;
+};
+
+export type FileBlock = HotspotBlockBase & {
+  type: "file";
+  /** `asset:<id>` from the library, or an http(s) URL / `{{token}}`. */
+  src: string;
+  /** Card title. Empty falls back to the asset file name (or the URL). */
+  label: string;
+};
+
+export type IframeBlock = HotspotBlockBase & {
+  type: "iframe";
+  /** https:// page (or `{{token}}` resolving to one), embedded sandboxed. */
+  url: string;
+  /** Frame height in CSS px. */
+  height: number;
+  /** Show an "Open in new tab" link under the frame in Preview. Missing = off. */
+  showOpenLink?: boolean;
+};
+
+export type DividerVariant = "line" | "dashed" | "space";
+
+export type DividerBlock = HotspotBlockBase & {
+  type: "divider";
+  variant: DividerVariant;
+};
+
+export type CalloutTone = "neutral" | "info" | "success" | "warning" | "danger";
+
+export type CalloutBlock = HotspotBlockBase & {
+  type: "callout";
+  /** Color preset (see `CALLOUT_TONES`). */
+  tone: CalloutTone;
+  /** CATEGORY_ICONS name. Missing = the tone's default icon. */
+  icon?: string;
+  /** Optional bold first line. Plain text with `{{tokens}}`. */
+  title: string;
+  /** Plain text with `{{tokens}}`; newlines are kept. */
+  content: string;
 };
 
 export type HotspotBlock =
@@ -66,4 +121,8 @@ export type HotspotBlock =
   | LinkBlock
   | ImageBlock
   | VideoBlock
-  | ButtonBlock;
+  | ButtonBlock
+  | FileBlock
+  | IframeBlock
+  | DividerBlock
+  | CalloutBlock;

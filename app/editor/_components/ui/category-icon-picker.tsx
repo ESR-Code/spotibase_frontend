@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, Search } from "lucide-react";
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createElement, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import {
@@ -16,6 +16,8 @@ type CategoryIconPickerProps = {
   color?: string;
   /** Icon-only trigger, no field label — for compact rows. */
   compact?: boolean;
+  /** Trigger is just the icon in the surrounding text color (no badge / box). */
+  bare?: boolean;
 };
 
 type MenuPosition = {
@@ -29,6 +31,7 @@ export function CategoryIconPicker({
   onChange,
   color = "#3fb8af",
   compact = false,
+  bare = false,
 }: CategoryIconPickerProps) {
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -37,6 +40,7 @@ export function CategoryIconPicker({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [menuPos, setMenuPos] = useState<MenuPosition | null>(null);
+  const iconOnly = compact || bare;
   const iconName = normalizeCategoryIcon(value);
   const SelectedIcon = getCategoryLucideIcon(iconName);
 
@@ -65,7 +69,7 @@ export function CategoryIconPicker({
     setMenuPos({
       top,
       left: rect.left,
-      width: compact ? Math.max(rect.width, 240) : rect.width,
+      width: iconOnly ? Math.max(rect.width, 240) : rect.width,
     });
   };
 
@@ -168,28 +172,32 @@ export function CategoryIconPicker({
 
   return (
     <div
-      className={`relative ${compact ? "" : "w-full space-y-1.5"}`}
+      className={`relative ${iconOnly ? "" : "w-full space-y-1.5"}`}
       ref={rootRef}
     >
-      {compact ? null : <FieldLabel>Icon</FieldLabel>}
+      {iconOnly ? null : <FieldLabel>Icon</FieldLabel>}
       <button
         ref={triggerRef}
         type="button"
-        className={`${compact ? "editor-custom-menu-icon-trigger" : "editor-category-select-trigger w-full"} ${open ? "open" : ""}`}
+        className={`${bare ? "editor-icon-picker-bare" : compact ? "editor-custom-menu-icon-trigger" : "editor-category-select-trigger w-full"} ${open ? "open" : ""}`}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listId}
-        title={compact ? (CATEGORY_ICONS.find((i) => i.name === iconName)?.label ?? iconName) : undefined}
+        title={iconOnly ? (CATEGORY_ICONS.find((i) => i.name === iconName)?.label ?? iconName) : undefined}
         onClick={() => setOpen((v) => !v)}
       >
-        <span
-          className="editor-category-option-icon"
-          style={{ background: color }}
-          aria-hidden
-        >
-          <SelectedIcon className="h-3 w-3" />
-        </span>
-        {compact ? null : (
+        {bare ? (
+          createElement(SelectedIcon, { className: "h-4 w-4", "aria-hidden": true })
+        ) : (
+          <span
+            className="editor-category-option-icon"
+            style={{ background: color }}
+            aria-hidden
+          >
+            <SelectedIcon className="h-3 w-3" />
+          </span>
+        )}
+        {iconOnly ? null : (
           <>
             <span className="editor-category-option-name">
               {CATEGORY_ICONS.find((i) => i.name === iconName)?.label ?? iconName}

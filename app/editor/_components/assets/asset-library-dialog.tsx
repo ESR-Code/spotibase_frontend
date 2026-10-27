@@ -3,6 +3,7 @@
 import {
   AlertTriangle,
   Box,
+  FileText,
   FolderOpen,
   ImageIcon,
   LayoutGrid,
@@ -37,6 +38,7 @@ const KIND_FILTERS: { id: KindFilter; label: string; Icon: LucideIcon }[] = [
   { id: "all", label: "All", Icon: LayoutGrid },
   { id: "image", label: "Images", Icon: ImageIcon },
   { id: "model", label: "Models", Icon: Box },
+  { id: "other", label: "Files", Icon: FileText },
 ];
 
 export function AssetLibraryDialog() {
@@ -73,7 +75,7 @@ function AssetLibrary({ onClose }: { onClose: () => void }) {
     <EditorDialog open onClose={onClose} presentation="modal" backdrop size="large">
       <EditorDialog.Header
         title="Assets"
-        description="Images and models shared by every scene in this project."
+        description="Images, models, and files shared by every scene in this project."
       >
         <IconButton title="Close" onClick={onClose}>
           <X />

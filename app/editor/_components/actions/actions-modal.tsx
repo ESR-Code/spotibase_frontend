@@ -90,6 +90,7 @@ export function ActionsModal() {
         <ActionsFlow
           hotspots={scopedHotspots}
           includeStartGraphs={scope.kind === "scene"}
+          focusOwnerId={scope.kind === "hotspot" ? scope.focusOwnerId : undefined}
         />
       </EditorDialog.Body>
     </EditorDialog>

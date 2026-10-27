@@ -1,11 +1,15 @@
 "use client";
 
-import { isAssetRef } from "@/lib/editor/assets";
+import { assetIdFromRef, isAssetRef, useAssetsStore } from "@/lib/editor/assets";
 import {
+  AppWindow,
   ExternalLink,
+  FileText,
   Film,
   Heading,
   ImageIcon,
+  Megaphone,
+  SeparatorHorizontal,
   Type,
   Zap,
   type LucideIcon,
@@ -13,8 +17,19 @@ import {
 import type { ComponentType } from "react";
 import { ButtonBlockEditor } from "@/app/editor/_components/blocks/button-block-editor";
 import { ButtonBlockPreview } from "@/app/editor/_components/blocks/button-block-preview";
+import { CalloutBlockEditor } from "@/app/editor/_components/blocks/callout-block-editor";
+import { CalloutBlockPreview } from "@/app/editor/_components/blocks/callout-block-preview";
+import {
+  DIVIDER_VARIANT_OPTIONS,
+  DividerBlockEditor,
+} from "@/app/editor/_components/blocks/divider-block-editor";
+import { DividerBlockPreview } from "@/app/editor/_components/blocks/divider-block-preview";
+import { FileBlockEditor } from "@/app/editor/_components/blocks/file-block-editor";
+import { FileBlockPreview } from "@/app/editor/_components/blocks/file-block-preview";
 import { HeadingBlockEditor } from "@/app/editor/_components/blocks/heading-block-editor";
 import { HeadingBlockPreview } from "@/app/editor/_components/blocks/heading-block-preview";
+import { IframeBlockEditor } from "@/app/editor/_components/blocks/iframe-block-editor";
+import { IframeBlockPreview } from "@/app/editor/_components/blocks/iframe-block-preview";
 import { ImageBlockEditor } from "@/app/editor/_components/blocks/image-block-editor";
 import { ImageBlockPreview } from "@/app/editor/_components/blocks/image-block-preview";
 import { LinkBlockEditor } from "@/app/editor/_components/blocks/link-block-editor";
@@ -248,6 +263,118 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
     Preview: asBlockPreview(function ButtonPreviewAdapter({ block, hotspotId }) {
       if (block.type !== "button") return null;
       return <ButtonBlockPreview block={block} hotspotId={hotspotId} />;
+    }),
+  },
+  file: {
+    type: "file",
+    label: "File",
+    icon: FileText,
+    createDefault: () => createBlock("file"),
+    collapsedPreview: (block) => {
+      if (block.type !== "file") return "";
+      if (block.label.trim()) return block.label.trim();
+      const assetId = assetIdFromRef(block.src);
+      if (assetId) {
+        return useAssetsStore.getState().assets[assetId]?.name ?? "Missing file";
+      }
+      return block.src.trim() || "No file";
+    },
+    Editor: asBlockEditor(function FileEditorAdapter({
+      block,
+      onChange,
+      autoFocus,
+      fieldSources,
+    }) {
+      if (block.type !== "file") return null;
+      return (
+        <FileBlockEditor
+          block={block}
+          autoFocus={autoFocus}
+          fieldSources={fieldSources}
+          onChange={onChange}
+        />
+      );
+    }),
+    Preview: asBlockPreview(function FilePreviewAdapter({ block }) {
+      if (block.type !== "file") return null;
+      return <FileBlockPreview block={block} />;
+    }),
+  },
+  iframe: {
+    type: "iframe",
+    label: "Embed (iframe)",
+    icon: AppWindow,
+    createDefault: () => createBlock("iframe"),
+    collapsedPreview: (block) =>
+      block.type === "iframe" ? block.url.trim() || "No URL" : "",
+    Editor: asBlockEditor(function IframeEditorAdapter({
+      block,
+      onChange,
+      autoFocus,
+      fieldSources,
+    }) {
+      if (block.type !== "iframe") return null;
+      return (
+        <IframeBlockEditor
+          block={block}
+          autoFocus={autoFocus}
+          fieldSources={fieldSources}
+          onChange={onChange}
+        />
+      );
+    }),
+    Preview: asBlockPreview(function IframePreviewAdapter({ block }) {
+      if (block.type !== "iframe") return null;
+      return <IframeBlockPreview block={block} />;
+    }),
+  },
+  divider: {
+    type: "divider",
+    label: "Divider",
+    icon: SeparatorHorizontal,
+    createDefault: () => createBlock("divider"),
+    collapsedPreview: (block) =>
+      block.type === "divider"
+        ? (DIVIDER_VARIANT_OPTIONS.find((option) => option.id === block.variant)
+            ?.label ?? "Line")
+        : "",
+    Editor: asBlockEditor(function DividerEditorAdapter({ block, onChange }) {
+      if (block.type !== "divider") return null;
+      return <DividerBlockEditor block={block} onChange={onChange} />;
+    }),
+    Preview: asBlockPreview(function DividerPreviewAdapter({ block }) {
+      if (block.type !== "divider") return null;
+      return <DividerBlockPreview block={block} />;
+    }),
+  },
+  callout: {
+    type: "callout",
+    label: "Callout",
+    icon: Megaphone,
+    createDefault: () => createBlock("callout"),
+    collapsedPreview: (block) =>
+      block.type === "callout"
+        ? block.title.trim() || block.content.trim() || "Empty callout"
+        : "",
+    Editor: asBlockEditor(function CalloutEditorAdapter({
+      block,
+      onChange,
+      autoFocus,
+      fieldSources,
+    }) {
+      if (block.type !== "callout") return null;
+      return (
+        <CalloutBlockEditor
+          block={block}
+          autoFocus={autoFocus}
+          fieldSources={fieldSources}
+          onChange={onChange}
+        />
+      );
+    }),
+    Preview: asBlockPreview(function CalloutPreviewAdapter({ block }) {
+      if (block.type !== "callout") return null;
+      return <CalloutBlockPreview block={block} />;
     }),
   },
 };

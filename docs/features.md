@@ -7,7 +7,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 ### Editor shell
 
 - `/projects/[id]/editor` client app: header, mode toolbar (select / add / preview), outliner, viewport HUD, drawers, dialogs. Legacy `/editor` (and `/editor?project=<id>`) redirects here.
-- Editor deletes (hotspot, block, action, scene, layer, asset, and the other trash actions) ask “Are you sure you want to delete this …?” before they run. Same dialog for the Delete / Backspace key.
+- Editor deletes (hotspot, action, scene, layer, asset, and the other trash actions) ask “Are you sure you want to delete this …?” before they run. Content blocks are the exception: they delete immediately (Undo restores them). Same dialog for the Delete / Backspace key.
 - Keyboard: `V` select, `A` add, `P` preview, `Escape` / `Delete` for selection (ignored in text fields).
 - Loading overlay, engine error banner, scene-transition splash.
 - Model scenes with GLB clips: viewport clip transport (play / pause / scrub / reset) so authors can freeze a pose in Select/Add. Hidden in Preview; does not run the action graph.
@@ -38,7 +38,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 ### Editor persistence and assets
 
 - `/projects/[id]/editor` loads the project's scenes, project-wide editor data, and asset library from Postgres; a project with no scenes starts from the seed scene. Header Save button (Saved / Save / Saving / Uploading / Conflict), Ctrl/Cmd+S, unsaved-changes warning on unload. Stale saves are rejected; the "Saved elsewhere" menu offers download my version / keep mine (overwrite) / reload.
-- Project asset library (project menu → Assets): search, filter by kind, rename, delete (blocked while referenced, with usage list), missing-asset report. Image fields (marker image, header image, image blocks, logo, scene thumbnail) upload into the library or pick from it; geo image overlays and 2D/3D subjects are library assets too. Identical files are deduped. Opening the editor and a successful save sweep unreferenced assets (`POST /storage/projects/:id/assets/gc`); files younger than 15 minutes, files the live editor or undo history still references, and referenced files stay. Deleting a library asset is blocked while the saved project uses it (save first).
+- Project asset library (project menu → Assets): images, models, and files (File block documents: PDF, Office, CSV, TXT, ZIP, up to 50 MB); search, filter by kind, rename, delete (blocked while referenced, with usage list), missing-asset report. Image fields (marker image, header image, image blocks, logo, scene thumbnail) upload into the library or pick from it; geo image overlays and 2D/3D subjects are library assets too. Identical files are deduped. Opening the editor and a successful save sweep unreferenced assets (`POST /storage/projects/:id/assets/gc`); files younger than 15 minutes, files the live editor or undo history still references, and referenced files stay. Deleting a library asset is blocked while the saved project uses it (save first).
 - `/` sends signed-in users to `/projects` and everyone else to `/auth/sign-in` (client session check). `/orgs` redirects to `/projects`.
 
 
@@ -53,7 +53,8 @@ Status as of the current codebase. “Partial” means code exists but the featu
 - 2D/3D: click a marker to open the Hotspot Editor; drag repositions without opening it.
 - Per-hotspot custom camera pose. Category + legend name.
 - **Mesh click** (3D model scenes): Subject → Meshes → **Make clickable** turns a model mesh into a hotspot trigger (no marker). It has the same title, blocks, actions (default Open Modal), legend and Hotspot Editor. In Preview, hovering highlights the mesh; clicking runs the actions, and the mesh stays highlighted while its modal is open. A marker in front wins. In the editor, clicking the mesh opens its hotspot. Rebind or unbind in the General tab. A mesh missing from the current model is flagged (outliner badge + General tab) and simply isn't clickable; the binding is kept.
-- Content blocks: heading, text, link, image (upload or URL / token; optional per-slide caption; 2+ images become a Preview carousel), video (YouTube / Vimeo embed), action button (icon + label + optional italic description; Preview accent). Token fields can insert HTTP / Post Message / For Each paths.
+- Content blocks: heading, text, link, image (upload or URL / token; optional per-slide caption; 2+ images become a Preview carousel), video (YouTube / Vimeo embed), action button (edited in place as it looks in Preview: click the icon, type label and description on the button, pick a color; neutral by default), file (library upload or URL; download card), embed (sandboxed https:// iframe with height and an optional “Open in new tab” link, off by default), divider (line / dashed / space), callout (edited in place as it looks in Preview: click the icon to change it, type title and text on the box, pick a color: neutral default / blue / green / amber / red). Token fields can insert HTTP / Post Message / For Each paths.
+- Blocks tab: drag to reorder, or use the “⋯” menu (Move up / Move down / Duplicate) for touch and keyboard. Cards show a warning when a block has a problem (empty, invalid URL, missing library file, button with no actions). The hotspot Actions tab lists its Action buttons with “Edit actions”, which opens the canvas centered on that button’s lane.
 - Preview: hover tooltip, select label, open presentation, legend filter.
 - Hotspot labels: per-scene style (Classic box / Pill with icon circle / frosted Glass chip with leader line) and background opacity in Scene Settings → Hotspots. Pill / Glass show the hotspot's own icon tinted with its marker color.
 
@@ -127,7 +128,6 @@ These are implied by gaps or comments, not a committed roadmap.
 - Password verification endpoint for the viewer (the hash and flag are stored; nothing checks them yet).
 - Full project import / export file format.
 - Additional overlay kinds beyond image + shape.
-- Additional hotspot block types beyond heading / text / link / image / video.
 - Wire or replace hotspot-only JSON export with a project-level format.
 - Replace default Next.js metadata / README with product branding.
 - Org admin (invites, remove member), change sign-in email, profile avatar upload, API secrets, Cloudflare R2 (files, queues). Re-enable signup and email verification when that UI ships. Neon Function for complex server-side work.

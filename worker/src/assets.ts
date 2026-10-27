@@ -13,7 +13,7 @@ import {
 	UUID_RE,
 } from "./storage-common";
 
-type AssetKind = "model" | "image";
+type AssetKind = "model" | "image" | "other";
 
 type AssetRow = {
 	id: string;
@@ -56,13 +56,30 @@ const ASSET_RULES: Record<AssetKind, { types: Record<string, string>; maxBytes: 
 		},
 		maxBytes: 25 * MB,
 	},
+	// Downloadable documents for File blocks. Served with `sandbox` CSP + nosniff
+	// like every other file, so none of these can run script on the app origin.
+	other: {
+		types: {
+			"application/pdf": "pdf",
+			"text/plain": "txt",
+			"text/csv": "csv",
+			"application/zip": "zip",
+			"application/msword": "doc",
+			"application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+			"application/vnd.ms-excel": "xls",
+			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+			"application/vnd.ms-powerpoint": "ppt",
+			"application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
+		},
+		maxBytes: 50 * MB,
+	},
 };
 
 const SHA256_RE = /^[0-9a-f]{64}$/;
 const ASSET_FILE_RE = new RegExp(`^(${UUID})\\.([a-z0-9]+)$`, "i");
 
 function isAssetKind(value: unknown): value is AssetKind {
-	return value === "model" || value === "image";
+	return value === "model" || value === "image" || value === "other";
 }
 
 function cleanText(value: unknown, max: number) {

@@ -5306,6 +5306,346 @@
   opacity: 0.88;
 }
 
+/* Action button colors. Neutral uses the surface tokens (remapped inside
+   Preview surfaces); accent is .editor-btn-primary; the rest are presets. */
+.editor-root .editor-content-button[data-color="neutral"] {
+  background: color-mix(in srgb, var(--editor-fg) 7%, transparent);
+  border-color: color-mix(in srgb, var(--editor-fg) 22%, transparent);
+  color: var(--editor-fg);
+}
+
+.editor-root .editor-content-button[data-color="neutral"]:hover {
+  background: color-mix(in srgb, var(--editor-fg) 13%, transparent);
+  border-color: color-mix(in srgb, var(--editor-fg) 30%, transparent);
+}
+
+.editor-root .editor-content-button[data-color="blue"] { --cb: #3a56d4; --cb-fg: #fff; }
+.editor-root .editor-content-button[data-color="green"] { --cb: #1f8a5b; --cb-fg: #fff; }
+.editor-root .editor-content-button[data-color="amber"] { --cb: #f4a259; --cb-fg: #2a1503; }
+.editor-root .editor-content-button[data-color="red"] { --cb: #d62839; --cb-fg: #fff; }
+.editor-root .editor-content-button[data-color="purple"] { --cb: #7b61ff; --cb-fg: #fff; }
+
+.editor-root .editor-content-button[data-color="blue"],
+.editor-root .editor-content-button[data-color="green"],
+.editor-root .editor-content-button[data-color="amber"],
+.editor-root .editor-content-button[data-color="red"],
+.editor-root .editor-content-button[data-color="purple"] {
+  background: linear-gradient(
+    135deg,
+    var(--cb) 0%,
+    color-mix(in srgb, var(--cb) 78%, #000) 100%
+  );
+  border-color: color-mix(in srgb, var(--cb) 60%, #000);
+  color: var(--cb-fg);
+  box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--cb) 55%, transparent);
+}
+
+.editor-root .editor-content-button[data-color="blue"]:hover,
+.editor-root .editor-content-button[data-color="green"]:hover,
+.editor-root .editor-content-button[data-color="amber"]:hover,
+.editor-root .editor-content-button[data-color="red"]:hover,
+.editor-root .editor-content-button[data-color="purple"]:hover {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--cb) 88%, #fff) 0%,
+    color-mix(in srgb, var(--cb) 84%, #000) 100%
+  );
+}
+
+/* Action button editing: laid out like the callout editor (full-width box,
+   icon on the left, fields filling the row), in the button's color. */
+.editor-root .editor-content-button.is-editing {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: default;
+}
+
+.editor-root .editor-content-button.is-editing:hover {
+  transform: none;
+}
+
+.editor-root .editor-content-button.is-editing .editor-content-button-text {
+  flex: 1;
+  gap: 1px;
+}
+
+.editor-root .editor-icon-picker-bare {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 4px;
+  margin: -4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.editor-root .editor-icon-picker-bare:hover,
+.editor-root .editor-icon-picker-bare.open {
+  background: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+/* The span carries the label / description typography; the input inherits it. */
+.editor-root .editor-content-button-field {
+  display: block;
+  width: 100%;
+}
+
+.editor-root .editor-content-button-input {
+  display: block;
+  width: calc(100% + 8px);
+  padding: 1px 4px;
+  margin: 0 -4px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  outline: none;
+}
+
+.editor-root .editor-content-button-input::placeholder {
+  color: inherit;
+  opacity: 0.55;
+  font-weight: 400;
+}
+
+.editor-root .editor-content-button-input:hover {
+  border-color: color-mix(in srgb, currentColor 28%, transparent);
+}
+
+.editor-root .editor-content-button-input:focus {
+  border-color: color-mix(in srgb, currentColor 55%, transparent);
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.editor-root .editor-swatch-row-compact .editor-swatch {
+  width: 20px;
+  height: 20px;
+}
+
+/* File block */
+.editor-root .editor-file-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--editor-line);
+  background: color-mix(in srgb, var(--editor-fg) 4%, transparent);
+  color: var(--editor-fg);
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.editor-root .editor-file-block:hover {
+  background: color-mix(in srgb, var(--editor-fg) 9%, transparent);
+  border-color: color-mix(in srgb, var(--editor-fg) 28%, transparent);
+}
+
+.editor-root .editor-file-block-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--editor-fg) 8%, transparent);
+  color: var(--editor-muted);
+}
+
+.editor-root .editor-file-block-text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.editor-root .editor-file-block-label {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-root .editor-file-block-meta {
+  font-size: 11px;
+  color: var(--editor-muted);
+}
+
+/* Iframe block */
+.editor-root .editor-iframe-block-frame {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--editor-line-soft, rgba(255, 255, 255, 0.08));
+  background: #fff;
+}
+
+.editor-root .editor-iframe-block-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--editor-muted);
+  text-decoration: none;
+}
+
+.editor-root .editor-iframe-block-open:hover {
+  color: var(--editor-fg);
+  text-decoration: underline;
+}
+
+/* Divider block */
+.editor-root .editor-divider-block {
+  margin: 4px 0;
+  border: 0;
+  border-top: 1px solid var(--editor-line);
+}
+
+.editor-root .editor-divider-block[data-variant="dashed"] {
+  border-top-style: dashed;
+}
+
+.editor-root .editor-divider-block-space {
+  height: 12px;
+}
+
+/* Callout block (shared by Preview and the in-place editor) */
+.editor-root .editor-callout-block {
+  --callout: #4c8dff;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--callout) 45%, transparent);
+  background: color-mix(in srgb, var(--callout) 12%, transparent);
+  color: var(--editor-fg);
+}
+
+.editor-root .editor-callout-block[data-tone="neutral"] { --callout: #7a88a8; }
+.editor-root .editor-callout-block[data-tone="success"] { --callout: #2bb673; }
+.editor-root .editor-callout-block[data-tone="warning"] { --callout: #f4a259; }
+.editor-root .editor-callout-block[data-tone="danger"] { --callout: #e63946; }
+
+.editor-root .editor-callout-block-badge {
+  margin-top: 1px;
+}
+
+/* Icon picker trigger inside the callout: just the badge, no button chrome. */
+.editor-root .editor-callout-block .editor-custom-menu-icon-trigger {
+  width: auto;
+  height: auto;
+  margin-top: 1px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 50%;
+}
+
+.editor-root .editor-callout-block .editor-custom-menu-icon-trigger:hover,
+.editor-root .editor-callout-block .editor-custom-menu-icon-trigger.open {
+  background: transparent;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--callout) 35%, transparent);
+}
+
+.editor-root .editor-callout-block-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.editor-root .editor-callout-block-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.editor-root .editor-callout-block-text {
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.editor-root .editor-callout-block-title + .editor-callout-block-text {
+  margin-top: 2px;
+  color: var(--editor-muted);
+}
+
+/* Inline fields look like text until hovered / focused. */
+.editor-root .editor-callout-block-input {
+  display: block;
+  width: calc(100% + 8px);
+  padding: 1px 4px;
+  margin: 0 -4px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  outline: none;
+}
+
+.editor-root .editor-callout-block-input::placeholder {
+  color: var(--editor-muted-2);
+  font-weight: 400;
+}
+
+.editor-root .editor-callout-block-input:hover {
+  border-color: color-mix(in srgb, var(--callout) 25%, transparent);
+}
+
+.editor-root .editor-callout-block-input:focus {
+  border-color: color-mix(in srgb, var(--callout) 60%, transparent);
+  background: color-mix(in srgb, var(--callout) 8%, transparent);
+}
+
+/* Block card "⋯" menu (reuses .editor-add-block-menu chrome) */
+.editor-root .editor-block-card-menu button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--editor-fg);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.editor-root .editor-block-card-menu button:hover:not(:disabled),
+.editor-root .editor-block-card-menu button:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+  outline: none;
+}
+
+.editor-root .editor-block-card-menu button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.editor-root .editor-block-card-menu svg {
+  color: var(--editor-muted);
+}
+
 /* ---- Editor toasts (bottom-right; sits above the center viewport menu) ---- */
 
 .editor-root .editor-toaster {

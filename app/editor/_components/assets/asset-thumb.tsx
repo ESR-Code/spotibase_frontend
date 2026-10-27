@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, ImageIcon } from "lucide-react";
+import { Box, FileText, ImageIcon } from "lucide-react";
 import { assetFileUrl, type EditorAsset } from "@/lib/editor/assets";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +33,8 @@ export function AssetThumb({
         />
       ) : asset.kind === "model" ? (
         <Box className="h-5 w-5" />
+      ) : asset.kind === "other" ? (
+        <FileText className="h-5 w-5" />
       ) : (
         <ImageIcon className="h-5 w-5" />
       )}

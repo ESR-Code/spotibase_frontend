@@ -1,4 +1,5 @@
-export type EditorAssetKind = "model" | "image";
+/** `other` = downloadable documents for File blocks (DB `assets_kind_check`). */
+export type EditorAssetKind = "model" | "image" | "other";
 
 /** A committed project asset (`public.assets` row, `status = ready`). */
 export type EditorAsset = {

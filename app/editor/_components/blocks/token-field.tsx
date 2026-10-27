@@ -12,6 +12,8 @@ type TokenFieldProps = {
   placeholder?: string;
   autoFocus?: boolean;
   type?: string;
+  /** Textarea instead of a single-line input. */
+  multiline?: boolean;
 };
 
 export function TokenField({
@@ -21,19 +23,32 @@ export function TokenField({
   placeholder,
   autoFocus,
   type,
+  multiline,
 }: TokenFieldProps) {
-  const ref = useRef<HTMLInputElement>(null);
+  const ref = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
   return (
-    <div className="flex items-center gap-1">
-      <input
-        ref={ref}
-        className="editor-input min-w-0 flex-1"
-        type={type}
-        value={value}
-        placeholder={placeholder}
-        autoFocus={autoFocus}
-        onChange={(e) => onChange(e.target.value)}
-      />
+    <div className={`flex gap-1 ${multiline ? "items-start" : "items-center"}`}>
+      {multiline ? (
+        <textarea
+          ref={ref}
+          className="editor-textarea min-w-0 flex-1"
+          style={{ minHeight: 72 }}
+          value={value}
+          placeholder={placeholder}
+          autoFocus={autoFocus}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      ) : (
+        <input
+          ref={ref}
+          className="editor-input min-w-0 flex-1"
+          type={type}
+          value={value}
+          placeholder={placeholder}
+          autoFocus={autoFocus}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      )}
       {sources.length > 0 ? (
         <VariableInsertButton
           sources={sources}

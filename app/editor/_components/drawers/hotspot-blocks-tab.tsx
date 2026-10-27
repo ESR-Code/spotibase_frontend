@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AlertTriangle,
   ChevronsDownUp,
   ChevronsUpDown,
   ChevronDown,
@@ -11,13 +12,15 @@ import {
 import { useMemo, useState } from "react";
 import { getBlockDefinition } from "@/app/editor/_components/blocks/block-registry";
 import { AddBlockMenu } from "@/app/editor/_components/drawers/add-block-menu";
+import { BlockCardMenu } from "@/app/editor/_components/drawers/block-card-menu";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
-import { confirmDelete } from "@/lib/editor/confirm";
-import { createBlock } from "@/lib/editor/blocks/create-block";
+import { useAssetsStore } from "@/lib/editor/assets";
+import { createBlock, duplicateBlock } from "@/lib/editor/blocks/create-block";
 import {
   listHttpFieldSources,
   type HttpFieldSource,
 } from "@/lib/editor/blocks/http-field-sources";
+import { validateBlock } from "@/lib/editor/blocks/validate-block";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
@@ -67,6 +70,8 @@ export function HotspotBlocksTab({
     createBlocksUiState(selected.id),
   );
   const blocks = selected.blocks;
+  // Validation reads the library (missing assets): re-render when it changes.
+  useAssetsStore((s) => s.assets);
 
   if (uiState.hotspotId !== selected.id) {
     setUiState(createBlocksUiState(selected.id));
@@ -150,19 +155,38 @@ export function HotspotBlocksTab({
     );
   };
 
+  // No confirmation: a block is cheap to recreate and Undo restores it.
   const handleDelete = (id: string) => {
-    void confirmDelete("block").then((ok) => {
-      if (!ok) return;
-      const current =
-        useEditorStore.getState().hotspots.find((hotspot) => hotspot.id === selected.id)
-          ?.blocks ?? blocks;
-      setBlocks(current.filter((block) => block.id !== id));
-      setCollapsedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
+    setBlocks(blocks.filter((block) => block.id !== id));
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
     });
+  };
+
+  const handleDuplicate = (id: string) => {
+    const index = blocks.findIndex((block) => block.id === id);
+    if (index < 0) return;
+    const copy = duplicateBlock(blocks[index]!);
+    const next = [...blocks];
+    next.splice(index + 1, 0, copy);
+    setBlocks(next);
+    setCollapsedIds((prev) => {
+      const nextIds = new Set(prev);
+      if (prev.has(id)) nextIds.add(copy.id);
+      return nextIds;
+    });
+  };
+
+  const moveBlock = (id: string, delta: number) => {
+    const from = blocks.findIndex((block) => block.id === id);
+    const to = from + delta;
+    if (from < 0 || to < 0 || to >= blocks.length) return;
+    const next = [...blocks];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    setBlocks(next);
   };
 
   const toggleCollapsed = (id: string) => {
@@ -204,8 +228,8 @@ export function HotspotBlocksTab({
       >
         <div className="mb-1 text-[12px] font-semibold">No blocks yet</div>
         <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
-          Add a heading, text, link, image, video, or action button block to
-          build hotspot content.
+          Use the + button below to add text, media, files, embeds, or action
+          buttons.
         </div>
       </div>
     ),
@@ -242,7 +266,7 @@ export function HotspotBlocksTab({
         emptyHint
       ) : (
         <div className="space-y-3">
-          {blocks.map((block) => {
+          {blocks.map((block, index) => {
             const def = getBlockDefinition(block.type);
             const Editor = def.Editor;
             const Icon = def.icon;
@@ -250,6 +274,7 @@ export function HotspotBlocksTab({
             const isDragging = draggingId === block.id;
             const isOver = overId === block.id && draggingId !== block.id;
             const preview = def.collapsedPreview(block);
+            const issue = validateBlock(block);
 
             return (
               <div
@@ -322,12 +347,34 @@ export function HotspotBlocksTab({
                     {collapsed ? (
                       <span
                         className="ml-1 truncate text-[11px] font-normal normal-case tracking-normal"
-                        style={{ color: "var(--editor-muted)" }}
+                        style={{
+                          color: issue ? "var(--editor-amber)" : "var(--editor-muted)",
+                        }}
                       >
-                        {preview || "Empty"}
+                        {issue ?? (preview || "Empty")}
                       </span>
                     ) : null}
                   </button>
+
+                  {issue ? (
+                    <span
+                      className="flex h-7 w-5 flex-shrink-0 items-center justify-center"
+                      title={issue}
+                      role="img"
+                      aria-label={issue}
+                      style={{ color: "var(--editor-amber)" }}
+                    >
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                    </span>
+                  ) : null}
+
+                  <BlockCardMenu
+                    canMoveUp={index > 0}
+                    canMoveDown={index < blocks.length - 1}
+                    onMoveUp={() => moveBlock(block.id, -1)}
+                    onMoveDown={() => moveBlock(block.id, 1)}
+                    onDuplicate={() => handleDuplicate(block.id)}
+                  />
 
                   <IconButton
                     title="Delete block"

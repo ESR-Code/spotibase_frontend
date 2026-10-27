@@ -20,9 +20,30 @@ export const ASSET_LIMITS: Record<EditorAssetKind, { maxBytes: number; types: st
     maxBytes: 25 * MB,
     types: ["image/png", "image/jpeg", "image/webp", "image/gif", "image/svg+xml"],
   },
+  other: {
+    maxBytes: 50 * MB,
+    types: [
+      "application/pdf",
+      "text/plain",
+      "text/csv",
+      "application/zip",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-powerpoint",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ],
+  },
 };
 
 export const IMAGE_ASSET_ACCEPT = ASSET_LIMITS.image.types.join(",");
+
+/** File-block uploads. Extensions too: OSes report some of these types inconsistently. */
+export const FILE_ASSET_ACCEPT = [
+  ...ASSET_LIMITS.other.types,
+  ".pdf,.txt,.csv,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx",
+].join(",");
 
 const TYPE_BY_EXTENSION: Record<string, string> = {
   glb: "model/gltf-binary",
@@ -32,6 +53,16 @@ const TYPE_BY_EXTENSION: Record<string, string> = {
   webp: "image/webp",
   gif: "image/gif",
   svg: "image/svg+xml",
+  pdf: "application/pdf",
+  txt: "text/plain",
+  csv: "text/csv",
+  zip: "application/zip",
+  doc: "application/msword",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xls: "application/vnd.ms-excel",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ppt: "application/vnd.ms-powerpoint",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 };
 
 export class AssetUploadError extends Error {

@@ -1,11 +1,13 @@
 "use client";
 
-import { Workflow } from "lucide-react";
+import { ArrowRight, Workflow } from "lucide-react";
 import { ACTION_UI_REGISTRY } from "@/app/editor/_components/actions/action-node-registry";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { getActionGraph } from "@/lib/editor/actions/create-action-graph";
 import { chainFromTrigger } from "@/lib/editor/actions/graph-ops";
 import { spawnSupportsYPlacement } from "@/lib/editor/actions/spawn-hotspots";
+import { isButtonBlock } from "@/lib/editor/blocks/content-buttons";
+import { getCategoryLucideIcon } from "@/lib/editor/theme/category-icons";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
@@ -313,14 +315,77 @@ export function ActionGraphSummary({
 
 export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
   const openActionsModal = useUIStore((s) => s.openActionsModal);
+  const buttons = selected.blocks.filter(isButtonBlock);
   return (
-    <ActionGraphSummary
-      graph={getActionGraph(selected)}
-      triggerLabel="Hotspot clicked"
-      emptyHint="No actions yet. Open the editor to add nodes for this hotspot."
-      onOpenEditor={() =>
-        openActionsModal({ kind: "hotspot", hotspotId: selected.id })
-      }
-    />
+    <div className="flex min-h-0 flex-col gap-4">
+      <ActionGraphSummary
+        graph={getActionGraph(selected)}
+        triggerLabel="Hotspot clicked"
+        emptyHint="No actions yet. Open the editor to add nodes for this hotspot."
+        onOpenEditor={() =>
+          openActionsModal({ kind: "hotspot", hotspotId: selected.id })
+        }
+      />
+
+      {buttons.length > 0 ? (
+        <div
+          className="rounded-lg px-4 py-4"
+          style={{
+            border: "1px solid var(--editor-line-soft)",
+            background: "rgba(11,20,36,0.35)",
+          }}
+        >
+          <div className="mb-1 text-[12px] font-semibold">Action buttons</div>
+          <div className="mb-2 text-[11px]" style={{ color: "var(--editor-muted)" }}>
+            Buttons in this hotspot&apos;s content. Each has its own lane on the
+            canvas.
+          </div>
+          <ul className="space-y-1">
+            {buttons.map((block) => {
+              const Icon = getCategoryLucideIcon(block.icon);
+              const steps = chainFromTrigger(block.actions).length;
+              return (
+                <li key={block.id} className="flex items-center gap-2">
+                  <Icon
+                    className="h-3.5 w-3.5 flex-shrink-0"
+                    style={{ color: "var(--editor-muted-2)" }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[12px] font-medium">
+                      {block.label.trim() || "Action button"}
+                    </div>
+                    <div
+                      className="text-[10px]"
+                      style={{
+                        color: steps ? "var(--editor-muted)" : "var(--editor-amber)",
+                      }}
+                    >
+                      {steps
+                        ? `${steps} action${steps === 1 ? "" : "s"}`
+                        : "Not wired yet"}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="editor-btn editor-btn-ghost text-[11px]"
+                    style={{ padding: "4px 8px" }}
+                    onClick={() =>
+                      openActionsModal({
+                        kind: "hotspot",
+                        hotspotId: selected.id,
+                        focusOwnerId: block.ownerId,
+                      })
+                    }
+                  >
+                    Edit actions
+                    <ArrowRight className="h-3 w-3" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
+    </div>
   );
 }

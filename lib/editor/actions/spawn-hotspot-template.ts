@@ -2,7 +2,9 @@ import {
   cloneActionGraph,
   createDefaultActionGraph,
 } from "@/lib/editor/actions/create-action-graph";
+import { BUTTON_BLOCK_COLORS } from "@/lib/editor/blocks/button-colors";
 import { CONTENT_BUTTON_OWNER_BASE } from "@/lib/editor/blocks/content-button-ids";
+import { IFRAME_BLOCK_HEIGHT } from "@/lib/editor/blocks/embed-iframe-url";
 import { DEFAULT_CATEGORY_ICON } from "@/lib/editor/theme/category-icons";
 import {
   DEFAULT_HOTSPOT_SHAPE,
@@ -10,7 +12,12 @@ import {
   type HotspotStyle,
   type HotspotType,
 } from "@/lib/editor/types/hotspot";
-import type { HotspotBlock } from "@/lib/editor/types/hotspot-block";
+import type {
+  ButtonBlockColor,
+  CalloutTone,
+  DividerVariant,
+  HotspotBlock,
+} from "@/lib/editor/types/hotspot-block";
 import type {
   HotspotActionGraph,
   SpawnCoordMode,
@@ -34,6 +41,9 @@ const HOTSPOT_STYLES: HotspotStyle[] = [
   "image",
   "hidden",
 ];
+
+const DIVIDER_VARIANTS: DividerVariant[] = ["line", "dashed", "space"];
+const CALLOUT_TONE_IDS: CalloutTone[] = ["neutral", "info", "success", "warning", "danger"];
 
 function asHotspotType(value: unknown): HotspotType {
   return HOTSPOT_TYPES.includes(value as HotspotType)
@@ -115,11 +125,54 @@ function cloneSpawnBlocks(value: unknown): HotspotBlock[] {
         icon: typeof rec.icon === "string" ? rec.icon : DEFAULT_CATEGORY_ICON,
         label: typeof rec.label === "string" ? rec.label : "Action button",
         description: typeof rec.description === "string" ? rec.description : "",
+        ...(BUTTON_BLOCK_COLORS.some((item) => item.id === rec.color)
+          ? { color: rec.color as ButtonBlockColor }
+          : {}),
         ownerId:
           typeof rec.ownerId === "number" && Number.isFinite(rec.ownerId)
             ? rec.ownerId
             : CONTENT_BUTTON_OWNER_BASE,
         actions: asTemplateActions(rec.actions),
+      });
+      continue;
+    }
+    if (rec.type === "file") {
+      blocks.push({ id, type: "file", src: asString(rec.src), label: asString(rec.label) });
+      continue;
+    }
+    if (rec.type === "iframe") {
+      const height = Number(rec.height);
+      blocks.push({
+        id,
+        type: "iframe",
+        url: asString(rec.url),
+        height: Number.isFinite(height)
+          ? Math.min(IFRAME_BLOCK_HEIGHT.max, Math.max(IFRAME_BLOCK_HEIGHT.min, height))
+          : IFRAME_BLOCK_HEIGHT.default,
+        ...(rec.showOpenLink === true ? { showOpenLink: true } : {}),
+      });
+      continue;
+    }
+    if (rec.type === "divider") {
+      blocks.push({
+        id,
+        type: "divider",
+        variant: DIVIDER_VARIANTS.includes(rec.variant as DividerVariant)
+          ? (rec.variant as DividerVariant)
+          : "line",
+      });
+      continue;
+    }
+    if (rec.type === "callout") {
+      blocks.push({
+        id,
+        type: "callout",
+        tone: CALLOUT_TONE_IDS.includes(rec.tone as CalloutTone)
+          ? (rec.tone as CalloutTone)
+          : "info",
+        ...(typeof rec.icon === "string" && rec.icon ? { icon: rec.icon } : {}),
+        title: asString(rec.title),
+        content: asString(rec.content),
       });
     }
   }

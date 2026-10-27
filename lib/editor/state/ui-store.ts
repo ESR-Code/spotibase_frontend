@@ -77,7 +77,12 @@ function sameInfoBoxAnchor(
 export type OutlinerTab = "outliner" | "subject" | "layers";
 
 export type ActionsModalScope =
-  | { kind: "hotspot"; hotspotId: number }
+  | {
+      kind: "hotspot";
+      hotspotId: number;
+      /** Lane to center on open (an Action button block's owner id). */
+      focusOwnerId?: number;
+    }
   | { kind: "scene" };
 
 export type SceneTransitionPhase = "in" | "hold" | "out";

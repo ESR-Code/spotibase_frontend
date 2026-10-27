@@ -86,6 +86,24 @@ function interpolateBlocks(blocks: HotspotBlock[]): HotspotBlock[] {
         ),
       };
     }
+    if (block.type === "file") {
+      return {
+        ...block,
+        src: interpolatePlainText(block.src),
+        label: interpolatePlainText(block.label),
+      };
+    }
+    if (block.type === "iframe") {
+      return { ...block, url: interpolatePlainText(block.url) };
+    }
+    if (block.type === "callout") {
+      return {
+        ...block,
+        title: interpolatePlainText(block.title),
+        content: interpolatePlainText(block.content),
+      };
+    }
+    if (block.type === "divider") return { ...block };
     return {
       ...block,
       content: interpolateRichTextHtml(block.content),
