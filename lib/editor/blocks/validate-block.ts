@@ -1,7 +1,7 @@
 import { isAssetRef, isMissingAssetRef } from "@/lib/editor/assets";
 import { hasFieldTokens } from "@/lib/editor/actions/interpolate-fields";
 import { chainFromTrigger } from "@/lib/editor/actions/graph-ops";
-import { parseIframeUrl } from "@/lib/editor/blocks/embed-iframe-url";
+import { iframeUrlError } from "@/lib/editor/blocks/embed-iframe-url";
 import { parseEmbedVideoUrl } from "@/lib/editor/blocks/embed-video-url";
 import { richTextToPlainPreview } from "@/lib/editor/blocks/rich-text";
 import { normalizeExternalUrl } from "@/lib/editor/utils/open-external-url";
@@ -49,9 +49,7 @@ export function validateBlock(block: HotspotBlock): string | null {
     case "iframe":
       if (!block.url.trim()) return "Add a page URL";
       if (hasFieldTokens(block.url)) return null;
-      return parseIframeUrl(block.url)
-        ? null
-        : "Only https:// pages can be embedded";
+      return iframeUrlError(block.url);
     case "callout":
       return block.title.trim() || block.content.trim()
         ? null

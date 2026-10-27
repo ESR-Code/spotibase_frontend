@@ -6,7 +6,7 @@ import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { hasFieldTokens } from "@/lib/editor/actions/interpolate-fields";
 import {
   IFRAME_BLOCK_HEIGHT,
-  parseIframeUrl,
+  iframeUrlError,
 } from "@/lib/editor/blocks/embed-iframe-url";
 import type { HttpFieldSource } from "@/lib/editor/blocks/http-field-sources";
 import { useInterpolatedPlainText } from "@/lib/editor/blocks/use-interpolated-plain-text";
@@ -34,11 +34,12 @@ export function IframeBlockEditor({
   if (block.url.trim()) {
     if (hasTokens && !resolvedUrl) {
       hint = "Uses tokens — waiting for an https:// URL";
-    } else if (!parseIframeUrl(hasTokens ? resolvedUrl : block.url)) {
-      hint = hasTokens
-        ? "Resolved URL is not an https:// page"
-        : "Only https:// pages can be embedded";
-      warn = true;
+    } else {
+      const error = iframeUrlError(hasTokens ? resolvedUrl : block.url);
+      if (error) {
+        hint = hasTokens ? `Resolved URL: ${error}` : error;
+        warn = true;
+      }
     }
   }
 
