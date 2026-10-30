@@ -14,6 +14,7 @@ import { clearPostMessageListeners } from "@/lib/editor/actions/send-post-messag
 import { clearSubscribePolls } from "@/lib/editor/actions/subscribe";
 import { cancelPendingWaits } from "@/lib/editor/actions/wait";
 import { cloneHotspotBlocks } from "@/lib/editor/blocks/content-buttons";
+import { resetSceneDialogSession } from "@/lib/editor/dialogs/dialog-session";
 import { cloneCameraResetPosition } from "@/lib/editor/constants/default-settings";
 import { DEMO_HOTSPOTS } from "@/lib/editor/constants/demo-hotspots";
 import {
@@ -128,6 +129,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       usePreviewMeshHighlightStore.getState().reset();
       usePreviewSpawnedHotspotsStore.getState().reset();
       useCustomMenuToggleStore.getState().reset();
+      resetSceneDialogSession();
       resetModelAnimation();
       useEditorAnimPreviewStore.getState().reset();
       useUIStore.getState().setPreviewShowAllLabels(false);
@@ -180,6 +182,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       usePreviewSpawnedHotspotsStore.getState().reset();
       useCustomMenuToggleStore.getState().reset();
       usePreviewPostMessageTestStore.getState().reset();
+      resetSceneDialogSession();
       resetModelAnimation();
       useEditorAnimPreviewStore.getState().reset();
       useUIStore.getState().setPreviewShowAllLabels(false);

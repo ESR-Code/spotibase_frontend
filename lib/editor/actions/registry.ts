@@ -78,6 +78,10 @@ import {
   validateWaitData,
 } from "@/lib/editor/actions/wait";
 import { transitionToScene } from "@/lib/editor/actions/transition-to-scene";
+import {
+  markSceneDialogShown,
+  wasSceneDialogShown,
+} from "@/lib/editor/dialogs/dialog-session";
 import { findActiveSceneDialog } from "@/lib/editor/dialogs/scene-dialogs";
 import { openHotspotInPreview } from "@/lib/editor/preview/open-hotspot-in-preview";
 import { openSceneDialogInPreview } from "@/lib/editor/preview/open-scene-dialog";
@@ -89,7 +93,11 @@ import type {
   ActionNodeXY,
 } from "@/lib/editor/types/hotspot-action";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
-import { OPEN_MODAL_HANDLE_ON_OPEN, normalizeReceiveEvents } from "@/lib/editor/types/hotspot-action";
+import {
+  OPEN_MODAL_HANDLE_ON_CLOSE,
+  OPEN_MODAL_HANDLE_ON_OPEN,
+  normalizeReceiveEvents,
+} from "@/lib/editor/types/hotspot-action";
 import {
   normalizeExternalUrl,
   openExternalUrl,
@@ -179,8 +187,38 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
       if (node.type !== "openModal") return;
       const dialogId = node.data.dialogId;
 
+      // Hotspot lanes read the hotspot (spawned pins are not owned lanes).
+      const readGraph = async () => {
+        const [{ findHotspot }, { getOwnedActionGraph }] = await Promise.all([
+          import("@/lib/editor/state/preview-hotspots"),
+          import("@/lib/editor/actions/action-owners"),
+        ]);
+        const hotspot =
+          ctx.hotspotId === ctx.ownerId ? findHotspot(ctx.ownerId) : null;
+        return hotspot
+          ? getActionGraph(hotspot)
+          : getOwnedActionGraph(ctx.ownerId);
+      };
+      const runBranch = async (handle: string) => {
+        const graph = await readGraph();
+        if (!graph) return;
+        const chain = chainFrom(graph, node.id, handle);
+        if (chain.length === 0) return;
+        const { runActionNodeList } = await import(
+          "@/lib/editor/actions/run-action-graph"
+        );
+        await runActionNodeList(chain, ctx);
+      };
+
       if (dialogId) {
+        const dialog = findActiveSceneDialog(dialogId);
+        // Already seen this session: act as if it was opened and dismissed.
+        if (dialog?.showOncePerSession && wasSceneDialogShown(dialogId)) {
+          await runBranch(OPEN_MODAL_HANDLE_ON_CLOSE);
+          return "stop";
+        }
         if (!openSceneDialogInPreview(dialogId)) return "stop";
+        markSceneDialogShown(dialogId);
       } else {
         if (ctx.hotspotId == null || ctx.hotspotId !== ctx.ownerId) {
           toast.error("Open Modal needs a dialog when it doesn't run from a hotspot click");
@@ -200,29 +238,7 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
           (ctx.hotspotId != null ? [ctx.hotspotId] : undefined),
       });
 
-      // Hotspot lanes read the hotspot (spawned pins are not owned lanes).
-      const [{ findHotspot }, { getOwnedActionGraph }] = await Promise.all([
-        import("@/lib/editor/state/preview-hotspots"),
-        import("@/lib/editor/actions/action-owners"),
-      ]);
-      const hotspot =
-        ctx.hotspotId === ctx.ownerId ? findHotspot(ctx.ownerId) : null;
-      const graph = hotspot
-        ? getActionGraph(hotspot)
-        : getOwnedActionGraph(ctx.ownerId);
-      if (graph) {
-        const onOpenChain = chainFrom(
-          graph,
-          node.id,
-          OPEN_MODAL_HANDLE_ON_OPEN,
-        );
-        if (onOpenChain.length > 0) {
-          const { runActionNodeList } = await import(
-            "@/lib/editor/actions/run-action-graph"
-          );
-          await runActionNodeList(onOpenChain, ctx);
-        }
-      }
+      await runBranch(OPEN_MODAL_HANDLE_ON_OPEN);
 
       // Branches continue from onOpen / onClose — stop the primary walk.
       return "stop";

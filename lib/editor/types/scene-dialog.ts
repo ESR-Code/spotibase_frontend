@@ -20,4 +20,9 @@ export type SceneDialog = {
   presentation?: SceneDialogPresentation;
   /** Unset = the scene's marker dialog size. */
   size?: MarkerDialogSize;
+  /**
+   * Open at most once per Preview session. Later Open Modal runs skip the
+   * dialog and continue with its onClose branch, as if it was dismissed.
+   */
+  showOncePerSession?: boolean;
 };

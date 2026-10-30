@@ -117,6 +117,7 @@ function DialogListItem({
           style={{ color: "var(--editor-muted-2)" }}
         >
           {count} block{count === 1 ? "" : "s"}
+          {dialog.showOncePerSession ? " · Once" : ""}
         </div>
       </div>
       <button

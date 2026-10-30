@@ -22,6 +22,7 @@ import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { SettingsSection } from "@/app/editor/_components/ui/settings-section";
+import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
 import { listHttpFieldSources } from "@/lib/editor/blocks/http-field-sources";
 import {
@@ -244,6 +245,14 @@ function DialogGeneralTab({ dialog }: { dialog: SceneDialog }) {
             ))}
           </div>
         </div>
+        <SwitchField
+          label="Show once per session"
+          description="After it has been shown, later Open Modal runs skip it and continue with onClose (e.g. a welcome on Scene Start that shouldn't return when revisiting the scene)"
+          checked={dialog.showOncePerSession ?? false}
+          onChange={(checked) =>
+            update({ showOncePerSession: checked || undefined })
+          }
+        />
       </SettingsSection>
 
       <SettingsSection
