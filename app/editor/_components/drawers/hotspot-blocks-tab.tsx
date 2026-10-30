@@ -23,24 +23,30 @@ import {
 import { validateBlock } from "@/lib/editor/blocks/validate-block";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
-import type { Hotspot } from "@/lib/editor/types/hotspot";
-import type { HotspotBlockType } from "@/lib/editor/types/hotspot-block";
+import type {
+  HotspotBlock,
+  HotspotBlockType,
+} from "@/lib/editor/types/hotspot-block";
+
+/** What owns the blocks: a hotspot (numeric id) or a scene dialog (uuid). */
+export type BlocksOwner = { id: number | string; blocks: HotspotBlock[] };
 
 type HotspotBlocksTabProps = {
-  selected: Hotspot;
-  onChange?: (blocks: Hotspot["blocks"]) => void;
+  selected: BlocksOwner;
+  /** Required for non-hotspot owners; hotspots default to `updateHotspot`. */
+  onChange?: (blocks: HotspotBlock[]) => void;
   fieldSources?: HttpFieldSource[];
 };
 
 type BlocksUiState = {
-  hotspotId: number;
+  hotspotId: number | string;
   focusBlockId: string | null;
   collapsedIds: Set<string>;
   draggingId: string | null;
   overId: string | null;
 };
 
-function createBlocksUiState(hotspotId: number): BlocksUiState {
+function createBlocksUiState(hotspotId: number | string): BlocksUiState {
   return {
     hotspotId,
     focusBlockId: null,
@@ -125,12 +131,14 @@ export function HotspotBlocksTab({
   const allCollapsed =
     blocks.length > 0 && blocks.every((block) => collapsedIds.has(block.id));
 
-  const setBlocks = (next: Hotspot["blocks"]) => {
+  const setBlocks = (next: HotspotBlock[]) => {
     if (onChange) {
       onChange(next);
       return;
     }
-    updateHotspot(selected.id, { blocks: next });
+    if (typeof selected.id === "number") {
+      updateHotspot(selected.id, { blocks: next });
+    }
   };
 
   const handleAdd = (type: HotspotBlockType) => {
@@ -390,7 +398,9 @@ export function HotspotBlocksTab({
                     <Editor
                       block={block}
                       autoFocus={focusBlockId === block.id}
-                      hotspotId={selected.id}
+                      hotspotId={
+                        typeof selected.id === "number" ? selected.id : undefined
+                      }
                       fieldSources={resolvedFieldSources}
                       onChange={(patch) => handleBlockChange(block.id, patch)}
                     />

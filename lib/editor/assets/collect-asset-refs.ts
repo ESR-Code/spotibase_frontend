@@ -20,6 +20,11 @@ function describe(scene: Scene | null, path: (string | number)[]): string {
     const label = hotspot?.title?.trim() || `#${hotspot?.id ?? index + 1}`;
     return `Hotspot "${label}" · ${tail(rest) || "image"}`;
   }
+  if (scene && head === "dialogs" && typeof index === "number") {
+    const dialog = scene.dialogs?.[index];
+    const label = dialog?.title?.trim() || `#${index + 1}`;
+    return `Dialog "${label}" · ${tail(rest) || "image"}`;
+  }
   if (scene && head === "layers" && typeof index === "number") {
     const layer = scene.layers[index];
     return `Layer "${layer && "name" in layer ? layer.name : index + 1}"`;

@@ -15,6 +15,7 @@ import type {
   ButtonBlock,
   HotspotBlock,
 } from "@/lib/editor/types/hotspot-block";
+import type { SceneDialog } from "@/lib/editor/types/scene-dialog";
 
 export {
   CONTENT_BUTTON_OWNER_BASE,
@@ -41,9 +42,9 @@ export function listButtonBlocks(
 
 function collectKnownOwnerIds(): number[] {
   const ids: number[] = [...reservedOwnerIds];
-  const pushFrom = (hotspots: Hotspot[]) => {
-    for (const hotspot of hotspots) {
-      for (const block of hotspot.blocks) {
+  const pushFrom = (owners: Array<{ blocks: HotspotBlock[] }>) => {
+    for (const owner of owners) {
+      for (const block of owner.blocks) {
         if (isButtonBlock(block)) ids.push(block.ownerId);
       }
     }
@@ -52,6 +53,7 @@ function collectKnownOwnerIds(): number[] {
   pushFrom(usePreviewSpawnedHotspotsStore.getState().list());
   for (const scene of useScenesStore.getState().scenes) {
     pushFrom(scene.hotspots);
+    pushFrom(scene.dialogs ?? []);
   }
   return ids;
 }
@@ -81,24 +83,69 @@ function findButtonInHotspots(
   return null;
 }
 
+/** Where an Action button block lives: a hotspot's content or a scene dialog. */
+export type ContentButtonMatch =
+  | { kind: "hotspot"; hotspot: Hotspot; block: ButtonBlock }
+  | { kind: "dialog"; sceneId: string; dialog: SceneDialog; block: ButtonBlock };
+
+function findButtonInDialogs(
+  dialogs: SceneDialog[],
+  ownerId: number,
+): { dialog: SceneDialog; block: ButtonBlock } | null {
+  for (const dialog of dialogs) {
+    for (const block of dialog.blocks) {
+      if (isButtonBlock(block) && block.ownerId === ownerId) {
+        return { dialog, block };
+      }
+    }
+  }
+  return null;
+}
+
 export function findContentButtonByOwnerId(
   ownerId: number,
-): { hotspot: Hotspot; block: ButtonBlock } | null {
+): ContentButtonMatch | null {
   const live = findButtonInHotspots(
     useEditorStore.getState().hotspots,
     ownerId,
   );
-  if (live) return live;
+  if (live) return { kind: "hotspot", ...live };
 
-  for (const scene of useScenesStore.getState().scenes) {
-    const match = findButtonInHotspots(scene.hotspots, ownerId);
-    if (match) return match;
+  const scenes = useScenesStore.getState();
+  // Active scene dialogs first: they are the ones Preview can show.
+  const ordered = [...scenes.scenes].sort(
+    (a, b) =>
+      Number(b.id === scenes.activeSceneId) -
+      Number(a.id === scenes.activeSceneId),
+  );
+  for (const scene of ordered) {
+    const inDialog = findButtonInDialogs(scene.dialogs ?? [], ownerId);
+    if (inDialog) return { kind: "dialog", sceneId: scene.id, ...inDialog };
   }
 
-  return findButtonInHotspots(
+  for (const scene of scenes.scenes) {
+    const match = findButtonInHotspots(scene.hotspots, ownerId);
+    if (match) return { kind: "hotspot", ...match };
+  }
+
+  const spawned = findButtonInHotspots(
     usePreviewSpawnedHotspotsStore.getState().list(),
     ownerId,
   );
+  return spawned ? { kind: "hotspot", ...spawned } : null;
+}
+
+/** Action button blocks inside scene dialogs. */
+export function listDialogButtonBlocks(
+  dialogs: SceneDialog[],
+): Array<{ dialog: SceneDialog; block: ButtonBlock }> {
+  const result: Array<{ dialog: SceneDialog; block: ButtonBlock }> = [];
+  for (const dialog of dialogs) {
+    for (const block of dialog.blocks) {
+      if (isButtonBlock(block)) result.push({ dialog, block });
+    }
+  }
+  return result;
 }
 
 export function listContentButtonGraphs(): Array<{
@@ -113,12 +160,12 @@ export function listContentButtonGraphs(): Array<{
     graph: ReturnType<typeof cloneActionGraph>;
   }> = [];
 
-  const push = (hotspot: Hotspot, block: ButtonBlock) => {
+  const push = (owner: { title: string }, block: ButtonBlock) => {
     if (seen.has(block.ownerId)) return;
     seen.add(block.ownerId);
     result.push({
       ownerId: block.ownerId,
-      label: `${hotspot.title}: ${block.label.trim() || "Action button"}`,
+      label: `${owner.title}: ${block.label.trim() || "Action button"}`,
       graph: cloneActionGraph(block.actions),
     });
   };
@@ -137,6 +184,11 @@ export function listContentButtonGraphs(): Array<{
 
   const scenes = useScenesStore.getState();
   for (const scene of scenes.scenes) {
+    for (const { dialog, block } of listDialogButtonBlocks(
+      scene.dialogs ?? [],
+    )) {
+      push({ title: dialog.title }, block);
+    }
     if (scene.id === scenes.activeSceneId) continue;
     for (const { hotspot, block } of listButtonBlocks(scene.hotspots)) {
       push(hotspot, block);
@@ -178,4 +230,14 @@ export function cloneHotspotBlocks(
     }
     return { ...block };
   });
+}
+
+export function cloneSceneDialogs(
+  dialogs: SceneDialog[],
+  remintContentButtons = false,
+): SceneDialog[] {
+  return dialogs.map((dialog) => ({
+    ...dialog,
+    blocks: cloneHotspotBlocks(dialog.blocks, remintContentButtons),
+  }));
 }

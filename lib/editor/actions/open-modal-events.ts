@@ -9,7 +9,10 @@ import { OPEN_MODAL_HANDLE_ON_CLOSE } from "@/lib/editor/types/hotspot-action";
 export type OpenModalCloseRegistration = {
   ownerId: number;
   nodeId: string;
-  hotspotId: number;
+  /** Hotspot of the run that opened it; null for start / menu / Action button runs. */
+  hotspotId: number | null;
+  /** Scene dialog shown, when the node opened one instead of the hotspot. */
+  dialogId?: string;
   ownerKey: string;
   /** Hand-off chain of the run that opened the modal (see ActionRunContext). */
   hotspotChain?: readonly number[];
@@ -40,6 +43,7 @@ export function registerOpenModalCloseHandler(
   if (
     previous &&
     (previous.hotspotId !== registration.hotspotId ||
+      previous.dialogId !== registration.dialogId ||
       previous.nodeId !== registration.nodeId ||
       previous.ownerId !== registration.ownerId)
   ) {
@@ -54,7 +58,13 @@ async function fireOpenModalClose(
   const { getActionGraph } = await import(
     "@/lib/editor/actions/create-action-graph"
   );
-  const hotspot = findHotspot(registration.hotspotId);
+  // Hotspot graphs come from the hotspot (spawned ones are not owned lanes);
+  // start / menu / Action button graphs from their owner.
+  const hotspot =
+    registration.hotspotId === registration.ownerId &&
+    registration.hotspotId != null
+      ? findHotspot(registration.hotspotId)
+      : null;
   const graph = hotspot
     ? getActionGraph(hotspot)
     : getOwnedActionGraph(registration.ownerId);
@@ -72,9 +82,12 @@ async function fireOpenModalClose(
   const { usePreviewSpawnedHotspotsStore } = await import(
     "@/lib/editor/state/preview-spawned-hotspots-store"
   );
-  const spawned = usePreviewSpawnedHotspotsStore
-    .getState()
-    .findEntry(registration.hotspotId);
+  const spawned =
+    registration.hotspotId != null
+      ? usePreviewSpawnedHotspotsStore
+          .getState()
+          .findEntry(registration.hotspotId)
+      : null;
   const ctx: ActionRunContext = {
     hotspotId: registration.hotspotId,
     ownerId: registration.ownerId,

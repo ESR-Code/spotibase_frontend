@@ -38,6 +38,7 @@ import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 import type { ActionFence } from "@/lib/editor/types/action-fence";
 import { cloneActionFences } from "@/lib/editor/types/action-fence";
 import { cloneLayers, type SceneLayer } from "@/lib/editor/types/scene-layer";
+import type { SceneDialog } from "@/lib/editor/types/scene-dialog";
 import type { Scene, SceneModelState } from "@/lib/editor/types/scene";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 import { createUuid } from "@/lib/editor/utils/uuid";
@@ -85,6 +86,7 @@ export function createScene(partial: {
   startActions?: HotspotActionGraph;
   legendActions?: HotspotActionGraph;
   actionFences?: ActionFence[];
+  dialogs?: SceneDialog[];
   model?: SceneModelState;
   settings?: EditorSettings;
   environment?: EnvironmentSettings;
@@ -112,6 +114,7 @@ export function createScene(partial: {
       partial.legendActions ?? createEmptyActionGraph(),
     ),
     actionFences: cloneActionFences(partial.actionFences),
+    dialogs: partial.dialogs ?? [],
     model: partial.model ?? createEmptyModelState(partial.type),
     settings: cloneEditorSettings(partial.settings ?? DEFAULT_EDITOR_SETTINGS),
     environment: cloneEnvironmentSettings(

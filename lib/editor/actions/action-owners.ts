@@ -65,8 +65,12 @@ export const START_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "wait",
 ];
 
-/** Scene Start can play the active 3D subject; App Start cannot. */
+/**
+ * Scene Start can play the active 3D subject and open scene dialogs;
+ * App Start cannot (it runs before any scene's dialogs apply).
+ */
 export const SCENE_START_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
+  "openModal",
   "goToScene",
   "goToHotspot",
   "sendPostMessage",
@@ -106,8 +110,12 @@ export const HOTSPOT_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "wait",
 ];
 
-/** Click triggers on the Preview bottom bar — no hotspot-owned Open Modal. */
+/**
+ * Click triggers on the Preview bottom bar and Action buttons. Open Modal is
+ * allowed but must show a scene dialog (there is no hotspot of their own).
+ */
 export const MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
+  "openModal",
   "goToScene",
   "goToHotspot",
   "openUrl",
@@ -321,6 +329,30 @@ export function setOwnedActionGraph(
   if (isContentButtonOwnerId(ownerId)) {
     const match = findContentButtonByOwnerId(ownerId);
     if (!match) return;
+    if (match.kind === "dialog") {
+      useScenesStore.setState((state) => ({
+        scenes: state.scenes.map((scene) =>
+          scene.id !== match.sceneId
+            ? scene
+            : {
+                ...scene,
+                dialogs: scene.dialogs.map((dialog) =>
+                  dialog.id !== match.dialog.id
+                    ? dialog
+                    : {
+                        ...dialog,
+                        blocks: dialog.blocks.map((block) =>
+                          block.type === "button" && block.ownerId === ownerId
+                            ? { ...block, actions: cloneActionGraph(graph) }
+                            : block,
+                        ),
+                      },
+                ),
+              },
+        ),
+      }));
+      return;
+    }
     const authored = useEditorStore
       .getState()
       .hotspots.find((hotspot) => hotspot.id === match.hotspot.id);

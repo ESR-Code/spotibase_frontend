@@ -8,6 +8,7 @@ import type {
 } from "@/lib/editor/types/editor-settings";
 import type { GeoReference } from "@/lib/editor/types/geo-reference";
 import type { GeoSettings } from "@/lib/editor/types/geo-settings";
+import type { SceneDialog } from "@/lib/editor/types/scene-dialog";
 import type { SceneLayer } from "@/lib/editor/types/scene-layer";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 
@@ -58,6 +59,8 @@ export type Scene = {
   legendActions: HotspotActionGraph;
   /** Named colored frames on the Scene Actions canvas. */
   actionFences: ActionFence[];
+  /** Standalone Preview dialogs, opened by Open Modal nodes (`dialogId`). */
+  dialogs: SceneDialog[];
   model: SceneModelState;
   /** Per-scene editor settings (formerly global "General Settings"). */
   settings: EditorSettings;

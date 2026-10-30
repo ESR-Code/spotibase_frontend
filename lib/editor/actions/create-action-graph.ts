@@ -784,11 +784,15 @@ export function cloneActionGraph(
           },
         };
       }
+      const dialogId =
+        node.type === "openModal" && typeof node.data?.dialogId === "string"
+          ? node.data.dialogId
+          : "";
       return {
         id: node.id,
         type: "openModal",
         position: { ...node.position },
-        data: {},
+        data: dialogId ? { dialogId } : {},
       };
     });
   return {

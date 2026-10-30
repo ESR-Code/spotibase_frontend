@@ -7,15 +7,18 @@ import {
   Layers,
   ListTree,
   MapPin,
+  MessageSquare,
 } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { confirmDelete } from "@/lib/editor/confirm";
 import { toast } from "@/lib/editor/toast";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { SceneModelRow } from "@/app/editor/_components/outliner/scene-model-row";
+import { DialogsPanel } from "@/app/editor/_components/outliner/dialogs-panel";
 import { HotspotListItem } from "@/app/editor/_components/outliner/hotspot-list-item";
 import { LayersPanel } from "@/app/editor/_components/outliner/layers-panel";
 import { SubjectPanel } from "@/app/editor/_components/outliner/subject-panel";
+import { useActiveSceneDialogs } from "@/lib/editor/dialogs/scene-dialogs";
 import { getSceneType } from "@/lib/editor/scene-types/registry";
 import { selectHotspotExclusive } from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
@@ -28,11 +31,15 @@ const BASE_TABS: { id: OutlinerTab; label: string; icon: typeof Layers }[] = [
   { id: "subject", label: "Subject", icon: Box },
 ];
 
+/** Every scene type can have standalone dialogs. */
+const DIALOGS_TAB = { id: "dialogs" as const, label: "Dialogs", icon: MessageSquare };
+
 export function HotspotOutliner() {
   const hotspots = useEditorStore((s) => s.hotspots);
   const selectedId = useEditorStore((s) => s.selectedId);
   const layerCount = useLayersStore((s) => s.layers.length);
   const scene = useActiveScene();
+  const dialogCount = useActiveSceneDialogs().length;
   const removeHotspot = useEditorStore((s) => s.removeHotspot);
   const collapsed = useUIStore((s) => s.outlinerCollapsed);
   const setCollapsed = useUIStore((s) => s.setOutlinerCollapsed);
@@ -42,10 +49,11 @@ export function HotspotOutliner() {
   const showLayersTab = getSceneType(scene.type).outlinerTabs.layers;
 
   const tabs = useMemo(() => {
-    if (!showLayersTab) return BASE_TABS;
+    if (!showLayersTab) return [...BASE_TABS, DIALOGS_TAB];
     return [
       ...BASE_TABS,
       { id: "layers" as const, label: "Layers", icon: Layers },
+      DIALOGS_TAB,
     ];
   }, [showLayersTab]);
 
@@ -76,7 +84,9 @@ export function HotspotOutliner() {
       ? "Subject"
       : outlinerTab === "layers"
         ? "Layers"
-        : "Hotspot Outliner";
+        : outlinerTab === "dialogs"
+          ? "Dialogs"
+          : "Hotspot Outliner";
   const subheading =
     outlinerTab === "subject"
       ? scene.type === "geo"
@@ -84,7 +94,9 @@ export function HotspotOutliner() {
         : "Import and adjust the scene subject"
       : outlinerTab === "layers"
         ? `${layerCount} overlay${layerCount === 1 ? "" : "s"} in scene`
-        : `${hotspots.length} markers in scene`;
+        : outlinerTab === "dialogs"
+          ? `${dialogCount} dialog${dialogCount === 1 ? "" : "s"} in scene`
+          : `${hotspots.length} markers in scene`;
 
   return (
     <aside
@@ -138,6 +150,8 @@ export function HotspotOutliner() {
           <SubjectPanel />
         ) : outlinerTab === "layers" ? (
           <LayersPanel />
+        ) : outlinerTab === "dialogs" ? (
+          <DialogsPanel />
         ) : (
           <>
             <div

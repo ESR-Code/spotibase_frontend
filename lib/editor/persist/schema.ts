@@ -60,6 +60,18 @@ export const sceneDataSchema = z
     startActions: actionGraph,
     legendActions: actionGraph,
     actionFences: z.array(looseObject).default([]),
+    dialogs: z
+      .array(
+        z
+          .object({
+            id: z.string(),
+            title: z.string().default(""),
+            image: z.string().default(""),
+            blocks: z.array(z.object({ id: z.string(), type: z.string() }).passthrough()),
+          })
+          .passthrough(),
+      )
+      .default([]),
     model: z
       .object({
         name: z.string(),

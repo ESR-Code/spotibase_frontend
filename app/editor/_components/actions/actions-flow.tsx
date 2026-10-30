@@ -109,7 +109,10 @@ import {
   type LaneOwner,
 } from "@/lib/editor/actions/action-lanes";
 import { filterActionNodeTypesForScene } from "@/lib/editor/actions/registry";
-import { listButtonBlocks } from "@/lib/editor/blocks/content-buttons";
+import {
+  listButtonBlocks,
+  listDialogButtonBlocks,
+} from "@/lib/editor/blocks/content-buttons";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import {
   createActionFence,
@@ -290,6 +293,7 @@ function canvasSessionKeyFor(
   hotspots: Hotspot[],
   includeStartGraphs: boolean,
   menuButtonOwnerIds: number[],
+  dialogButtonOwnerIds: number[],
   legendEnabled: boolean,
   isolatedKey?: string,
 ): string {
@@ -300,6 +304,7 @@ function canvasSessionKeyFor(
         "scene",
         ...(legendEnabled ? ["legend"] : []),
         ...menuButtonOwnerIds.map((id) => `m${id}`),
+        ...dialogButtonOwnerIds.map((id) => `d${id}`),
       ]
     : [];
   for (const hotspot of hotspots) owners.push(`h${hotspot.id}`);
@@ -425,8 +430,15 @@ function ActionsFlowCanvas({
         graph: block.actions ?? createEmptyActionGraph(),
       });
     }
+    for (const { block } of listDialogButtonBlocks(activeScene.dialogs ?? [])) {
+      owners.push({
+        ownerId: block.ownerId,
+        graph: block.actions ?? createEmptyActionGraph(),
+      });
+    }
     return owners;
   }, [
+    activeScene.dialogs,
     activeScene.legendActions,
     activeScene.startActions,
     appStartActions,
@@ -510,6 +522,21 @@ function ActionsFlowCanvas({
           allowedNodeTypes: forScene(MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES),
         });
       }
+      // Action buttons inside scene dialogs live on the scene canvas.
+      for (const { dialog, block } of listDialogButtonBlocks(
+        activeScene.dialogs ?? [],
+      )) {
+        list.push({
+          ownerId: block.ownerId,
+          title: block.label.trim() || "Action button",
+          graph: block.actions ?? createEmptyActionGraph(),
+          originY: originY(block.ownerId),
+          triggerKind: "contentButton",
+          triggerIcon: block.icon,
+          triggerSubtitle: dialog.title,
+          allowedNodeTypes: forScene(MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES),
+        });
+      }
     }
 
     for (const hotspot of hotspots) {
@@ -541,6 +568,7 @@ function ActionsFlowCanvas({
   // though the callback doesn't name them.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    activeScene.dialogs,
     activeScene.name,
     activeScene.startActions,
     activeScene.legendActions,
@@ -2105,6 +2133,9 @@ export function ActionsFlow({
     hotspots,
     includeStartGraphs,
     customMenuButtons.map((button) => button.ownerId),
+    listDialogButtonBlocks(activeScene.dialogs ?? []).map(
+      ({ block }) => block.ownerId,
+    ),
     legendEnabled,
     isolatedLane?.fenceScopeKey,
   );

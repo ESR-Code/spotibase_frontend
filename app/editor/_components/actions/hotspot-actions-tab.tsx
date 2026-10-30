@@ -11,6 +11,7 @@ import { getCategoryLucideIcon } from "@/lib/editor/theme/category-icons";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import type { Hotspot } from "@/lib/editor/types/hotspot";
+import type { HotspotBlock } from "@/lib/editor/types/hotspot-block";
 import type { ActionNode, HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 import {
   normalizeReceiveEvents,
@@ -40,10 +41,23 @@ function actionNodeDetail(
         (edge) =>
           edge.source === node.id && edge.sourceHandle === "onClose",
       );
-      if (hasOnOpen && hasOnClose) return "→ onOpen + onClose";
-      if (hasOnOpen) return "→ onOpen";
-      if (hasOnClose) return "→ onClose";
-      return null;
+      const dialogId = node.data.dialogId;
+      const dialog = dialogId
+        ? scenes.flatMap((scene) => scene.dialogs ?? []).find((d) => d.id === dialogId)
+        : null;
+      const target = dialogId
+        ? `→ ${dialog ? dialog.title.trim() || "Untitled dialog" : "missing dialog"}`
+        : null;
+      const branches =
+        hasOnOpen && hasOnClose
+          ? "onOpen + onClose"
+          : hasOnOpen
+            ? "onOpen"
+            : hasOnClose
+              ? "onClose"
+              : null;
+      if (target) return branches ? `${target} · ${branches}` : target;
+      return branches ? `→ ${branches}` : null;
     }
     case "goToScene":
       return node.data.sceneId
@@ -315,7 +329,6 @@ export function ActionGraphSummary({
 
 export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
   const openActionsModal = useUIStore((s) => s.openActionsModal);
-  const buttons = selected.blocks.filter(isButtonBlock);
   return (
     <div className="flex min-h-0 flex-col gap-4">
       <ActionGraphSummary
@@ -327,65 +340,86 @@ export function HotspotActionsTab({ selected }: HotspotActionsTabProps) {
         }
       />
 
-      {buttons.length > 0 ? (
-        <div
-          className="rounded-lg px-4 py-4"
-          style={{
-            border: "1px solid var(--editor-line-soft)",
-            background: "rgba(11,20,36,0.35)",
-          }}
-        >
-          <div className="mb-1 text-[12px] font-semibold">Action buttons</div>
-          <div className="mb-2 text-[11px]" style={{ color: "var(--editor-muted)" }}>
-            Buttons in this hotspot&apos;s content. Each has its own lane on the
-            canvas.
-          </div>
-          <ul className="space-y-1">
-            {buttons.map((block) => {
-              const Icon = getCategoryLucideIcon(block.icon);
-              const steps = chainFromTrigger(block.actions).length;
-              return (
-                <li key={block.id} className="flex items-center gap-2">
-                  <Icon
-                    className="h-3.5 w-3.5 flex-shrink-0"
-                    style={{ color: "var(--editor-muted-2)" }}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[12px] font-medium">
-                      {block.label.trim() || "Action button"}
-                    </div>
-                    <div
-                      className="text-[10px]"
-                      style={{
-                        color: steps ? "var(--editor-muted)" : "var(--editor-amber)",
-                      }}
-                    >
-                      {steps
-                        ? `${steps} action${steps === 1 ? "" : "s"}`
-                        : "Not wired yet"}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="editor-btn editor-btn-ghost text-[11px]"
-                    style={{ padding: "4px 8px" }}
-                    onClick={() =>
-                      openActionsModal({
-                        kind: "hotspot",
-                        hotspotId: selected.id,
-                        focusOwnerId: block.ownerId,
-                      })
-                    }
-                  >
-                    Edit actions
-                    <ArrowRight className="h-3 w-3" />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ) : null}
+      <ActionButtonsList
+        blocks={selected.blocks}
+        description="Buttons in this hotspot’s content. Each has its own lane on the canvas."
+        onEditActions={(ownerId) =>
+          openActionsModal({
+            kind: "hotspot",
+            hotspotId: selected.id,
+            focusOwnerId: ownerId,
+          })
+        }
+      />
+    </div>
+  );
+}
+
+type ActionButtonsListProps = {
+  blocks: HotspotBlock[];
+  description: string;
+  /** Open the canvas centered on this button's lane. */
+  onEditActions: (ownerId: number) => void;
+};
+
+/** Action button blocks of a hotspot or scene dialog, with their wiring state. */
+export function ActionButtonsList({
+  blocks,
+  description,
+  onEditActions,
+}: ActionButtonsListProps) {
+  const buttons = blocks.filter(isButtonBlock);
+  if (buttons.length === 0) return null;
+  return (
+    <div
+      className="rounded-lg px-4 py-4"
+      style={{
+        border: "1px solid var(--editor-line-soft)",
+        background: "rgba(11,20,36,0.35)",
+      }}
+    >
+      <div className="mb-1 text-[12px] font-semibold">Action buttons</div>
+      <div className="mb-2 text-[11px]" style={{ color: "var(--editor-muted)" }}>
+        {description}
+      </div>
+      <ul className="space-y-1">
+        {buttons.map((block) => {
+          const Icon = getCategoryLucideIcon(block.icon);
+          const steps = chainFromTrigger(block.actions).length;
+          return (
+            <li key={block.id} className="flex items-center gap-2">
+              <Icon
+                className="h-3.5 w-3.5 flex-shrink-0"
+                style={{ color: "var(--editor-muted-2)" }}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[12px] font-medium">
+                  {block.label.trim() || "Action button"}
+                </div>
+                <div
+                  className="text-[10px]"
+                  style={{
+                    color: steps ? "var(--editor-muted)" : "var(--editor-amber)",
+                  }}
+                >
+                  {steps
+                    ? `${steps} action${steps === 1 ? "" : "s"}`
+                    : "Not wired yet"}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="editor-btn editor-btn-ghost text-[11px]"
+                style={{ padding: "4px 8px" }}
+                onClick={() => onEditActions(block.ownerId)}
+              >
+                Edit actions
+                <ArrowRight className="h-3 w-3" />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

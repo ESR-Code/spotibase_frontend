@@ -74,7 +74,7 @@ function sameInfoBoxAnchor(
   );
 }
 
-export type OutlinerTab = "outliner" | "subject" | "layers";
+export type OutlinerTab = "outliner" | "subject" | "layers" | "dialogs";
 
 export type ActionsModalScope =
   | {
@@ -83,7 +83,11 @@ export type ActionsModalScope =
       /** Lane to center on open (an Action button block's owner id). */
       focusOwnerId?: number;
     }
-  | { kind: "scene" };
+  | {
+      kind: "scene";
+      /** Lane to center on open (e.g. a scene dialog's Action button). */
+      focusOwnerId?: number;
+    };
 
 export type SceneTransitionPhase = "in" | "hold" | "out";
 
@@ -108,6 +112,14 @@ type UIState = {
   previewModalIndex: number;
   /** Hotspot selected by click in Preview (label / dialog target). */
   previewActiveHotspotId: number | null;
+  /**
+   * Scene dialog shown in the Preview dialog slot instead of a hotspot.
+   * Shares `previewModalOpen` with the hotspot dialog (one slot). Kept after
+   * close so the dialog can animate out; opening a hotspot clears it.
+   */
+  previewDialogId: string | null;
+  /** Scene dialog open in the dialog editor drawer (editor only). */
+  dialogEditorId: string | null;
   /** Hide select label briefly after click before revealing with transition. */
   previewLabelPending: boolean;
   /** Preview-session toggle: show a title on every visible hotspot. */
@@ -140,6 +152,8 @@ type UIState = {
   setLegendFilterCategory: (value: string) => void;
   setPreviewModalOpen: (value: boolean) => void;
   setPreviewModalIndex: (index: number) => void;
+  setPreviewDialogId: (id: string | null) => void;
+  setDialogEditorId: (id: string | null) => void;
   setPreviewActiveHotspotId: (id: number | null) => void;
   setPreviewLabelPending: (value: boolean) => void;
   setPreviewShowAllLabels: (value: boolean) => void;
@@ -177,6 +191,8 @@ const TRANSIENT_UI = {
   previewModalOpen: false,
   previewModalIndex: 0,
   previewActiveHotspotId: null,
+  previewDialogId: null,
+  dialogEditorId: null,
   previewLabelPending: false,
   previewShowAllLabels: false,
   labelAnchors: [],
@@ -231,6 +247,8 @@ export const useUIStore = create<UIState>((set, get) => ({
     }
   },
   setPreviewModalIndex: (previewModalIndex) => set({ previewModalIndex }),
+  setPreviewDialogId: (previewDialogId) => set({ previewDialogId }),
+  setDialogEditorId: (dialogEditorId) => set({ dialogEditorId }),
   setPreviewActiveHotspotId: (previewActiveHotspotId) => {
     if (get().previewActiveHotspotId === previewActiveHotspotId) return;
     set({ previewActiveHotspotId });
@@ -311,6 +329,8 @@ export const useUIStore = create<UIState>((set, get) => ({
       spawnTemplateEditor: null,
       spawnClickActionsEditor: null,
       previewActiveHotspotId: null,
+      previewDialogId: null,
+      dialogEditorId: null,
       previewLabelPending: false,
       hoverTooltip: null,
       infoBoxAnchor: null,

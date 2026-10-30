@@ -51,7 +51,8 @@ reference_editor_html/              # legacy HTML reference (not runtime)
 | `layers/` | Overlay id helpers and image blend |
 | `theme/` | Editor tokens, shapes, category icons, preview CSS vars |
 | `hooks/` | `usePlayCanvasEditor`, `useGeoMapEditor`, keyboard |
-| `preview/` | Open / focus hotspot in Preview |
+| `preview/` | Open / focus hotspot, open scene dialog in Preview |
+| `dialogs/` | Scene dialogs: CRUD (with undo), lookup, "opened by" references |
 | `constants/` | Seed scene, defaults, demo hotspots |
 
 UI mirrors that split: `app/editor/_components/{viewport,outliner,drawers,actions,blocks,dialogs,toolbar,ui}`.
@@ -181,6 +182,8 @@ EditorPageClient (ssr:false)
 
 **Live stores** (active scene only): `editor-store` (hotspots, mode, preview), `model-store`, `settings-store`, `environment-store`, `effects-store`, `geo-store`, `layers-store`, plus UI/session stores.
 
+**Scene dialogs** (`Scene.dialogs`) live on the `Scene` record like `startActions` (no live store): edited through `lib/editor/dialogs/scene-dialogs.ts`, listed in the outliner Dialogs tab, edited in `DialogPropertiesDrawer` (reuses `HotspotBlocksTab` + `ActionButtonsList`). `ui-store.dialogEditorId` is the drawer target, exclusive with hotspot / layer selection.
+
 On scene switch / add, `scenes-store` snapshots live stores into the outgoing `Scene` and hydrates the incoming one (`hotspots`, model, settings, environment, effects, geo, layers, `geoReference`). New per-scene fields must join that path. Scene identity (`name`, `slug`, `description`, `thumbnailUrl`) lives on the `Scene` record and is not hydrated into a live store. The subject reference (`model.subjectAssetId`) is part of the model snapshot.
 
 **Project library:** `useAssetsStore` (project id, ready assets, pending upload count). Project-level; not snapshotted per scene. `useProjectPersistStore` holds the DB binding (revision, dirty, save status).
@@ -206,12 +209,14 @@ Graphs are `{ nodes, edges }` owned by:
 | Scene Start | `SCENE_START_OWNER_ID` (−2) |
 | Spawn click template (editor-only) | `SPAWN_CLICK_LANE_OWNER_ID` (−3), not persisted |
 | Legend category | `LEGEND_OWNER_ID` (−4); lane only while legend is enabled |
-| Action button (hotspot content) | `CONTENT_BUTTON_OWNER_BASE` (−5000) down to just above −10000 |
+| Action button (hotspot or scene-dialog content) | `CONTENT_BUTTON_OWNER_BASE` (−5000) down to just above −10000 |
 | Custom bottom-menu button | `ownerId ≤ MENU_BUTTON_OWNER_BASE` (−10000) |
 
 Runtime metadata: `lib/editor/actions/registry.ts` (`validate` / `run`, optional `sceneTypes`). Canvas UI: `action-node-registry.tsx`. Allowed node types differ by owner (`action-owners.ts`). Runner: `run-action-graph.ts`. The Legend trigger is a scene-scoped graph (`Scene.legendActions`); Preview category changes walk that trigger’s matching output (`lib/editor/actions/legend-category.ts`).
 
 XYFlow edits the graph; `flow-adapter.ts` maps domain nodes ↔ flow nodes. Named frames on the canvas are `ActionFence`s (scene-scoped).
+
+**Open Modal** shows the clicked hotspot's dialog, or a scene dialog when `data.dialogId` is set. Both use the one Preview dialog slot (`PreviewModal`): `ui.previewDialogId` picks the scene dialog as source (kept after close for the exit animation, cleared by `openHotspotInPreview`). The onClose registration (`open-modal-events.ts`) carries `hotspotId | null` + `dialogId`; replacing what the slot shows fires the previous onClose. Dialog Action buttons are lanes on the Scene Actions canvas; `findContentButtonByOwnerId` returns `{ kind: "hotspot" | "dialog" }`.
 
 `{{field}}` interpolation (`interpolate-fields.ts`) pulls from HTTP / Subscribe / Post Message / For Each item scope.
 

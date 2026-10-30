@@ -523,6 +523,13 @@ export function updateNodeData(
   const prevNode = graph.nodes.find((node) => node.id === id);
   const nodes = graph.nodes.map((node) => {
     if (node.id !== id) return node;
+      if (node.type === "openModal") {
+        // `dialogId` absent / empty = the hotspot's own dialog.
+        if (!("dialogId" in patch)) return node;
+        const dialogId =
+          typeof patch.dialogId === "string" ? patch.dialogId : "";
+        return { ...node, data: dialogId ? { dialogId } : {} };
+      }
       if (node.type === "goToScene") {
         return {
           ...node,

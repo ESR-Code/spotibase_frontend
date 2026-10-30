@@ -64,8 +64,8 @@ export function ButtonBlockPreview({
       color={resolveButtonBlockColor(block.color)}
       icon={<ButtonIcon name={block.icon} />}
       onClick={() => {
-        if (hotspotId == null) return;
-        void runContentButtonActions(block.ownerId, hotspotId);
+        // No hotspot = the button sits in a scene dialog.
+        void runContentButtonActions(block.ownerId, hotspotId ?? null);
       }}
     >
       <span className="editor-content-button-label">{label}</span>

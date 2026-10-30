@@ -30,6 +30,7 @@ This is a Next.js 16 / React 19 app. The product is **Spotibase** (“3D Hotspot
 | Scene types, engines, settings visibility | `lib/editor/scene-types/registry.ts`, `docs/architecture.md`                        |
 | Action nodes (runtime)                    | `lib/editor/actions/registry.ts`, `lib/editor/types/hotspot-action.ts`              |
 | Action nodes (UI)                         | `app/editor/_components/actions/action-node-registry.tsx`                           |
+| Scene dialogs (standalone Preview dialogs) | `lib/editor/dialogs/`, `lib/editor/types/scene-dialog.ts`, `app/editor/_components/drawers/dialog-properties-drawer.tsx`, Open Modal (`lib/editor/actions/registry.ts`) |
 | Hotspot content blocks                    | `lib/editor/blocks/registry.ts`, `app/editor/_components/blocks/block-registry.tsx` |
 | Project / scene state                     | `lib/editor/state/scenes-store.ts`, `lib/editor/types/scene.ts`                     |
 | Live editor / preview overlay state       | `lib/editor/state/`                                                                 |

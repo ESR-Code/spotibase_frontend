@@ -61,7 +61,13 @@ type ActionNodeBase<T extends ActionNodeType, D> = {
 
 export type OpenModalActionNode = ActionNodeBase<
   "openModal",
-  Record<string, never>
+  {
+    /**
+     * Scene dialog to show. Unset = the clicked hotspot's own content
+     * (hotspot graphs only).
+     */
+    dialogId?: string;
+  }
 >;
 export type GoToSceneActionNode = ActionNodeBase<
   "goToScene",

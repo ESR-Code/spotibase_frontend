@@ -1,6 +1,9 @@
 import { create } from "zustand";
 import { toast } from "@/lib/editor/toast";
-import { cloneHotspotBlocks } from "@/lib/editor/blocks/content-buttons";
+import {
+  cloneHotspotBlocks,
+  cloneSceneDialogs,
+} from "@/lib/editor/blocks/content-buttons";
 import {
   cloneActionGraph,
   createDefaultActionGraph,
@@ -56,6 +59,7 @@ import {
 } from "@/lib/editor/types/geo-reference";
 import { cloneLayers } from "@/lib/editor/types/scene-layer";
 import type { Scene } from "@/lib/editor/types/scene";
+import type { SceneDialog } from "@/lib/editor/types/scene-dialog";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 
 export function snapshotCurrentIntoScene(scene: Scene): Scene {
@@ -82,6 +86,7 @@ export function snapshotCurrentIntoScene(scene: Scene): Scene {
       scene.legendActions ?? createEmptyActionGraph(),
     ),
     actionFences: cloneActionFences(scene.actionFences),
+    dialogs: cloneSceneDialogs(scene.dialogs ?? []),
     nextHotspotId: editor.nextId,
     model: {
       name: model.modelName,
@@ -126,6 +131,7 @@ type ScenesState = {
   setAppStartActions: (graph: HotspotActionGraph) => void;
   setActiveSceneStartActions: (graph: HotspotActionGraph) => void;
   setActiveSceneLegendActions: (graph: HotspotActionGraph) => void;
+  setActiveSceneDialogs: (dialogs: SceneDialog[]) => void;
   addScene: (input: AddSceneInput) => string;
   removeScene: (id: string) => void;
   renameScene: (id: string, name: string) => void;
@@ -158,6 +164,7 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
         SEED_SCENE.legendActions ?? createEmptyActionGraph(),
       ),
       actionFences: cloneActionFences(SEED_SCENE.actionFences),
+      dialogs: cloneSceneDialogs(SEED_SCENE.dialogs),
       model: { ...SEED_SCENE.model, rotation: { ...SEED_SCENE.model.rotation } },
       settings: cloneEditorSettings(SEED_SCENE.settings),
       environment: cloneEnvironmentSettings(SEED_SCENE.environment),
@@ -192,6 +199,15 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
         scene.id === state.activeSceneId
           ? { ...scene, legendActions: cloneActionGraph(graph) }
           : scene,
+      ),
+    });
+  },
+
+  setActiveSceneDialogs: (dialogs) => {
+    const state = get();
+    set({
+      scenes: state.scenes.map((scene) =>
+        scene.id === state.activeSceneId ? { ...scene, dialogs } : scene,
       ),
     });
   },

@@ -78,7 +78,9 @@ import {
   validateWaitData,
 } from "@/lib/editor/actions/wait";
 import { transitionToScene } from "@/lib/editor/actions/transition-to-scene";
+import { findActiveSceneDialog } from "@/lib/editor/dialogs/scene-dialogs";
 import { openHotspotInPreview } from "@/lib/editor/preview/open-hotspot-in-preview";
+import { openSceneDialogInPreview } from "@/lib/editor/preview/open-scene-dialog";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import type {
@@ -163,31 +165,51 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
   openModal: {
     type: "openModal",
     label: "Open Modal",
-    description: "Open the marker dialog; wire onOpen / onClose for follow-ups.",
+    description:
+      "Open the hotspot's dialog or a scene dialog; wire onOpen / onClose for follow-ups.",
     createDefault: (position) => createActionNode("openModal", position),
-    validate: () => null,
+    validate: (node) => {
+      if (node.type !== "openModal" || !node.data.dialogId) return null;
+      if (!findActiveSceneDialog(node.data.dialogId)) {
+        return "Dialog no longer exists";
+      }
+      return null;
+    },
     run: async (node, ctx) => {
       if (node.type !== "openModal") return;
-      if (ctx.hotspotId == null) {
-        toast.error("Open Modal can only run from a hotspot click");
-        return "stop";
-      }
+      const dialogId = node.data.dialogId;
 
-      openHotspotInPreview(ctx.hotspotId);
+      if (dialogId) {
+        if (!openSceneDialogInPreview(dialogId)) return "stop";
+      } else {
+        if (ctx.hotspotId == null || ctx.hotspotId !== ctx.ownerId) {
+          toast.error("Open Modal needs a dialog when it doesn't run from a hotspot click");
+          return "stop";
+        }
+        openHotspotInPreview(ctx.hotspotId);
+      }
 
       registerOpenModalCloseHandler({
         ownerId: ctx.ownerId,
         nodeId: node.id,
         hotspotId: ctx.hotspotId,
+        dialogId,
         ownerKey: ctx.ownerKey,
-        hotspotChain: ctx.hotspotChain ?? [ctx.ownerId],
+        hotspotChain:
+          ctx.hotspotChain ??
+          (ctx.hotspotId != null ? [ctx.hotspotId] : undefined),
       });
 
-      const { findHotspot } = await import(
-        "@/lib/editor/state/preview-hotspots"
-      );
-      const hotspot = findHotspot(ctx.ownerId);
-      const graph = hotspot ? getActionGraph(hotspot) : null;
+      // Hotspot lanes read the hotspot (spawned pins are not owned lanes).
+      const [{ findHotspot }, { getOwnedActionGraph }] = await Promise.all([
+        import("@/lib/editor/state/preview-hotspots"),
+        import("@/lib/editor/actions/action-owners"),
+      ]);
+      const hotspot =
+        ctx.hotspotId === ctx.ownerId ? findHotspot(ctx.ownerId) : null;
+      const graph = hotspot
+        ? getActionGraph(hotspot)
+        : getOwnedActionGraph(ctx.ownerId);
       if (graph) {
         const onOpenChain = chainFrom(
           graph,

@@ -5,6 +5,7 @@ import { EditorHeader } from "@/app/editor/_components/editor-header";
 import { LoadingOverlay } from "@/app/editor/_components/loading-overlay";
 import { HotspotOutliner, OutlinerExpandTab } from "@/app/editor/_components/outliner/hotspot-outliner";
 import { ViewportFrame } from "@/app/editor/_components/viewport/viewport-frame";
+import { DialogPropertiesDrawer } from "@/app/editor/_components/drawers/dialog-properties-drawer";
 import { HotspotPropertiesDrawer } from "@/app/editor/_components/drawers/hotspot-properties-drawer";
 import { LegendDrawer } from "@/app/editor/_components/drawers/legend-drawer";
 import {
@@ -55,6 +56,7 @@ export function EditorShell() {
         <HotspotOutliner />
         <OutlinerExpandTab />
         <HotspotPropertiesDrawer />
+        <DialogPropertiesDrawer />
         <SettingsDrawer />
         <GeneralSettingsDrawer />
         <LegendDrawer />

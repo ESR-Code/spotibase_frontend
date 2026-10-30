@@ -141,6 +141,27 @@ export function useOwnedActionNode(
     return null;
   });
 
+  // Action buttons inside the active scene's dialogs (Scene Actions canvas).
+  const dialogButtonNode = useScenesStore((s) => {
+    const buttonOwnerId = isolated ? spawnClick?.ownerId : ownerId;
+    if (!nodeId || buttonOwnerId == null) return null;
+    if (!isContentButtonOwnerId(buttonOwnerId)) return null;
+    const scene = s.scenes.find((sc) => sc.id === s.activeSceneId);
+    for (const dialog of scene?.dialogs ?? []) {
+      for (const block of dialog.blocks) {
+        if (!isButtonBlock(block) || block.ownerId !== buttonOwnerId) continue;
+        return isolated && spawnClick
+          ? findNodeInSpawnTemplateActions(
+              block.actions,
+              spawnClick.nodeId,
+              nodeId,
+            )
+          : (block.actions.nodes.find((n) => n.id === nodeId) ?? null);
+      }
+    }
+    return null;
+  });
+
   return (
     spawnClickFromHotspot ??
     spawnClickFromStart ??
@@ -149,6 +170,7 @@ export function useOwnedActionNode(
     hotspotNode ??
     startNode ??
     menuNode ??
-    contentButtonNode
+    contentButtonNode ??
+    dialogButtonNode
   );
 }

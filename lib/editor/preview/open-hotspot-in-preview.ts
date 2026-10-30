@@ -31,6 +31,7 @@ export function openHotspotInPreview(id: number) {
 
   ui.setSettingsDrawerOpen(false);
   ui.setGeneralSettingsDrawerOpen(false);
+  ui.setPreviewDialogId(null);
   ui.setPreviewActiveHotspotId(hotspot.id);
   ui.setPreviewModalIndex(index);
   editor.setHoveredHotspot(null);

@@ -217,7 +217,11 @@ export function listAllFieldSources(excludeNodeId?: string): HttpFieldSource[] {
     : sources;
 }
 
-export function listHttpFieldSources(hotspot: Hotspot): HttpFieldSource[] {
+/** Sources a hotspot's (or scene dialog's) block fields can insert. */
+export function listHttpFieldSources(hotspot: {
+  id: number | string;
+  blocks: Hotspot["blocks"];
+}): HttpFieldSource[] {
   const buttonOwnerIds = new Set(
     hotspot.blocks.filter(isButtonBlock).map((block) => block.ownerId),
   );

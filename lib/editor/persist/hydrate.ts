@@ -43,6 +43,7 @@ import type { Hotspot } from "@/lib/editor/types/hotspot";
 import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 import type { ActionFence } from "@/lib/editor/types/action-fence";
 import type { Scene, SceneModelState } from "@/lib/editor/types/scene";
+import type { SceneDialog } from "@/lib/editor/types/scene-dialog";
 import type { SceneLayer } from "@/lib/editor/types/scene-layer";
 
 export class ProjectLoadError extends Error {
@@ -78,6 +79,7 @@ function sceneFromRow(row: SceneRow, primarySceneId: string | null): Scene {
     startActions: data.startActions as unknown as HotspotActionGraph,
     legendActions: data.legendActions as unknown as HotspotActionGraph,
     actionFences: data.actionFences as unknown as ActionFence[],
+    dialogs: data.dialogs as unknown as SceneDialog[],
     model: data.model as SceneModelState,
     // Older saves may miss newer fields: defaults first, stored values win.
     settings: { ...DEFAULT_EDITOR_SETTINGS, ...data.settings } as EditorSettings,

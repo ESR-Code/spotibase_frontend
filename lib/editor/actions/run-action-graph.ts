@@ -5,7 +5,11 @@ import {
   ownerKeyFor,
   SCENE_START_OWNER_ID,
 } from "@/lib/editor/actions/action-owners";
-import { isButtonBlock } from "@/lib/editor/blocks/content-buttons";
+import {
+  findContentButtonByOwnerId,
+  isButtonBlock,
+} from "@/lib/editor/blocks/content-buttons";
+import type { ButtonBlock } from "@/lib/editor/types/hotspot-block";
 import { findCustomMenuButtonByOwnerId } from "@/lib/editor/actions/custom-menu-buttons";
 import {
   createEmptyActionGraph,
@@ -204,16 +208,25 @@ export async function runSceneStartActions(sceneId?: string) {
   });
 }
 
+/**
+ * Action button click. `hotspotId` is the hotspot whose dialog shows the
+ * button, or null when it sits in a scene dialog.
+ */
 export async function runContentButtonActions(
   ownerId: number,
-  hotspotId: number,
+  hotspotId: number | null,
 ) {
-  const { findHotspot } = await import("@/lib/editor/state/preview-hotspots");
-  const hotspot = findHotspot(hotspotId);
-  const block = hotspot?.blocks.find(
-    (item) => isButtonBlock(item) && item.ownerId === ownerId,
-  );
-  if (!block || !isButtonBlock(block)) return;
+  let block: ButtonBlock | null = null;
+  if (hotspotId != null) {
+    const { findHotspot } = await import("@/lib/editor/state/preview-hotspots");
+    const found = findHotspot(hotspotId)?.blocks.find(
+      (item) => isButtonBlock(item) && item.ownerId === ownerId,
+    );
+    block = found && isButtonBlock(found) ? found : null;
+  } else {
+    block = findContentButtonByOwnerId(ownerId)?.block ?? null;
+  }
+  if (!block) return;
 
   await runActionGraph(block.actions, {
     hotspotId,
