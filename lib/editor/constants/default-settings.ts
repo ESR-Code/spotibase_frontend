@@ -44,6 +44,8 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   markerDialogResetCameraOnClose: true,
   markerDialogPrevNext: true,
   legendEnabled: false,
+  legendTitle: "",
+  legendInset: false,
   bottomMenuEnabled: true,
   legendCategories: [],
   logoUrl: "",
@@ -199,6 +201,8 @@ export function cloneEditorSettings(settings: EditorSettings): EditorSettings {
     resetPosition: cloneCameraResetPosition(settings.resetPosition ?? null),
     legendCategories: cloneLegendCategories(settings.legendCategories ?? []),
     legendEnabled: settings.legendEnabled ?? false,
+    legendTitle: settings.legendTitle ?? "",
+    legendInset: settings.legendInset ?? false,
     bottomMenuEnabled: settings.bottomMenuEnabled ?? true,
     customMenuButtons: cloneCustomMenuButtons(settings.customMenuButtons),
   };

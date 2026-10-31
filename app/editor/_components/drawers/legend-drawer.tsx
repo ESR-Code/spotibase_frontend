@@ -51,6 +51,8 @@ export function LegendButton() {
 export function LegendDrawer() {
   const isPreview = useEditorStore((s) => s.isPreview);
   const legendEnabled = useSettingsStore((s) => s.legendEnabled);
+  const title = (useSettingsStore((s) => s.legendTitle) ?? "").trim() || "Legend";
+  const inset = useSettingsStore((s) => s.legendInset);
   const legendCategories = useSettingsStore((s) => s.legendCategories);
   const hotspots = usePreviewHotspots();
   const disabledHotspotIds = usePreviewVisibilityStore(
@@ -89,14 +91,16 @@ export function LegendDrawer() {
 
   return (
     <GlassPanel
-      className={`editor-legend-drawer editor-preview-surface editor-glass editor-panel-shadow flex flex-col ${visible ? "open" : ""}`}
+      className={`editor-legend-drawer editor-preview-surface editor-glass editor-panel-shadow flex flex-col ${inset ? "editor-drawer-inset" : ""} ${visible ? "open" : ""}`}
       aria-hidden={!visible}
     >
       <div
         className="editor-preview-divider flex flex-shrink-0 items-center justify-between px-4 py-3"
       >
-        <div>
-          <div className="font-display text-[14px] font-bold">Legend</div>
+        <div className="min-w-0">
+          <div className="truncate font-display text-[14px] font-bold" title={title}>
+            {title}
+          </div>
           <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
             {filtered.length} hotspot{filtered.length === 1 ? "" : "s"}
           </div>

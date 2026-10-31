@@ -99,6 +99,10 @@ export type EditorSettings = {
   markerDialogPrevNext: boolean;
   /** Show the Legend button and drawer in Preview. */
   legendEnabled: boolean;
+  /** Legend drawer title. Empty keeps the default “Legend”. */
+  legendTitle: string;
+  /** Inset the Legend drawer from the top, bottom, and left in Preview. */
+  legendInset: boolean;
   /** Show the bottom menu (reset, zoom, labels, custom buttons) in Preview. */
   bottomMenuEnabled: boolean;
   /** User-defined legend categories available for hotspot assignment. */

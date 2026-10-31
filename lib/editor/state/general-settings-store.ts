@@ -16,6 +16,10 @@ type GeneralSettingsState = {
   style: GeneralStyleSettings;
   /** Project-wide Preview Scene Explorer control. Independent of Style Reset. */
   sceneExplorerEnabled: boolean;
+  /** Scene Explorer drawer title. Empty keeps the default “Scene explorer”. */
+  sceneExplorerTitle: string;
+  /** Inset the Scene Explorer drawer from the top, bottom, and left in Preview. */
+  sceneExplorerInset: boolean;
   setGlobalToken: <K extends keyof GeneralStyleGlobalTokens>(
     key: K,
     value: GeneralStyleGlobalTokens[K],
@@ -31,6 +35,8 @@ type GeneralSettingsState = {
   setStyle: (patch: Partial<GeneralStyleSettings>) => void;
   resetStyle: () => void;
   setSceneExplorerEnabled: (value: boolean) => void;
+  setSceneExplorerTitle: (value: string) => void;
+  setSceneExplorerInset: (value: boolean) => void;
 };
 
 function mergeSurfaces(
@@ -51,6 +57,8 @@ function mergeSurfaces(
 export const useGeneralSettingsStore = create<GeneralSettingsState>((set) => ({
   style: cloneGeneralStyle(DEFAULT_GENERAL_STYLE),
   sceneExplorerEnabled: false,
+  sceneExplorerTitle: "",
+  sceneExplorerInset: false,
   setGlobalToken: (key, value) =>
     set((state) => ({
       style: { ...state.style, [key]: value },
@@ -92,6 +100,8 @@ export const useGeneralSettingsStore = create<GeneralSettingsState>((set) => ({
   resetStyle: () => set({ style: cloneGeneralStyle(DEFAULT_GENERAL_STYLE) }),
   setSceneExplorerEnabled: (sceneExplorerEnabled) =>
     set({ sceneExplorerEnabled }),
+  setSceneExplorerTitle: (sceneExplorerTitle) => set({ sceneExplorerTitle }),
+  setSceneExplorerInset: (sceneExplorerInset) => set({ sceneExplorerInset }),
 }));
 
 export function readGeneralStyleSnapshot(): GeneralStyleSettings {

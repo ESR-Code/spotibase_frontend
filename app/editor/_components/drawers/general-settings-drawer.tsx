@@ -49,6 +49,14 @@ export function GeneralSettingsDrawer() {
   const setSceneExplorerEnabled = useGeneralSettingsStore(
     (s) => s.setSceneExplorerEnabled,
   );
+  const sceneExplorerTitle = useGeneralSettingsStore((s) => s.sceneExplorerTitle);
+  const setSceneExplorerTitle = useGeneralSettingsStore(
+    (s) => s.setSceneExplorerTitle,
+  );
+  const sceneExplorerInset = useGeneralSettingsStore((s) => s.sceneExplorerInset);
+  const setSceneExplorerInset = useGeneralSettingsStore(
+    (s) => s.setSceneExplorerInset,
+  );
 
   return (
     <GlassPanel
@@ -83,6 +91,26 @@ export function GeneralSettingsDrawer() {
             checked={sceneExplorerEnabled}
             onChange={setSceneExplorerEnabled}
           />
+          {sceneExplorerEnabled ? (
+            <>
+              <div>
+                <FieldLabel htmlFor="scene-explorer-title">Title</FieldLabel>
+                <input
+                  id="scene-explorer-title"
+                  className="editor-input"
+                  value={sceneExplorerTitle}
+                  placeholder="Scene explorer"
+                  onChange={(event) => setSceneExplorerTitle(event.target.value)}
+                />
+              </div>
+              <SwitchField
+                label="Inset from edges"
+                description="Keep a gap on the top, bottom, and left so the drawer does not hug the screen"
+                checked={sceneExplorerInset}
+                onChange={setSceneExplorerInset}
+              />
+            </>
+          ) : null}
         </SettingsSection>
         <SettingsSection
           title="Style"

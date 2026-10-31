@@ -2764,6 +2764,22 @@
   pointer-events: auto;
 }
 
+.editor-root .editor-legend-drawer.editor-drawer-inset,
+.editor-root .editor-scene-explorer-drawer.editor-drawer-inset {
+  --editor-drawer-inset: 12px;
+  top: var(--editor-drawer-inset);
+  bottom: var(--editor-drawer-inset);
+  left: var(--editor-drawer-inset);
+  height: auto;
+  border-radius: 12px;
+  transform: translateX(calc(-100% - var(--editor-drawer-inset)));
+}
+
+.editor-root .editor-legend-drawer.editor-drawer-inset.open,
+.editor-root .editor-scene-explorer-drawer.editor-drawer-inset.open {
+  transform: translateX(0);
+}
+
 /* Overlay drawer — slides over the viewport; never changes canvas layout size */
 .editor-root .editor-outliner {
   position: absolute;

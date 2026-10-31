@@ -14,6 +14,10 @@ export type ProjectEditorData = {
   appStartActions: HotspotActionGraph;
   generalStyle: GeneralStyleSettings;
   sceneExplorerEnabled: boolean;
+  /** Scene Explorer drawer title. Empty keeps the default “Scene explorer”. */
+  sceneExplorerTitle: string;
+  /** Inset the Scene Explorer drawer from the top, bottom, and left in Preview. */
+  sceneExplorerInset: boolean;
 };
 
 /** Columns lifted out of `Scene` into `public.scenes`. */
@@ -112,5 +116,7 @@ export const projectEditorDataSchema = z
     appStartActions: actionGraph,
     generalStyle: looseObject,
     sceneExplorerEnabled: z.boolean().default(false),
+    sceneExplorerTitle: z.string().default(""),
+    sceneExplorerInset: z.boolean().default(false),
   })
   .passthrough();

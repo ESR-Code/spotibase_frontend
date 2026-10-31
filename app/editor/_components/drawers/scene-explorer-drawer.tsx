@@ -22,12 +22,19 @@ export function PreviewRailButtons() {
   const outlinerCollapsed = useUIStore((s) => s.outlinerCollapsed);
   const legendOpen = useUIStore((s) => s.legendDrawerOpen);
   const explorerOpen = useUIStore((s) => s.sceneExplorerDrawerOpen);
+  const legendInset = useSettingsStore((s) => s.legendInset);
+  const sceneExplorerInset = useGeneralSettingsStore((s) => s.sceneExplorerInset);
 
   if (!isPreview || (!legendEnabled && !sceneExplorerEnabled)) return null;
 
   const railOpen = legendOpen || explorerOpen;
+  const openInset = (explorerOpen && sceneExplorerInset) || (legendOpen && legendInset);
   const left =
-    outlinerCollapsed && !railOpen ? "1rem" : "calc(18rem + 1rem)";
+    outlinerCollapsed && !railOpen
+      ? "1rem"
+      : openInset
+        ? "calc(18rem + 12px + 1rem)"
+        : "calc(18rem + 1rem)";
 
   return (
     <div
@@ -63,6 +70,10 @@ export function SceneExplorerButton() {
 export function SceneExplorerDrawer() {
   const isPreview = useEditorStore((s) => s.isPreview);
   const enabled = useGeneralSettingsStore((s) => s.sceneExplorerEnabled);
+  const title =
+    (useGeneralSettingsStore((s) => s.sceneExplorerTitle) ?? "").trim() ||
+    "Scene explorer";
+  const inset = useGeneralSettingsStore((s) => s.sceneExplorerInset);
   const open = useUIStore((s) => s.sceneExplorerDrawerOpen);
   const setOpen = useUIStore((s) => s.setSceneExplorerDrawerOpen);
   const scenes = useScenesStore((s) => s.scenes);
@@ -74,15 +85,15 @@ export function SceneExplorerDrawer() {
 
   return (
     <GlassPanel
-      className={`editor-scene-explorer-drawer editor-preview-surface editor-glass editor-panel-shadow flex flex-col ${visible ? "open" : ""}`}
+      className={`editor-scene-explorer-drawer editor-preview-surface editor-glass editor-panel-shadow flex flex-col ${inset ? "editor-drawer-inset" : ""} ${visible ? "open" : ""}`}
       aria-hidden={!visible}
     >
       <div
         className="editor-preview-divider flex flex-shrink-0 items-center justify-between px-4 py-3"
       >
-        <div>
-          <div className="font-display text-[14px] font-bold">
-            Scene explorer
+        <div className="min-w-0">
+          <div className="truncate font-display text-[14px] font-bold" title={title}>
+            {title}
           </div>
           <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
             {scenes.length} scene{scenes.length === 1 ? "" : "s"}

@@ -576,6 +576,26 @@ export function SettingsDrawer() {
             checked={values.legendEnabled}
             onChange={(checked) => form.setValue("legendEnabled", checked)}
           />
+          {values.legendEnabled ? (
+            <>
+              <div>
+                <FieldLabel htmlFor="legend-title">Title</FieldLabel>
+                <input
+                  id="legend-title"
+                  className="editor-input"
+                  value={values.legendTitle ?? ""}
+                  placeholder="Legend"
+                  onChange={(event) => form.setValue("legendTitle", event.target.value)}
+                />
+              </div>
+              <SwitchField
+                label="Inset from edges"
+                description="Keep a gap on the top, bottom, and left so the drawer does not hug the screen"
+                checked={values.legendInset}
+                onChange={(checked) => form.setValue("legendInset", checked)}
+              />
+            </>
+          ) : null}
         </SettingsSection>
 
         <SettingsSection

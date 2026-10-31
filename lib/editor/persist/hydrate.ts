@@ -167,6 +167,8 @@ export function hydrateProject(input: {
     general.setStyle(editorData.generalStyle as Partial<GeneralStyleSettings>);
   }
   general.setSceneExplorerEnabled(editorData?.sceneExplorerEnabled ?? false);
+  general.setSceneExplorerTitle(editorData?.sceneExplorerTitle ?? "");
+  general.setSceneExplorerInset(editorData?.sceneExplorerInset ?? false);
 
   useEditorStore.getState().setMode("select");
   hydrateLiveStores(active);

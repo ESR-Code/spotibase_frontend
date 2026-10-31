@@ -19,7 +19,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 - Subject import via file picker or drag-drop (`import-subject`). GLB up to 150 MB, images up to 25 MB and 8192 px; blocked in Preview and during alignment; replacing the subject invalidates an aligned georeference. Scene subject cache when switching.
 - 3D subject properties include uniform scale, rotation, reflection, and Move Up / Down. The height slider lifts the model in scene units and cannot move it below the ground.
 - Optional scene description (create form + Scene Settings) and thumbnail upload (Scene Settings), including **Use screenshot** which captures the live viewport and stores it as an image asset. Empty description is omitted from lists, not shown as a placeholder.
-- Scene settings: name / description / thumbnail, camera limits (pitch capped at 90° true top view; optional soft "Limit panning to subject", on by default: rubber-bands near the model / image bounds), grid, logo, marker dialog presentation (modal / drawer / infobox, optional drawer inset), optional prev/next buttons in the hotspot dialog (on by default; hidden when the scene has fewer than two hotspots), legend, custom Preview bottom-menu buttons. The Preview bottom menu can be hidden per scene (on by default; older saves stay on).
+- Scene settings: name / description / thumbnail, camera limits (pitch capped at 90° true top view; optional soft "Limit panning to subject", on by default: rubber-bands near the model / image bounds), grid, logo, marker dialog presentation (modal / drawer / infobox, optional drawer inset), optional prev/next buttons in the hotspot dialog (on by default; hidden when the scene has fewer than two hotspots), legend (optional drawer title and edge inset), custom Preview bottom-menu buttons. The Preview bottom menu can be hidden per scene (on by default; older saves stay on).
 - Environment + lighting (PlayCanvas). SSAO effects (model scenes).
 - Geo start pin, zoom, map style, globe vs flat mercator. Nominatim place search.
 
@@ -94,7 +94,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 ### Preview chrome
 
-- Project-wide General Settings: accent, inputs, borders, surface opacity/blur, legend / scene-explorer / hotspot-dialog surface colors and per-surface stroke on/off + color, bottom-menu style, Scene Explorer enable.
+- Project-wide General Settings: accent, inputs, borders, surface opacity/blur, legend / scene-explorer / hotspot-dialog surface colors and per-surface stroke on/off + color, bottom-menu style, Scene Explorer enable, optional title, and optional edge inset.
 - Legend drawer in Preview. Scene Explorer drawer in Preview (above the legend button) lists scenes with name, optional description, and thumbnail; click uses the Go To Scene transition. Logo overlay. Reset-view / home camera (orbit or geo viewport pose). Preview bottom bar can show every visible hotspot title at once (session only; cleared when leaving Preview).
 - Post Message receive test HUD (editor-only chip/panel, stacked under the viewport info HUD) when a receive node has Test in Preview on.
 
