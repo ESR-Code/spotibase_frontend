@@ -171,14 +171,15 @@ export function HotspotOutliner() {
               {hotspots.length === 0 ? (
                 <div className="editor-empty-state">
                   <MapPin
-                    className="mx-auto mb-2 h-8 w-8"
-                    style={{ color: "var(--editor-line)" }}
+                    className="editor-empty-state-icon"
+                    strokeWidth={1.5}
+                    aria-hidden
                   />
-                  <div className="mb-1 text-[12px] font-semibold">No hotspots yet</div>
-                  <div className="text-[11px]">
+                  <div className="editor-empty-state-title">No hotspots yet</div>
+                  <div className="editor-empty-state-copy">
                     Switch to{" "}
-                    <span style={{ color: "var(--editor-crimson-2)" }}>Add</span> mode
-                    and click on the model.
+                    <span className="editor-empty-state-accent">Add</span> mode and
+                    click on the model.
                   </div>
                 </div>
               ) : (

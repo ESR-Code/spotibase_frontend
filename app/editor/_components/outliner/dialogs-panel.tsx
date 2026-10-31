@@ -32,13 +32,14 @@ export function DialogsPanel() {
         {dialogs.length === 0 ? (
           <div className="editor-empty-state">
             <MessageSquare
-              className="mx-auto mb-2 h-8 w-8"
-              style={{ color: "var(--editor-line)" }}
+              className="editor-empty-state-icon"
+              strokeWidth={1.5}
+              aria-hidden
             />
-            <div className="mb-1 text-[12px] font-semibold">No dialogs yet</div>
-            <div className="text-[11px]">
-              Dialogs show content without a hotspot: a welcome on Scene Start,
-              or help behind a menu button. Open them with an Open Modal node.
+            <div className="editor-empty-state-title">No dialogs yet</div>
+            <div className="editor-empty-state-copy">
+              Dialogs show content without a hotspot: a welcome on Scene Start, or
+              help behind a menu button. Open them with an Open Modal node.
             </div>
           </div>
         ) : (

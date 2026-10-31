@@ -233,13 +233,12 @@ export function LayersPanel() {
         {imageListed.length === 0 ? (
           <div className="editor-empty-state">
             <ImageIcon
-              className="mx-auto mb-2 h-8 w-8"
-              style={{ color: "var(--editor-line)" }}
+              className="editor-empty-state-icon"
+              strokeWidth={1.5}
+              aria-hidden
             />
-            <div className="mb-1 text-[12px] font-semibold">
-              Add a PNG or JPG overlay
-            </div>
-            <div className="text-[11px]">
+            <div className="editor-empty-state-title">Add a PNG or JPG overlay</div>
+            <div className="editor-empty-state-copy">
               Drop a top-view site photo onto the map, then position it with the
               on-map handles.
             </div>
@@ -300,13 +299,12 @@ export function LayersPanel() {
         {shapeListed.length === 0 ? (
           <div className="editor-empty-state">
             <Square
-              className="mx-auto mb-2 h-8 w-8"
-              style={{ color: "var(--editor-line)" }}
+              className="editor-empty-state-icon"
+              strokeWidth={1.5}
+              aria-hidden
             />
-            <div className="mb-1 text-[12px] font-semibold">
-              Add a simple shape
-            </div>
-            <div className="text-[11px]">
+            <div className="editor-empty-state-title">Add a simple shape</div>
+            <div className="editor-empty-state-copy">
               Place a square, triangle, circle, or freehand shape on the map.
             </div>
           </div>

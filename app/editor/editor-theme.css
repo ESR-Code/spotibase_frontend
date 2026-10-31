@@ -2123,9 +2123,41 @@
 }
 
 .editor-root .editor-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
   text-align: center;
-  padding: 32px 16px;
-  color: var(--editor-muted-2);
+  padding: 28px 12px;
+  color: var(--editor-muted);
+}
+
+.editor-root .editor-empty-state-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 4px;
+  color: var(--editor-fg);
+  opacity: 0.72;
+}
+
+.editor-root .editor-empty-state-title {
+  color: var(--editor-fg);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.editor-root .editor-empty-state-copy {
+  max-width: 32ch;
+  color: var(--editor-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.editor-root .editor-empty-state-accent {
+  color: var(--editor-crimson-2);
+  font-weight: 600;
 }
 
 .editor-root .editor-spinner {
