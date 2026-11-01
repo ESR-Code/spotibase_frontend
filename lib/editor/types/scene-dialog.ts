@@ -25,4 +25,6 @@ export type SceneDialog = {
    * dialog and continue with its onClose branch, as if it was dismissed.
    */
   showOncePerSession?: boolean;
+  /** Dim the page behind the dialog. Unset = off (blur follows the scene setting). */
+  backdrop?: boolean;
 };

@@ -269,8 +269,7 @@ function SceneDialogPreviewModal({ dialogId }: { dialogId: string }) {
   const scenePresentation = useSettingsStore((s) => s.markerDialogPresentation);
   const sceneSize = useSettingsStore((s) => s.markerDialogSize);
   const drawerInset = useSettingsStore((s) => s.markerDialogDrawerInset);
-  const backdrop = useSettingsStore((s) => s.markerDialogBackdrop);
-  const backdropBlur = useSettingsStore((s) => s.markerDialogBackdropBlur);
+  const sceneBackdropBlur = useSettingsStore((s) => s.markerDialogBackdropBlur);
   const title = useInterpolatedPlainText(dialog?.title ?? "");
 
   const close = useCallback(() => setOpen(false), [setOpen]);
@@ -290,8 +289,8 @@ function SceneDialogPreviewModal({ dialogId }: { dialogId: string }) {
       presentation={presentation}
       size={dialog.size ?? sceneSize}
       inset={presentation === "drawer" && drawerInset}
-      backdrop={backdrop}
-      backdropBlur={backdropBlur}
+      backdrop={dialog.backdrop ?? false}
+      backdropBlur={(dialog.backdrop ?? false) && sceneBackdropBlur}
       className={cn("editor-marker-dialog", "editor-preview-surface")}
     >
       <PreviewDialogContent

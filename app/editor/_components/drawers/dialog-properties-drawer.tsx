@@ -253,6 +253,12 @@ function DialogGeneralTab({ dialog }: { dialog: SceneDialog }) {
             update({ showOncePerSession: checked || undefined })
           }
         />
+        <SwitchField
+          label="Show backdrop"
+          description="Dim the page behind the dialog while it is open"
+          checked={dialog.backdrop ?? false}
+          onChange={(checked) => update({ backdrop: checked || undefined })}
+        />
       </SettingsSection>
 
       <SettingsSection
