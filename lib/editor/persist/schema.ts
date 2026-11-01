@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type {
   DrawerLogoSize,
+  PreviewMenuBarPosition,
+  PreviewRailSide,
   ViewportLogoPosition,
 } from "@/lib/editor/types/editor-settings";
 import type { GeneralStyleSettings } from "@/lib/editor/types/general-style";
@@ -23,6 +25,8 @@ export type ProjectEditorData = {
   logoPosition: ViewportLogoPosition;
   logoShadow: boolean;
   logoInvert: boolean;
+  menuBarPosition: PreviewMenuBarPosition;
+  railSide: PreviewRailSide;
   sceneExplorerEnabled: boolean;
   /** Scene Explorer drawer title. Empty keeps the default “Scene explorer”. */
   sceneExplorerTitle: string;
@@ -137,6 +141,11 @@ export const projectEditorDataSchema = z
       .default("center"),
     logoShadow: z.boolean().catch(true).default(true),
     logoInvert: z.boolean().catch(false).default(false),
+    menuBarPosition: z
+      .enum(["bottom", "top", "left", "right"])
+      .catch("bottom")
+      .default("bottom"),
+    railSide: z.enum(["left", "right"]).catch("left").default("left"),
     sceneExplorerEnabled: z.boolean().default(false),
     sceneExplorerTitle: z.string().default(""),
     sceneExplorerInset: z.boolean().default(false),

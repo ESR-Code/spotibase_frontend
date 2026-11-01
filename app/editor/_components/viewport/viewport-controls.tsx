@@ -15,6 +15,8 @@ import { runCustomMenuButtonActions } from "@/lib/editor/actions/run-action-grap
 import { useEditorAnimTransport } from "@/lib/editor/hooks/use-editor-anim-transport";
 import { useCustomMenuToggleStore } from "@/lib/editor/state/custom-menu-toggle-store";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useGeneralSettingsStore } from "@/lib/editor/state/general-settings-store";
+import { cn } from "@/lib/utils";
 import { useModelStore } from "@/lib/editor/state/model-store";
 import { useActiveScene } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
@@ -26,7 +28,13 @@ function formatSeconds(value: number): string {
   return value.toFixed(1);
 }
 
-export function ViewportControls() {
+type ControlsSlot = "top" | "bottom" | "left" | "right";
+
+/**
+ * Editor / Preview menu bar. Rendered in every slot; only the one matching
+ * the Preview `menuBarPosition` (always `bottom` in the editor) shows.
+ */
+export function ViewportControls({ slot }: { slot: ControlsSlot }) {
   const wireframe = useModelStore((s) => s.wireframe);
   const setWireframe = useModelStore((s) => s.setWireframe);
   const isPreview = useEditorStore((s) => s.isPreview);
@@ -39,12 +47,26 @@ export function ViewportControls() {
   const scene = useActiveScene();
   const isGeo = isGeoSceneType(scene.type);
   const transport = useEditorAnimTransport();
+  const menuBarPosition = useGeneralSettingsStore((s) => s.menuBarPosition);
 
   if (isPreview && !bottomMenuEnabled) return null;
+  if ((isPreview ? menuBarPosition : "bottom") !== slot) return null;
+  const vertical = slot === "left" || slot === "right";
 
   return (
-    <div className="editor-viewport-controls editor-glass editor-panel-shadow absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 flex-col items-stretch gap-1.5 rounded-xl px-2 py-2">
-      <div className="flex items-center justify-center gap-1">
+    <div
+      className={cn(
+        "editor-viewport-controls editor-glass editor-panel-shadow flex flex-col items-stretch gap-1.5 rounded-xl",
+        vertical ? "editor-viewport-controls-vertical p-1.5" : "px-2 py-2",
+        slot === "bottom" && "absolute bottom-4 left-1/2 z-10 -translate-x-1/2",
+      )}
+    >
+      <div
+        className={cn(
+          "flex items-center justify-center gap-1",
+          vertical && "flex-col",
+        )}
+      >
         <ControlButton
           title="Reset view"
           onClick={() => window.dispatchEvent(new Event("editor:reset-camera"))}
@@ -73,7 +95,7 @@ export function ViewportControls() {
         </ControlButton>
         {isPreview ? (
           <>
-            <div className="editor-vsep" style={{ height: 18 }} />
+            <div className="editor-vsep editor-controls-sep" />
             <ControlButton
               title={showAllLabels ? "Hide hotspot labels" : "Show hotspot labels"}
               active={showAllLabels}
@@ -85,7 +107,7 @@ export function ViewportControls() {
         ) : null}
         {isPreview && customMenuButtons.length > 0 ? (
           <>
-            <div className="editor-vsep" style={{ height: 18 }} />
+            <div className="editor-vsep editor-controls-sep" />
             {customMenuButtons.map((button) => {
               const toggled =
                 button.toggleEnabled && toggledIds.includes(button.id);
@@ -109,7 +131,7 @@ export function ViewportControls() {
         ) : null}
         {!isPreview && !isGeo ? (
           <>
-            <div className="editor-vsep" style={{ height: 18 }} />
+            <div className="editor-vsep editor-controls-sep" />
             <ControlButton
               title="Wireframe"
               active={wireframe}
@@ -121,7 +143,7 @@ export function ViewportControls() {
         ) : null}
         {!isPreview ? (
           <>
-            <div className="editor-vsep" style={{ height: 18 }} />
+            <div className="editor-vsep editor-controls-sep" />
             <ControlButton
               title="Scene settings"
               onClick={() => {

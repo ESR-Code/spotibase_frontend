@@ -17,6 +17,27 @@ export function asViewportLogoPosition(value: unknown): ViewportLogoPosition {
     : "center";
 }
 
+/** Where the Preview menu bar sits: horizontal at top / bottom, vertical at left / right. */
+export type PreviewMenuBarPosition = "bottom" | "top" | "left" | "right";
+
+export const PREVIEW_MENU_BAR_POSITIONS: {
+  id: PreviewMenuBarPosition;
+  label: string;
+}[] = [
+  { id: "bottom", label: "Bottom" },
+  { id: "top", label: "Top" },
+  { id: "left", label: "Left" },
+  { id: "right", label: "Right" },
+];
+
+/** Side of the Scene Explorer / Legend buttons (and the drawers they open). */
+export type PreviewRailSide = "left" | "right";
+
+export const PREVIEW_RAIL_SIDES: { id: PreviewRailSide; label: string }[] = [
+  { id: "left", label: "Left" },
+  { id: "right", label: "Right" },
+];
+
 /** Preview drawer header logo size; `full` = full-width banner. */
 export type DrawerLogoSize = "small" | "medium" | "large" | "full";
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   ChevronDown,
   ImageIcon,
+  LayoutTemplate,
   ListTree,
   Map,
   Palette,
@@ -21,7 +22,11 @@ import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { SettingsSection } from "@/app/editor/_components/ui/settings-section";
 import { SwitchField } from "@/app/editor/_components/ui/switch-field";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
-import { VIEWPORT_LOGO_POSITIONS } from "@/lib/editor/types/editor-settings";
+import {
+  PREVIEW_MENU_BAR_POSITIONS,
+  PREVIEW_RAIL_SIDES,
+  VIEWPORT_LOGO_POSITIONS,
+} from "@/lib/editor/types/editor-settings";
 import { DEFAULT_GENERAL_STYLE } from "@/lib/editor/constants/default-general-style";
 import { useGeneralSettingsStore } from "@/lib/editor/state/general-settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
@@ -48,6 +53,10 @@ export function GeneralSettingsDrawer() {
   const setSurfaceColors = useGeneralSettingsStore((s) => s.setSurfaceColors);
   const setBottomMenuToken = useGeneralSettingsStore((s) => s.setBottomMenuToken);
   const resetStyle = useGeneralSettingsStore((s) => s.resetStyle);
+  const menuBarPosition = useGeneralSettingsStore((s) => s.menuBarPosition);
+  const setMenuBarPosition = useGeneralSettingsStore((s) => s.setMenuBarPosition);
+  const railSide = useGeneralSettingsStore((s) => s.railSide);
+  const setRailSide = useGeneralSettingsStore((s) => s.setRailSide);
   const logoUrl = useGeneralSettingsStore((s) => s.logoUrl);
   const setLogoUrl = useGeneralSettingsStore((s) => s.setLogoUrl);
   const logoScale = useGeneralSettingsStore((s) => s.logoScale);
@@ -127,20 +136,12 @@ export function GeneralSettingsDrawer() {
           />
           {logoUrl ? (
             <>
-              <div>
-                <FieldLabel>Position</FieldLabel>
-                <div className="flex flex-wrap gap-1.5">
-                  {VIEWPORT_LOGO_POSITIONS.map((position) => (
-                    <TypePill
-                      key={position.id}
-                      active={logoPosition === position.id}
-                      onClick={() => setLogoPosition(position.id)}
-                    >
-                      {position.label}
-                    </TypePill>
-                  ))}
-                </div>
-              </div>
+              <PillField
+                label="Position"
+                options={VIEWPORT_LOGO_POSITIONS}
+                value={logoPosition}
+                onChange={setLogoPosition}
+              />
               <SliderField
                 label="Logo scale"
                 value={logoScale}
@@ -164,6 +165,25 @@ export function GeneralSettingsDrawer() {
               />
             </>
           ) : null}
+        </SettingsSection>
+        <SettingsSection
+          title="Preview layout"
+          icon={<LayoutTemplate className="h-3.5 w-3.5" />}
+        >
+          <PillField
+            label="Menu bar"
+            hint="Top / bottom run horizontally; left / right run vertically. The editor keeps it at the bottom."
+            options={PREVIEW_MENU_BAR_POSITIONS}
+            value={menuBarPosition}
+            onChange={setMenuBarPosition}
+          />
+          <PillField
+            label="Scene explorer & legend buttons"
+            hint="Their drawers open from the same side."
+            options={PREVIEW_RAIL_SIDES}
+            value={railSide}
+            onChange={setRailSide}
+          />
         </SettingsSection>
         <SettingsSection
           title="Scene explorer"
@@ -456,6 +476,42 @@ function ColorSwatch({
       onChange={(e) => onChange(e.target.value)}
       title={value}
     />
+  );
+}
+
+function PillField<T extends string>({
+  label,
+  hint,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  options: { id: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div>
+      <FieldLabel>{label}</FieldLabel>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((option) => (
+          <TypePill
+            key={option.id}
+            active={value === option.id}
+            onClick={() => onChange(option.id)}
+          >
+            {option.label}
+          </TypePill>
+        ))}
+      </div>
+      {hint ? (
+        <p className="mt-1.5 text-[11px]" style={{ color: "var(--editor-muted)" }}>
+          {hint}
+        </p>
+      ) : null}
+    </div>
   );
 }
 

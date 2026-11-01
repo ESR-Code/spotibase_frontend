@@ -58,13 +58,17 @@ export function ViewportFrame() {
       {!isGeo ? <AlignmentMarkersOverlay /> : null}
       <AlignmentPickBanner />
       {isGeo ? null : <ModelDropOverlay />}
-      <ViewportLogo slot="overlay" />
+      <div className="editor-viewport-top-center">
+        <ViewportLogo slot="center" />
+        <ViewportControls slot="top" />
+      </div>
+      <ViewportLogo slot="right" />
       <div className="editor-viewport-hud-stack">
-        <ViewportLogo slot="hud" />
+        <ViewportLogo slot="left" />
         <ViewportHud />
         <PostMessageReceiveTestSuite />
       </div>
-      <ViewportControls />
+      <ViewportControls slot="bottom" />
     </div>
   );
 }

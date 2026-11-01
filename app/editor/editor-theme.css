@@ -2780,6 +2780,28 @@
   transform: translateX(0);
 }
 
+/* Rail on the right: Legend / Scene explorer drawers open from the right. */
+.editor-root .editor-legend-drawer.editor-drawer-right,
+.editor-root .editor-scene-explorer-drawer.editor-drawer-right {
+  left: auto;
+  right: 0;
+  transform: translateX(100%);
+  border-right: none;
+  border-left: 1px solid var(--editor-line);
+}
+
+.editor-root .editor-legend-drawer.editor-drawer-right.editor-drawer-inset,
+.editor-root .editor-scene-explorer-drawer.editor-drawer-right.editor-drawer-inset {
+  left: auto;
+  right: var(--editor-drawer-inset);
+  transform: translateX(calc(100% + var(--editor-drawer-inset)));
+}
+
+.editor-root .editor-legend-drawer.editor-drawer-right.open,
+.editor-root .editor-scene-explorer-drawer.editor-drawer-right.open {
+  transform: translateX(0);
+}
+
 /* Overlay drawer — slides over the viewport; never changes canvas layout size */
 .editor-root .editor-outliner {
   position: absolute;
@@ -6410,4 +6432,98 @@
   );
   border: 1px solid var(--preview-border, rgba(255, 255, 255, 0.12));
   backdrop-filter: blur(8px);
+}
+
+/* Top-center stack: centered logo, then a top menu bar. */
+.editor-root .editor-viewport-top-center {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 2rem);
+  pointer-events: none;
+}
+
+.editor-root .editor-viewport-top-center > * {
+  pointer-events: auto;
+}
+
+.editor-root .editor-viewport-top-center > .editor-viewport-logo {
+  pointer-events: none;
+}
+
+/* Preview edge columns: vertical menu bar centered, rail buttons at the bottom. */
+.editor-root .editor-preview-edge {
+  position: absolute;
+  top: 1rem;
+  bottom: 1rem;
+  z-index: 10;
+  display: grid;
+  /* Bar centered when there is room; on short viewports the top row collapses
+     first and the bar scrolls, the rail row never shrinks below its content. */
+  grid-template-rows: minmax(0, 1fr) minmax(0, max-content) minmax(min-content, 1fr);
+  justify-items: start;
+  pointer-events: none;
+  transition:
+    left 0.35s cubic-bezier(0.22, 0.61, 0.36, 1),
+    right 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.editor-root .editor-preview-edge[data-side="right"] {
+  justify-items: end;
+}
+
+.editor-root .editor-preview-edge-middle {
+  min-height: 0;
+  max-height: 100%;
+  display: flex;
+}
+
+.editor-root .editor-preview-edge-bottom {
+  align-self: end;
+  padding-top: 8px;
+}
+
+.editor-root .editor-preview-edge-middle > *,
+.editor-root .editor-preview-edge-bottom > * {
+  pointer-events: auto;
+}
+
+.editor-root .editor-controls-sep {
+  height: 18px;
+}
+
+/* Icon-only buttons: square instead of the wide text-button padding. */
+.editor-root .editor-preview-rail-btns .editor-tool-btn,
+.editor-root .editor-viewport-controls-vertical .editor-tool-btn {
+  padding: 7px;
+}
+
+.editor-root .editor-viewport-controls-vertical {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.editor-root .editor-viewport-controls-vertical .editor-controls-sep {
+  width: 18px;
+  height: 1px;
+  margin: 2px 0;
+}
+
+/* Vertical bar: keep play / reset, drop the wide clip picker, slider and time. */
+.editor-root .editor-viewport-controls-vertical .editor-viewport-anim-transport {
+  flex-direction: column;
+  min-width: 0;
+  padding: 0;
+}
+
+.editor-root .editor-viewport-controls-vertical .editor-viewport-anim-select,
+.editor-root .editor-viewport-controls-vertical .editor-viewport-anim-slider,
+.editor-root .editor-viewport-controls-vertical .editor-viewport-anim-time {
+  display: none;
 }

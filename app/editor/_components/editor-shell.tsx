@@ -8,10 +8,8 @@ import { ViewportFrame } from "@/app/editor/_components/viewport/viewport-frame"
 import { DialogPropertiesDrawer } from "@/app/editor/_components/drawers/dialog-properties-drawer";
 import { HotspotPropertiesDrawer } from "@/app/editor/_components/drawers/hotspot-properties-drawer";
 import { LegendDrawer } from "@/app/editor/_components/drawers/legend-drawer";
-import {
-  PreviewRailButtons,
-  SceneExplorerDrawer,
-} from "@/app/editor/_components/drawers/scene-explorer-drawer";
+import { SceneExplorerDrawer } from "@/app/editor/_components/drawers/scene-explorer-drawer";
+import { PreviewEdgeColumn } from "@/app/editor/_components/viewport/preview-edge-column";
 import { GeneralSettingsDrawer } from "@/app/editor/_components/drawers/general-settings-drawer";
 import { SettingsDrawer } from "@/app/editor/_components/drawers/settings-drawer";
 import { ActionsModal } from "@/app/editor/_components/actions/actions-modal";
@@ -61,7 +59,8 @@ export function EditorShell() {
         <GeneralSettingsDrawer />
         <LegendDrawer />
         <SceneExplorerDrawer />
-        <PreviewRailButtons />
+        <PreviewEdgeColumn side="left" />
+        <PreviewEdgeColumn side="right" />
         <PreviewModal />
         <ScenesModal />
         <AssetLibraryDialog />

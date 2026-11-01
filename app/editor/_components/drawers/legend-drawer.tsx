@@ -8,6 +8,7 @@ import { CategorySelect } from "@/app/editor/_components/ui/category-select";
 import { CategoryOptionBadge } from "@/app/editor/_components/ui/category-option";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
+import { useGeneralSettingsStore } from "@/lib/editor/state/general-settings-store";
 import { HotspotMarkerIcon } from "@/app/editor/_components/ui/hotspot-marker-icon";
 import { MeshClickBadge } from "@/app/editor/_components/outliner/hotspot-list-item";
 import { runHotspotActions } from "@/lib/editor/actions/run-hotspot-actions";
@@ -53,6 +54,7 @@ export function LegendDrawer() {
   const legendEnabled = useSettingsStore((s) => s.legendEnabled);
   const title = (useSettingsStore((s) => s.legendTitle) ?? "").trim() || "Legend";
   const inset = useSettingsStore((s) => s.legendInset);
+  const railSide = useGeneralSettingsStore((s) => s.railSide);
   const logoUrl = useSettingsStore((s) => s.legendLogoUrl) ?? "";
   const logoSize = useSettingsStore((s) => s.legendLogoSize) ?? "small";
   const hideTitle = useSettingsStore((s) => s.legendHideTitle) ?? false;
@@ -94,7 +96,7 @@ export function LegendDrawer() {
 
   return (
     <GlassPanel
-      className={`editor-legend-drawer editor-preview-surface editor-glass editor-panel-shadow flex flex-col ${inset ? "editor-drawer-inset" : ""} ${visible ? "open" : ""}`}
+      className={`editor-legend-drawer editor-preview-surface editor-glass editor-panel-shadow flex flex-col ${inset ? "editor-drawer-inset" : ""} ${railSide === "right" ? "editor-drawer-right" : ""} ${visible ? "open" : ""}`}
       aria-hidden={!visible}
     >
       <DrawerHeader

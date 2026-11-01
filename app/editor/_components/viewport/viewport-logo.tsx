@@ -4,14 +4,15 @@ import type { CSSProperties } from "react";
 import { useAssetSrc } from "@/lib/editor/assets";
 import { useGeneralSettingsStore } from "@/lib/editor/state/general-settings-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
+import type { ViewportLogoPosition } from "@/lib/editor/types/editor-settings";
 import { cn } from "@/lib/utils";
 
 /**
- * Project logo at the top of the viewport. `slot="hud"` renders the left
- * placement inside the HUD stack (so it never overlaps the HUD panel);
- * `slot="overlay"` renders center / right as an absolute overlay.
+ * Project logo at the top of the viewport. Rendered in each slot; only the
+ * one matching `logoPosition` shows. `left` sits in the HUD stack and
+ * `center` in the top-center stack (above a top menu bar), so neither overlaps.
  */
-export function ViewportLogo({ slot }: { slot: "hud" | "overlay" }) {
+export function ViewportLogo({ slot }: { slot: ViewportLogoPosition }) {
   const logoUrl = useAssetSrc(useGeneralSettingsStore((s) => s.logoUrl));
   const logoScale = useGeneralSettingsStore((s) => s.logoScale);
   const position = useGeneralSettingsStore((s) => s.logoPosition);
@@ -20,15 +21,14 @@ export function ViewportLogo({ slot }: { slot: "hud" | "overlay" }) {
   const invert = useGeneralSettingsStore((s) => s.logoInvert);
 
   if (hidden || !logoUrl.trim()) return null;
-  if ((position === "left") !== (slot === "hud")) return null;
+  if (position !== slot) return null;
 
   return (
     <div
       className={cn(
         "editor-viewport-logo pointer-events-none",
-        position === "center" && "absolute left-1/2 top-4 z-10 -translate-x-1/2",
         position === "right" && "absolute right-4 top-4 z-10",
-        position === "left" && "flex-shrink-0",
+        position !== "right" && "flex-shrink-0",
       )}
       // Scale through size (not transform) so the HUD stack reflows below a left logo.
       style={{ "--editor-logo-scale": logoScale } as CSSProperties}

@@ -5,6 +5,8 @@ import {
 } from "@/lib/editor/constants/default-general-style";
 import type {
   DrawerLogoSize,
+  PreviewMenuBarPosition,
+  PreviewRailSide,
   ViewportLogoPosition,
 } from "@/lib/editor/types/editor-settings";
 import type {
@@ -28,6 +30,10 @@ type GeneralSettingsState = {
   logoShadow: boolean;
   /** Invert the viewport logo colors (e.g. dark logo on a dark scene). */
   logoInvert: boolean;
+  /** Preview menu bar placement (Preview only; the editor keeps it at the bottom). */
+  menuBarPosition: PreviewMenuBarPosition;
+  /** Side of the Scene Explorer / Legend buttons; their drawers open on it too. */
+  railSide: PreviewRailSide;
   /** Project-wide Preview Scene Explorer control. Independent of Style Reset. */
   sceneExplorerEnabled: boolean;
   /** Scene Explorer drawer title. Empty keeps the default “Scene explorer”. */
@@ -59,6 +65,8 @@ type GeneralSettingsState = {
   setLogoPosition: (value: ViewportLogoPosition) => void;
   setLogoShadow: (value: boolean) => void;
   setLogoInvert: (value: boolean) => void;
+  setMenuBarPosition: (value: PreviewMenuBarPosition) => void;
+  setRailSide: (value: PreviewRailSide) => void;
   setSceneExplorerEnabled: (value: boolean) => void;
   setSceneExplorerTitle: (value: string) => void;
   setSceneExplorerInset: (value: boolean) => void;
@@ -89,6 +97,8 @@ export const useGeneralSettingsStore = create<GeneralSettingsState>((set) => ({
   logoPosition: "center",
   logoShadow: true,
   logoInvert: false,
+  menuBarPosition: "bottom",
+  railSide: "left",
   sceneExplorerEnabled: false,
   sceneExplorerTitle: "",
   sceneExplorerInset: false,
@@ -139,6 +149,8 @@ export const useGeneralSettingsStore = create<GeneralSettingsState>((set) => ({
   setLogoPosition: (logoPosition) => set({ logoPosition }),
   setLogoShadow: (logoShadow) => set({ logoShadow }),
   setLogoInvert: (logoInvert) => set({ logoInvert }),
+  setMenuBarPosition: (menuBarPosition) => set({ menuBarPosition }),
+  setRailSide: (railSide) => set({ railSide }),
   setSceneExplorerEnabled: (sceneExplorerEnabled) =>
     set({ sceneExplorerEnabled }),
   setSceneExplorerTitle: (sceneExplorerTitle) => set({ sceneExplorerTitle }),

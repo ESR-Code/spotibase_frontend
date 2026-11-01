@@ -13,34 +13,18 @@ import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import type { Scene } from "@/lib/editor/types/scene";
 
+/** Scene Explorer + Legend buttons; placed by `PreviewEdgeColumn`. */
 export function PreviewRailButtons() {
   const isPreview = useEditorStore((s) => s.isPreview);
   const legendEnabled = useSettingsStore((s) => s.legendEnabled);
   const sceneExplorerEnabled = useGeneralSettingsStore(
     (s) => s.sceneExplorerEnabled,
   );
-  const outlinerCollapsed = useUIStore((s) => s.outlinerCollapsed);
-  const legendOpen = useUIStore((s) => s.legendDrawerOpen);
-  const explorerOpen = useUIStore((s) => s.sceneExplorerDrawerOpen);
-  const legendInset = useSettingsStore((s) => s.legendInset);
-  const sceneExplorerInset = useGeneralSettingsStore((s) => s.sceneExplorerInset);
 
   if (!isPreview || (!legendEnabled && !sceneExplorerEnabled)) return null;
 
-  const railOpen = legendOpen || explorerOpen;
-  const openInset = (explorerOpen && sceneExplorerInset) || (legendOpen && legendInset);
-  const left =
-    outlinerCollapsed && !railOpen
-      ? "1rem"
-      : openInset
-        ? "calc(18rem + 12px + 1rem)"
-        : "calc(18rem + 1rem)";
-
   return (
-    <div
-      className="editor-preview-rail-btns editor-viewport-controls editor-glass editor-panel-shadow absolute bottom-4 z-10 flex flex-col items-center gap-1 rounded-xl px-2 py-2"
-      style={{ left }}
-    >
+    <div className="editor-preview-rail-btns editor-viewport-controls editor-glass editor-panel-shadow flex flex-col items-center gap-1 rounded-xl p-1.5">
       <SceneExplorerButton />
       <LegendButton />
     </div>
@@ -74,6 +58,7 @@ export function SceneExplorerDrawer() {
     (useGeneralSettingsStore((s) => s.sceneExplorerTitle) ?? "").trim() ||
     "Scene explorer";
   const inset = useGeneralSettingsStore((s) => s.sceneExplorerInset);
+  const railSide = useGeneralSettingsStore((s) => s.railSide);
   const logoUrl = useGeneralSettingsStore((s) => s.sceneExplorerLogoUrl) ?? "";
   const logoSize = useGeneralSettingsStore((s) => s.sceneExplorerLogoSize) ?? "small";
   const hideTitle =
@@ -89,7 +74,7 @@ export function SceneExplorerDrawer() {
 
   return (
     <GlassPanel
-      className={`editor-scene-explorer-drawer editor-preview-surface editor-glass editor-panel-shadow flex flex-col ${inset ? "editor-drawer-inset" : ""} ${visible ? "open" : ""}`}
+      className={`editor-scene-explorer-drawer editor-preview-surface editor-glass editor-panel-shadow flex flex-col ${inset ? "editor-drawer-inset" : ""} ${railSide === "right" ? "editor-drawer-right" : ""} ${visible ? "open" : ""}`}
       aria-hidden={!visible}
     >
       <DrawerHeader
