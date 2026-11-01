@@ -107,6 +107,7 @@ export const HOTSPOT_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "forEach",
   "spawnHotspots",
   "switch",
+  "closeDialog",
   "wait",
 ];
 
@@ -132,6 +133,7 @@ export const MENU_BUTTON_GRAPH_ALLOWED_NODE_TYPES: ActionNodeType[] = [
   "forEach",
   "spawnHotspots",
   "switch",
+  "closeDialog",
   "wait",
 ];
 

@@ -259,6 +259,12 @@ function DialogGeneralTab({ dialog }: { dialog: SceneDialog }) {
           checked={dialog.backdrop ?? false}
           onChange={(checked) => update({ backdrop: checked || undefined })}
         />
+        <SwitchField
+          label="Required (can't be dismissed)"
+          description="Hides the close button and ignores Esc / backdrop clicks, and blocks the scene behind. Add a button with a Close Dialog action so the user can continue"
+          checked={dialog.required ?? false}
+          onChange={(checked) => update({ required: checked || undefined })}
+        />
       </SettingsSection>
 
       <SettingsSection

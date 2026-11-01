@@ -27,4 +27,10 @@ export type SceneDialog = {
   showOncePerSession?: boolean;
   /** Dim the page behind the dialog. Unset = off (blur follows the scene setting). */
   backdrop?: boolean;
+  /**
+   * Can't be dismissed: no close X, Esc or backdrop click, and the scene
+   * behind is blocked. Only a Close Dialog action (e.g. on a button block)
+   * closes it, which then runs the Open Modal's onClose branch.
+   */
+  required?: boolean;
 };

@@ -47,6 +47,8 @@ export type EditorDialogProps = {
   closeOnBackdrop?: boolean;
   /** Close on Escape. Default true. */
   closeOnEscape?: boolean;
+  /** Cover the area behind the surface so it can't be clicked (no visual change). */
+  blockInteraction?: boolean;
   /** Drawer side. Default `"right"`. */
   side?: "left" | "right";
   /** Desktop size. Mobile always renders fullscreen. Default `"medium"`. */
@@ -72,6 +74,7 @@ export function EditorDialog({
   backdropBlur = false,
   closeOnBackdrop,
   closeOnEscape = true,
+  blockInteraction = false,
   side = "right",
   size = "medium",
   inset = false,
@@ -138,6 +141,14 @@ export function EditorDialog({
         )}
         role="presentation"
       >
+        {blockInteraction && !showBackdrop && !isInfoBox ? (
+          <div
+            aria-hidden
+            className="editor-dialog-backdrop"
+            style={{ background: "transparent", cursor: "default" }}
+          />
+        ) : null}
+
         {showBackdrop ? (
           <button
             type="button"

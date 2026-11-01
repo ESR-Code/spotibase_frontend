@@ -289,6 +289,9 @@ function SceneDialogPreviewModal({ dialogId }: { dialogId: string }) {
       presentation={presentation}
       size={dialog.size ?? sceneSize}
       inset={presentation === "drawer" && drawerInset}
+      closeOnEscape={!dialog.required}
+      closeOnBackdrop={!dialog.required}
+      blockInteraction={dialog.required}
       backdrop={dialog.backdrop ?? false}
       backdropBlur={(dialog.backdrop ?? false) && sceneBackdropBlur}
       className={cn("editor-marker-dialog", "editor-preview-surface")}
@@ -298,6 +301,7 @@ function SceneDialogPreviewModal({ dialogId }: { dialogId: string }) {
         image={dialog.image}
         blocks={dialog.blocks}
         isInfoBox={false}
+        hideClose={dialog.required}
         onClose={close}
       />
     </EditorDialog>
@@ -313,6 +317,8 @@ type PreviewDialogContentProps = {
   blocks: HotspotBlock[];
   hotspotId?: number;
   isInfoBox: boolean;
+  /** Required dialogs: no close X. */
+  hideClose?: boolean;
   onClose: () => void;
 };
 
@@ -325,12 +331,13 @@ function PreviewDialogContent({
   blocks,
   hotspotId,
   isInfoBox,
+  hideClose = false,
   onClose,
 }: PreviewDialogContentProps) {
   const headerImage = resolveAssetSrc(image.trim());
   const hasHeaderImage = headerImage.length > 0;
 
-  const closeButton = (
+  const closeButton = hideClose ? null : (
     <IconButton
       title="Close"
       className={hasHeaderImage ? "editor-marker-dialog-close" : undefined}

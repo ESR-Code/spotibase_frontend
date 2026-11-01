@@ -24,7 +24,8 @@ export type ActionNodeType =
   | "spawnHotspots"
   | "switch"
   | "playAnimation"
-  | "wait";
+  | "wait"
+  | "closeDialog";
 
 /** Relative destination from the selected target hotspot. */
 export type GoToHotspotOffset = "self" | "next" | "prev";
@@ -510,6 +511,12 @@ export type WaitActionNode = ActionNodeBase<
   }
 >;
 
+/** Closes the open Preview dialog (its Open Modal `onClose` branch runs). */
+export type CloseDialogActionNode = ActionNodeBase<
+  "closeDialog",
+  Record<string, never>
+>;
+
 export type ActionNode =
   | OpenModalActionNode
   | GoToSceneActionNode
@@ -528,7 +535,8 @@ export type ActionNode =
   | SpawnHotspotsActionNode
   | SwitchActionNode
   | PlayAnimationActionNode
-  | WaitActionNode;
+  | WaitActionNode
+  | CloseDialogActionNode;
 
 export type ActionEdge = {
   id: string;

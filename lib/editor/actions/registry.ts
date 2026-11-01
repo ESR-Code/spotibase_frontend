@@ -86,6 +86,7 @@ import { findActiveSceneDialog } from "@/lib/editor/dialogs/scene-dialogs";
 import { openHotspotInPreview } from "@/lib/editor/preview/open-hotspot-in-preview";
 import { openSceneDialogInPreview } from "@/lib/editor/preview/open-scene-dialog";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useUIStore } from "@/lib/editor/state/ui-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import type {
   ActionNode,
@@ -643,6 +644,17 @@ export const ACTION_NODE_META: Record<ActionNodeType, ActionNodeMeta> = {
     run: async (node) => {
       if (node.type !== "playAnimation") return;
       return applyPlayAnimation(node.data);
+    },
+  },
+  closeDialog: {
+    type: "closeDialog",
+    label: "Close Dialog",
+    description:
+      "Close the open dialog; its Open Modal onClose branch then runs. Use on a button inside a Required dialog.",
+    createDefault: (position) => createActionNode("closeDialog", position),
+    validate: () => null,
+    run: () => {
+      useUIStore.getState().setPreviewModalOpen(false);
     },
   },
   wait: {

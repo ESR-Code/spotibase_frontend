@@ -25,6 +25,7 @@ import type {
   SendPostMessageActionNode,
   PlayAnimationActionNode,
   WaitActionNode,
+  CloseDialogActionNode,
 } from "@/lib/editor/types/hotspot-action";
 import { HTTP_METHODS, TRIGGER_NODE_ID } from "@/lib/editor/types/hotspot-action";
 import {
@@ -242,6 +243,10 @@ export function createActionNode(
   position: ActionNodeXY,
 ): WaitActionNode;
 export function createActionNode(
+  type: "closeDialog",
+  position: ActionNodeXY,
+): CloseDialogActionNode;
+export function createActionNode(
   type: ActionNodeType,
   position: ActionNodeXY,
 ): ActionNode;
@@ -433,6 +438,13 @@ export function createActionNode(
         type: "wait",
         position: { ...position },
         data: { durationSeconds: WAIT_DURATION_DEFAULT_SECONDS },
+      };
+    case "closeDialog":
+      return {
+        id: newActionId(),
+        type: "closeDialog",
+        position: { ...position },
+        data: {},
       };
   }
 }
@@ -772,6 +784,14 @@ export function cloneActionGraph(
             startTime: asPlayAnimationTime(node.data.startTime, 0),
             endTime: asPlayAnimationTime(node.data.endTime, 0),
           },
+        };
+      }
+      if (node.type === "closeDialog") {
+        return {
+          id: node.id,
+          type: "closeDialog",
+          position: { ...node.position },
+          data: {},
         };
       }
       if (node.type === "wait") {

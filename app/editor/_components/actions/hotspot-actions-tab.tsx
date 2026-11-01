@@ -172,6 +172,8 @@ function actionNodeDetail(
       const field = node.data.subject.trim() || "(no field)";
       return `→ ${field} · ${count} case${count === 1 ? "" : "s"}`;
     }
+    case "closeDialog":
+      return "→ close";
     case "wait": {
       const seconds = Math.round(node.data.durationSeconds * 100) / 100;
       return `→ ${seconds}s`;

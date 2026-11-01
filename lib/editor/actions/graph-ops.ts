@@ -835,6 +835,7 @@ export function updateNodeData(
           },
         };
       }
+      if (node.type === "closeDialog") return node;
       if (node.type === "wait") {
         return {
           ...node,

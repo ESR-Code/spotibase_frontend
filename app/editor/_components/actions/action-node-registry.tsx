@@ -20,6 +20,7 @@ import {
   Repeat,
   Shapes,
   Timer,
+  XCircle,
   type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
@@ -41,6 +42,7 @@ import { ForEachNode } from "@/app/editor/_components/actions/for-each-node";
 import { SendPostMessageNode } from "@/app/editor/_components/actions/send-post-message-node";
 import { SpawnHotspotsNode } from "@/app/editor/_components/actions/spawn-hotspots-node";
 import { SwitchNode } from "@/app/editor/_components/actions/switch-node";
+import { CloseDialogNode } from "@/app/editor/_components/actions/close-dialog-node";
 import { WaitNode } from "@/app/editor/_components/actions/wait-node";
 import { ActionFenceNode } from "@/app/editor/_components/actions/action-fence-node";
 import {
@@ -213,6 +215,14 @@ export const ACTION_UI_REGISTRY: Record<ActionNodeType, ActionUiDefinition> = {
     menuGroup: "logic",
     Node: SwitchNode,
   },
+  closeDialog: {
+    type: "closeDialog",
+    meta: ACTION_NODE_META.closeDialog,
+    icon: XCircle,
+    accent: "var(--editor-teal)",
+    menuGroup: "navigate",
+    Node: CloseDialogNode,
+  },
   wait: {
     type: "wait",
     meta: ACTION_NODE_META.wait,
@@ -245,5 +255,6 @@ export const ACTION_FLOW_NODE_TYPES = {
   spawnHotspots: SpawnHotspotsNode,
   switch: SwitchNode,
   wait: WaitNode,
+  closeDialog: CloseDialogNode,
   [ACTION_FENCE_TYPE]: ActionFenceNode,
 };
