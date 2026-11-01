@@ -1,14 +1,14 @@
 "use client";
 
+import { DrawerHeader } from "@/app/editor/_components/drawers/drawer-brand";
 import { resolveAssetSrc } from "@/lib/editor/assets";
-import { ListTree, X } from "lucide-react";
+import { ListTree } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CategorySelect } from "@/app/editor/_components/ui/category-select";
 import { CategoryOptionBadge } from "@/app/editor/_components/ui/category-option";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { HotspotMarkerIcon } from "@/app/editor/_components/ui/hotspot-marker-icon";
-import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { MeshClickBadge } from "@/app/editor/_components/outliner/hotspot-list-item";
 import { runHotspotActions } from "@/lib/editor/actions/run-hotspot-actions";
 import { selectLegendFilterCategory } from "@/lib/editor/actions/legend-category";
@@ -53,6 +53,9 @@ export function LegendDrawer() {
   const legendEnabled = useSettingsStore((s) => s.legendEnabled);
   const title = (useSettingsStore((s) => s.legendTitle) ?? "").trim() || "Legend";
   const inset = useSettingsStore((s) => s.legendInset);
+  const logoUrl = useSettingsStore((s) => s.legendLogoUrl) ?? "";
+  const logoSize = useSettingsStore((s) => s.legendLogoSize) ?? "small";
+  const hideTitle = useSettingsStore((s) => s.legendHideTitle) ?? false;
   const legendCategories = useSettingsStore((s) => s.legendCategories);
   const hotspots = usePreviewHotspots();
   const disabledHotspotIds = usePreviewVisibilityStore(
@@ -94,21 +97,15 @@ export function LegendDrawer() {
       className={`editor-legend-drawer editor-preview-surface editor-glass editor-panel-shadow flex flex-col ${inset ? "editor-drawer-inset" : ""} ${visible ? "open" : ""}`}
       aria-hidden={!visible}
     >
-      <div
-        className="editor-preview-divider flex flex-shrink-0 items-center justify-between px-4 py-3"
-      >
-        <div className="min-w-0">
-          <div className="truncate font-display text-[14px] font-bold" title={title}>
-            {title}
-          </div>
-          <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
-            {filtered.length} hotspot{filtered.length === 1 ? "" : "s"}
-          </div>
-        </div>
-        <IconButton title="Close legend" onClick={() => setOpen(false)}>
-          <X />
-        </IconButton>
-      </div>
+      <DrawerHeader
+        title={title}
+        logoUrl={logoUrl}
+        logoSize={logoSize}
+        hideTitle={hideTitle}
+        subtitle={`${filtered.length} hotspot${filtered.length === 1 ? "" : "s"}`}
+        closeTitle="Close legend"
+        onClose={() => setOpen(false)}
+      />
 
       <div
         className="editor-preview-divider flex-shrink-0 space-y-3 p-4"

@@ -169,6 +169,9 @@ export function hydrateProject(input: {
   general.setSceneExplorerEnabled(editorData?.sceneExplorerEnabled ?? false);
   general.setSceneExplorerTitle(editorData?.sceneExplorerTitle ?? "");
   general.setSceneExplorerInset(editorData?.sceneExplorerInset ?? false);
+  general.setSceneExplorerLogoUrl(editorData?.sceneExplorerLogoUrl ?? "");
+  general.setSceneExplorerHideTitle(editorData?.sceneExplorerHideTitle ?? false);
+  general.setSceneExplorerLogoSize(editorData?.sceneExplorerLogoSize ?? "small");
 
   useEditorStore.getState().setMode("select");
   hydrateLiveStores(active);

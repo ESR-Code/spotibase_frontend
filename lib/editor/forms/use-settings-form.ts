@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { asDrawerLogoSize } from "@/lib/editor/types/editor-settings";
 import { DEFAULT_EDITOR_SETTINGS } from "@/lib/editor/constants/default-settings";
 import { useSceneFormReset } from "@/lib/editor/forms/use-scene-form-reset";
 import {
@@ -46,6 +47,9 @@ function toFormValues(
     legendEnabled: settings.legendEnabled,
     legendTitle: settings.legendTitle ?? "",
     legendInset: settings.legendInset ?? false,
+    legendLogoUrl: settings.legendLogoUrl ?? "",
+    legendHideTitle: settings.legendHideTitle ?? false,
+    legendLogoSize: asDrawerLogoSize(settings.legendLogoSize),
     bottomMenuEnabled: settings.bottomMenuEnabled ?? true,
     logoUrl: settings.logoUrl,
     logoScale: settings.logoScale,

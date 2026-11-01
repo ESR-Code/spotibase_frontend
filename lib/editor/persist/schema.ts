@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { DrawerLogoSize } from "@/lib/editor/types/editor-settings";
 import type { GeneralStyleSettings } from "@/lib/editor/types/general-style";
 import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 import type { Scene } from "@/lib/editor/types/scene";
@@ -18,6 +19,10 @@ export type ProjectEditorData = {
   sceneExplorerTitle: string;
   /** Inset the Scene Explorer drawer from the top, bottom, and left in Preview. */
   sceneExplorerInset: boolean;
+  /** Scene Explorer logo override (`asset:<id>`); empty uses the scene logo. */
+  sceneExplorerLogoUrl: string;
+  sceneExplorerHideTitle: boolean;
+  sceneExplorerLogoSize: DrawerLogoSize;
 };
 
 /** Columns lifted out of `Scene` into `public.scenes`. */
@@ -118,5 +123,11 @@ export const projectEditorDataSchema = z
     sceneExplorerEnabled: z.boolean().default(false),
     sceneExplorerTitle: z.string().default(""),
     sceneExplorerInset: z.boolean().default(false),
+    sceneExplorerLogoUrl: z.string().default(""),
+    sceneExplorerHideTitle: z.boolean().default(false),
+    sceneExplorerLogoSize: z
+      .enum(["small", "medium", "large", "full"])
+      .catch("small")
+      .default("small"),
   })
   .passthrough();

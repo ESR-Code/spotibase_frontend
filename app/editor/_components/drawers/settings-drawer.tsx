@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "@/lib/editor/toast";
+import { DrawerLogoFields } from "@/app/editor/_components/drawers/drawer-logo-fields";
 import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-image-field";
 import { GeoDetailsSection } from "@/app/editor/_components/drawers/geo-details-section";
 import { GeoreferenceSection } from "@/app/editor/_components/drawers/georeference-section";
@@ -593,6 +594,15 @@ export function SettingsDrawer() {
                 description="Keep a gap on the top, bottom, and left so the drawer does not hug the screen"
                 checked={values.legendInset}
                 onChange={(checked) => form.setValue("legendInset", checked)}
+              />
+              <DrawerLogoFields
+                drawerLabel="Legend"
+                logoUrl={values.legendLogoUrl ?? ""}
+                onLogoUrlChange={(value) => form.setValue("legendLogoUrl", value)}
+                logoSize={values.legendLogoSize}
+                onLogoSizeChange={(value) => form.setValue("legendLogoSize", value)}
+                hideTitle={values.legendHideTitle}
+                onHideTitleChange={(checked) => form.setValue("legendHideTitle", checked)}
               />
             </>
           ) : null}

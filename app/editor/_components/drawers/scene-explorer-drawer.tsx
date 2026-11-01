@@ -1,10 +1,10 @@
 "use client";
 
+import { DrawerHeader } from "@/app/editor/_components/drawers/drawer-brand";
 import { resolveAssetSrc } from "@/lib/editor/assets";
-import { Layers, Map, X } from "lucide-react";
+import { Layers, Map } from "lucide-react";
 import { LegendButton } from "@/app/editor/_components/drawers/legend-drawer";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
-import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { transitionToScene } from "@/lib/editor/actions/transition-to-scene";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { useGeneralSettingsStore } from "@/lib/editor/state/general-settings-store";
@@ -74,6 +74,10 @@ export function SceneExplorerDrawer() {
     (useGeneralSettingsStore((s) => s.sceneExplorerTitle) ?? "").trim() ||
     "Scene explorer";
   const inset = useGeneralSettingsStore((s) => s.sceneExplorerInset);
+  const logoUrl = useGeneralSettingsStore((s) => s.sceneExplorerLogoUrl) ?? "";
+  const logoSize = useGeneralSettingsStore((s) => s.sceneExplorerLogoSize) ?? "small";
+  const hideTitle =
+    useGeneralSettingsStore((s) => s.sceneExplorerHideTitle) ?? false;
   const open = useUIStore((s) => s.sceneExplorerDrawerOpen);
   const setOpen = useUIStore((s) => s.setSceneExplorerDrawerOpen);
   const scenes = useScenesStore((s) => s.scenes);
@@ -88,21 +92,15 @@ export function SceneExplorerDrawer() {
       className={`editor-scene-explorer-drawer editor-preview-surface editor-glass editor-panel-shadow flex flex-col ${inset ? "editor-drawer-inset" : ""} ${visible ? "open" : ""}`}
       aria-hidden={!visible}
     >
-      <div
-        className="editor-preview-divider flex flex-shrink-0 items-center justify-between px-4 py-3"
-      >
-        <div className="min-w-0">
-          <div className="truncate font-display text-[14px] font-bold" title={title}>
-            {title}
-          </div>
-          <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
-            {scenes.length} scene{scenes.length === 1 ? "" : "s"}
-          </div>
-        </div>
-        <IconButton title="Close scene explorer" onClick={() => setOpen(false)}>
-          <X />
-        </IconButton>
-      </div>
+      <DrawerHeader
+        title={title}
+        logoUrl={logoUrl}
+        logoSize={logoSize}
+        hideTitle={hideTitle}
+        subtitle={`${scenes.length} scene${scenes.length === 1 ? "" : "s"}`}
+        closeTitle="Close scene explorer"
+        onClose={() => setOpen(false)}
+      />
 
       <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
         {scenes.map((scene) => (

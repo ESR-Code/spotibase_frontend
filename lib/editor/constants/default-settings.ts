@@ -9,6 +9,7 @@ import type {
   EffectsSettings,
   EnvironmentSettings,
 } from "@/lib/editor/types/editor-settings";
+import { asDrawerLogoSize } from "@/lib/editor/types/editor-settings";
 import { DEFAULT_GEO_MAP_STYLE_ID, isGeoMapStyleId } from "@/lib/editor/geo/map-styles";
 import type { GeoSettings } from "@/lib/editor/types/geo-settings";
 import type { LegendCategory } from "@/lib/editor/types/legend-category";
@@ -46,6 +47,9 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   legendEnabled: false,
   legendTitle: "",
   legendInset: false,
+  legendLogoUrl: "",
+  legendHideTitle: false,
+  legendLogoSize: "small",
   bottomMenuEnabled: true,
   legendCategories: [],
   logoUrl: "",
@@ -203,6 +207,9 @@ export function cloneEditorSettings(settings: EditorSettings): EditorSettings {
     legendEnabled: settings.legendEnabled ?? false,
     legendTitle: settings.legendTitle ?? "",
     legendInset: settings.legendInset ?? false,
+    legendLogoUrl: settings.legendLogoUrl ?? "",
+    legendHideTitle: settings.legendHideTitle ?? false,
+    legendLogoSize: asDrawerLogoSize(settings.legendLogoSize),
     bottomMenuEnabled: settings.bottomMenuEnabled ?? true,
     customMenuButtons: cloneCustomMenuButtons(settings.customMenuButtons),
   };

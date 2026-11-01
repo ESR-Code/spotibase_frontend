@@ -6389,3 +6389,14 @@
   background-size: 12px 12px;
   background-position: 0 0, 6px 6px;
 }
+
+/* Close button over a full-width Preview drawer logo banner. */
+.editor-root .editor-drawer-banner-close {
+  background: color-mix(
+    in srgb,
+    var(--preview-surface-legend-drawer-bg, rgba(11, 20, 36, 0.9)) 72%,
+    transparent
+  );
+  border: 1px solid var(--preview-border, rgba(255, 255, 255, 0.12));
+  backdrop-filter: blur(8px);
+}

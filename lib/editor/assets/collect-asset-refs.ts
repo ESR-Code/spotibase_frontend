@@ -31,6 +31,8 @@ function describe(scene: Scene | null, path: (string | number)[]): string {
   }
   if (head === "thumbnailUrl") return "Scene thumbnail";
   if (head === "settings" && index === "logoUrl") return "Logo";
+  if (head === "sceneExplorerLogoUrl") return "Scene explorer logo";
+  if (head === "settings" && index === "legendLogoUrl") return "Legend logo";
   if (head === "model") return "Scene subject";
   return tail(path) || "Project";
 }

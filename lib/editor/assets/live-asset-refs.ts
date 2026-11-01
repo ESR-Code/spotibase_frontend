@@ -10,6 +10,7 @@ export function readLiveAssetRefs() {
     project: {
       appStartActions: useScenesStore.getState().appStartActions,
       generalStyle: useGeneralSettingsStore.getState().style,
+      sceneExplorerLogoUrl: useGeneralSettingsStore.getState().sceneExplorerLogoUrl,
     },
   });
 }

@@ -11,6 +11,7 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
+import { DrawerLogoFields } from "@/app/editor/_components/drawers/drawer-logo-fields";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
@@ -54,6 +55,24 @@ export function GeneralSettingsDrawer() {
     (s) => s.setSceneExplorerTitle,
   );
   const sceneExplorerInset = useGeneralSettingsStore((s) => s.sceneExplorerInset);
+  const sceneExplorerLogoUrl = useGeneralSettingsStore(
+    (s) => s.sceneExplorerLogoUrl,
+  );
+  const setSceneExplorerLogoUrl = useGeneralSettingsStore(
+    (s) => s.setSceneExplorerLogoUrl,
+  );
+  const sceneExplorerHideTitle = useGeneralSettingsStore(
+    (s) => s.sceneExplorerHideTitle,
+  );
+  const setSceneExplorerHideTitle = useGeneralSettingsStore(
+    (s) => s.setSceneExplorerHideTitle,
+  );
+  const sceneExplorerLogoSize = useGeneralSettingsStore(
+    (s) => s.sceneExplorerLogoSize,
+  );
+  const setSceneExplorerLogoSize = useGeneralSettingsStore(
+    (s) => s.setSceneExplorerLogoSize,
+  );
   const setSceneExplorerInset = useGeneralSettingsStore(
     (s) => s.setSceneExplorerInset,
   );
@@ -108,6 +127,15 @@ export function GeneralSettingsDrawer() {
                 description="Keep a gap on the top, bottom, and left so the drawer does not hug the screen"
                 checked={sceneExplorerInset}
                 onChange={setSceneExplorerInset}
+              />
+              <DrawerLogoFields
+                drawerLabel="Scene explorer"
+                logoUrl={sceneExplorerLogoUrl}
+                onLogoUrlChange={setSceneExplorerLogoUrl}
+                logoSize={sceneExplorerLogoSize}
+                onLogoSizeChange={setSceneExplorerLogoSize}
+                hideTitle={sceneExplorerHideTitle}
+                onHideTitleChange={setSceneExplorerHideTitle}
               />
             </>
           ) : null}

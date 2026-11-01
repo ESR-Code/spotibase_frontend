@@ -3,6 +3,7 @@ import {
   cloneGeneralStyle,
   DEFAULT_GENERAL_STYLE,
 } from "@/lib/editor/constants/default-general-style";
+import type { DrawerLogoSize } from "@/lib/editor/types/editor-settings";
 import type {
   BottomMenuStyleTokens,
   GeneralStyleGlobalTokens,
@@ -20,6 +21,12 @@ type GeneralSettingsState = {
   sceneExplorerTitle: string;
   /** Inset the Scene Explorer drawer from the top, bottom, and left in Preview. */
   sceneExplorerInset: boolean;
+  /** Scene Explorer logo override (`asset:<id>`); empty falls back to the scene logo. */
+  sceneExplorerLogoUrl: string;
+  /** Hide the Scene Explorer title text when a logo is shown. */
+  sceneExplorerHideTitle: boolean;
+  /** Scene Explorer header logo size. */
+  sceneExplorerLogoSize: DrawerLogoSize;
   setGlobalToken: <K extends keyof GeneralStyleGlobalTokens>(
     key: K,
     value: GeneralStyleGlobalTokens[K],
@@ -37,6 +44,9 @@ type GeneralSettingsState = {
   setSceneExplorerEnabled: (value: boolean) => void;
   setSceneExplorerTitle: (value: string) => void;
   setSceneExplorerInset: (value: boolean) => void;
+  setSceneExplorerLogoUrl: (value: string) => void;
+  setSceneExplorerHideTitle: (value: boolean) => void;
+  setSceneExplorerLogoSize: (value: DrawerLogoSize) => void;
 };
 
 function mergeSurfaces(
@@ -59,6 +69,9 @@ export const useGeneralSettingsStore = create<GeneralSettingsState>((set) => ({
   sceneExplorerEnabled: false,
   sceneExplorerTitle: "",
   sceneExplorerInset: false,
+  sceneExplorerLogoUrl: "",
+  sceneExplorerHideTitle: false,
+  sceneExplorerLogoSize: "small",
   setGlobalToken: (key, value) =>
     set((state) => ({
       style: { ...state.style, [key]: value },
@@ -102,6 +115,12 @@ export const useGeneralSettingsStore = create<GeneralSettingsState>((set) => ({
     set({ sceneExplorerEnabled }),
   setSceneExplorerTitle: (sceneExplorerTitle) => set({ sceneExplorerTitle }),
   setSceneExplorerInset: (sceneExplorerInset) => set({ sceneExplorerInset }),
+  setSceneExplorerLogoUrl: (sceneExplorerLogoUrl) =>
+    set({ sceneExplorerLogoUrl }),
+  setSceneExplorerHideTitle: (sceneExplorerHideTitle) =>
+    set({ sceneExplorerHideTitle }),
+  setSceneExplorerLogoSize: (sceneExplorerLogoSize) =>
+    set({ sceneExplorerLogoSize }),
 }));
 
 export function readGeneralStyleSnapshot(): GeneralStyleSettings {

@@ -2,6 +2,22 @@ import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 import type { LegendCategory } from "@/lib/editor/types/legend-category";
 
 /** How marker content is presented when a hotspot is opened in preview. */
+/** Preview drawer header logo size; `full` = full-width banner. */
+export type DrawerLogoSize = "small" | "medium" | "large" | "full";
+
+export const DRAWER_LOGO_SIZES: { id: DrawerLogoSize; label: string }[] = [
+  { id: "small", label: "Small" },
+  { id: "medium", label: "Medium" },
+  { id: "large", label: "Large" },
+  { id: "full", label: "Full width" },
+];
+
+export function asDrawerLogoSize(value: unknown): DrawerLogoSize {
+  return DRAWER_LOGO_SIZES.some((size) => size.id === value)
+    ? (value as DrawerLogoSize)
+    : "small";
+}
+
 export type MarkerDialogPresentation = "modal" | "drawer" | "infobox";
 
 /** Desktop width of the marker dialog. Mobile always uses fullscreen. */
@@ -103,6 +119,12 @@ export type EditorSettings = {
   legendTitle: string;
   /** Inset the Legend drawer from the top, bottom, and left in Preview. */
   legendInset: boolean;
+  /** Legend drawer logo override (`asset:<id>`); empty falls back to `logoUrl`. */
+  legendLogoUrl: string;
+  /** Hide the Legend title text when a logo is shown. */
+  legendHideTitle: boolean;
+  /** Legend header logo size. */
+  legendLogoSize: DrawerLogoSize;
   /** Show the bottom menu (reset, zoom, labels, custom buttons) in Preview. */
   bottomMenuEnabled: boolean;
   /** User-defined legend categories available for hotspot assignment. */

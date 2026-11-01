@@ -79,6 +79,11 @@ export function serializeProject(): SerializedProject {
       sceneExplorerEnabled: useGeneralSettingsStore.getState().sceneExplorerEnabled,
       sceneExplorerTitle: useGeneralSettingsStore.getState().sceneExplorerTitle,
       sceneExplorerInset: useGeneralSettingsStore.getState().sceneExplorerInset,
+      sceneExplorerLogoUrl: useGeneralSettingsStore.getState().sceneExplorerLogoUrl,
+      sceneExplorerHideTitle:
+        useGeneralSettingsStore.getState().sceneExplorerHideTitle,
+      sceneExplorerLogoSize:
+        useGeneralSettingsStore.getState().sceneExplorerLogoSize,
     },
     scenes: scenes.map((scene, index) => ({
       id: scene.id,
