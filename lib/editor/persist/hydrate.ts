@@ -166,6 +166,11 @@ export function hydrateProject(input: {
   if (editorData) {
     general.setStyle(editorData.generalStyle as Partial<GeneralStyleSettings>);
   }
+  general.setLogoUrl(editorData?.logoUrl ?? "");
+  general.setLogoScale(editorData?.logoScale ?? 1);
+  general.setLogoPosition(editorData?.logoPosition ?? "center");
+  general.setLogoShadow(editorData?.logoShadow ?? true);
+  general.setLogoInvert(editorData?.logoInvert ?? false);
   general.setSceneExplorerEnabled(editorData?.sceneExplorerEnabled ?? false);
   general.setSceneExplorerTitle(editorData?.sceneExplorerTitle ?? "");
   general.setSceneExplorerInset(editorData?.sceneExplorerInset ?? false);

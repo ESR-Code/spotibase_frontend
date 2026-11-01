@@ -30,7 +30,7 @@ function describe(scene: Scene | null, path: (string | number)[]): string {
     return `Layer "${layer && "name" in layer ? layer.name : index + 1}"`;
   }
   if (head === "thumbnailUrl") return "Scene thumbnail";
-  if (head === "settings" && index === "logoUrl") return "Logo";
+  if (head === "logoUrl") return "Project logo";
   if (head === "sceneExplorerLogoUrl") return "Scene explorer logo";
   if (head === "settings" && index === "legendLogoUrl") return "Legend logo";
   if (head === "model") return "Scene subject";

@@ -34,8 +34,7 @@ export const settingsFormSchema = z.object({
   legendHideTitle: z.boolean(),
   legendLogoSize: z.enum(["small", "medium", "large", "full"]),
   bottomMenuEnabled: z.boolean(),
-  logoUrl: z.string(),
-  logoScale: z.number().min(0.4).max(2.5),
+  logoHidden: z.boolean(),
 });
 
 export type SettingsFormValues = z.infer<typeof settingsFormSchema>;

@@ -52,8 +52,7 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   legendLogoSize: "small",
   bottomMenuEnabled: true,
   legendCategories: [],
-  logoUrl: "",
-  logoScale: 1,
+  logoHidden: false,
   customMenuButtons: [],
 };
 

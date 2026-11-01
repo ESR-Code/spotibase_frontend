@@ -51,8 +51,7 @@ function toFormValues(
     legendHideTitle: settings.legendHideTitle ?? false,
     legendLogoSize: asDrawerLogoSize(settings.legendLogoSize),
     bottomMenuEnabled: settings.bottomMenuEnabled ?? true,
-    logoUrl: settings.logoUrl,
-    logoScale: settings.logoScale,
+    logoHidden: settings.logoHidden ?? false,
   };
 }
 

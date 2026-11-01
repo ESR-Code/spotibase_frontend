@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 import type { ReactNode } from "react";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { useAssetSrc } from "@/lib/editor/assets";
-import { useSettingsStore } from "@/lib/editor/state/settings-store";
+import { useGeneralSettingsStore } from "@/lib/editor/state/general-settings-store";
 import type { DrawerLogoSize } from "@/lib/editor/types/editor-settings";
 import { cn } from "@/lib/utils";
 
@@ -37,7 +37,7 @@ export function DrawerHeader({
   closeTitle,
   onClose,
 }: DrawerHeaderProps) {
-  const projectLogo = useSettingsStore((s) => s.logoUrl);
+  const projectLogo = useGeneralSettingsStore((s) => s.logoUrl);
   const logo = useAssetSrc(logoUrl.trim() || projectLogo).trim();
   const showTitle = !hideTitle || !logo;
   const banner = Boolean(logo) && logoSize === "full";

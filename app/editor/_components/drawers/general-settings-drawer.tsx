@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   ChevronDown,
+  ImageIcon,
   ListTree,
   Map,
   Palette,
@@ -11,6 +12,7 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
+import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-image-field";
 import { DrawerLogoFields } from "@/app/editor/_components/drawers/drawer-logo-fields";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
@@ -18,6 +20,8 @@ import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { SettingsSection } from "@/app/editor/_components/ui/settings-section";
 import { SwitchField } from "@/app/editor/_components/ui/switch-field";
+import { TypePill } from "@/app/editor/_components/ui/type-pill";
+import { VIEWPORT_LOGO_POSITIONS } from "@/lib/editor/types/editor-settings";
 import { DEFAULT_GENERAL_STYLE } from "@/lib/editor/constants/default-general-style";
 import { useGeneralSettingsStore } from "@/lib/editor/state/general-settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
@@ -44,6 +48,16 @@ export function GeneralSettingsDrawer() {
   const setSurfaceColors = useGeneralSettingsStore((s) => s.setSurfaceColors);
   const setBottomMenuToken = useGeneralSettingsStore((s) => s.setBottomMenuToken);
   const resetStyle = useGeneralSettingsStore((s) => s.resetStyle);
+  const logoUrl = useGeneralSettingsStore((s) => s.logoUrl);
+  const setLogoUrl = useGeneralSettingsStore((s) => s.setLogoUrl);
+  const logoScale = useGeneralSettingsStore((s) => s.logoScale);
+  const setLogoScale = useGeneralSettingsStore((s) => s.setLogoScale);
+  const logoPosition = useGeneralSettingsStore((s) => s.logoPosition);
+  const setLogoPosition = useGeneralSettingsStore((s) => s.setLogoPosition);
+  const logoShadow = useGeneralSettingsStore((s) => s.logoShadow);
+  const setLogoShadow = useGeneralSettingsStore((s) => s.setLogoShadow);
+  const logoInvert = useGeneralSettingsStore((s) => s.logoInvert);
+  const setLogoInvert = useGeneralSettingsStore((s) => s.setLogoInvert);
   const sceneExplorerEnabled = useGeneralSettingsStore(
     (s) => s.sceneExplorerEnabled,
   );
@@ -100,6 +114,57 @@ export function GeneralSettingsDrawer() {
       </div>
 
       <div className="editor-settings-sections min-h-0 flex-1 space-y-2.5 overflow-y-auto p-4">
+        <SettingsSection title="Logo" icon={<ImageIcon className="h-3.5 w-3.5" />}>
+          <HotspotImageField
+            layout="split"
+            value={logoUrl}
+            onChange={setLogoUrl}
+            uploadLabel="Upload logo"
+            emptyLabel="No logo"
+            hint="Shown at the top of the viewport on every scene (a scene can hide it). PNG / JPG / WebP / SVG / GIF, up to 25 MB."
+            clearTitle="Remove logo"
+            successMessage="Logo applied"
+          />
+          {logoUrl ? (
+            <>
+              <div>
+                <FieldLabel>Position</FieldLabel>
+                <div className="flex flex-wrap gap-1.5">
+                  {VIEWPORT_LOGO_POSITIONS.map((position) => (
+                    <TypePill
+                      key={position.id}
+                      active={logoPosition === position.id}
+                      onClick={() => setLogoPosition(position.id)}
+                    >
+                      {position.label}
+                    </TypePill>
+                  ))}
+                </div>
+              </div>
+              <SliderField
+                label="Logo scale"
+                value={logoScale}
+                display={`${logoScale.toFixed(2)}×`}
+                min={0.4}
+                max={2.5}
+                step={0.05}
+                onChange={setLogoScale}
+              />
+              <SwitchField
+                label="Drop shadow"
+                description="Soft shadow under the logo to lift it off the scene"
+                checked={logoShadow}
+                onChange={setLogoShadow}
+              />
+              <SwitchField
+                label="Invert"
+                description="Invert the logo colors, e.g. a dark logo on a dark scene"
+                checked={logoInvert}
+                onChange={setLogoInvert}
+              />
+            </>
+          ) : null}
+        </SettingsSection>
         <SettingsSection
           title="Scene explorer"
           icon={<Map className="h-3.5 w-3.5" />}

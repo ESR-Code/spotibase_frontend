@@ -1,5 +1,8 @@
 import { z } from "zod";
-import type { DrawerLogoSize } from "@/lib/editor/types/editor-settings";
+import type {
+  DrawerLogoSize,
+  ViewportLogoPosition,
+} from "@/lib/editor/types/editor-settings";
 import type { GeneralStyleSettings } from "@/lib/editor/types/general-style";
 import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 import type { Scene } from "@/lib/editor/types/scene";
@@ -14,6 +17,12 @@ export type ProjectEditorData = {
   primarySceneId: string | null;
   appStartActions: HotspotActionGraph;
   generalStyle: GeneralStyleSettings;
+  /** Project logo (`asset:<id>`), shown on every scene unless the scene hides it. */
+  logoUrl: string;
+  logoScale: number;
+  logoPosition: ViewportLogoPosition;
+  logoShadow: boolean;
+  logoInvert: boolean;
   sceneExplorerEnabled: boolean;
   /** Scene Explorer drawer title. Empty keeps the default “Scene explorer”. */
   sceneExplorerTitle: string;
@@ -120,6 +129,14 @@ export const projectEditorDataSchema = z
     primarySceneId: z.string().nullable().default(null),
     appStartActions: actionGraph,
     generalStyle: looseObject,
+    logoUrl: z.string().catch("").default(""),
+    logoScale: z.number().min(0.4).max(2.5).catch(1).default(1),
+    logoPosition: z
+      .enum(["left", "center", "right"])
+      .catch("center")
+      .default("center"),
+    logoShadow: z.boolean().catch(true).default(true),
+    logoInvert: z.boolean().catch(false).default(false),
     sceneExplorerEnabled: z.boolean().default(false),
     sceneExplorerTitle: z.string().default(""),
     sceneExplorerInset: z.boolean().default(false),

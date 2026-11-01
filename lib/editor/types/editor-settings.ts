@@ -2,6 +2,21 @@ import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 import type { LegendCategory } from "@/lib/editor/types/legend-category";
 
 /** How marker content is presented when a hotspot is opened in preview. */
+/** Horizontal placement of the project logo at the top of the viewport. */
+export type ViewportLogoPosition = "left" | "center" | "right";
+
+export const VIEWPORT_LOGO_POSITIONS: { id: ViewportLogoPosition; label: string }[] = [
+  { id: "left", label: "Left" },
+  { id: "center", label: "Center" },
+  { id: "right", label: "Right" },
+];
+
+export function asViewportLogoPosition(value: unknown): ViewportLogoPosition {
+  return VIEWPORT_LOGO_POSITIONS.some((position) => position.id === value)
+    ? (value as ViewportLogoPosition)
+    : "center";
+}
+
 /** Preview drawer header logo size; `full` = full-width banner. */
 export type DrawerLogoSize = "small" | "medium" | "large" | "full";
 
@@ -119,7 +134,7 @@ export type EditorSettings = {
   legendTitle: string;
   /** Inset the Legend drawer from the top, bottom, and left in Preview. */
   legendInset: boolean;
-  /** Legend drawer logo override (`asset:<id>`); empty falls back to `logoUrl`. */
+  /** Legend drawer logo override (`asset:<id>`); empty falls back to the project logo. */
   legendLogoUrl: string;
   /** Hide the Legend title text when a logo is shown. */
   legendHideTitle: boolean;
@@ -129,10 +144,8 @@ export type EditorSettings = {
   bottomMenuEnabled: boolean;
   /** User-defined legend categories available for hotspot assignment. */
   legendCategories: LegendCategory[];
-  /** Project logo as a data URL or remote URL; empty when unset. */
-  logoUrl: string;
-  /** Display scale for the viewport logo overlay. */
-  logoScale: number;
+  /** Hide the project logo (set in General settings) on this scene. */
+  logoHidden: boolean;
   /** Custom Preview bottom-menu buttons for this scene. */
   customMenuButtons: CustomMenuButton[];
 };

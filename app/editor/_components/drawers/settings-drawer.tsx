@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import { toast } from "@/lib/editor/toast";
 import { DrawerLogoFields } from "@/app/editor/_components/drawers/drawer-logo-fields";
-import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-image-field";
 import { GeoDetailsSection } from "@/app/editor/_components/drawers/geo-details-section";
 import { GeoreferenceSection } from "@/app/editor/_components/drawers/georeference-section";
 import { MapStyleSection } from "@/app/editor/_components/drawers/map-style-section";
@@ -169,27 +168,12 @@ export function SettingsDrawer() {
         ) : null}
 
         <SettingsSection title="Logo" icon={<ImageIcon className="h-3.5 w-3.5" />}>
-          <HotspotImageField
-            layout="split"
-            value={values.logoUrl ?? ""}
-            onChange={(value) => form.setValue("logoUrl", value)}
-            uploadLabel="Upload logo"
-            emptyLabel="No logo"
-            hint="Shown at the top center of the viewport. PNG / JPG / WebP / SVG / GIF, up to 25 MB."
-            clearTitle="Remove logo"
-            successMessage="Logo applied"
+          <SwitchField
+            label="Hide logo"
+            description="Don't show the project logo on this scene. The logo itself is set in General settings."
+            checked={values.logoHidden}
+            onChange={(checked) => form.setValue("logoHidden", checked)}
           />
-          {values.logoUrl ? (
-            <SliderField
-              label="Logo scale"
-              value={values.logoScale}
-              display={`${values.logoScale.toFixed(2)}×`}
-              min={0.4}
-              max={2.5}
-              step={0.05}
-              onChange={(v) => form.setValue("logoScale", v)}
-            />
-          ) : null}
         </SettingsSection>
 
         <SettingsSection title="Hotspots" icon={<MapPin className="h-3.5 w-3.5" />}>

@@ -49,8 +49,7 @@ function pickSettings(state: SettingsState): EditorSettings {
     legendLogoSize: state.legendLogoSize,
     bottomMenuEnabled: state.bottomMenuEnabled,
     legendCategories: state.legendCategories,
-    logoUrl: state.logoUrl,
-    logoScale: state.logoScale,
+    logoHidden: state.logoHidden,
     customMenuButtons: state.customMenuButtons,
   });
 }

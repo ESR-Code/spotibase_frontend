@@ -3,7 +3,10 @@ import {
   cloneGeneralStyle,
   DEFAULT_GENERAL_STYLE,
 } from "@/lib/editor/constants/default-general-style";
-import type { DrawerLogoSize } from "@/lib/editor/types/editor-settings";
+import type {
+  DrawerLogoSize,
+  ViewportLogoPosition,
+} from "@/lib/editor/types/editor-settings";
 import type {
   BottomMenuStyleTokens,
   GeneralStyleGlobalTokens,
@@ -15,6 +18,16 @@ import { GENERAL_STYLE_SURFACES } from "@/lib/editor/types/general-style";
 
 type GeneralSettingsState = {
   style: GeneralStyleSettings;
+  /** Project logo (`asset:<id>` / URL), shown on every scene; empty = none. */
+  logoUrl: string;
+  /** Viewport logo display scale. */
+  logoScale: number;
+  /** Viewport logo placement along the top edge. */
+  logoPosition: ViewportLogoPosition;
+  /** Drop shadow under the viewport logo. */
+  logoShadow: boolean;
+  /** Invert the viewport logo colors (e.g. dark logo on a dark scene). */
+  logoInvert: boolean;
   /** Project-wide Preview Scene Explorer control. Independent of Style Reset. */
   sceneExplorerEnabled: boolean;
   /** Scene Explorer drawer title. Empty keeps the default “Scene explorer”. */
@@ -41,6 +54,11 @@ type GeneralSettingsState = {
   ) => void;
   setStyle: (patch: Partial<GeneralStyleSettings>) => void;
   resetStyle: () => void;
+  setLogoUrl: (value: string) => void;
+  setLogoScale: (value: number) => void;
+  setLogoPosition: (value: ViewportLogoPosition) => void;
+  setLogoShadow: (value: boolean) => void;
+  setLogoInvert: (value: boolean) => void;
   setSceneExplorerEnabled: (value: boolean) => void;
   setSceneExplorerTitle: (value: string) => void;
   setSceneExplorerInset: (value: boolean) => void;
@@ -66,6 +84,11 @@ function mergeSurfaces(
 
 export const useGeneralSettingsStore = create<GeneralSettingsState>((set) => ({
   style: cloneGeneralStyle(DEFAULT_GENERAL_STYLE),
+  logoUrl: "",
+  logoScale: 1,
+  logoPosition: "center",
+  logoShadow: true,
+  logoInvert: false,
   sceneExplorerEnabled: false,
   sceneExplorerTitle: "",
   sceneExplorerInset: false,
@@ -111,6 +134,11 @@ export const useGeneralSettingsStore = create<GeneralSettingsState>((set) => ({
       },
     })),
   resetStyle: () => set({ style: cloneGeneralStyle(DEFAULT_GENERAL_STYLE) }),
+  setLogoUrl: (logoUrl) => set({ logoUrl }),
+  setLogoScale: (logoScale) => set({ logoScale }),
+  setLogoPosition: (logoPosition) => set({ logoPosition }),
+  setLogoShadow: (logoShadow) => set({ logoShadow }),
+  setLogoInvert: (logoInvert) => set({ logoInvert }),
   setSceneExplorerEnabled: (sceneExplorerEnabled) =>
     set({ sceneExplorerEnabled }),
   setSceneExplorerTitle: (sceneExplorerTitle) => set({ sceneExplorerTitle }),
