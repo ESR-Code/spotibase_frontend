@@ -47,6 +47,8 @@ import type {
   MarkerDialogSize,
 } from "@/lib/editor/types/editor-settings";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
+import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
+import { CategorySelect } from "@/app/editor/_components/ui/category-select";
 import {
   syncActiveSceneSettings,
   useActiveScene,
@@ -97,6 +99,7 @@ export function SettingsDrawer() {
   const isModelScene = scene.type === "model";
   const resetPosition = useSettingsStore((s) => s.resetPosition);
   const setSettings = useSettingsStore((s) => s.setSettings);
+  const legendCategories = useSettingsStore((s) => s.legendCategories);
 
   const resetAll = () => {
     resetSettings();
@@ -572,6 +575,29 @@ export function SettingsDrawer() {
                   placeholder="Legend"
                   onChange={(event) => form.setValue("legendTitle", event.target.value)}
                 />
+              </div>
+              <div>
+                <CategorySelect
+                  label="Initial category"
+                  value={
+                    legendCategories.some(
+                      (category) => category.id === values.legendInitialCategory,
+                    )
+                      ? values.legendInitialCategory
+                      : LEGEND_CATEGORY_ALL
+                  }
+                  categories={legendCategories}
+                  includeAllOption
+                  onChange={(value) =>
+                    form.setValue("legendInitialCategory", value)
+                  }
+                />
+                <p
+                  className="mt-1.5 text-[11px]"
+                  style={{ color: "var(--editor-muted)" }}
+                >
+                  Category the legend filter starts on when Preview opens or this scene loads.
+                </p>
               </div>
               <SwitchField
                 label="Inset from edges"

@@ -11,6 +11,7 @@ import { useLayersStore } from "@/lib/editor/state/layers-store";
 import { syncActiveSceneLayers } from "@/lib/editor/state/scenes-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
+import { resolveInitialLegendCategory } from "@/lib/editor/types/legend-category";
 
 /**
  * A dialog or flow owns the keyboard: the shortcuts below must not act on the
@@ -72,6 +73,13 @@ export function useEditorKeyboard() {
           window.dispatchEvent(new CustomEvent("editor:reset-camera"));
         }
         closeAllOverlays();
+        if (isPreview) {
+          useUIStore
+            .getState()
+            .setLegendFilterCategory(
+              resolveInitialLegendCategory(useSettingsStore.getState()),
+            );
+        }
         setPropertiesDrawerOpen(false);
         clearEditorSelection();
       } else if (

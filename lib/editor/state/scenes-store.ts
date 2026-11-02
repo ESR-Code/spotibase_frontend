@@ -52,6 +52,7 @@ import {
   useSettingsStore,
 } from "@/lib/editor/state/settings-store";
 import { cloneActionFences } from "@/lib/editor/types/action-fence";
+import { resolveInitialLegendCategory } from "@/lib/editor/types/legend-category";
 import type { HotspotActionGraph } from "@/lib/editor/types/hotspot-action";
 import {
   cloneGeoReference,
@@ -377,8 +378,17 @@ export const useScenesStore = create<ScenesState>((set, get) => ({
         usePreviewMeshHighlightStore.getState().reset();
         usePreviewSpawnedHotspotsStore.getState().reset();
         cancelPendingWaits();
-        void import("@/lib/editor/actions/run-action-graph").then(
-          ({ runSceneStartActions }) => {
+        void Promise.all([
+          import("@/lib/editor/state/ui-store"),
+          import("@/lib/editor/actions/run-action-graph"),
+        ]).then(
+          ([{ useUIStore }, { runSceneStartActions }]) => {
+            // Start the new scene on its own initial legend category.
+            useUIStore
+              .getState()
+              .setLegendFilterCategory(
+                resolveInitialLegendCategory(useSettingsStore.getState()),
+              );
             void runSceneStartActions(id);
           },
         );

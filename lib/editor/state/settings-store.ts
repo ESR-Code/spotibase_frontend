@@ -47,6 +47,7 @@ function pickSettings(state: SettingsState): EditorSettings {
     legendLogoUrl: state.legendLogoUrl,
     legendHideTitle: state.legendHideTitle,
     legendLogoSize: state.legendLogoSize,
+    legendInitialCategory: state.legendInitialCategory,
     bottomMenuEnabled: state.bottomMenuEnabled,
     legendCategories: state.legendCategories,
     logoHidden: state.logoHidden,

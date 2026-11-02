@@ -11,6 +11,22 @@ export type LegendCategory = {
   color: string;
 };
 
+/**
+ * Legend filter to start Preview / a scene with: the scene's initial category
+ * when the legend is enabled and the category still exists, otherwise “all”.
+ */
+export function resolveInitialLegendCategory(settings: {
+  legendEnabled: boolean;
+  legendInitialCategory?: string;
+  legendCategories: LegendCategory[];
+}): string {
+  const id = settings.legendInitialCategory;
+  if (!settings.legendEnabled || !id) return LEGEND_CATEGORY_ALL;
+  return settings.legendCategories.some((category) => category.id === id)
+    ? id
+    : LEGEND_CATEGORY_ALL;
+}
+
 export function createLegendCategoryId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();

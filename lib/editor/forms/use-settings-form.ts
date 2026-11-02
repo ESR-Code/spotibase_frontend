@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { asDrawerLogoSize } from "@/lib/editor/types/editor-settings";
+import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
 import { DEFAULT_EDITOR_SETTINGS } from "@/lib/editor/constants/default-settings";
 import { useSceneFormReset } from "@/lib/editor/forms/use-scene-form-reset";
 import {
@@ -50,6 +51,8 @@ function toFormValues(
     legendLogoUrl: settings.legendLogoUrl ?? "",
     legendHideTitle: settings.legendHideTitle ?? false,
     legendLogoSize: asDrawerLogoSize(settings.legendLogoSize),
+    legendInitialCategory:
+      settings.legendInitialCategory ?? LEGEND_CATEGORY_ALL,
     bottomMenuEnabled: settings.bottomMenuEnabled ?? true,
     logoHidden: settings.logoHidden ?? false,
   };

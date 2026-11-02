@@ -33,6 +33,7 @@ export const settingsFormSchema = z.object({
   legendLogoUrl: z.string(),
   legendHideTitle: z.boolean(),
   legendLogoSize: z.enum(["small", "medium", "large", "full"]),
+  legendInitialCategory: z.string(),
   bottomMenuEnabled: z.boolean(),
   logoHidden: z.boolean(),
 });

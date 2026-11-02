@@ -12,7 +12,10 @@ import type {
 import { asDrawerLogoSize } from "@/lib/editor/types/editor-settings";
 import { DEFAULT_GEO_MAP_STYLE_ID, isGeoMapStyleId } from "@/lib/editor/geo/map-styles";
 import type { GeoSettings } from "@/lib/editor/types/geo-settings";
-import type { LegendCategory } from "@/lib/editor/types/legend-category";
+import {
+  LEGEND_CATEGORY_ALL,
+  type LegendCategory,
+} from "@/lib/editor/types/legend-category";
 import { DEFAULT_CATEGORY_ICON } from "@/lib/editor/theme/category-icons";
 
 export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
@@ -50,6 +53,7 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   legendLogoUrl: "",
   legendHideTitle: false,
   legendLogoSize: "small",
+  legendInitialCategory: LEGEND_CATEGORY_ALL,
   bottomMenuEnabled: true,
   legendCategories: [],
   logoHidden: false,
@@ -209,6 +213,8 @@ export function cloneEditorSettings(settings: EditorSettings): EditorSettings {
     legendLogoUrl: settings.legendLogoUrl ?? "",
     legendHideTitle: settings.legendHideTitle ?? false,
     legendLogoSize: asDrawerLogoSize(settings.legendLogoSize),
+    legendInitialCategory:
+      settings.legendInitialCategory ?? LEGEND_CATEGORY_ALL,
     bottomMenuEnabled: settings.bottomMenuEnabled ?? true,
     customMenuButtons: cloneCustomMenuButtons(settings.customMenuButtons),
   };

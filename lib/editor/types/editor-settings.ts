@@ -196,6 +196,8 @@ export type EditorSettings = {
   legendHideTitle: boolean;
   /** Legend header logo size. */
   legendLogoSize: DrawerLogoSize;
+  /** Legend category selected when Preview starts / the scene opens; `LEGEND_CATEGORY_ALL` = all. */
+  legendInitialCategory: string;
   /** Show the bottom menu (reset, zoom, labels, custom buttons) in Preview. */
   bottomMenuEnabled: boolean;
   /** User-defined legend categories available for hotspot assignment. */

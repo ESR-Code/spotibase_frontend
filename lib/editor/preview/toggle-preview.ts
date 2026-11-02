@@ -1,7 +1,11 @@
 import { clearEditorSelection } from "@/lib/editor/state/exclusive-selection";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
+import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
-import { LEGEND_CATEGORY_ALL } from "@/lib/editor/types/legend-category";
+import {
+  LEGEND_CATEGORY_ALL,
+  resolveInitialLegendCategory,
+} from "@/lib/editor/types/legend-category";
 
 /** Enter Preview, or leave it and return to the editor. Shared by the header and the P key. */
 export function toggleEditorPreview(): void {
@@ -15,6 +19,11 @@ export function toggleEditorPreview(): void {
     if (keepGeneralSettings) {
       useUIStore.getState().setGeneralSettingsDrawerOpen(true);
     }
+    useUIStore
+      .getState()
+      .setLegendFilterCategory(
+        resolveInitialLegendCategory(useSettingsStore.getState()),
+      );
     useUIStore.getState().setPropertiesDrawerOpen(false);
     useUIStore.getState().setOutlinerCollapsed(true);
     clearEditorSelection();
