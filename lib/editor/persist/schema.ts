@@ -3,6 +3,8 @@ import type {
   DrawerLogoSize,
   PreviewMenuBarPosition,
   PreviewRailSide,
+  SceneTransitionSpeed,
+  SceneTransitionStyle,
   ViewportLogoPosition,
 } from "@/lib/editor/types/editor-settings";
 import type { GeneralStyleSettings } from "@/lib/editor/types/general-style";
@@ -27,6 +29,8 @@ export type ProjectEditorData = {
   logoInvert: boolean;
   menuBarPosition: PreviewMenuBarPosition;
   railSide: PreviewRailSide;
+  sceneTransitionStyle: SceneTransitionStyle;
+  sceneTransitionSpeed: SceneTransitionSpeed;
   sceneExplorerEnabled: boolean;
   /** Scene Explorer drawer title. Empty keeps the default “Scene explorer”. */
   sceneExplorerTitle: string;
@@ -146,6 +150,14 @@ export const projectEditorDataSchema = z
       .catch("bottom")
       .default("bottom"),
     railSide: z.enum(["left", "right"]).catch("left").default("left"),
+    sceneTransitionStyle: z
+      .enum(["default", "minimal", "wipe", "blur"])
+      .catch("default")
+      .default("default"),
+    sceneTransitionSpeed: z
+      .enum(["fast", "normal", "slow"])
+      .catch("normal")
+      .default("normal"),
     sceneExplorerEnabled: z.boolean().default(false),
     sceneExplorerTitle: z.string().default(""),
     sceneExplorerInset: z.boolean().default(false),

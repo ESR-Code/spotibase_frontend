@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   ChevronDown,
+  Clapperboard,
   ImageIcon,
   LayoutTemplate,
   ListTree,
@@ -25,6 +26,8 @@ import { TypePill } from "@/app/editor/_components/ui/type-pill";
 import {
   PREVIEW_MENU_BAR_POSITIONS,
   PREVIEW_RAIL_SIDES,
+  SCENE_TRANSITION_SPEEDS,
+  SCENE_TRANSITION_STYLES,
   VIEWPORT_LOGO_POSITIONS,
 } from "@/lib/editor/types/editor-settings";
 import { DEFAULT_GENERAL_STYLE } from "@/lib/editor/constants/default-general-style";
@@ -57,6 +60,18 @@ export function GeneralSettingsDrawer() {
   const setMenuBarPosition = useGeneralSettingsStore((s) => s.setMenuBarPosition);
   const railSide = useGeneralSettingsStore((s) => s.railSide);
   const setRailSide = useGeneralSettingsStore((s) => s.setRailSide);
+  const sceneTransitionStyle = useGeneralSettingsStore(
+    (s) => s.sceneTransitionStyle,
+  );
+  const setSceneTransitionStyle = useGeneralSettingsStore(
+    (s) => s.setSceneTransitionStyle,
+  );
+  const sceneTransitionSpeed = useGeneralSettingsStore(
+    (s) => s.sceneTransitionSpeed,
+  );
+  const setSceneTransitionSpeed = useGeneralSettingsStore(
+    (s) => s.setSceneTransitionSpeed,
+  );
   const logoUrl = useGeneralSettingsStore((s) => s.logoUrl);
   const setLogoUrl = useGeneralSettingsStore((s) => s.setLogoUrl);
   const logoScale = useGeneralSettingsStore((s) => s.logoScale);
@@ -183,6 +198,24 @@ export function GeneralSettingsDrawer() {
             options={PREVIEW_RAIL_SIDES}
             value={railSide}
             onChange={setRailSide}
+          />
+        </SettingsSection>
+        <SettingsSection
+          title="Scene transition"
+          icon={<Clapperboard className="h-3.5 w-3.5" />}
+        >
+          <PillField
+            label="Splash style"
+            hint="Default: icon + title on a solid cover. Minimal: scene name only. Wipe: the cover sweeps across. Blur: frosted glass over the outgoing scene."
+            options={SCENE_TRANSITION_STYLES}
+            value={sceneTransitionStyle}
+            onChange={setSceneTransitionStyle}
+          />
+          <PillField
+            label="Speed"
+            options={SCENE_TRANSITION_SPEEDS}
+            value={sceneTransitionSpeed}
+            onChange={setSceneTransitionSpeed}
           />
         </SettingsSection>
         <SettingsSection

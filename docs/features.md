@@ -9,7 +9,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 - `/projects/[id]/editor` client app: header, mode toolbar (select / add / preview), outliner, viewport HUD, drawers, dialogs. Legacy `/editor` (and `/editor?project=<id>`) redirects here.
 - Editor deletes (hotspot, action, scene, layer, asset, and the other trash actions) ask “Are you sure you want to delete this …?” before they run. Content blocks are the exception: they delete immediately (Undo restores them). Same dialog for the Delete / Backspace key.
 - Keyboard: `V` select, `A` add, `P` preview, `Escape` / `Delete` for selection (ignored in text fields).
-- Loading overlay, engine error banner, scene-transition splash.
+- Loading overlay, engine error banner, scene-transition splash (General Settings → Scene transition: Default / Minimal / Wipe / Blur style, Fast / Normal / Slow speed; persisted in `editor_data`).
 - Model scenes with GLB clips: viewport clip transport (play / pause / scrub / reset) so authors can freeze a pose in Select/Add. Hidden in Preview; does not run the action graph.
 
 ### Scenes

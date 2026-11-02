@@ -38,6 +38,41 @@ export const PREVIEW_RAIL_SIDES: { id: PreviewRailSide; label: string }[] = [
   { id: "right", label: "Right" },
 ];
 
+/** Visual style of the Go To Scene transition splash. */
+export type SceneTransitionStyle = "default" | "minimal" | "wipe" | "blur";
+
+export const SCENE_TRANSITION_STYLES: {
+  id: SceneTransitionStyle;
+  label: string;
+}[] = [
+  { id: "default", label: "Default" },
+  { id: "minimal", label: "Minimal" },
+  { id: "wipe", label: "Wipe" },
+  { id: "blur", label: "Blur" },
+];
+
+/** Speed of the Go To Scene transition splash. */
+export type SceneTransitionSpeed = "fast" | "normal" | "slow";
+
+export const SCENE_TRANSITION_SPEEDS: {
+  id: SceneTransitionSpeed;
+  label: string;
+}[] = [
+  { id: "fast", label: "Fast" },
+  { id: "normal", label: "Normal" },
+  { id: "slow", label: "Slow" },
+];
+
+/** Base splash fade duration; the overlay CSS reads it via `--scene-transition-fade`. */
+export const SCENE_TRANSITION_FADE_MS = 420;
+
+/** Multiplier applied to the splash fade / hold durations. */
+export const SCENE_TRANSITION_SPEED_FACTOR: Record<SceneTransitionSpeed, number> = {
+  fast: 0.6,
+  normal: 1,
+  slow: 1.6,
+};
+
 /** Preview drawer header logo size; `full` = full-width banner. */
 export type DrawerLogoSize = "small" | "medium" | "large" | "full";
 

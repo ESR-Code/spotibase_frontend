@@ -83,6 +83,10 @@ export function serializeProject(): SerializedProject {
       logoInvert: useGeneralSettingsStore.getState().logoInvert,
       menuBarPosition: useGeneralSettingsStore.getState().menuBarPosition,
       railSide: useGeneralSettingsStore.getState().railSide,
+      sceneTransitionStyle:
+        useGeneralSettingsStore.getState().sceneTransitionStyle,
+      sceneTransitionSpeed:
+        useGeneralSettingsStore.getState().sceneTransitionSpeed,
       sceneExplorerEnabled: useGeneralSettingsStore.getState().sceneExplorerEnabled,
       sceneExplorerTitle: useGeneralSettingsStore.getState().sceneExplorerTitle,
       sceneExplorerInset: useGeneralSettingsStore.getState().sceneExplorerInset,

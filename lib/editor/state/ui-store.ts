@@ -93,6 +93,8 @@ export type SceneTransitionPhase = "in" | "hold" | "out";
 
 export type SceneTransitionState = {
   sceneName: string;
+  /** Target scene thumbnail (`asset:<id>` / URL); empty = none. */
+  thumbnailUrl: string;
   phase: SceneTransitionPhase;
 } | null;
 
@@ -169,7 +171,7 @@ type UIState = {
   closeSpawnTemplateEditor: () => void;
   openSpawnClickActionsEditor: (ownerId: number, nodeId: string) => void;
   closeSpawnClickActionsEditor: () => void;
-  startSceneTransition: (sceneName: string) => void;
+  startSceneTransition: (sceneName: string, thumbnailUrl?: string) => void;
   holdSceneTransition: () => void;
   beginSceneTransitionOut: () => void;
   endSceneTransition: () => void;
@@ -297,8 +299,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   openSpawnClickActionsEditor: (ownerId, nodeId) =>
     set({ spawnClickActionsEditor: { ownerId, nodeId } }),
   closeSpawnClickActionsEditor: () => set({ spawnClickActionsEditor: null }),
-  startSceneTransition: (sceneName) =>
-    set({ sceneTransition: { sceneName, phase: "in" } }),
+  startSceneTransition: (sceneName, thumbnailUrl = "") =>
+    set({ sceneTransition: { sceneName, thumbnailUrl, phase: "in" } }),
   holdSceneTransition: () =>
     set((state) =>
       state.sceneTransition

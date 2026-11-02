@@ -4,11 +4,15 @@ import {
   recordAutomaticSceneHop,
   resetSceneTransitionChain,
 } from "@/lib/editor/actions/scene-transition-chain";
+import { useGeneralSettingsStore } from "@/lib/editor/state/general-settings-store";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
+import {
+  SCENE_TRANSITION_FADE_MS,
+  SCENE_TRANSITION_SPEED_FACTOR,
+} from "@/lib/editor/types/editor-settings";
 import { toast } from "@/lib/editor/toast";
 
-const FADE_MS = 420;
 const HOLD_MS = 380;
 
 /**
@@ -46,9 +50,16 @@ export function transitionToScene(
     resetSceneTransitionChain();
   }
 
+  const speed =
+    SCENE_TRANSITION_SPEED_FACTOR[
+      useGeneralSettingsStore.getState().sceneTransitionSpeed
+    ] ?? 1;
+  const FADE_MS = Math.round(SCENE_TRANSITION_FADE_MS * speed);
+  const holdMs = Math.round(HOLD_MS * speed);
+
   const token = beginSceneTransitionToken();
   const ui = useUIStore.getState();
-  ui.startSceneTransition(scene.name);
+  ui.startSceneTransition(scene.name, scene.thumbnailUrl);
 
   window.setTimeout(() => {
     if (!isSceneTransitionTokenCurrent(token)) return;
@@ -73,7 +84,7 @@ export function transitionToScene(
         if (!isSceneTransitionTokenCurrent(token)) return;
         useUIStore.getState().endSceneTransition();
       }, FADE_MS);
-    }, HOLD_MS);
+    }, holdMs);
   }, FADE_MS);
 
   return "stop";

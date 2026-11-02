@@ -7,6 +7,8 @@ import type {
   DrawerLogoSize,
   PreviewMenuBarPosition,
   PreviewRailSide,
+  SceneTransitionSpeed,
+  SceneTransitionStyle,
   ViewportLogoPosition,
 } from "@/lib/editor/types/editor-settings";
 import type {
@@ -34,6 +36,10 @@ type GeneralSettingsState = {
   menuBarPosition: PreviewMenuBarPosition;
   /** Side of the Scene Explorer / Legend buttons; their drawers open on it too. */
   railSide: PreviewRailSide;
+  /** Go To Scene splash visual style. */
+  sceneTransitionStyle: SceneTransitionStyle;
+  /** Go To Scene splash speed. */
+  sceneTransitionSpeed: SceneTransitionSpeed;
   /** Project-wide Preview Scene Explorer control. Independent of Style Reset. */
   sceneExplorerEnabled: boolean;
   /** Scene Explorer drawer title. Empty keeps the default “Scene explorer”. */
@@ -67,6 +73,8 @@ type GeneralSettingsState = {
   setLogoInvert: (value: boolean) => void;
   setMenuBarPosition: (value: PreviewMenuBarPosition) => void;
   setRailSide: (value: PreviewRailSide) => void;
+  setSceneTransitionStyle: (value: SceneTransitionStyle) => void;
+  setSceneTransitionSpeed: (value: SceneTransitionSpeed) => void;
   setSceneExplorerEnabled: (value: boolean) => void;
   setSceneExplorerTitle: (value: string) => void;
   setSceneExplorerInset: (value: boolean) => void;
@@ -99,6 +107,8 @@ export const useGeneralSettingsStore = create<GeneralSettingsState>((set) => ({
   logoInvert: false,
   menuBarPosition: "bottom",
   railSide: "left",
+  sceneTransitionStyle: "default",
+  sceneTransitionSpeed: "normal",
   sceneExplorerEnabled: false,
   sceneExplorerTitle: "",
   sceneExplorerInset: false,
@@ -151,6 +161,10 @@ export const useGeneralSettingsStore = create<GeneralSettingsState>((set) => ({
   setLogoInvert: (logoInvert) => set({ logoInvert }),
   setMenuBarPosition: (menuBarPosition) => set({ menuBarPosition }),
   setRailSide: (railSide) => set({ railSide }),
+  setSceneTransitionStyle: (sceneTransitionStyle) =>
+    set({ sceneTransitionStyle }),
+  setSceneTransitionSpeed: (sceneTransitionSpeed) =>
+    set({ sceneTransitionSpeed }),
   setSceneExplorerEnabled: (sceneExplorerEnabled) =>
     set({ sceneExplorerEnabled }),
   setSceneExplorerTitle: (sceneExplorerTitle) => set({ sceneExplorerTitle }),
