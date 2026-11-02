@@ -43,6 +43,7 @@ This is a Next.js 16 / React 19 app. The product is **Spotibase** (“3D Hotspot
 | Editor media library (`asset:<id>` refs)  | `lib/editor/assets/`, `app/editor/_components/assets/` |
 | Editor load / save (scenes, editor_data)  | `lib/editor/persist/`, `app/editor/_components/editor-project-loader.tsx`, `drizzle/0004_*.sql` |
 | Undo / redo | `lib/editor/history/`, `docs/decisions.md` |
+| Public viewer (`/view/<projectId>`, embeds) | `app/view/`, `lib/viewer/`, `lib/editor/runtime.ts`, `worker/src/viewer.ts`, `drizzle/0009_*.sql`, `docs/architecture.md` |
 | Feature status                            | `docs/features.md`                                                                  |
 
 

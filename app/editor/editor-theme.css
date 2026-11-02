@@ -6268,6 +6268,16 @@
   color: var(--editor-muted-2);
 }
 
+.editor-root .editor-publish-link-field.is-live {
+  color: var(--editor-fg);
+  border-style: solid;
+}
+
+.editor-root .editor-publish-copy:not(:disabled):hover {
+  color: var(--editor-fg);
+  background: rgba(138, 152, 184, 0.12);
+}
+
 .editor-root .editor-publish-copy:disabled {
   cursor: not-allowed;
   opacity: 0.6;

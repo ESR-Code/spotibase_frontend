@@ -1,6 +1,6 @@
 "use client";
 
-import { resolveAssetSrc } from "@/lib/editor/assets";
+import { resolveAssetSrc } from "@/lib/editor/assets/resolve";
 import { AlertTriangle, Box, Focus, Trash2 } from "lucide-react";
 import { HotspotMarkerIcon } from "@/app/editor/_components/ui/hotspot-marker-icon";
 import { hotspotShapeClass } from "@/lib/editor/theme/hotspot-shape";

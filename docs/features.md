@@ -46,6 +46,15 @@ Status as of the current codebase. “Partial” means code exists but the featu
 ### Publishing
 
 - Header **Publish** button opens a publish dialog: status (Not published / Live vN), Publish / Publish update (saves a dirty draft first), Unpublish, password protection (off by default; set / change / remove), and the 5 retained versions. Each archived version has a publish button that makes that snapshot live and takes the current one offline; the editor draft is not changed. Published versions are immutable `project_versions` snapshots; the Data API cannot write them. Assets used by a retained version are protected from GC and deletion. Pruning always keeps the version that was live, even when it is older than newer archived versions.
+- The dialog's **Share** section shows the viewer link and copyable iframe embed code while a version is live.
+
+### Public viewer
+
+- `/view/<projectId>` (optional `?scene=<slug>`) plays the live published version exactly like editor Preview, for anyone with the link, with no sign-in. It shows the menu bar, legend, scene explorer, dialogs, transitions and action graphs. Editor chrome (HUD, Post Message tester, authoring overlays) is never shown.
+- Password-protected projects show a password prompt (12 h unlock per tab; changing the password or unpublishing revokes unlocks).
+- Embeddable from any site via iframe; a fullscreen button appears when embedded. Studio / editor pages refuse to be framed.
+- "Show once per session" dialogs are remembered per tab (`sessionStorage`).
+- Engines load on demand (no PlayCanvas download for geo-only tours, no MapLibre without geo scenes). Published files are cached `public, immutable`, and the snapshot is edge-cached for 60 s, so a new publish shows within about a minute.
 
 ### Hotspots
 
@@ -126,11 +135,11 @@ These are implied by gaps or comments, not a committed roadmap.
 
 - Autosave.
 - Configurable version retention. Loading an archived snapshot back into the editor.
-- Password verification endpoint for the viewer (the hash and flag are stored; nothing checks them yet).
 - Full project import / export file format.
 - Additional overlay kinds beyond image + shape.
 - Wire or replace hotspot-only JSON export with a project-level format.
 - Replace default Next.js metadata / README with product branding.
 - Org admin (invites, remove member), change sign-in email, profile avatar upload, API secrets, Cloudflare R2 (files, queues). Re-enable signup and email verification when that UI ships. Neon Function for complex server-side work.
-- A viewer route that will be used on prod once a persistent memory (db backend) existed. It will be a lightweight version of editor's preview mode
+- Viewer analytics (see `decisions.md`). Link-unfurl previews (OG title / image) for viewer links: the viewer page is a static shell by design, so it has none.
+- Move `QueryProvider` out of the root layout so `/view` does not load TanStack Query (~13 KB gzip).
 

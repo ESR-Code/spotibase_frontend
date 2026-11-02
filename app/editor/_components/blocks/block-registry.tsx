@@ -1,6 +1,7 @@
 "use client";
 
-import { assetIdFromRef, isAssetRef, useAssetsStore } from "@/lib/editor/assets";
+import { assetIdFromRef, isAssetRef } from "@/lib/editor/assets/types";
+import { useAssetsStore } from "@/lib/editor/assets/assets-store";
 import {
   AppWindow,
   ExternalLink,
@@ -16,28 +17,22 @@ import {
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { ButtonBlockEditor } from "@/app/editor/_components/blocks/button-block-editor";
-import { ButtonBlockPreview } from "@/app/editor/_components/blocks/button-block-preview";
 import { CalloutBlockEditor } from "@/app/editor/_components/blocks/callout-block-editor";
-import { CalloutBlockPreview } from "@/app/editor/_components/blocks/callout-block-preview";
 import {
   DIVIDER_VARIANT_OPTIONS,
   DividerBlockEditor,
 } from "@/app/editor/_components/blocks/divider-block-editor";
-import { DividerBlockPreview } from "@/app/editor/_components/blocks/divider-block-preview";
 import { FileBlockEditor } from "@/app/editor/_components/blocks/file-block-editor";
-import { FileBlockPreview } from "@/app/editor/_components/blocks/file-block-preview";
 import { HeadingBlockEditor } from "@/app/editor/_components/blocks/heading-block-editor";
-import { HeadingBlockPreview } from "@/app/editor/_components/blocks/heading-block-preview";
 import { IframeBlockEditor } from "@/app/editor/_components/blocks/iframe-block-editor";
-import { IframeBlockPreview } from "@/app/editor/_components/blocks/iframe-block-preview";
 import { ImageBlockEditor } from "@/app/editor/_components/blocks/image-block-editor";
-import { ImageBlockPreview } from "@/app/editor/_components/blocks/image-block-preview";
 import { LinkBlockEditor } from "@/app/editor/_components/blocks/link-block-editor";
-import { LinkBlockPreview } from "@/app/editor/_components/blocks/link-block-preview";
 import { TextBlockEditor } from "@/app/editor/_components/blocks/text-block-editor";
-import { TextBlockPreview } from "@/app/editor/_components/blocks/text-block-preview";
 import { VideoBlockEditor } from "@/app/editor/_components/blocks/video-block-editor";
-import { VideoBlockPreview } from "@/app/editor/_components/blocks/video-block-preview";
+import {
+  BLOCK_PREVIEWS,
+  type BlockPreviewProps,
+} from "@/app/editor/_components/blocks/block-preview-registry";
 import { createBlock } from "@/lib/editor/blocks/create-block";
 import type { HttpFieldSource } from "@/lib/editor/blocks/http-field-sources";
 import { richTextToPlainPreview } from "@/lib/editor/blocks/rich-text";
@@ -56,11 +51,6 @@ type BlockEditorProps = {
   fieldSources?: HttpFieldSource[];
 };
 
-type BlockPreviewProps = {
-  block: HotspotBlock;
-  hotspotId?: number;
-};
-
 export type BlockDefinition = {
   type: HotspotBlockType;
   label: string;
@@ -77,18 +67,13 @@ function asBlockEditor(
   return Editor;
 }
 
-function asBlockPreview(
-  Preview: ComponentType<BlockPreviewProps>,
-): ComponentType<BlockPreviewProps> {
-  return Preview;
-}
-
 export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
   heading: {
     type: "heading",
     label: "Heading",
     icon: Heading,
     createDefault: () => createBlock("heading"),
+    Preview: BLOCK_PREVIEWS.heading,
     collapsedPreview: (block) =>
       block.type === "heading" ? block.content.trim() || "Empty heading" : "",
     Editor: asBlockEditor(function HeadingEditorAdapter({
@@ -107,16 +92,13 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
         />
       );
     }),
-    Preview: asBlockPreview(function HeadingPreviewAdapter({ block }) {
-      if (block.type !== "heading") return null;
-      return <HeadingBlockPreview block={block} />;
-    }),
   },
   text: {
     type: "text",
     label: "Text",
     icon: Type,
     createDefault: () => createBlock("text"),
+    Preview: BLOCK_PREVIEWS.text,
     collapsedPreview: (block) =>
       block.type === "text"
         ? richTextToPlainPreview(block.content) || "Empty text"
@@ -139,16 +121,13 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
         />
       );
     }),
-    Preview: asBlockPreview(function TextPreviewAdapter({ block, hotspotId }) {
-      if (block.type !== "text") return null;
-      return <TextBlockPreview block={block} hotspotId={hotspotId} />;
-    }),
   },
   link: {
     type: "link",
     label: "Link",
     icon: ExternalLink,
     createDefault: () => createBlock("link"),
+    Preview: BLOCK_PREVIEWS.link,
     collapsedPreview: (block) =>
       block.type === "link"
         ? block.label.trim() || block.url.trim() || "Empty link"
@@ -169,16 +148,13 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
         />
       );
     }),
-    Preview: asBlockPreview(function LinkPreviewAdapter({ block }) {
-      if (block.type !== "link") return null;
-      return <LinkBlockPreview block={block} />;
-    }),
   },
   image: {
     type: "image",
     label: "Image",
     icon: ImageIcon,
     createDefault: () => createBlock("image"),
+    Preview: BLOCK_PREVIEWS.image,
     collapsedPreview: (block) => {
       if (block.type !== "image") return "";
       const count = block.items.length;
@@ -204,16 +180,13 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
         />
       );
     }),
-    Preview: asBlockPreview(function ImagePreviewAdapter({ block }) {
-      if (block.type !== "image") return null;
-      return <ImageBlockPreview block={block} />;
-    }),
   },
   video: {
     type: "video",
     label: "Video",
     icon: Film,
     createDefault: () => createBlock("video"),
+    Preview: BLOCK_PREVIEWS.video,
     collapsedPreview: (block) =>
       block.type === "video" ? block.url.trim() || "No video" : "",
     Editor: asBlockEditor(function VideoEditorAdapter({
@@ -232,16 +205,13 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
         />
       );
     }),
-    Preview: asBlockPreview(function VideoPreviewAdapter({ block }) {
-      if (block.type !== "video") return null;
-      return <VideoBlockPreview block={block} />;
-    }),
   },
   button: {
     type: "button",
     label: "Action button",
     icon: Zap,
     createDefault: () => createBlock("button"),
+    Preview: BLOCK_PREVIEWS.button,
     collapsedPreview: (block) =>
       block.type === "button" ? block.label.trim() || "Action button" : "",
     Editor: asBlockEditor(function ButtonEditorAdapter({
@@ -260,16 +230,13 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
         />
       );
     }),
-    Preview: asBlockPreview(function ButtonPreviewAdapter({ block, hotspotId }) {
-      if (block.type !== "button") return null;
-      return <ButtonBlockPreview block={block} hotspotId={hotspotId} />;
-    }),
   },
   file: {
     type: "file",
     label: "File",
     icon: FileText,
     createDefault: () => createBlock("file"),
+    Preview: BLOCK_PREVIEWS.file,
     collapsedPreview: (block) => {
       if (block.type !== "file") return "";
       if (block.label.trim()) return block.label.trim();
@@ -295,16 +262,13 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
         />
       );
     }),
-    Preview: asBlockPreview(function FilePreviewAdapter({ block }) {
-      if (block.type !== "file") return null;
-      return <FileBlockPreview block={block} />;
-    }),
   },
   iframe: {
     type: "iframe",
     label: "Embed (iframe)",
     icon: AppWindow,
     createDefault: () => createBlock("iframe"),
+    Preview: BLOCK_PREVIEWS.iframe,
     collapsedPreview: (block) =>
       block.type === "iframe" ? block.url.trim() || "No URL" : "",
     Editor: asBlockEditor(function IframeEditorAdapter({
@@ -323,16 +287,13 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
         />
       );
     }),
-    Preview: asBlockPreview(function IframePreviewAdapter({ block }) {
-      if (block.type !== "iframe") return null;
-      return <IframeBlockPreview block={block} />;
-    }),
   },
   divider: {
     type: "divider",
     label: "Divider",
     icon: SeparatorHorizontal,
     createDefault: () => createBlock("divider"),
+    Preview: BLOCK_PREVIEWS.divider,
     collapsedPreview: (block) =>
       block.type === "divider"
         ? (DIVIDER_VARIANT_OPTIONS.find((option) => option.id === block.variant)
@@ -342,16 +303,13 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
       if (block.type !== "divider") return null;
       return <DividerBlockEditor block={block} onChange={onChange} />;
     }),
-    Preview: asBlockPreview(function DividerPreviewAdapter({ block }) {
-      if (block.type !== "divider") return null;
-      return <DividerBlockPreview block={block} />;
-    }),
   },
   callout: {
     type: "callout",
     label: "Callout",
     icon: Megaphone,
     createDefault: () => createBlock("callout"),
+    Preview: BLOCK_PREVIEWS.callout,
     collapsedPreview: (block) =>
       block.type === "callout"
         ? block.title.trim() || block.content.trim() || "Empty callout"
@@ -371,10 +329,6 @@ export const BLOCK_REGISTRY: Record<HotspotBlockType, BlockDefinition> = {
           onChange={onChange}
         />
       );
-    }),
-    Preview: asBlockPreview(function CalloutPreviewAdapter({ block }) {
-      if (block.type !== "callout") return null;
-      return <CalloutBlockPreview block={block} />;
     }),
   },
 };

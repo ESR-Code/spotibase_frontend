@@ -283,6 +283,27 @@ export const projectPublishSecrets = pgTable(
   ],
 ).enableRLS();
 
+/**
+ * Public viewer unlock tokens (sha256 of the token handed to the viewer after
+ * a correct publish password; 12h). RLS on, no grants: only the
+ * `unlock_published_project` / `get_published_snapshot` functions touch it.
+ * Changing the password or unpublishing deletes a project's rows.
+ */
+export const projectViewerUnlocks = pgTable(
+  "project_viewer_unlocks",
+  {
+    tokenHash: text("token_hash").primaryKey().notNull(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", {
+      withTimezone: true,
+      mode: "string",
+    }).notNull(),
+  },
+  (table) => [index("project_viewer_unlocks_project_id_idx").on(table.projectId)],
+).enableRLS();
+
 export type ProjectFolder = typeof projectFolders.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type Asset = typeof assets.$inferSelect;

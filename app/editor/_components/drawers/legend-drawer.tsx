@@ -1,7 +1,7 @@
 "use client";
 
 import { DrawerHeader } from "@/app/editor/_components/drawers/drawer-brand";
-import { resolveAssetSrc } from "@/lib/editor/assets";
+import { resolveAssetSrc } from "@/lib/editor/assets/resolve";
 import { ListTree } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CategorySelect } from "@/app/editor/_components/ui/category-select";

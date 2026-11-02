@@ -17,6 +17,8 @@ async function proxyToWorker(request: NextRequest, context: RouteContext) {
   const headers = new Headers(request.headers);
   headers.delete("host");
   headers.delete("connection");
+  // Public viewer routes are anonymous: never hand them the session.
+  if (suffix.startsWith("public/")) headers.delete("cookie");
   headers.set(
     "origin",
     request.headers.get("origin") ??

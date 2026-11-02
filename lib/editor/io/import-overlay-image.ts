@@ -1,4 +1,5 @@
-import { assetRef, uploadAsset } from "@/lib/editor/assets";
+import { assetRef } from "@/lib/editor/assets/types";
+import { uploadAsset } from "@/lib/editor/assets/upload-asset";
 
 export const OVERLAY_MAX_BYTES = 25 * 1024 * 1024;
 export const OVERLAY_ACCEPT = "image/png,image/jpeg,image/webp";

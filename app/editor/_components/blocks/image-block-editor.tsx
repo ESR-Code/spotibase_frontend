@@ -9,13 +9,10 @@ import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import type { HttpFieldSource } from "@/lib/editor/blocks/http-field-sources";
 import { createBlockId } from "@/lib/editor/blocks/create-block";
-import {
-  assetRef,
-  IMAGE_ASSET_ACCEPT,
-  isAssetRef,
-  resolveAssetSrc,
-  uploadAsset,
-} from "@/lib/editor/assets";
+import { assetRef, isAssetRef } from "@/lib/editor/assets/types";
+import { resolveAssetSrc } from "@/lib/editor/assets/resolve";
+import { IMAGE_ASSET_ACCEPT } from "@/lib/editor/assets/api";
+import { uploadAsset } from "@/lib/editor/assets/upload-asset";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import type { ImageBlock, ImageBlockItem } from "@/lib/editor/types/hotspot-block";
 

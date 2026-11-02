@@ -28,10 +28,9 @@ import { createPickingController } from "@/lib/editor/engine/picking-controller"
 import { createScene } from "@/lib/editor/engine/scene-manager";
 import { bindViewportInvalidator } from "@/lib/editor/engine/viewport-invalidate";
 import { bindViewportResize } from "@/lib/editor/engine/viewport-resize";
-import {
-  type ImportSubjectDetail,
-  uploadSubjectAsset,
-} from "@/lib/editor/io/import-subject";
+import type { ImportSubjectDetail } from "@/lib/editor/io/import-subject";
+import { isViewerRuntime } from "@/lib/editor/runtime";
+import { markViewportReady } from "@/lib/editor/engine/viewport-ready";
 import {
   getCameraModeForSceneType,
   getSceneType,
@@ -133,6 +132,9 @@ export function usePlayCanvasEditor() {
     if (!canvas) return;
 
     let destroyed = false;
+    // Public viewer: Preview only. Skips authoring wiring (subject import,
+    // saving camera poses, thumbnails, alignment overlay, FPS stats).
+    const viewer = isViewerRuntime();
     let cleanup: (() => void) | undefined;
     let unbindInvalidator: (() => void) | undefined;
     // Set once the controllers exist, so an unmount or a failure during the
@@ -384,6 +386,7 @@ export function usePlayCanvasEditor() {
         const overlayTo = new pc.Vec3();
 
         const projectOverlayMarkers = () => {
+          if (viewer) return;
           const cam = scene.camera.camera;
           if (!cam) {
             useGeoPickOverlayStore.getState().setMarkers([]);
@@ -505,7 +508,7 @@ export function usePlayCanvasEditor() {
           }
 
           fpsAccum += dt;
-          if (fpsAccum >= 0.5) {
+          if (!viewer && fpsAccum >= 0.5) {
             useModelStore
               .getState()
               .setStats(
@@ -664,7 +667,11 @@ export function usePlayCanvasEditor() {
             applyScenePresentation(type);
             cameraCtrl.frameToEntity(scene.modelRoot, { storeHome: true });
             syncKeyLightShadowMode();
-            void uploadSubjectAsset(detail.file, type, sceneId);
+            // Loaded lazily: upload code is editor-only (not in the viewer bundle).
+            void import("@/lib/editor/io/import-subject").then(
+              ({ uploadSubjectAsset }) =>
+                uploadSubjectAsset(detail.file!, type, sceneId),
+            );
             warnAboutSubjectDependents(sceneId);
           }
         };
@@ -818,20 +825,24 @@ export function usePlayCanvasEditor() {
           syncKeyLightShadowMode();
         };
 
-        window.addEventListener("editor:import-subject", onImportSubject);
-        // Back-compat for any remaining GLB import dispatches.
-        window.addEventListener("editor:import-glb", onImportSubject);
+        if (!viewer) {
+          window.addEventListener("editor:import-subject", onImportSubject);
+          // Back-compat for any remaining GLB import dispatches.
+          window.addEventListener("editor:import-glb", onImportSubject);
+          window.addEventListener("editor:set-reset-position", onSetResetPosition);
+          window.addEventListener("editor:set-hotspot-camera", onSetHotspotCamera);
+        }
         window.addEventListener("editor:reset-camera", onResetCamera);
-        window.addEventListener("editor:set-reset-position", onSetResetPosition);
-        window.addEventListener("editor:set-hotspot-camera", onSetHotspotCamera);
         window.addEventListener("editor:zoom", onZoom);
         window.addEventListener("editor:focus-hotspot", onFocusHotspot);
         window.addEventListener("editor:scene-switched", onSceneSwitched);
-        const unregisterCapture = registerViewportCapturer(() => {
-          if (!isPlayCanvasSceneType(getActiveSceneType())) return null;
-          app.render();
-          return captureViewportPreview(canvas, SCENE_THUMBNAIL_MAX_WIDTH);
-        });
+        const unregisterCapture = viewer
+          ? () => {}
+          : registerViewportCapturer(() => {
+              if (!isPlayCanvasSceneType(getActiveSceneType())) return null;
+              app.render();
+              return captureViewportPreview(canvas, SCENE_THUMBNAIL_MAX_WIDTH);
+            });
 
         useModelStore.getState().setEngineReady(true);
         useModelStore.getState().setEngineError(null);
@@ -850,7 +861,10 @@ export function usePlayCanvasEditor() {
             }),
           );
         }
-        toast.success("Welcome to Spotibase — try Preview mode", { id: "editor-welcome" });
+        markViewportReady();
+        if (!viewer) {
+          toast.success("Welcome to Spotibase — try Preview mode", { id: "editor-welcome" });
+        }
 
         cleanup = () => {
           window.removeEventListener("editor:import-subject", onImportSubject);

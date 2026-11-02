@@ -1,7 +1,8 @@
 "use client";
 
 import { Box, FileText, ImageIcon } from "lucide-react";
-import { assetFileUrl, type EditorAsset } from "@/lib/editor/assets";
+import { type EditorAsset } from "@/lib/editor/assets/types";
+import { assetFileUrl } from "@/lib/editor/assets/resolve";
 import { cn } from "@/lib/utils";
 
 export function AssetThumb({

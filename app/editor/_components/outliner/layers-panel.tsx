@@ -23,7 +23,7 @@ import { ColorSwatch } from "@/app/editor/_components/ui/color-swatch";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { TypePill } from "@/app/editor/_components/ui/type-pill";
-import { resolveAssetSrc } from "@/lib/editor/assets";
+import { resolveAssetSrc } from "@/lib/editor/assets/resolve";
 import { defaultOverlayWidthMeters } from "@/lib/editor/geo/overlay-quad";
 import {
   OVERLAY_ACCEPT,

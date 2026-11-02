@@ -14,7 +14,7 @@ import { getBlockDefinition } from "@/app/editor/_components/blocks/block-regist
 import { AddBlockMenu } from "@/app/editor/_components/drawers/add-block-menu";
 import { BlockCardMenu } from "@/app/editor/_components/drawers/block-card-menu";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
-import { useAssetsStore } from "@/lib/editor/assets";
+import { useAssetsStore } from "@/lib/editor/assets/assets-store";
 import { createBlock, duplicateBlock } from "@/lib/editor/blocks/create-block";
 import {
   listHttpFieldSources,

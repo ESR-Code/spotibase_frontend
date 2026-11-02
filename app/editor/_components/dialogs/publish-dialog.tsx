@@ -3,7 +3,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Check,
+  Code2,
   Copy,
+  ExternalLink,
   Eye,
   EyeOff,
   Globe,
@@ -312,19 +314,8 @@ function PublishSettings({ onClose }: { onClose: () => void }) {
           ) : null}
         </Section>
 
-        <Section
-          title="Viewer link"
-          aside={<span className="editor-publish-soon">Coming soon</span>}
-        >
-          <div className="editor-publish-link-field" aria-disabled>
-            <Link2 className="h-3.5 w-3.5 shrink-0" />
-            <span className="min-w-0 flex-1 truncate">
-              A shareable link appears here once the viewer ships.
-            </span>
-            <button type="button" className="editor-publish-copy" disabled title="Copy link">
-              <Copy className="h-3.5 w-3.5" />
-            </button>
-          </div>
+        <Section title="Share">
+          <ShareLinks projectId={projectId} live={live != null} protectedOn={protectedOn} />
         </Section>
 
         <Section
@@ -743,6 +734,94 @@ function PasswordInput({
       {error ? (
         <div id={`${id}-error`} className="editor-publish-error">
           {error}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Public viewer URL for a project (`/view/<projectId>`). */
+function viewerUrl(projectId: string): string {
+  return `${window.location.origin}/view/${projectId}`;
+}
+
+function embedSnippet(url: string): string {
+  return `<iframe src="${url}" width="100%" height="600" style="border:0" allow="fullscreen; xr-spatial-tracking" allowfullscreen></iframe>`;
+}
+
+function ShareLinks({
+  projectId,
+  live,
+  protectedOn,
+}: {
+  projectId: string | null;
+  live: boolean;
+  protectedOn: boolean;
+}) {
+  const [copied, setCopied] = useState<"link" | "embed" | null>(null);
+  if (!projectId || !live) {
+    return (
+      <div className="editor-publish-link-field" aria-disabled>
+        <Link2 className="h-3.5 w-3.5 shrink-0" />
+        <span className="min-w-0 flex-1 truncate">
+          Publish to get a viewer link and embed code.
+        </span>
+      </div>
+    );
+  }
+  const url = viewerUrl(projectId);
+  const snippet = embedSnippet(url);
+  const copy = async (what: "link" | "embed", text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(what);
+      window.setTimeout(() => setCopied((c) => (c === what ? null : c)), 1500);
+    } catch {
+      toast.error("Could not copy to the clipboard");
+    }
+  };
+  return (
+    <div className="space-y-2">
+      <div className="editor-publish-link-field is-live">
+        <Link2 className="h-3.5 w-3.5 shrink-0" />
+        <span className="min-w-0 flex-1 truncate" title={url}>
+          {url}
+        </span>
+        <a
+          className="editor-publish-copy"
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Open viewer"
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+        <button
+          type="button"
+          className="editor-publish-copy"
+          title="Copy link"
+          onClick={() => void copy("link", url)}
+        >
+          {copied === "link" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+        </button>
+      </div>
+      <div className="editor-publish-link-field is-live">
+        <Code2 className="h-3.5 w-3.5 shrink-0" />
+        <code className="min-w-0 flex-1 truncate text-[11px]" title={snippet}>
+          {snippet}
+        </code>
+        <button
+          type="button"
+          className="editor-publish-copy"
+          title="Copy embed code"
+          onClick={() => void copy("embed", snippet)}
+        >
+          {copied === "embed" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+        </button>
+      </div>
+      {protectedOn ? (
+        <div className="text-[11px]" style={{ color: "var(--editor-muted)" }}>
+          Viewers enter the password first, including inside an embed.
         </div>
       ) : null}
     </div>

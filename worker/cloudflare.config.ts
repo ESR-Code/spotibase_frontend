@@ -20,6 +20,8 @@ export default defineConfig({
 			R2_ACCESS_KEY_ID: bindings.secret(),
 			R2_SECRET_ACCESS_KEY: bindings.secret(),
 			R2_BUCKET_NAME: bindings.secret(),
+			// Execute-only `spotibase_viewer` role (scripts/create-viewer-role.mjs).
+			VIEWER_DATABASE_URL: bindings.secret(),
 			// Presigned PUTs always hit the real bucket, so storage only works in
 			// dev with R2_REMOTE=true (needs R2 enabled and a Cloudflare login).
 			ASSETS: bindings.r2({
@@ -37,6 +39,19 @@ export default defineConfig({
 			DATA_RATE_LIMIT: bindings.rateLimit({
 				namespace: "1002",
 				simple: { limit: 120, period: 60 },
+			}),
+			// Public viewer: snapshot loads, password attempts, published files.
+			VIEWER_RATE_LIMIT: bindings.rateLimit({
+				namespace: "1004",
+				simple: { limit: 60, period: 60 },
+			}),
+			VIEWER_UNLOCK_RATE_LIMIT: bindings.rateLimit({
+				namespace: "1005",
+				simple: { limit: 10, period: 60 },
+			}),
+			VIEWER_FILES_RATE_LIMIT: bindings.rateLimit({
+				namespace: "1006",
+				simple: { limit: 1000, period: 60 },
 			}),
 		},
 	},

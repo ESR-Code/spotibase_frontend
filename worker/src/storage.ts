@@ -15,7 +15,7 @@ import {
 	UUID,
 } from "./storage-common";
 
-const PROJECT_KEY_RE = new RegExp(`^orgs/(${UUID})/projects/(${UUID})/(.+)$`, "i");
+export const PROJECT_KEY_RE = new RegExp(`^orgs/(${UUID})/projects/(${UUID})/(.+)$`, "i");
 const THUMBNAIL_FILE_RE = new RegExp(`^thumbnails/${UUID}\\.webp$`, "i");
 
 const THUMBNAIL_TYPE = "image/webp";
@@ -174,21 +174,43 @@ export async function handleFiles(request: Request, path: string, token: string)
 		}
 	}
 
-	const object = await env.ASSETS.get(key, { onlyIf: request.headers });
+	return serveR2Object(request, key, "private, max-age=31536000, immutable");
+}
+
+/**
+ * Stream one R2 object with the shared file headers. Supports conditional
+ * requests and single `Range` requests (large GLBs). Keys are unique per
+ * upload, so callers pass an `immutable` cache-control.
+ */
+export async function serveR2Object(request: Request, key: string, cacheControl: string) {
+	const hasRange = request.method === "GET" && request.headers.has("range");
+	const object = await env.ASSETS.get(key, {
+		onlyIf: request.headers,
+		...(hasRange ? { range: request.headers } : {}),
+	});
 	if (!object) return json(404, { error: "Not found." });
 
 	const headers = new Headers();
 	object.writeHttpMetadata(headers);
 	headers.set("etag", object.httpEtag);
-	// Keys are unique per upload, so the bytes behind a key never change.
-	headers.set("cache-control", "private, max-age=31536000, immutable");
+	headers.set("cache-control", cacheControl);
+	headers.set("accept-ranges", "bytes");
 	// Files are served from the app origin; uploaded SVG/HTML must never run script.
 	headers.set("x-content-type-options", "nosniff");
 	headers.set("content-security-policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
 
 	if (!("body" in object) || request.method === "HEAD") {
 		const status = "body" in object ? 200 : 304;
+		if ("body" in object) headers.set("content-length", String(object.size));
 		return new Response(null, { status, headers });
+	}
+	const range = hasRange ? object.range : undefined;
+	if (range && "offset" in range) {
+		const offset = range.offset ?? 0;
+		const length = range.length ?? object.size - offset;
+		headers.set("content-range", `bytes ${offset}-${offset + length - 1}/${object.size}`);
+		headers.set("content-length", String(length));
+		return new Response(object.body, { status: 206, headers });
 	}
 	headers.set("content-length", String(object.size));
 	return new Response(object.body, { headers });

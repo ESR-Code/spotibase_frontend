@@ -1,12 +1,9 @@
 "use client";
 
-import {
-  assetFileUrl,
-  assetIdFromRef,
-  formatAssetSize,
-  useAssetsStore,
-  type EditorAsset,
-} from "@/lib/editor/assets";
+import { assetIdFromRef, type EditorAsset } from "@/lib/editor/assets/types";
+import { useAssetsStore } from "@/lib/editor/assets/assets-store";
+import { assetFileUrl } from "@/lib/editor/assets/resolve";
+import { formatAssetSize } from "@/lib/editor/assets/api";
 import { useInterpolatedPlainText } from "@/lib/editor/blocks/use-interpolated-plain-text";
 import { normalizeExternalUrl } from "@/lib/editor/utils/open-external-url";
 import type { FileBlock } from "@/lib/editor/types/hotspot-block";

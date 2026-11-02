@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from "react";
 import { Layers } from "lucide-react";
-import { resolveAssetSrc } from "@/lib/editor/assets";
+import { resolveAssetSrc } from "@/lib/editor/assets/resolve";
 import { useGeneralSettingsStore } from "@/lib/editor/state/general-settings-store";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import {

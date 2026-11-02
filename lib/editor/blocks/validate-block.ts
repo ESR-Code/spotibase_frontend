@@ -1,4 +1,5 @@
-import { isAssetRef, isMissingAssetRef } from "@/lib/editor/assets";
+import { isAssetRef } from "@/lib/editor/assets/types";
+import { isMissingAssetRef } from "@/lib/editor/assets/resolve";
 import { hasFieldTokens } from "@/lib/editor/actions/interpolate-fields";
 import { chainFromTrigger } from "@/lib/editor/actions/graph-ops";
 import { iframeUrlError } from "@/lib/editor/blocks/embed-iframe-url";

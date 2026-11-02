@@ -1,6 +1,6 @@
 "use client";
 
-import { resolveAssetSrc } from "@/lib/editor/assets";
+import { resolveAssetSrc } from "@/lib/editor/assets/resolve";
 import { MapMarker, MarkerContent } from "@/components/ui/map";
 import { HotspotMarkerIcon } from "@/app/editor/_components/ui/hotspot-marker-icon";
 import { useEditorStore } from "@/lib/editor/state/editor-store";

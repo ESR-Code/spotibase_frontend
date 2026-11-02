@@ -3,7 +3,7 @@
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
-import { useAssetSrc } from "@/lib/editor/assets";
+import { useAssetSrc } from "@/lib/editor/assets/resolve";
 import { useGeneralSettingsStore } from "@/lib/editor/state/general-settings-store";
 import type { DrawerLogoSize } from "@/lib/editor/types/editor-settings";
 import { cn } from "@/lib/utils";

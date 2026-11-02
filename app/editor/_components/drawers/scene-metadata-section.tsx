@@ -4,7 +4,8 @@ import { Camera, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { HotspotImageField } from "@/app/editor/_components/drawers/hotspot-image-field";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
-import { assetRef, uploadAsset } from "@/lib/editor/assets";
+import { assetRef } from "@/lib/editor/assets/types";
+import { uploadAsset } from "@/lib/editor/assets/upload-asset";
 import {
   captureActiveViewport,
   dataUrlToJpegFile,

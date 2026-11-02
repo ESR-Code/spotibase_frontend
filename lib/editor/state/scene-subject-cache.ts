@@ -1,5 +1,6 @@
 import { assetRef } from "@/lib/editor/assets/types";
 import { resolveAssetSrc } from "@/lib/editor/assets/resolve";
+import { isViewerRuntime } from "@/lib/editor/runtime";
 import type { SceneTypeId } from "@/lib/editor/types/scene-type";
 
 export type CachedSubject = {
@@ -34,14 +35,17 @@ export const sceneSubjectCache = {
   },
 };
 
-/** Downloads a subject asset once per session (`/gateway/files/...`). */
+/** Downloads a subject asset once per session (`/gateway/files/...`, or `/gateway/public/files/...` in the viewer). */
 export function fetchSubjectBlob(assetId: string): Promise<Blob> {
   const existing = fetched.get(assetId);
   if (existing) return existing;
   const url = resolveAssetSrc(assetRef(assetId));
   const promise = (async () => {
     if (!url) throw new Error("Subject asset is missing from the library");
-    const response = await fetch(url, { credentials: "include" });
+    // The viewer is anonymous: never attach a session to published files.
+    const response = await fetch(url, {
+      credentials: isViewerRuntime() ? "omit" : "include",
+    });
     if (!response.ok) throw new Error(`Subject download failed (${response.status})`);
     return response.blob();
   })();

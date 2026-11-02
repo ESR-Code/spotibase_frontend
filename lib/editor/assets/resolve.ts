@@ -1,3 +1,4 @@
+import { viewerRuntime } from "@/lib/editor/runtime";
 import { useAssetsStore } from "@/lib/editor/assets/assets-store";
 import {
   assetIdFromRef,
@@ -5,8 +6,16 @@ import {
   type EditorAsset,
 } from "@/lib/editor/assets/types";
 
+/**
+ * Same-origin URL for an asset's bytes. The editor reads through the
+ * session-checked `/files` route; the public viewer reads the published copy
+ * through `/public/files` (plus the unlock token for protected projects).
+ */
 export function assetFileUrl(asset: Pick<EditorAsset, "r2Key">): string {
-  return `/gateway/files/${asset.r2Key}`;
+  const viewer = viewerRuntime();
+  if (!viewer) return `/gateway/files/${asset.r2Key}`;
+  const token = viewer.token ? `?vt=${encodeURIComponent(viewer.token)}` : "";
+  return `/gateway/public/files/${asset.r2Key}${token}`;
 }
 
 /**

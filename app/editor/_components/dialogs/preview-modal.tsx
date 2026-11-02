@@ -1,6 +1,6 @@
 "use client";
 
-import { resolveAssetSrc } from "@/lib/editor/assets";
+import { resolveAssetSrc } from "@/lib/editor/assets/resolve";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useCallback, useEffect, type ReactNode } from "react";
 import { HotspotBlocksPreview } from "@/app/editor/_components/blocks/hotspot-blocks-preview";

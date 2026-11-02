@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import type { Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
 import { toast } from "@/lib/editor/toast";
+import { isViewerRuntime } from "@/lib/editor/runtime";
+import { markViewportReady } from "@/lib/editor/engine/viewport-ready";
 import { runHotspotActions } from "@/lib/editor/actions/run-hotspot-actions";
 import { captureViewportPreview } from "@/lib/editor/engine/capture-viewport-preview";
 import {
@@ -475,15 +477,21 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
 
     window.addEventListener("editor:reset-camera", onResetCamera);
     window.addEventListener("editor:zoom", onZoom);
-    window.addEventListener("editor:set-reset-position", onSetResetPosition);
-    window.addEventListener("editor:set-hotspot-camera", onSetHotspotCamera);
+    // Public viewer: Preview only, no authoring of poses or thumbnails.
+    const viewer = isViewerRuntime();
+    if (!viewer) {
+      window.addEventListener("editor:set-reset-position", onSetResetPosition);
+      window.addEventListener("editor:set-hotspot-camera", onSetHotspotCamera);
+    }
     window.addEventListener("editor:focus-hotspot", onFocusHotspot);
     window.addEventListener("editor:scene-switched", onSceneSwitched);
-    const unregisterCapture = registerViewportCapturer(() => {
-      const canvas = map.getCanvas();
-      if (!canvas) return null;
-      return captureViewportPreview(canvas, SCENE_THUMBNAIL_MAX_WIDTH);
-    });
+    const unregisterCapture = viewer
+      ? () => {}
+      : registerViewportCapturer(() => {
+          const canvas = map.getCanvas();
+          if (!canvas) return null;
+          return captureViewportPreview(canvas, SCENE_THUMBNAIL_MAX_WIDTH);
+        });
 
     const unsubEditor = useEditorStore.subscribe(() => syncOverlayAnchors(map));
     const unsubUi = useUIStore.subscribe(() => syncOverlayAnchors(map));
@@ -496,6 +504,7 @@ export function useGeoMapEditor(map: MapLibreMap | null, isLoaded: boolean) {
     const unsubSpawned = usePreviewSpawnedHotspotsStore.subscribe(() =>
       syncOverlayAnchors(map),
     );
+    markViewportReady();
 
     return () => {
       map.off("click", onClick);

@@ -50,7 +50,10 @@ type EditorState = {
   draggingId: number | null;
   previewDown: { x: number; y: number; id: number | null } | null;
   previewDragged: boolean;
+  /** `"preview"` toggles Preview (header button / P key). */
   setMode: (mode: EditorMode | "preview") => void;
+  /** Idempotent: enter Preview if not already in it (public viewer boot). */
+  enterPreview: () => void;
   addHotspot: (position: Vec3, data?: Partial<Omit<Hotspot, "id" | "position">>) => Hotspot;
   updateHotspot: (id: number, patch: Partial<Hotspot>) => void;
   removeHotspot: (id: number) => void;
@@ -204,6 +207,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       previewDragged: false,
     });
     cancelPendingWaits();
+  },
+
+  enterPreview: () => {
+    if (!get().isPreview) get().setMode("preview");
   },
 
   addHotspot: (position, data = {}) => {

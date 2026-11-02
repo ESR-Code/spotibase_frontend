@@ -76,7 +76,7 @@ const ASSET_RULES: Record<AssetKind, { types: Record<string, string>; maxBytes: 
 };
 
 const SHA256_RE = /^[0-9a-f]{64}$/;
-const ASSET_FILE_RE = new RegExp(`^(${UUID})\\.([a-z0-9]+)$`, "i");
+export const ASSET_FILE_RE = new RegExp(`^(${UUID})\\.([a-z0-9]+)$`, "i");
 
 function isAssetKind(value: unknown): value is AssetKind {
 	return value === "model" || value === "image" || value === "other";

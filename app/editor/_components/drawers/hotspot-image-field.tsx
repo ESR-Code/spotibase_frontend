@@ -5,14 +5,10 @@ import { useState, type ReactNode } from "react";
 import { toast } from "@/lib/editor/toast";
 import { AssetPickerButton } from "@/app/editor/_components/assets/asset-picker-button";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
-import {
-  assetRef,
-  IMAGE_ASSET_ACCEPT,
-  isAssetRef,
-  uploadAsset,
-  useAssetSrc,
-  useIsMissingAssetRef,
-} from "@/lib/editor/assets";
+import { assetRef, isAssetRef } from "@/lib/editor/assets/types";
+import { useAssetSrc, useIsMissingAssetRef } from "@/lib/editor/assets/resolve";
+import { IMAGE_ASSET_ACCEPT } from "@/lib/editor/assets/api";
+import { uploadAsset } from "@/lib/editor/assets/upload-asset";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
 import { cn } from "@/lib/utils";
 

@@ -11,6 +11,21 @@ const nextConfig: NextConfig = {
       },
     ];
     return [
+      // Published tours can be embedded anywhere; the rest of the app
+      // (studio, editor, auth) may only be framed by itself.
+      {
+        source: "/view/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors *" },
+        ],
+      },
+      {
+        source: "/:path((?!view(?:/|$)).*)",
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+        ],
+      },
       { source: "/maplibre-gl-worker.mjs", headers: javascript },
       { source: "/maplibre-gl-shared.mjs", headers: javascript },
     ];

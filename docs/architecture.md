@@ -144,11 +144,28 @@ Publish dialog (header) → publishCurrentProject (lib/editor/publish/)
   rpc/republish_project_version(project, version)   # archived snapshot becomes live; draft unchanged
 ```
 
-- `project_versions` snapshot (`formatVersion: 1`): `editorRevision`, `project`, `editorData`, `scenes[]` (same row shape as `sceneRowSchema`), and an `assets` map (`r2Key`, kind, type, size) of the referenced ready assets. `asset_ids uuid[]` lists every referenced asset so the Worker GC does not parse snapshots. At most one `published` row per project (partial unique index).
+- `project_versions` snapshot (`formatVersion: 1`): `editorRevision`, `project` (`id`, `name`), `editorData`, `scenes[]` (same row shape as `sceneRowSchema`), and an `assets` map (`r2Key`, kind, contentType, width, height) of the referenced ready assets. `asset_ids uuid[]` lists every referenced asset so the Worker GC does not parse snapshots. At most one `published` row per project (partial unique index).
 - The Data API can only `SELECT` versions (`REVOKE` of all write privileges + a select-only policy). Writes go through `publish_project_version`, `republish_project_version`, `unpublish_project`, and `set_project_publish_password`, which check `public.is_org_member` themselves. The browser sends no snapshot.
 - Retention: 5 versions per project (live included, archived ones count). Pruning runs inside publish and deletes the row and its `asset_ids` together. The new row and the row that was live are always kept, even when that live row is older than newer archived versions; the remaining slots go to the highest version numbers. Asset rows and R2 objects are never touched there. `republish_project_version` (migration `0008`) only swaps which row is `published`.
 - Worker GC (`assets/gc`) keeps assets referenced by the saved draft **and** by any retained version (versions are read after the draft; a failed read aborts the sweep). `DELETE .../assets/:id` returns 409 while a retained version uses the asset.
-- Password: set / cleared only through `set_project_publish_password` (min 8 chars, `crypt`/bcrypt). The hash is in `project_publish_secrets`, which the Data API cannot read. Verification belongs to the future viewer.
+- Password: set / cleared only through `set_project_publish_password` (min 8 chars, `crypt`/bcrypt). The hash is in `project_publish_secrets`, which the Data API cannot read. The viewer verifies it (below).
+
+### Public viewer
+
+```
+/view/[id] (static shell, generateStaticParams → [], ssr:false client)
+  ViewerApp: GET /gateway/public/projects/:id/snapshot   (password? POST …/unlock → token)
+  parsePublishedSnapshot → bootViewerProject: setViewerRuntime + hydrateProject (+ ?scene=slug)
+  ViewerShell (.editor-root data-preview="true") → whenViewportReady → enterViewerPreview
+Worker /public/* (worker/src/viewer.ts) → Postgres as `spotibase_viewer` (no Data API, no cookie)
+```
+
+- **DB access.** The Neon Data API needs a JWT, so anonymous reads go from the Worker straight to Postgres (`@neondatabase/serverless`, secret `VIEWER_DATABASE_URL`) as the login role `spotibase_viewer`. It is created by `scripts/create-viewer-role.mjs` (SQL, not `neon roles create`, which would grant `neon_superuser`) and only inherits `viewer_reader` (migration `0009`), which can EXECUTE `get_published_snapshot`, `unlock_published_project` and `is_published_asset` and nothing else. Those functions are not granted to `authenticated` / `anonymous`, so password guessing only goes through the Worker's rate limit.
+- **Password.** `unlock_published_project` checks the bcrypt hash and stores `sha256(token)` in `project_viewer_unlocks` (12 h, no grants). The raw token goes back in JSON. The client keeps it in `sessionStorage` and sends `x-viewer-token` (snapshot) / `?vt=` (files). Changing the password or unpublishing deletes the project's unlocks.
+- **Files.** `GET /public/files/<key>` serves only `orgs/{org}/projects/{project}/assets/{assetId}.{ext}` keys whose asset id is in the live version's `asset_ids`. Unprotected: `public, max-age=31536000, immutable`; protected: `private`. Range requests return 206 (`serveR2Object`, shared with `/files`). The ownership check result is edge-cached 60 s (Cache API).
+- **Snapshot.** Unprotected snapshots are edge-cached 60 s and sent `public, max-age=0, s-maxage=60, stale-while-revalidate=300`; protected ones are `no-store`. Rate limits: `VIEWER_RATE_LIMIT` (snapshot), `VIEWER_UNLOCK_RATE_LIMIT` (10/min per IP + project), `VIEWER_FILES_RATE_LIMIT`.
+- **Client runtime.** `lib/editor/runtime.ts` (`isViewerRuntime`) is set once at boot. It switches `assetFileUrl` to `/gateway/public/files/…`, sends subject fetches without credentials, backs show-once dialogs with `sessionStorage`, and makes the PlayCanvas / MapLibre hooks skip authoring wiring (subject import, pose capture, thumbnails, alignment overlay, FPS stats). Everything else is the editor's Preview runtime unchanged. The gateway strips cookies on `public/*`.
+- **Framing.** `next.config.ts` sends `frame-ancestors *` on `/view/*` and `frame-ancestors 'self'` + `X-Frame-Options: SAMEORIGIN` everywhere else.
 
 - Media: `lib/editor/assets/` (`useAssetsStore` project library, `uploadAsset`, `resolveAssetSrc`, `collectAssetRefs`). Asset Library dialog: project menu → Assets.
 

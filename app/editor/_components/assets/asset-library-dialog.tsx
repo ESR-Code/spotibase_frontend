@@ -19,15 +19,10 @@ import { EditorChip } from "@/app/editor/_components/ui/editor-chip";
 import { confirmDelete } from "@/lib/editor/confirm";
 import { EditorDialog } from "@/app/editor/_components/ui/editor-dialog";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
-import {
-  deleteProjectAsset,
-  formatAssetSize,
-  renameProjectAsset,
-  useAssetsStore,
-  type AssetUsage,
-  type EditorAsset,
-  type EditorAssetKind,
-} from "@/lib/editor/assets";
+import { type EditorAsset, type EditorAssetKind } from "@/lib/editor/assets/types";
+import { useAssetsStore } from "@/lib/editor/assets/assets-store";
+import { deleteProjectAsset, formatAssetSize, renameProjectAsset } from "@/lib/editor/assets/api";
+import { type AssetUsage } from "@/lib/editor/assets/collect-asset-refs";
 import { readLiveAssetRefs } from "@/lib/editor/assets/live-asset-refs";
 import { useUIStore } from "@/lib/editor/state/ui-store";
 import { toast } from "@/lib/editor/toast";

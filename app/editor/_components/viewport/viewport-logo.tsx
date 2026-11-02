@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useAssetSrc } from "@/lib/editor/assets";
+import { useAssetSrc } from "@/lib/editor/assets/resolve";
 import { useGeneralSettingsStore } from "@/lib/editor/state/general-settings-store";
 import { useSettingsStore } from "@/lib/editor/state/settings-store";
 import type { ViewportLogoPosition } from "@/lib/editor/types/editor-settings";

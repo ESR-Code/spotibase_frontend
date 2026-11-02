@@ -4,15 +4,10 @@ import { ImageOff, ImagePlus, Loader2, Trash2, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { AssetPickerButton } from "@/app/editor/_components/assets/asset-picker-button";
 import { useImageUpload } from "@/app/editor/_components/drawers/hotspot-image-field";
-import {
-  assetIdFromRef,
-  assetRef,
-  formatAssetSize,
-  IMAGE_ASSET_ACCEPT,
-  useAssetSrc,
-  useAssetsStore,
-  useIsMissingAssetRef,
-} from "@/lib/editor/assets";
+import { assetIdFromRef, assetRef } from "@/lib/editor/assets/types";
+import { useAssetsStore } from "@/lib/editor/assets/assets-store";
+import { useAssetSrc, useIsMissingAssetRef } from "@/lib/editor/assets/resolve";
+import { formatAssetSize, IMAGE_ASSET_ACCEPT } from "@/lib/editor/assets/api";
 import { toast } from "@/lib/editor/toast";
 import { cn } from "@/lib/utils";
 

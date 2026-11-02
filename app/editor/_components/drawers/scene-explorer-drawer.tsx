@@ -1,7 +1,7 @@
 "use client";
 
 import { DrawerHeader } from "@/app/editor/_components/drawers/drawer-brand";
-import { resolveAssetSrc } from "@/lib/editor/assets";
+import { resolveAssetSrc } from "@/lib/editor/assets/resolve";
 import { Layers, Map } from "lucide-react";
 import { LegendButton } from "@/app/editor/_components/drawers/legend-drawer";
 import { GlassPanel } from "@/app/editor/_components/ui/glass-panel";

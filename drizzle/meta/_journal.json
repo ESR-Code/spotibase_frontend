@@ -64,6 +64,13 @@
       "when": 1791150000000,
       "tag": "0008_republish_project_version",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791160000000,
+      "tag": "0009_public_viewer",
+      "breakpoints": true
     }
   ]
 }

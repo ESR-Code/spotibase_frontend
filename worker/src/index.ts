@@ -10,6 +10,7 @@ import {
 	withCors,
 } from "./http";
 import { handleFiles, handleStorage } from "./storage";
+import { handlePublic } from "./viewer";
 
 const AUTH_WRITES = [
 	"/sign-in/email",
@@ -44,6 +45,10 @@ export default {
 			}
 			if (pathname.startsWith("/storage/")) {
 				return await handleStorageRequest(request, url);
+			}
+			if (pathname.startsWith("/public/")) {
+				// Anonymous viewer reads; never forwards the session cookie.
+				return withCors(request, env.APP_ORIGIN, await handlePublic(request, url));
 			}
 			if (pathname.startsWith("/files/")) {
 				return await handleFilesRequest(request, url);

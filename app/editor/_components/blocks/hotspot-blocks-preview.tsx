@@ -1,6 +1,6 @@
 "use client";
 
-import { getBlockDefinition } from "@/app/editor/_components/blocks/block-registry";
+import { BLOCK_PREVIEWS } from "@/app/editor/_components/blocks/block-preview-registry";
 import type { HotspotBlock } from "@/lib/editor/types/hotspot-block";
 
 type HotspotBlocksPreviewProps = {
@@ -26,8 +26,7 @@ export function HotspotBlocksPreview({
   return (
     <div className="flex flex-col gap-3">
       {blocks.map((block) => {
-        const def = getBlockDefinition(block.type);
-        const Preview = def.Preview;
+        const Preview = BLOCK_PREVIEWS[block.type];
         return (
           <Preview key={block.id} block={block} hotspotId={hotspotId} />
         );

@@ -18,6 +18,7 @@ import {
 import { geoMapProjection } from "@/lib/editor/geo/map-projection";
 import { geoMapStyleUrls } from "@/lib/editor/geo/map-styles";
 import { resolveGeoHomeViewport } from "@/lib/editor/geo/resolve-home-viewport";
+import { isViewerRuntime } from "@/lib/editor/runtime";
 import { useEditorStore } from "@/lib/editor/state/editor-store";
 import { usePreviewHotspots } from "@/lib/editor/state/preview-hotspots";
 import { useGeoStore } from "@/lib/editor/state/geo-store";
@@ -66,7 +67,9 @@ export function GeoMapViewport() {
         theme="dark"
         styles={mapStyles}
         projection={geoMapProjection(geo.flatProjection)}
-        canvasContextAttributes={{ preserveDrawingBuffer: true }}
+        // Thumbnails read the canvas back; the viewer never captures, so it
+        // skips the extra buffer copy.
+        canvasContextAttributes={{ preserveDrawingBuffer: !isViewerRuntime() }}
         minZoom={minZoom}
         maxZoom={maxZoom}
         viewport={viewport}

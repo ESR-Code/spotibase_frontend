@@ -8,12 +8,9 @@ import { EditorDialog } from "@/app/editor/_components/ui/editor-dialog";
 import { getEditorPortalHost } from "@/app/editor/_components/ui/fixed-portal-menu";
 import { cn } from "@/lib/utils";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
-import {
-  formatAssetSize,
-  useAssetsStore,
-  type EditorAsset,
-  type EditorAssetKind,
-} from "@/lib/editor/assets";
+import { type EditorAsset, type EditorAssetKind } from "@/lib/editor/assets/types";
+import { useAssetsStore } from "@/lib/editor/assets/assets-store";
+import { formatAssetSize } from "@/lib/editor/assets/api";
 
 type AssetPickerButtonProps = {
   kind: EditorAssetKind;

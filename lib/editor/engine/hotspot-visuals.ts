@@ -1,4 +1,4 @@
-import { resolveAssetSrc } from "@/lib/editor/assets";
+import { resolveAssetSrc } from "@/lib/editor/assets/resolve";
 import type { Application, Entity, StandardMaterial, Texture } from "playcanvas";
 import type * as pc from "playcanvas";
 import {

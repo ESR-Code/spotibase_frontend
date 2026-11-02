@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { GeoJSONSource, ImageSource, Map as MapLibreMap } from "maplibre-gl";
 import { useMap } from "@/components/ui/map";
-import { resolveAssetSrc } from "@/lib/editor/assets";
+import { resolveAssetSrc } from "@/lib/editor/assets/resolve";
 import {
   geoOverlayQuad,
   geographicBearing,

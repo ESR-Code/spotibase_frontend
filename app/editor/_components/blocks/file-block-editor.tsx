@@ -6,15 +6,10 @@ import { AssetPickerButton } from "@/app/editor/_components/assets/asset-picker-
 import { TokenField } from "@/app/editor/_components/blocks/token-field";
 import { FieldLabel } from "@/app/editor/_components/ui/field-label";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
-import {
-  ASSET_LIMITS,
-  assetIdFromRef,
-  assetRef,
-  FILE_ASSET_ACCEPT,
-  formatAssetSize,
-  uploadAsset,
-  useAssetsStore,
-} from "@/lib/editor/assets";
+import { assetIdFromRef, assetRef } from "@/lib/editor/assets/types";
+import { useAssetsStore } from "@/lib/editor/assets/assets-store";
+import { ASSET_LIMITS, FILE_ASSET_ACCEPT, formatAssetSize } from "@/lib/editor/assets/api";
+import { uploadAsset } from "@/lib/editor/assets/upload-asset";
 import { fileTypeLabel } from "@/lib/editor/blocks/file-block";
 import type { HttpFieldSource } from "@/lib/editor/blocks/http-field-sources";
 import { useScenesStore } from "@/lib/editor/state/scenes-store";
