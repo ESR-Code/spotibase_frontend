@@ -4,9 +4,9 @@ import { AccountMenu } from "@/app/projects/_components/account-menu";
 import { Bell } from "lucide-react";
 import Link from "next/link";
 
-export function BrandMark({ compact = false }: { compact?: boolean }) {
+export function BrandMark({ compact = false, href = "/projects" }: { compact?: boolean; href?: string }) {
   return (
-    <Link href="/projects" className="flex items-center gap-2.5" aria-label="Spotibase home">
+    <Link href={href} className="flex items-center gap-2.5" aria-label="Spotibase home">
       <span className="relative flex h-8 w-8 items-center justify-center rounded-[9px] bg-gradient-to-br from-[#ff7186] via-[#fd4f6a] to-[#b8253f] shadow-[0_6px_18px_-6px_rgba(253,79,106,0.8)]">
         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
           <path d="M4 5l8 14 8-14" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />

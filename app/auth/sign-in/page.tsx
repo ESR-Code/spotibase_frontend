@@ -1,10 +1,14 @@
 "use client";
 
-import { AuthLinks, AuthShell } from "@/app/auth/_components/auth-shell";
+import {
+  AuthError,
+  AuthField,
+  AuthLinks,
+  AuthShell,
+  AuthSubmit,
+} from "@/app/auth/_components/auth-shell";
 import { authClient } from "@/lib/auth/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
@@ -43,39 +47,37 @@ export default function SignInPage() {
   }
 
   return (
-    <AuthShell title="Sign in">
+    <AuthShell
+      title="Welcome back to Spotibase"
+      subtitle="Sign in to continue to your studio"
+      footer="Your projects and media stay private to your organization."
+    >
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            placeholder="you@example.com"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-          />
-        </div>
-        {error ? (
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-        ) : null}
-        <Button
-          type="submit"
-          disabled={pending}
-          className="w-full bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-        >
+        <AuthField
+          label="Email"
+          id="email"
+          type="email"
+          autoComplete="email"
+          required
+          placeholder="Enter your email"
+        />
+        <AuthField
+          label="Password"
+          id="password"
+          type="password"
+          autoComplete="current-password"
+          required
+          placeholder="Enter your password"
+          aside={
+            <Link href="/auth/forgot-password" className="auth-link text-xs">
+              Forgot password?
+            </Link>
+          }
+        />
+        <AuthError message={error} />
+        <AuthSubmit disabled={pending}>
           {pending ? "Signing in…" : "Sign in"}
-        </Button>
+        </AuthSubmit>
       </form>
       <AuthLinks current="sign-in" />
     </AuthShell>

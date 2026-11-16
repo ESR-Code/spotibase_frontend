@@ -1,0 +1,70 @@
+/* Auth screens (sign-in / sign-up / password). Builds on the studio tokens
+   from `app/projects/projects-theme.css`. */
+
+.auth-hero {
+  border-radius: 22px;
+  border: 1px solid var(--studio-line);
+  background: #101829;
+}
+
+.auth-chip {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--studio-fg-2);
+  border: 1px solid var(--studio-line-strong);
+}
+
+/* Hotspot ring in the hero illustration. */
+.auth-ill-ping {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: auth-ping 2.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.auth-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--studio-fg-2);
+}
+
+.auth-link {
+  color: var(--studio-accent-2);
+  font-weight: 600;
+  text-underline-offset: 4px;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--studio-muted-2);
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--studio-line-strong);
+}
+
+@keyframes auth-ping {
+  75%,
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-ill-ping {
+    animation: none;
+  }
+}

@@ -1,35 +1,21 @@
-import { AuthLinks, AuthShell } from "@/app/auth/_components/auth-shell";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { AuthField, AuthLinks, AuthShell, AuthSubmit } from "@/app/auth/_components/auth-shell";
 
 export default function SignUpPage() {
   return (
-    <AuthShell title="Create an account">
-      <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
-        New signups are disabled. Ask an admin to create your account, then sign
-        in.
+    <AuthShell
+      title="Create your Spotibase account"
+      subtitle="New signups are currently invite-only"
+    >
+      <p className="mb-5 rounded-[10px] border border-[var(--studio-line-strong)] bg-[var(--studio-sub)] px-3 py-2.5 text-sm text-[var(--studio-fg-2)]">
+        Ask an admin to create your account, then sign in.
       </p>
       <form className="flex flex-col gap-4" aria-disabled="true">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="name">Name</Label>
-          <Input id="name" name="name" type="text" disabled />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" disabled />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="password">Password</Label>
-          <Input id="password" name="password" type="password" disabled />
-        </div>
-        <Button
-          type="button"
-          disabled
-          className="w-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-        >
+        <AuthField label="Name" id="name" type="text" disabled />
+        <AuthField label="Email" id="email" type="email" disabled />
+        <AuthField label="Password" id="password" type="password" disabled />
+        <AuthSubmit type="button" disabled>
           Sign up unavailable
-        </Button>
+        </AuthSubmit>
       </form>
       <AuthLinks current="sign-up" />
     </AuthShell>

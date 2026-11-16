@@ -1,10 +1,13 @@
 "use client";
 
-import { AuthLinks, AuthShell } from "@/app/auth/_components/auth-shell";
+import {
+  AuthError,
+  AuthField,
+  AuthLinks,
+  AuthShell,
+  AuthSubmit,
+} from "@/app/auth/_components/auth-shell";
 import { authClient } from "@/lib/auth/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useState, type FormEvent } from "react";
 
 export default function ForgotPasswordPage() {
@@ -42,34 +45,28 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <AuthShell title="Forgot password">
+    <AuthShell
+      title="Forgot your password?"
+      subtitle="We'll email you a link to reset it"
+    >
       {ok ? (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-center text-sm text-[var(--studio-fg-2)]">
           If that email is registered, a reset link is on its way.
         </p>
       ) : (
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              placeholder="you@example.com"
-            />
-          </div>
-          {error ? (
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          ) : null}
-          <Button
-            type="submit"
-            disabled={pending}
-            className="w-full bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-          >
+          <AuthField
+            label="Email"
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            placeholder="Enter your email"
+          />
+          <AuthError message={error} />
+          <AuthSubmit disabled={pending}>
             {pending ? "Sending…" : "Send reset link"}
-          </Button>
+          </AuthSubmit>
         </form>
       )}
       <AuthLinks current="forgot-password" />

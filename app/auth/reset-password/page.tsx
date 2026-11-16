@@ -1,10 +1,13 @@
 "use client";
 
-import { AuthLinks, AuthShell } from "@/app/auth/_components/auth-shell";
+import {
+  AuthError,
+  AuthField,
+  AuthLinks,
+  AuthShell,
+  AuthSubmit,
+} from "@/app/auth/_components/auth-shell";
 import { authClient } from "@/lib/auth/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState, type FormEvent } from "react";
 
@@ -18,7 +21,7 @@ function ResetPasswordForm() {
   if (!token) {
     return (
       <AuthShell title="Reset password">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-center text-sm text-[var(--studio-fg-2)]">
           This page needs a valid reset link from your email.
         </p>
         <AuthLinks current="forgot-password" />
@@ -54,29 +57,21 @@ function ResetPasswordForm() {
   }
 
   return (
-    <AuthShell title="Reset password">
+    <AuthShell title="Reset password" subtitle="Choose a new password for your account">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="password">New password</Label>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            required
-            minLength={8}
-          />
-        </div>
-        {error ? (
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-        ) : null}
-        <Button
-          type="submit"
-          disabled={pending}
-          className="w-full bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-        >
+        <AuthField
+          label="New password"
+          id="password"
+          type="password"
+          autoComplete="new-password"
+          required
+          minLength={8}
+          placeholder="At least 8 characters"
+        />
+        <AuthError message={error} />
+        <AuthSubmit disabled={pending}>
           {pending ? "Saving…" : "Update password"}
-        </Button>
+        </AuthSubmit>
       </form>
       <AuthLinks current="forgot-password" />
     </AuthShell>

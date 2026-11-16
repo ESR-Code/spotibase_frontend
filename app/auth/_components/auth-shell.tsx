@@ -1,25 +1,108 @@
+import { BrandMark } from "@/app/projects/_components/projects-topbar";
+import { AuthIllustration } from "@/app/auth/_components/auth-illustration";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
+
+function AuthHero() {
+  return (
+    <aside className="auth-hero hidden min-h-[560px] flex-col p-8 lg:flex xl:p-12">
+      <div className="flex flex-1 items-center justify-center py-6">
+        <AuthIllustration className="h-auto w-full max-w-[560px]" />
+      </div>
+
+      <div>
+        <h2 className="studio-heading max-w-md text-[26px] leading-tight xl:text-[30px]">
+          Bring every space to life, one hotspot at a time
+        </h2>
+        <p className="mt-3 max-w-md text-sm leading-relaxed text-[var(--studio-muted)]">
+          Place hotspots on 3D models, images, and geo maps, wire their behavior
+          with action graphs, and publish a viewer anywhere.
+        </p>
+        <ul className="mt-5 flex flex-wrap gap-2" aria-label="Scene types">
+          {["3D models", "Images", "Geo maps"].map((t) => (
+            <li key={t} className="auth-chip">
+              {t}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </aside>
+  );
+}
 
 export function AuthShell({
   title,
+  subtitle,
   children,
+  footer,
 }: {
   title: string;
+  subtitle?: string;
   children: ReactNode;
+  footer?: ReactNode;
 }) {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
-      <div className="w-full max-w-sm rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <p className="mb-1 text-center text-xs font-medium tracking-wide text-zinc-500 uppercase">
-          Spotibase
-        </p>
-        <h1 className="mb-6 text-center text-xl font-semibold text-zinc-900 dark:text-zinc-50">
-          {title}
-        </h1>
-        {children}
-      </div>
+    <div className="grid min-h-dvh flex-1 gap-4 p-3 sm:p-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
+      <AuthHero />
+
+      <main className="flex flex-col items-center justify-center px-4 py-12">
+        <div className="w-full max-w-[380px]">
+          <div className="mb-8 flex flex-col items-center text-center">
+            <span className="mb-5">
+              <BrandMark href="/auth/sign-in" compact />
+            </span>
+            <h1 className="studio-heading text-2xl">{title}</h1>
+            {subtitle ? (
+              <p className="mt-1.5 text-sm text-[var(--studio-muted)]">{subtitle}</p>
+            ) : null}
+          </div>
+
+          {children}
+
+          {footer ? (
+            <div className="mt-8 text-center text-xs leading-relaxed text-[var(--studio-muted)]">
+              {footer}
+            </div>
+          ) : null}
+        </div>
+      </main>
     </div>
+  );
+}
+
+export function AuthField({
+  label,
+  id,
+  aside,
+  ...inputProps
+}: { label: string; id: string; aside?: ReactNode } & ComponentProps<"input">) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <label htmlFor={id} className="auth-label">
+          {label}
+        </label>
+        {aside}
+      </div>
+      <input id={id} name={id} className="studio-input" {...inputProps} />
+    </div>
+  );
+}
+
+export function AuthError({ message }: { message: string | null }) {
+  if (!message) return null;
+  return (
+    <p role="alert" className="text-sm text-[var(--studio-accent-2)]">
+      {message}
+    </p>
+  );
+}
+
+export function AuthSubmit({ children, ...props }: ComponentProps<"button">) {
+  return (
+    <button type="submit" className="studio-btn studio-btn-primary h-[42px] w-full text-sm" {...props}>
+      {children}
+    </button>
   );
 }
 
@@ -28,24 +111,23 @@ export function AuthLinks({
 }: {
   current: "sign-in" | "sign-up" | "forgot-password";
 }) {
-  const linkClass = "text-sm text-zinc-600 underline-offset-4 hover:underline dark:text-zinc-400";
   return (
-    <nav className="mt-6 flex flex-col items-center gap-2">
-      {current !== "sign-in" ? (
-        <Link href="/auth/sign-in" className={linkClass}>
-          Sign in
-        </Link>
-      ) : null}
-      {current !== "forgot-password" ? (
-        <Link href="/auth/forgot-password" className={linkClass}>
-          Forgot password
-        </Link>
-      ) : null}
-      {current !== "sign-up" ? (
-        <Link href="/auth/sign-up" className={linkClass}>
-          Create an account
-        </Link>
-      ) : null}
-    </nav>
+    <p className="mt-6 text-center text-sm text-[var(--studio-muted)]">
+      {current === "sign-in" ? (
+        <>
+          New to Spotibase?{" "}
+          <Link href="/auth/sign-up" className="auth-link">
+            Create an account
+          </Link>
+        </>
+      ) : (
+        <>
+          {current === "sign-up" ? "Already have an account?" : "Remembered it?"}{" "}
+          <Link href="/auth/sign-in" className="auth-link">
+            Sign in
+          </Link>
+        </>
+      )}
+    </p>
   );
 }

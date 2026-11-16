@@ -70,4 +70,5 @@ This is a Next.js 16 / React 19 app. The product is **Spotibase** (“3D Hotspot
 - `docs/architecture.md` — structure and relationships
 - `docs/features.md` — implemented / partial / planned
 - `docs/decisions.md` — architectural and technical decisions
+- `docs/testing.md` — test accounts (emails, password, org roles)
 
