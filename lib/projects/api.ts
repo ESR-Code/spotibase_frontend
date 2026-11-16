@@ -164,3 +164,22 @@ export async function getProjectAssetStats(projectId: string): Promise<ProjectAs
   });
   return parseAssetStats(raw);
 }
+
+export type LivePublishedVersion = { version: number; created_at: string };
+
+/** The project's live (`published`) version, or null when it isn't published. */
+export async function getLivePublishedVersion(projectId: string): Promise<LivePublishedVersion | null> {
+  const q = new URLSearchParams({
+    project_id: `eq.${projectId}`,
+    status: "eq.published",
+    select: "version,created_at",
+    limit: "1",
+  });
+  const rows = await dataJson<LivePublishedVersion[]>(`project_versions?${q}`);
+  return rows[0] ?? null;
+}
+
+/** Public viewer URL (`/view/<projectId>`) for a published project. */
+export function viewerHref(projectId: string) {
+  return `/view/${encode(projectId)}`;
+}

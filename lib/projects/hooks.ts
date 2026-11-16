@@ -11,6 +11,7 @@ import {
   deleteFolder,
   deleteProject,
   getProject,
+  getLivePublishedVersion,
   getProjectAssetStats,
   listFolders,
   listProjects,
@@ -63,6 +64,7 @@ export const projectKeys = {
     ["projects", orgId, folderId ?? "all"] as const,
   detail: (id: string) => ["project", id] as const,
   assetStats: (id: string) => ["project", id, "asset-stats"] as const,
+  livePublished: (id: string) => ["project", id, "live-published"] as const,
 };
 
 export function useOrganizations() {
@@ -227,6 +229,14 @@ export function useProjectAssetStats(id: string | null | undefined) {
   return useQuery<ProjectAssetStats>({
     queryKey: projectKeys.assetStats(id ?? ""),
     queryFn: () => getProjectAssetStats(id!),
+    enabled: Boolean(id),
+  });
+}
+
+export function useLivePublishedVersion(id: string | null | undefined) {
+  return useQuery({
+    queryKey: projectKeys.livePublished(id ?? ""),
+    queryFn: () => getLivePublishedVersion(id!),
     enabled: Boolean(id),
   });
 }

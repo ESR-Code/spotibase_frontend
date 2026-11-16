@@ -18,12 +18,14 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { EditorButton } from "@/app/editor/_components/ui/editor-button";
 import { EditorDialog } from "@/app/editor/_components/ui/editor-dialog";
 import { IconButton } from "@/app/editor/_components/ui/icon-button";
 import { authClient } from "@/lib/auth/client";
+import { projectKeys } from "@/lib/projects/hooks";
 import { confirmDelete } from "@/lib/editor/confirm";
 import {
   publishPasswordSchema,
@@ -85,15 +87,19 @@ function PublishSettings({ onClose }: { onClose: () => void }) {
   const [republishingId, setRepublishingId] = useState<string | null>(null);
   const [passwordFormOpen, setPasswordFormOpen] = useState(false);
 
+  const queryClient = useQueryClient();
+
   const refresh = useCallback(async () => {
     if (!projectId) return;
+    // The project page's Play button reads the live version from this query.
+    void queryClient.invalidateQueries({ queryKey: projectKeys.livePublished(projectId) });
     try {
       setState(await loadPublishState(projectId));
       setLoadError(null);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "Could not load publish settings");
     }
-  }, [projectId]);
+  }, [projectId, queryClient]);
 
   useEffect(() => {
     if (!projectId) return;

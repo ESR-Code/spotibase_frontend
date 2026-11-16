@@ -1,8 +1,9 @@
-import { EditorLaunchButton } from "@/app/projects/_components/editor-launch-button";
+import { EditorLaunchButton, ViewerPlayButton } from "@/app/projects/_components/editor-launch-button";
 import { FolderIcon } from "@/app/projects/_components/folder-icon";
 import { FolderTag } from "@/app/projects/_components/project-card";
 import { formatRelative, plural } from "@/app/projects/_lib/format";
 import { folderHex } from "@/lib/projects/folder-colors";
+import { useLivePublishedVersion } from "@/lib/projects/hooks";
 import { projectThumbnailSrc } from "@/lib/projects/storage";
 import type {
   OrganizationSummary,
@@ -64,6 +65,7 @@ export function ProjectHero({
   folder: ProjectFolderRow | null;
   organization: OrganizationSummary | null;
 }) {
+  const live = useLivePublishedVersion(project.id).data ?? null;
   const subtitle = [folder?.name ?? "Root workspace", organization?.name].filter(Boolean).join(" · ");
 
   return (
@@ -105,7 +107,10 @@ export function ProjectHero({
           </p>
         </div>
 
-        <EditorLaunchButton projectId={project.id} className="w-full shrink-0 sm:w-auto lg:self-center" />
+        <div className="flex w-full shrink-0 flex-col gap-2.5 sm:w-auto sm:flex-row lg:self-center">
+          {live ? <ViewerPlayButton projectId={project.id} version={live.version} /> : null}
+          <EditorLaunchButton projectId={project.id} />
+        </div>
       </div>
     </section>
   );

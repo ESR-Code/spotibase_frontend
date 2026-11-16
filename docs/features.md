@@ -47,6 +47,7 @@ Status as of the current codebase. “Partial” means code exists but the featu
 
 - Header **Publish** button opens a publish dialog: status (Not published / Live vN), Publish / Publish update (saves a dirty draft first), Unpublish, password protection (off by default; set / change / remove), and the 5 retained versions. Each archived version has a publish button that makes that snapshot live and takes the current one offline; the editor draft is not changed. Published versions are immutable `project_versions` snapshots; the Data API cannot write them. Assets used by a retained version are protected from GC and deletion. Pruning always keeps the version that was live, even when it is older than newer archived versions.
 - The dialog's **Share** section shows the viewer link and copyable iframe embed code while a version is live.
+- The project detail page shows a **Play vN** button next to "Open in Studio Editor" while a version is live; it opens the viewer in a new tab.
 
 ### Public viewer
 

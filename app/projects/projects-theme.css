@@ -879,6 +879,57 @@ textarea.studio-input {
   transform: translateX(3px);
 }
 
+.studio-play-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 0 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--studio-fg);
+  background: var(--studio-sub);
+  border: 1px solid var(--studio-line-strong);
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.studio-play-btn:hover {
+  border-color: color-mix(in srgb, var(--studio-teal) 55%, transparent);
+  background: var(--studio-card-hover);
+  transform: translateY(-1px);
+}
+
+.studio-play-btn:active {
+  transform: translateY(1px);
+}
+
+.studio-play-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--studio-teal) 70%, transparent);
+  outline-offset: 3px;
+}
+
+.studio-play-btn svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: var(--studio-teal);
+  fill: currentColor;
+}
+
+.studio-play-version {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--studio-teal);
+  background: color-mix(in srgb, var(--studio-teal) 12%, transparent);
+}
+
 /* ---------- Underline tabs ---------- */
 
 .studio-line-tabs {
